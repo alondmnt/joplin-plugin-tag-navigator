@@ -1,11 +1,14 @@
 import joplin from 'api';
+import { parseUniqueTags } from './parser';
 
 export async function convertNoteToJoplinTags(note: any) {
 
   // Prase all inline tags from the note
-  const tags = note.body.match(/#(\w+)/g).map(tag => {
-    return tag.replace('#', '');
-  });
+  const tags = parseUniqueTags(note.body);
+
+  if (tags.length === 0) {
+    return;
+  }
 
   // Get note tags
   const noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
