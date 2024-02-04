@@ -4,7 +4,7 @@
 	"app_min_version": "2.10",
 	"version": "0.0.1",
 	"name": "Inline Tag Browser",
-	"description": "Convert inline tags to native joplin tags, or browse their locations in the text in a dedicated panel.",
+	"description": "Convert inline tags to native joplin tags, or navigate to tags using a dedicated panel.",
 	"author": "Alon Diament",
 	"homepage_url": "",
 	"repository_url": "",
