@@ -37,13 +37,21 @@ joplin.plugins.register({
     const panel = await joplin.views.panels.create('itags.panel');
     // await joplin.views.panels.addScript(panel, 'webview.css');
     await joplin.views.panels.addScript(panel, 'webview.js');
+    let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
-      await updatePanel(panel, parseTagsLines(note.body));
+      tagLines = parseTagsLines(note.body);
+      await updatePanel(panel, tagLines);
     });
 
     await joplin.views.panels.onMessage(panel, async (message) => {
       if (message.name === 'jumpToLine') {
+        // Increment the index of the tag
+        for (const tag of tagLines) {
+          if (tag.tag === message.tag) {
+            tag.index = (tag.index + 1) % tag.count;
+          }
+        }
         // Navigate to the line
         if (message.line > 0) {
           await joplin.commands.execute('editor.execCommand', {
@@ -51,6 +59,8 @@ joplin.plugins.register({
             args: [message.line]
           });
         }
+        // Update the panel
+        await updatePanel(panel, tagLines);
       }
     });
 

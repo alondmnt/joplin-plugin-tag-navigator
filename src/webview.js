@@ -5,6 +5,7 @@ document.addEventListener('click', event => {
 		webviewApi.postMessage({
 			name: 'jumpToLine',
 			line: element.dataset.line,
+			tag: element.dataset.tag,
 		});
 	}
 });

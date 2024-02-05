@@ -13,7 +13,7 @@ export function parseUniqueTags(text: string): string[] {
   return uniqueTags;
 }
 
-export function parseTagsLines(text: string): { tag: string, lines: number[], count: number }[] {
+export function parseTagsLines(text: string): { tag: string, lines: number[], count: number, index: number }[] {
   const tags = parseUniqueTags(text);
 
   if (tags.length === 0) {
@@ -31,7 +31,7 @@ export function parseTagsLines(text: string): { tag: string, lines: number[], co
       }
       return acc;
     }, []);
-    return { tag, lines: tagLines, count: tagLines.length};
+    return { tag, lines: tagLines, count: tagLines.length, index: 0 };
   });
 
   // Sort by the tag name
