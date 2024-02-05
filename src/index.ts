@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { ContentScriptType } from 'api/types';
+import { ContentScriptType, MenuItemLocation } from 'api/types';
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updatePanel } from './panel';
 import { parseTagsLines } from './parser';
@@ -43,6 +43,27 @@ joplin.plugins.register({
       tagLines = parseTagsLines(note.body);
       await updatePanel(panel, tagLines);
     });
+
+    await joplin.commands.register({
+      name: 'itags.togglePanel',
+      label: 'Toggle inline tags panel',
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        (await joplin.views.panels.visible(panel)) ? joplin.views.panels.hide(panel) : joplin.views.panels.show(panel);
+      },
+    })
+
+    await joplin.views.menus.create('itags.menu', 'Inline tags', [
+      {
+        commandName: 'itags.togglePanel',
+      },
+      {
+        commandName: 'itags.convertNoteToJoplinTags',
+      },
+      {
+        commandName: 'itags.convertAllNotesToJoplinTags',
+      },
+    ], MenuItemLocation.Tools);
 
     await joplin.views.panels.onMessage(panel, async (message) => {
       if (message.name === 'jumpToLine') {
