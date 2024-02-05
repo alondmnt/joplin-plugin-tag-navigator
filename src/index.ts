@@ -35,7 +35,7 @@ joplin.plugins.register({
     });
 
     const panel = await joplin.views.panels.create('itags.panel');
-    // await joplin.views.panels.addScript(panel, 'webview.css');
+    await joplin.views.panels.addScript(panel, 'webview.css');
     await joplin.views.panels.addScript(panel, 'webview.js');
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
