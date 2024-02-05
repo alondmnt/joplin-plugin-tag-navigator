@@ -1,11 +1,35 @@
 import joplin from 'api';
-import { ContentScriptType, MenuItemLocation } from 'api/types';
+import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types';
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updatePanel } from './panel';
 import { parseTagsLines } from './parser';
 
 joplin.plugins.register({
   onStart: async function() {
+
+    await joplin.settings.registerSection('itags', {
+      label: 'Tag Navigator',
+      iconName: 'fas fa-dharmachakra',
+    });
+    await joplin.settings.registerSettings({
+      'periodicUpdate': {
+        value: 0,
+        type: SettingItemType.Int,
+        minimum: 0,
+        maximum: 1440,
+        section: 'itags',
+        public: true,
+        label: 'Periodic update (minutes)',
+        description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
+      },
+    });
+    const periodicUpdate: number = await joplin.settings.value('periodicUpdate');
+    if (periodicUpdate > 0) {
+      setInterval(async () => {
+        console.log('Periodic inline tags update');
+        await convertAllNotesToJoplinTags();
+      }, periodicUpdate * 60 * 1000);
+    }
 
     await joplin.contentScripts.register(
       ContentScriptType.CodeMirrorPlugin,
@@ -53,7 +77,7 @@ joplin.plugins.register({
       },
     })
 
-    await joplin.views.menus.create('itags.menu', 'Inline tags', [
+    await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.togglePanel',
       },
