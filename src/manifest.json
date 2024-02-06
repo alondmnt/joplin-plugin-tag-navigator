@@ -1,15 +1,15 @@
 {
 	"manifest_version": 1,
-	"id": "joplin.plugin.alondmnt.tag-browser",
+	"id": "joplin.plugin.alondmnt.tag-navigator",
 	"app_min_version": "2.10",
-	"version": "0.0.1",
-	"name": "Inline Tag Browser",
-	"description": "Convert inline tags to native joplin tags, or navigate to tags using a dedicated panel.",
+	"version": "0.1.0",
+	"name": "Inline Tag Navigator",
+	"description": "Convert inline tags to native joplin tags, or navigate between tags using a dedicated panel.",
 	"author": "Alon Diament",
-	"homepage_url": "",
-	"repository_url": "",
-	"keywords": [],
-	"categories": [],
+	"homepage_url": "https://github.com/alondmnt/joplin-plugin-tag-navigator#readme",
+	"repository_url": "https://github.com/alondmnt/joplin-plugin-tag-navigator",
+	"keywords": ["editor", "tags"],
+	"categories": ["tags"],
 	"screenshots": [],
 	"icons": {}
 }
