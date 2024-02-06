@@ -69,6 +69,17 @@ joplin.plugins.register({
     });
 
     await joplin.commands.register({
+      name: 'itags.refreshPanel',
+      label: 'Refresh inline tags panel',
+      iconName: 'fas fa-sync',
+      execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+        tagLines = parseTagsLines(note.body);
+        await updatePanel(panel, tagLines);
+      },
+    })
+
+    await joplin.commands.register({
       name: 'itags.togglePanel',
       label: 'Toggle inline tags panel',
       iconName: 'fas fa-tags',
@@ -78,6 +89,9 @@ joplin.plugins.register({
     })
 
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
+      {
+        commandName: 'itags.refreshPanel',
+      },
       {
         commandName: 'itags.togglePanel',
       },
