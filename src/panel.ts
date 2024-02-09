@@ -8,7 +8,7 @@ export async function updatePanel(panel: string, tagsLines: { tag: string, lines
     }
     return `
       <a class="itags-panel-tag" href="#" data-tag="${tag.tag}" data-line="${tag.lines[tag.index]}">
-      #${tag.tag} ${indexText}
+      ${tag.tag} ${indexText}
       </a>
     `;
   }).join('');
