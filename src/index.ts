@@ -107,6 +107,7 @@ joplin.plugins.register({
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.refreshPanel',
+        accelerator: 'CmdOrCtrl+Shift+I',
       },
       {
         commandName: 'itags.togglePanel',
@@ -118,6 +119,7 @@ joplin.plugins.register({
         commandName: 'itags.convertAllNotesToJoplinTags',
       },
     ], MenuItemLocation.Tools);
+    await joplin.views.menuItems.create('itags.convertNoteToJoplinTags', 'itags.convertNoteToJoplinTags', MenuItemLocation.Note);
 
     await joplin.views.panels.onMessage(panel, async (message) => {
       if (message.name === 'jumpToLine') {
