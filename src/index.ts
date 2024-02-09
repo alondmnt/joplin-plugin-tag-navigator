@@ -12,7 +12,7 @@ joplin.plugins.register({
       iconName: 'fas fa-dharmachakra',
     });
     await joplin.settings.registerSettings({
-      'periodicUpdate': {
+      'itags.periodicUpdate': {
         value: 0,
         type: SettingItemType.Int,
         minimum: 0,
@@ -22,8 +22,24 @@ joplin.plugins.register({
         label: 'Periodic update (minutes)',
         description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
       },
+      'itags.tagRegex': {
+        value: '',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        label: 'Tag regex',
+        description: 'Custom regex to match tags. Leave empty to use the default regex.',
+      },
+      'itags.excludeRegex': {
+        value: '',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        label: 'Exclude regex',
+        description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
+      }
     });
-    const periodicUpdate: number = await joplin.settings.value('periodicUpdate');
+    const periodicUpdate: number = await joplin.settings.value('itags.periodicUpdate');
     if (periodicUpdate > 0) {
       setInterval(async () => {
         console.log('Periodic inline tags update');
@@ -64,7 +80,7 @@ joplin.plugins.register({
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
-      tagLines = parseTagsLines(note.body);
+      tagLines = await parseTagsLines(note.body);
       await updatePanel(panel, tagLines);
     });
 
@@ -74,7 +90,7 @@ joplin.plugins.register({
       iconName: 'fas fa-sync',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
-        tagLines = parseTagsLines(note.body);
+        tagLines = await parseTagsLines(note.body);
         await updatePanel(panel, tagLines);
       },
     })

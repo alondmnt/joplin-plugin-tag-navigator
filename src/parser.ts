@@ -1,15 +1,34 @@
-const tag_regex = /(?<=\s|\()#([^\s#]*\w)/g;
+import joplin from 'api';
 
-export function parseUniqueTags(text: string): string[] {
-  const tagsMatch = text.toLowerCase().match(tag_regex)
+const defTagRegex = /(?<=\s|\()#([^\s#]*\w)/g;
 
-  const uniqueTags = tagsMatch ? [...new Set(tagsMatch)] : [];
+export async function parseUniqueTags(text: string): Promise<string[]> {
+  const userRegex = await joplin.settings.value('itags.tagRegex');
+  let tagRegex = defTagRegex;
+  if (userRegex) {
+    tagRegex = new RegExp(userRegex, 'g');
+  }
+
+  const tagsMatch = text.toLowerCase().match(tagRegex);
+  let uniqueTags = tagsMatch ? [...new Set(tagsMatch)] : [];
+
+  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
+  if (excludeRegex) {
+    const excludeReg = new RegExp(excludeRegex, 'g');
+    uniqueTags = uniqueTags.filter((tag) => !tag.match(excludeReg)) || [];
+  }
 
   return uniqueTags;
 }
 
-export function parseTagsLines(text: string): { tag: string, lines: number[], count: number, index: number }[] {
-  const tags = parseUniqueTags(text);
+export async function parseTagsLines(text: string): Promise<{ tag: string, lines: number[], count: number, index: number }[]> {
+  const userRegex = await joplin.settings.value('itags.tagRegex');
+  let tagRegex = defTagRegex;
+  if (userRegex) {
+    tagRegex = new RegExp(userRegex, 'g');
+  }
+
+  const tags = await parseUniqueTags(text);
 
   if (tags.length === 0) {
     return [];
@@ -19,7 +38,7 @@ export function parseTagsLines(text: string): { tag: string, lines: number[], co
   const lines = text.toLocaleLowerCase().split('\n');
   const tagsLines = tags.map((tag) => {
     const tagLines: number[] = lines.reduce((acc, line, index) => {
-      if (line.match(tag_regex)?.includes(tag)) {
+      if (line.match(tagRegex)?.includes(tag)) {
         acc.push(index);
       }
       return acc;

@@ -23,7 +23,7 @@ export async function convertAllNotesToJoplinTags() {
 export async function convertNoteToJoplinTags(note: any) {
 
   // Prase all inline tags from the note
-  const tags = parseUniqueTags(note.body);
+  const tags = await parseUniqueTags(note.body);
 
   if (tags.length === 0) {
     return;
