@@ -46,9 +46,6 @@ export async function convertNoteToJoplinTags(note: any) {
   const curTags = allTags.items.filter(tag => tagsToAdd.includes(tag.title));
   const newTags = tagsToAdd.filter(tag => !allTagNames.includes(tag));
 
-  console.log(curTags);
-  console.log(newTags);
-
   for (const tag of newTags) {
     const newTag = await joplin.data.post(['tags'], null, { title: tag });
     // Update the note tags
