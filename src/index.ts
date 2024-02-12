@@ -3,6 +3,9 @@ import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types'
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updatePanel } from './panel';
 import { parseTagsLines } from './parser';
+import { processAllNotes } from './db';
+import { convertToSQLiteQuery, runQueryAndPrintResults } from './search';
+import { dumpInMemoryDbToFile } from './debug';
 
 joplin.plugins.register({
   onStart: async function() {
@@ -138,6 +141,20 @@ joplin.plugins.register({
         }
         // Update the panel
         await updatePanel(panel, tagLines);
+      }
+    });
+
+    await joplin.commands.register({
+      name: 'itags.testSearch',
+      label: 'Test search',
+      execute: async () => {
+        const db = await processAllNotes();
+        // const plugin_dir = await joplin.plugins.dataDir();
+        // await dumpInMemoryDbToFile(db, plugin_dir + '/debug.sqlite');
+        const query = [[{ tag: '#then.we.take', negated: false }, { tag: '#second', negated: true }]];
+        console.log(query);
+        const sqlQuery = convertToSQLiteQuery(query);
+        await runQueryAndPrintResults(db, sqlQuery);
       }
     });
 
