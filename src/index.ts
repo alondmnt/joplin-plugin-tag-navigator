@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types';
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
-import { updatePanel } from './panel';
+import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { convertToSQLiteQuery, runQueryAndPrintResults } from './search';
@@ -84,7 +84,7 @@ joplin.plugins.register({
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
       tagLines = await parseTagsLines(note.body);
-      await updatePanel(panel, tagLines);
+      await updateNotePanel(panel, tagLines);
     });
 
     await joplin.commands.register({
@@ -94,7 +94,7 @@ joplin.plugins.register({
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
         tagLines = await parseTagsLines(note.body);
-        await updatePanel(panel, tagLines);
+        await updateNotePanel(panel, tagLines);
       },
     })
 
@@ -140,7 +140,7 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updatePanel(panel, tagLines);
+        await updateNotePanel(panel, tagLines);
       }
     });
 
