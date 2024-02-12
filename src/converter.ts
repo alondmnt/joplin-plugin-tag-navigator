@@ -13,10 +13,10 @@ export async function convertAllNotesToJoplinTags() {
     });
     hasMore = notes.has_more;
 
-    // Process the notes asynchronously
-    await Promise.all(notes.items.map(async (note) => {
+    // Process the notes synchronously to avoid issues
+    for (const note of notes.items) {
       await convertNoteToJoplinTags(note);
-    }));
+    }
   }
 }
 
@@ -45,6 +45,9 @@ export async function convertNoteToJoplinTags(note: any) {
   // Create the tags that don't exist
   const curTags = allTags.items.filter(tag => tagsToAdd.includes(tag.title));
   const newTags = tagsToAdd.filter(tag => !allTagNames.includes(tag));
+
+  console.log(curTags);
+  console.log(newTags);
 
   for (const tag of newTags) {
     const newTag = await joplin.data.post(['tags'], null, { title: tag });
