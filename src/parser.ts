@@ -1,6 +1,6 @@
 import joplin from 'api';
 
-const defTagRegex = /(?<=\s|\()#([^\s#]*\w)/g;
+const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g;
 
 export async function parseUniqueTags(text: string): Promise<string[]> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
