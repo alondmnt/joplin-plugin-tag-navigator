@@ -1,0 +1,105 @@
+body {
+    padding: 10px;
+}
+
+#userInput {
+    background-color: var(--joplin-background-color);
+    color: var(--joplin-color);
+    margin-bottom: 5px; /* Space between the tag filter and the next element */
+    margin-top: 5px; /* Space between the tag filter and the previous element */
+    font-size: var(--joplin-text-font-size);
+}
+
+#userInput button {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+#tagList {
+    max-height: 60px; /* Adjust the height as needed */
+    overflow-y: auto; /* Corrected to ensure vertical scrolling */
+    border: 1px solid #ccc; /* Adds a border around the tag list */
+    padding: 5px;
+    margin-bottom: 5px; /* Space between the tag list and the next element */
+    margin-top: 5px; /* Space between the tag list and the previous element */
+    font-size: var(--joplin-text-font-size);
+    box-sizing: border-box;
+}
+
+.tag {
+    display: inline-block;
+    padding: 3px; /* Decreased padding to reduce tag height */
+    margin: 2px;
+    background-color: #e7e7e7;
+    color: #333;
+    cursor: pointer;
+    border-radius: 4px; /* Rounds the corners of the tag elements */
+    font-size: var(--joplin-text-font-size);
+}
+
+.tag.selected, .tag.negated {
+    color: white;
+    font-size: var(--joplin-text-font-size);
+}
+
+.tag.selected { background-color: #96bdca; }
+.tag.negated { background-color: #f08080; }
+
+/* Styling for the delete button */
+button {
+    margin-left: 5px;
+    cursor: pointer;
+    font-size: var(--joplin-text-font-size);
+}
+
+#queryArea {
+    max-height: 105px; /* Adjust the height as needed */
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    overflow-y: auto;
+    font-size: var(--joplin-text-font-size);
+    box-sizing: border-box;
+}
+
+.operator {
+    padding: 5px;
+    margin: 0 5px;
+    background-color: #e7e7e7;
+    color: #333;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    font-size: var(--joplin-text-font-size);
+}
+
+.operator:hover {
+    background-color: #dcdcdc;
+}
+
+::-webkit-scrollbar {
+	width: 7px;
+	height: 7px;
+}
+
+::-webkit-scrollbar-corner {
+	background: none;
+}
+
+::-webkit-scrollbar-track {
+	border: none;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(100, 100, 100, 0.3);
+	border-radius: 5px;
+}
+
+::-webkit-scrollbar-track:hover {
+	background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(100, 100, 100, 0.7);
+}

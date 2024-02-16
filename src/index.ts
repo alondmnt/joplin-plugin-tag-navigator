@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { convertToSQLiteQuery, runQueryAndPrintResults } from './search';
-import { dumpInMemoryDbToFile } from './debug';
+import { updateSearchPanel } from './searchPanel';
 
 joplin.plugins.register({
   onStart: async function() {
@@ -77,14 +77,20 @@ joplin.plugins.register({
       },
     });
 
-    const panel = await joplin.views.panels.create('itags.panel');
-    await joplin.views.panels.addScript(panel, 'webview.css');
-    await joplin.views.panels.addScript(panel, 'webview.js');
+    let db = await processAllNotes();
+    const searchPanel = await joplin.views.panels.create('itags.searchPanel');
+    await joplin.views.panels.addScript(searchPanel, 'searchPanelStyle.css');
+    await joplin.views.panels.addScript(searchPanel, 'searchPanelScript.js');
+    await updateSearchPanel(searchPanel, db);
+
+    const notePanel = await joplin.views.panels.create('itags.notePanel');
+    await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
+    await joplin.views.panels.addScript(notePanel, 'notePanelScript.js');
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
       tagLines = await parseTagsLines(note.body);
-      await updateNotePanel(panel, tagLines);
+      await updateNotePanel(notePanel, tagLines);
     });
 
     await joplin.commands.register({
@@ -94,7 +100,7 @@ joplin.plugins.register({
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
         tagLines = await parseTagsLines(note.body);
-        await updateNotePanel(panel, tagLines);
+        await updateNotePanel(notePanel, tagLines);
       },
     })
 
@@ -103,7 +109,7 @@ joplin.plugins.register({
       label: 'Toggle inline tags panel',
       iconName: 'fas fa-tags',
       execute: async () => {
-        (await joplin.views.panels.visible(panel)) ? joplin.views.panels.hide(panel) : joplin.views.panels.show(panel);
+        (await joplin.views.panels.visible(notePanel)) ? joplin.views.panels.hide(notePanel) : joplin.views.panels.show(notePanel);
       },
     })
 
@@ -124,7 +130,7 @@ joplin.plugins.register({
     ], MenuItemLocation.Tools);
     await joplin.views.menuItems.create('itags.convertNoteToJoplinTags', 'itags.convertNoteToJoplinTags', MenuItemLocation.Note);
 
-    await joplin.views.panels.onMessage(panel, async (message) => {
+    await joplin.views.panels.onMessage(notePanel, async (message) => {
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
@@ -140,7 +146,7 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updateNotePanel(panel, tagLines);
+        await updateNotePanel(notePanel, tagLines);
       }
     });
 

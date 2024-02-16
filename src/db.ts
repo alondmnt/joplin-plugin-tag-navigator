@@ -3,7 +3,7 @@ import { parseTagsLines } from './parser';
 const sqlite3 = joplin.require('sqlite3');
 
 
-export async function createTables(path) {
+export async function createTables(path: string) {
   // Open an in-memory SQLite database
   const db = new sqlite3.Database(path, (err) => {
     if (err) {
@@ -106,7 +106,7 @@ async function processNote(db: any, note: any) {
 
     // Commit the transaction
     await run(db, 'COMMIT');
-    console.log(`Processed note ${note.id} successfully.`);
+    // console.log(`Processed note ${note.id} successfully.`);
   } catch (error) {
     // Roll back the transaction in case of an error
     await run(db, 'ROLLBACK');
@@ -146,4 +146,17 @@ async function insertOrGetNoteId(db: any, externalId: string): Promise<number | 
   } catch (error) {
     throw error; // Rethrow the error to be handled by the caller
   }
+}
+
+export function getAllTags(db: any): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT tag FROM Tags`, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const tags = rows.map(row => row.tag);
+        resolve(tags);
+      }
+    });
+  });
 }
