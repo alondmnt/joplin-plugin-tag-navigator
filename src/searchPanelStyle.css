@@ -3,26 +3,54 @@ body {
 }
 
 #userInput {
-    background-color: var(--joplin-background-color);
+    display: flex;
     color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
     margin-bottom: 5px; /* Space between the tag filter and the next element */
     margin-top: 5px; /* Space between the tag filter and the previous element */
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
+}
+
+#userInput input {
+    flex-grow: 2;
+    min-height: 26px;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
 }
 
 #userInput button {
+    min-height: 26px;
     margin-left: 5px;
     cursor: pointer;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-spacing: 5px;
+    border-style: solid;
+}
+
+#userInput button:hover {
+    background-color: var(--joplin-background-color-hover3)
 }
 
 #tagList {
-    max-height: 60px; /* Adjust the height as needed */
-    overflow-y: auto; /* Corrected to ensure vertical scrolling */
-    border: 1px solid #ccc; /* Adds a border around the tag list */
+    flex-grow: 1;
+    max-height: 60px;
+    overflow-y: auto;
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
     padding: 5px;
     margin-bottom: 5px; /* Space between the tag list and the next element */
     margin-top: 5px; /* Space between the tag list and the previous element */
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
     box-sizing: border-box;
 }
 
@@ -34,12 +62,12 @@ body {
     color: #333;
     cursor: pointer;
     border-radius: 4px; /* Rounds the corners of the tag elements */
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
 }
 
 .tag.selected, .tag.negated {
     color: white;
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
 }
 
 .tag.selected { background-color: #96bdca; }
@@ -49,17 +77,20 @@ body {
 button {
     margin-left: 5px;
     cursor: pointer;
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
 }
 
 #queryArea {
     max-height: 105px; /* Adjust the height as needed */
     margin-top: 5px;
     margin-bottom: 5px;
-    border: 1px solid #ccc;
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
     padding: 5px;
     overflow-y: auto;
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
     box-sizing: border-box;
 }
 
@@ -71,7 +102,7 @@ button {
     border-radius: 5px;
     cursor: pointer;
     user-select: none;
-    font-size: var(--joplin-text-font-size);
+    font-size: var(--joplin-font-size);
 }
 
 .operator:hover {
