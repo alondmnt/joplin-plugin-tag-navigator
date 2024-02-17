@@ -1,5 +1,4 @@
 import joplin from 'api';
-import { getAllTags } from './db';
 import { GroupedResult } from './search';
 
 export async function registerSearchPanel(panel: string) {
@@ -17,8 +16,7 @@ export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
 }
 
-export async function updatePanelTagData(panel: string, db: any) {
-  const tags = await getAllTags(db);
+export async function updatePanelTagData(panel: string, tags: string[]) {
   const intervalID = setInterval(
     () => {
       if(joplin.views.panels.visible(panel)) {
@@ -27,8 +25,7 @@ export async function updatePanelTagData(panel: string, db: any) {
           tags: JSON.stringify(tags),
         });
       }
-      clearInterval(intervalID);
     }
-    , 500
+    , 1000
   );
 }

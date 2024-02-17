@@ -3,7 +3,7 @@ import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types'
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
-import { processAllNotes } from './db';
+import { getAllTags, processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
 import { registerSearchPanel, updatePanelTagData } from './searchPanel';
 
@@ -80,7 +80,8 @@ joplin.plugins.register({
     let db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
-    updatePanelTagData(searchPanel, db);
+    let tags = await getAllTags(db);
+    updatePanelTagData(searchPanel, tags);
 
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
