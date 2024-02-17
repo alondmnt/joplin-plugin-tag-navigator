@@ -23,7 +23,7 @@ function updateQueryArea() {
             // Display each tag with its state
             const tagEl = document.createElement('span');
             tagEl.classList.add('tag', item.negated ? 'negated' : 'selected');
-            tagEl.textContent = item.negated ? `!${item.tag}` : item.tag;
+            tagEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
             tagEl.onclick = () => {
                 toggleTagNegation(groupIndex, tagIndex);
                 updateQueryArea(); // Refresh after toggling negation

@@ -36,7 +36,7 @@ body {
 }
 
 #userInput button:hover {
-    background-color: var(--joplin-background-color-hover3)
+    background-color: var(--joplin-background-color-hover3);
 }
 
 #tagList {
@@ -65,13 +65,17 @@ body {
     font-size: var(--joplin-font-size);
 }
 
+.tag:hover { background-color: #d3d3d3; }
+
 .tag.selected, .tag.negated {
     color: white;
     font-size: var(--joplin-font-size);
 }
 
-.tag.selected { background-color: #96bdca; }
-.tag.negated { background-color: #f08080; }
+.tag.selected { background-color: #7698b3; }
+.tag.selected:hover { background-color: #7aaab8; }
+.tag.negated { background-color: #e66c6c; }
+.tag.negated:hover { background-color: #f08080; }
 
 /* Styling for the delete button */
 button {
@@ -106,7 +110,7 @@ button {
 }
 
 .operator:hover {
-    background-color: #dcdcdc;
+    background-color: #d3d3d3
 }
 
 ::-webkit-scrollbar {
