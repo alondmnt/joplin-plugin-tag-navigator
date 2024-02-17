@@ -1,12 +1,35 @@
 let queryGroups = [[]]; // Array of Sets
 // each set is a group of tags combined with "AND"
 // sets are combined with "OR"
+let allTags = [];
 
 const tagFilterInput = document.getElementById('tagFilter');
 const clearButton = document.getElementById('clearButton');
 const searchButton = document.getElementById('searchButton');
 const tagList = document.getElementById('tagList');
 const queryArea = document.getElementById('queryArea');
+const resultsArea = document.getElementById('resultsArea');
+
+// Listen for messages from the main process
+webviewApi.onMessage((message) => {
+    if (message.message.name === 'updateTagData') {
+        console.log('Received tag data:', message.message.tags);
+        allTags = JSON.parse(message.message.tags);
+        updateTagList();
+    }
+});
+
+function updateTagList() {
+    tagList.innerHTML = '';
+    const filter = tagFilterInput.value.toLowerCase();
+    allTags.filter(tag => tag.toLowerCase().includes(filter)).forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.classList.add('tag');
+        tagEl.textContent = tag;
+        tagEl.onclick = () => handleTagClick(tag);
+        tagList.appendChild(tagEl);
+    });
+}
 
 function updateQueryArea() {
     queryArea.innerHTML = ''; // Clear the current content
@@ -125,19 +148,6 @@ function handleTagClick(tag) {
         tagObject.negated = !tagObject.negated;
     }
     updateQueryArea();
-}
-
-function updateTagList() {
-    tagList.innerHTML = '';
-    const filter = tagFilterInput.value.toLowerCase();
-    const allTags = JSON.parse(document.getElementById('tagData').textContent);
-    allTags.filter(tag => tag.toLowerCase().includes(filter)).forEach(tag => {
-        const tagEl = document.createElement('span');
-        tagEl.classList.add('tag');
-        tagEl.textContent = tag;
-        tagEl.onclick = () => handleTagClick(tag);
-        tagList.appendChild(tagEl);
-    });
 }
 
 function clearQueryArea() {

@@ -1,19 +1,25 @@
 import joplin from 'api';
 
+export interface Query {
+  tag: string;
+  negated: boolean;
+}
+
 interface QueryResult {
   noteId: string;
   externalId: string;
   lineNumber: number;
 }
 
-interface GroupedResult {
+export interface GroupedResult {
   externalId: string;
   lineNumbers: number[];
   text: string[];
   title: string;
+  html: string[];
 }
 
-export async function getQueryResults(db: any, query: string) {
+export async function getQueryResults(db: any, query: string): Promise<GroupedResult[]> {
   return new Promise((resolve, reject) => {
     db.all(query, [], async (err, rows) => {
       if (err) {
@@ -25,7 +31,7 @@ export async function getQueryResults(db: any, query: string) {
   });
 }
 
-export function convertToSQLiteQuery(groups: Array<Array<{ tag: string, negated: boolean }>>) {
+export function convertToSQLiteQuery(groups: Query[][]) {
   // Process each group to create a part of the WHERE clause
   const groupConditions = groups.map(group => {
     // For each tag in the group, create a conditional aggregation check
@@ -70,7 +76,8 @@ async function processQueryResults(queryResults: QueryResult[]): Promise<Grouped
         externalId: externalId,
         lineNumbers: [],
         text: [],
-        title: ''
+        title: '',
+        html: [],
       });
     }
 

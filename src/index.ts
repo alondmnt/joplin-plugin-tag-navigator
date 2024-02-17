@@ -4,8 +4,8 @@ import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converte
 import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
-import { convertToSQLiteQuery, getQueryResults } from './search';
-import { updateSearchPanel } from './searchPanel';
+import { Query, convertToSQLiteQuery, getQueryResults } from './search';
+import { registerSearchPanel, updatePanelTagData } from './searchPanel';
 
 joplin.plugins.register({
   onStart: async function() {
@@ -79,9 +79,8 @@ joplin.plugins.register({
 
     let db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
-    await joplin.views.panels.addScript(searchPanel, 'searchPanelStyle.css');
-    await joplin.views.panels.addScript(searchPanel, 'searchPanelScript.js');
-    await updateSearchPanel(searchPanel, db);
+    await registerSearchPanel(searchPanel);
+    updatePanelTagData(searchPanel, db);
 
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
@@ -152,25 +151,11 @@ joplin.plugins.register({
 
     await joplin.views.panels.onMessage(searchPanel, async (message) => {
       if (message.name === 'searchQuery') {
-        const query = JSON.parse(message.query);
+        const query: Query[][] = JSON.parse(message.query);
         const sqlQuery = convertToSQLiteQuery(query);
-        console.log(await getQueryResults(db, sqlQuery));
+        const results = await getQueryResults(db, sqlQuery);
+        console.log(results);
       }
     });
-
-    await joplin.commands.register({
-      name: 'itags.testSearch',
-      label: 'Test search',
-      execute: async () => {
-        const db = await processAllNotes();
-        // const plugin_dir = await joplin.plugins.dataDir();
-        // await dumpInMemoryDbToFile(db, plugin_dir + '/debug.sqlite');
-        const query = [[{ tag: '#then.we.take', negated: false }, { tag: '#second', negated: true }]];
-        console.log(query);
-        const sqlQuery = convertToSQLiteQuery(query);
-        await getQueryResults(db, sqlQuery);
-      }
-    });
-
   },
 });
