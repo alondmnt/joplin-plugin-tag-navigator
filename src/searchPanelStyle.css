@@ -56,12 +56,12 @@ body {
 
 .tag {
     display: inline-block;
-    padding: 3px; /* Decreased padding to reduce tag height */
+    padding: 3px;
     margin: 2px;
     background-color: #e7e7e7;
     color: #333;
     cursor: pointer;
-    border-radius: 4px; /* Rounds the corners of the tag elements */
+    border-radius: 5px;
     font-size: var(--joplin-font-size);
 }
 
@@ -95,7 +95,7 @@ button {
 }
 
 .operator {
-    padding: 5px;
+    padding: 3px;
     margin: 0 5px;
     background-color: #e7e7e7;
     color: #333;

@@ -4,7 +4,7 @@ import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converte
 import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
-import { convertToSQLiteQuery, runQueryAndPrintResults } from './search';
+import { convertToSQLiteQuery, getQueryResults } from './search';
 import { updateSearchPanel } from './searchPanel';
 
 joplin.plugins.register({
@@ -150,6 +150,14 @@ joplin.plugins.register({
       }
     });
 
+    await joplin.views.panels.onMessage(searchPanel, async (message) => {
+      if (message.name === 'searchQuery') {
+        const query = JSON.parse(message.query);
+        const sqlQuery = convertToSQLiteQuery(query);
+        console.log(await getQueryResults(db, sqlQuery));
+      }
+    });
+
     await joplin.commands.register({
       name: 'itags.testSearch',
       label: 'Test search',
@@ -160,7 +168,7 @@ joplin.plugins.register({
         const query = [[{ tag: '#then.we.take', negated: false }, { tag: '#second', negated: true }]];
         console.log(query);
         const sqlQuery = convertToSQLiteQuery(query);
-        await runQueryAndPrintResults(db, sqlQuery);
+        await getQueryResults(db, sqlQuery);
       }
     });
 

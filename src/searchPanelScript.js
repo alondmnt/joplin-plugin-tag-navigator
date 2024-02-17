@@ -140,14 +140,23 @@ function updateTagList() {
     });
 }
 
-
-
-// Function to clear the query area - you need to implement this based on your specific setup
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = [[]]; // Reset the query groups
     lastGroup = queryGroups[0];
     document.getElementById('queryArea').innerHTML = '';
+}
+
+function sendSearchMessage() {
+    if (queryGroups.length === 1 && queryGroups[0].length === 0) {
+        return; // Don't send an empty query
+    }
+    const searchQuery = JSON.stringify(queryGroups);
+    // Use webviewApi.postMessage to send the search query back to the plugin
+    webviewApi.postMessage({
+        name: 'searchQuery',
+        query: searchQuery,
+    });
 }
 
 updateTagList(); // Initial update
@@ -163,18 +172,15 @@ clearButton.addEventListener('click', () => {
 
 // Post the search query as JSON
 searchButton.addEventListener('click', () => {
-    const searchQuery = tagFilterInput.value;
-    // Use webviewApi.postMessage to send the search query back to the plugin
-    webviewApi.postMessage({
-        name: 'searchQuery',
-        query: searchQuery,
-    });
+    sendSearchMessage();
 });
 
 tagFilterInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
-        if (tagList.childElementCount === 1) {
+        if (tagFilterInput.value === '') {
+            sendSearchMessage()
+        } else if (tagList.childElementCount === 1) {
             // Get the tag name from the only child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);

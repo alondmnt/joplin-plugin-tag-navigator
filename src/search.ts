@@ -1,15 +1,25 @@
-export async function runQueryAndPrintResults(db: any, query: string) {
+import joplin from 'api';
+
+interface QueryResult {
+  noteId: string;
+  externalId: string;
+  lineNumber: number;
+}
+
+interface GroupedResult {
+  externalId: string;
+  lineNumbers: number[];
+  text: string[];
+  title: string;
+}
+
+export async function getQueryResults(db: any, query: string) {
   return new Promise((resolve, reject) => {
-    db.all(query, [], (err, rows) => {
+    db.all(query, [], async (err, rows) => {
       if (err) {
         reject(err);
       } else {
-        // Assuming 'n.name' is the column you're interested in, print each result
-        console.log("Resulting Table:");
-        rows.forEach(row => {
-          console.log(row);
-        });
-        resolve(rows);
+        resolve(await processQueryResults(rows));
       }
     });
   });
@@ -31,7 +41,52 @@ export function convertToSQLiteQuery(groups: Array<Array<{ tag: string, negated:
   // Union the groups with OR
   const finalQuery = groupConditions.length > 1 ? groupConditions.join(' UNION ') : groupConditions[0];
 
-  console.log(finalQuery);
-  
-  return `SELECT DISTINCT noteId, lineNumber FROM (${finalQuery})`;
+  return `SELECT sub.noteId, sub.lineNumber, n.externalId
+    FROM (${finalQuery}) AS sub
+    JOIN Notes n ON sub.noteId = n.noteId
+    ORDER BY sub.noteId, sub.lineNumber;`
+}
+
+async function processQueryResults(queryResults: QueryResult[]): Promise<GroupedResult[]> {
+  // assuming that queryResults are already sorted by noteId
+  // group the results by externalId and get the note content
+  const groupedResults: GroupedResult[] = [];
+  if (queryResults.length === 0) return groupedResults;
+  let lastExternalId = '';
+  let ind = 0;
+
+  for (const row of queryResults) {
+    const { noteId, lineNumber, externalId } = row;
+
+    if (externalId !== lastExternalId) {
+      if (lastExternalId !== '') {
+        // If this is not the first externalId, fetch the text for the last noteId
+        ind = groupedResults.length - 1;
+        groupedResults[ind] = await getTextAndTitle(groupedResults[ind]);
+      }
+
+      // If this is the first time we've seen this externalId, initialize the object
+      groupedResults.push({
+        externalId: externalId,
+        lineNumbers: [],
+        text: [],
+        title: ''
+      });
+    }
+
+    groupedResults[groupedResults.length -1].lineNumbers.push(lineNumber);
+    lastExternalId = externalId;
+  }
+
+  ind = groupedResults.length - 1;
+  groupedResults[ind] = await getTextAndTitle(groupedResults[ind]);
+  return groupedResults;
+}
+
+async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
+  const note = await joplin.data.get(['notes', result.externalId], { fields: ['title', 'body'] });
+  const lines: string[] = note.body.split('\n');
+  result.title = note.title;
+  result.text = result.lineNumbers.map(lineNumber => lines[lineNumber]);
+  return result
 }
