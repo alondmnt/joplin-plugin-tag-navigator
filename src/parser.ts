@@ -2,14 +2,13 @@ import joplin from 'api';
 
 const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g;
 
-export async function parseUniqueTags(text: string): Promise<string[]> {
+export async function getTagRegex(): Promise<RegExp> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
-  let tagRegex = defTagRegex;
-  if (userRegex) {
-    tagRegex = new RegExp(userRegex, 'g');
-  }
+  return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
+}
 
-  const tagsMatch = text.toLowerCase().match(tagRegex);
+export async function parseUniqueTags(text: string): Promise<string[]> {
+  const tagsMatch = text.toLowerCase().match(await getTagRegex());
   let uniqueTags = tagsMatch ? [...new Set(tagsMatch)] : [];
 
   const excludeRegex = await joplin.settings.value('itags.excludeRegex');

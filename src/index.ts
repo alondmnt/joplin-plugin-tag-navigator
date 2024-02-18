@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { getAllTags, processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { registerSearchPanel, updatePanelTagData } from './searchPanel';
+import { registerSearchPanel, updatePanelResults, updatePanelTagData } from './searchPanel';
 
 joplin.plugins.register({
   onStart: async function() {
@@ -155,7 +155,21 @@ joplin.plugins.register({
         const query: Query[][] = JSON.parse(message.query);
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
-        console.log(results);
+        updatePanelResults(searchPanel, results);
+
+      } else if (message.name === 'openNote') {
+        const note = await joplin.workspace.selectedNote();
+
+        if (note.id !== message.externalId) {
+          await joplin.commands.execute('openNote', message.externalId);
+          // Wait for the note to be opened for 1 second
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        await joplin.commands.execute('editor.execCommand', {
+          name: 'scrollToTagLine',
+          args: [message.line]
+        });
       }
     });
   },

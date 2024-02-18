@@ -13,7 +13,7 @@ body {
 
 #userInput input {
     flex-grow: 2;
-    min-height: 26px;
+    min-height: 23px;
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
     border-color: rgb(118, 118, 118);
@@ -23,7 +23,7 @@ body {
 }
 
 #userInput button {
-    min-height: 26px;
+    min-height: 23px;
     margin-left: 5px;
     cursor: pointer;
     color: var(--joplin-color);
@@ -111,6 +111,84 @@ button {
 
 .operator:hover {
     background-color: #d3d3d3
+}
+
+#resultsArea {
+    max-height: calc(100vh - 188px);
+    margin-top: 5px;
+    margin-bottom: 0px;
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 3px;
+    padding: 5px;
+    overflow-y: scroll;
+    font-size: var(--joplin-font-size);
+    box-sizing: border-box;
+    font-family: Avenir, Arial, sans-serif;
+}
+
+#resultsArea::-webkit-scrollbar {
+    display: none;
+}
+
+#resultsArea a {
+    color: var(--joplin-url-color);
+    cursor: not-allowed;
+    pointer-events: none;
+    overflow-y: auto;
+}
+
+#resultsArea p {
+    margin: 0px 0;
+}
+
+#resultsArea ul {
+    margin: 5px 0;
+    padding-left: 15px;
+}
+
+.resultNote {
+    border: 1px solid rgb(118, 118, 118);
+    border-radius: 3px;
+    padding: 5px;
+}
+
+.resultNote h3 {
+    margin: 0;
+    margin-top: 0;
+    margin-bottom: 0px;
+}
+
+.resultNote h3:hover {
+    background-color: var(--joplin-background-color-hover3);
+}
+
+.resultContent {
+    margin-top: 5px;
+}
+
+.resultSection:hover {
+    background-color: var(--joplin-background-color-hover3);
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: rgb(118, 118, 118);
+    margin: 5px 0;
+}
+
+.resultSpace {
+    margin-bottom: 5px;
+}
+
+.renderedTag {
+	background-color: #7698b3;
+	color: white;
+	padding: 0.3px, 0.3px;
+	border-radius: 5px;
+	display: inline;
 }
 
 ::-webkit-scrollbar {

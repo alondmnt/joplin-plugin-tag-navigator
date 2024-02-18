@@ -13,9 +13,11 @@ const resultsArea = document.getElementById('resultsArea');
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
     if (message.message.name === 'updateTagData') {
-        console.log('Received tag data:', message.message.tags);
         allTags = JSON.parse(message.message.tags);
         updateTagList();
+    } else if (message.message.name === 'updateResults') {
+        const results = JSON.parse(message.message.results);
+        updateResultsArea(results);
     }
 });
 
@@ -72,6 +74,64 @@ function updateQueryArea() {
         });
 
         queryArea.appendChild(document.createTextNode(')')); // End group
+    });
+}
+
+function updateResultsArea(results) {
+    resultsArea.innerHTML = ''; // Clear the current content
+    results.forEach((result, index) => {
+        const resultEl = document.createElement('div');
+        resultEl.classList.add('resultNote');
+        
+        const titleEl = document.createElement('h3');
+        titleEl.textContent = result.title;
+        titleEl.style.cursor = 'pointer'; // Make the title look clickable
+        resultEl.appendChild(titleEl);
+        
+        const contentContainer = document.createElement('div');
+        contentContainer.classList.add('resultContent');
+        contentContainer.style.display = 'block'; // Initially show the content
+        
+        result.html.forEach((entry, index) => {
+            const entryEl = document.createElement('div');
+            entryEl.classList.add('resultSection');
+            entryEl.innerHTML = entry;
+            entryEl.style.cursor = 'pointer'; // Make the content look clickable
+
+            entryEl.addEventListener('click', () => {
+                // Handle click on the content
+                webviewApi.postMessage({
+                    name: 'openNote',
+                    externalId: result.externalId,
+                    line: result.lineNumbers[index],
+                });
+            });
+
+            contentContainer.appendChild(entryEl);
+            
+            // Add a dividing line between sections, but not after the last one
+            if (index < result.html.length - 1) {
+                const divider = document.createElement('hr');
+                contentContainer.appendChild(divider);
+            }
+        });
+        
+        resultEl.appendChild(contentContainer);
+        
+        // Toggle visibility of the contentContainer on title click
+        titleEl.addEventListener('click', () => {
+            const isHidden = contentContainer.style.display === 'none';
+            contentContainer.style.display = isHidden ? 'block' : 'none';
+        });
+        
+        resultsArea.appendChild(resultEl);
+
+        // Add a dividing space between notes, but not after the last one
+        if (index < results.length - 1) {
+            const resultSpace = document.createElement('div');
+            resultSpace.classList.add('resultSpace');
+            resultsArea.appendChild(resultSpace);
+        }
     });
 }
 
@@ -157,6 +217,10 @@ function clearQueryArea() {
     document.getElementById('queryArea').innerHTML = '';
 }
 
+function clearResultsArea() {
+    document.getElementById('resultsArea').innerHTML = '';
+}
+
 function sendSearchMessage() {
     if (queryGroups.length === 1 && queryGroups[0].length === 0) {
         return; // Don't send an empty query
@@ -175,7 +239,8 @@ document.getElementById('tagFilter').addEventListener('input', updateTagList);
 // Clear the query area
 clearButton.addEventListener('click', () => {
     // Assuming you have a function or a way to clear the query area
-    clearQueryArea(); // Implement this function to clear the query area
+    clearQueryArea();
+    clearResultsArea();
     tagFilterInput.value = ''; // Clear the input field
     updateTagList();
 });
