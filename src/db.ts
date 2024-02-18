@@ -154,7 +154,7 @@ export function getAllTags(db: any): Promise<string[]> {
       if (err) {
         reject(err);
       } else {
-        const tags = rows.map(row => row.tag);
+        const tags: string[] = rows.map(row => row.tag).sort();
         resolve(tags);
       }
     });
