@@ -3,12 +3,12 @@ let queryGroups = []; // Array of Sets
 // sets are combined with "OR"
 let allTags = [];
 
-const tagFilterInput = document.getElementById('tagFilter');
-const clearButton = document.getElementById('clearButton');
-const searchButton = document.getElementById('searchButton');
-const tagList = document.getElementById('tagList');
-const queryArea = document.getElementById('queryArea');
-const resultsArea = document.getElementById('resultsArea');
+const tagFilterInput = document.getElementById('itags-search-tagFilter');
+const clearButton = document.getElementById('itags-search-clearButton');
+const searchButton = document.getElementById('itags-search-searchButton');
+const tagList = document.getElementById('itags-search-tagList');
+const queryArea = document.getElementById('itags-search-queryArea');
+const resultsArea = document.getElementById('itags-search-resultsArea');
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
@@ -26,7 +26,7 @@ function updateTagList() {
     const filter = tagFilterInput.value.toLowerCase();
     allTags.filter(tag => tag.toLowerCase().includes(filter)).forEach(tag => {
         const tagEl = document.createElement('span');
-        tagEl.classList.add('tag');
+        tagEl.classList.add('itags-search-tag');
         tagEl.textContent = tag;
         tagEl.onclick = () => handleTagClick(tag);
         tagList.appendChild(tagEl);
@@ -47,7 +47,7 @@ function updateQueryArea() {
         group.forEach((item, tagIndex) => {
             // Display each tag with its state
             const tagEl = document.createElement('span');
-            tagEl.classList.add('tag', item.negated ? 'negated' : 'selected');
+            tagEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
             tagEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
             tagEl.onclick = () => {
                 toggleTagNegation(groupIndex, tagIndex);
@@ -56,7 +56,7 @@ function updateQueryArea() {
 
             // Append a delete button for each tag
             const deleteBtn = document.createElement('button');
-            deleteBtn.classList.add('delete-btn');
+            deleteBtn.classList.add('itags-delete-btn');
             deleteBtn.textContent = 'x';
             deleteBtn.onclick = (e) => {
                 e.stopPropagation(); // Prevent tag toggle event
@@ -81,7 +81,7 @@ function updateResultsArea(results) {
     resultsArea.innerHTML = ''; // Clear the current content
     results.forEach((result, index) => {
         const resultEl = document.createElement('div');
-        resultEl.classList.add('resultNote');
+        resultEl.classList.add('itags-search-resultNote');
         
         const titleEl = document.createElement('h3');
         titleEl.textContent = result.title;
@@ -89,12 +89,12 @@ function updateResultsArea(results) {
         resultEl.appendChild(titleEl);
         
         const contentContainer = document.createElement('div');
-        contentContainer.classList.add('resultContent');
+        contentContainer.classList.add('itags-search-resultContent');
         contentContainer.style.display = 'block'; // Initially show the content
         
         result.html.forEach((entry, index) => {
             const entryEl = document.createElement('div');
-            entryEl.classList.add('resultSection');
+            entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
 
@@ -129,7 +129,7 @@ function updateResultsArea(results) {
         // Add a dividing space between notes, but not after the last one
         if (index < results.length - 1) {
             const resultSpace = document.createElement('div');
-            resultSpace.classList.add('resultSpace');
+            resultSpace.classList.add('itags-search-resultSpace');
             resultsArea.appendChild(resultSpace);
         }
     });
@@ -137,7 +137,7 @@ function updateResultsArea(results) {
 
 function createOperatorElement(operator, groupIndex, isGroupOperator, tagIndex) {
     const operatorEl = document.createElement('span');
-    operatorEl.classList.add('operator');
+    operatorEl.classList.add('itags-search-operator');
     operatorEl.textContent = ` ${operator} `;
     operatorEl.onclick = () => {
         if (isGroupOperator) {
@@ -214,11 +214,11 @@ function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
     lastGroup = queryGroups[0];
-    document.getElementById('queryArea').innerHTML = '';
+    document.getElementById('itags-search-queryArea').innerHTML = '';
 }
 
 function clearResultsArea() {
-    document.getElementById('resultsArea').innerHTML = '';
+    document.getElementById('itags-search-resultsArea').innerHTML = '';
 }
 
 function sendSearchMessage() {
@@ -234,7 +234,7 @@ function sendSearchMessage() {
 }
 
 updateTagList(); // Initial update
-document.getElementById('tagFilter').addEventListener('input', updateTagList);
+document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
 
 // Clear the query area
 clearButton.addEventListener('click', () => {
