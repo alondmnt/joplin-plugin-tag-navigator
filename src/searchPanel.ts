@@ -18,6 +18,14 @@ export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
 }
 
+export async function focusSearchPanel(panel: string) {
+  if (joplin.views.panels.visible(panel)) {
+    joplin.views.panels.postMessage(panel, {
+      name: 'focusTagFilter',
+    });
+  }
+}
+
 export async function updatePanelTagData(panel: string, tags: string[]) {
   const intervalID = setInterval(
     () => {

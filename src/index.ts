@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { getAllTags, processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { registerSearchPanel, updatePanelResults, updatePanelTagData } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelTagData } from './searchPanel';
 
 joplin.plugins.register({
   onStart: async function() {
@@ -102,21 +102,40 @@ joplin.plugins.register({
         tagLines = await parseTagsLines(note.body);
         await updateNotePanel(notePanel, tagLines);
       },
-    })
+    });
 
     await joplin.commands.register({
       name: 'itags.togglePanel',
-      label: 'Toggle inline tags panel',
+      label: 'Toggle inline tags navigation panel',
       iconName: 'fas fa-tags',
       execute: async () => {
         (await joplin.views.panels.visible(notePanel)) ? joplin.views.panels.hide(notePanel) : joplin.views.panels.show(notePanel);
       },
-    })
+    });
+
+    await joplin.commands.register({
+      name: 'itags.toggleSearch',
+      label: 'Toggle inline tags search panel',
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        const panelState = await joplin.views.panels.visible(searchPanel);
+        (panelState) ? joplin.views.panels.hide(searchPanel) : joplin.views.panels.show(searchPanel);
+        if (!panelState) {
+          tags = await getAllTags(db);
+          updatePanelTagData(searchPanel, tags);
+          focusSearchPanel(searchPanel);
+        }
+      },
+    });
 
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
+        commandName: 'itags.toggleSearch',
+        accelerator: 'Ctrl+Shift+T',
+      },
+      {
         commandName: 'itags.refreshPanel',
-        accelerator: 'CmdOrCtrl+Shift+I',
+        accelerator: 'Ctrl+Shift+I',
       },
       {
         commandName: 'itags.togglePanel',

@@ -18,6 +18,8 @@ webviewApi.onMessage((message) => {
     } else if (message.message.name === 'updateResults') {
         const results = JSON.parse(message.message.results);
         updateResultsArea(results);
+    } else if (message.message.name === 'focusTagFilter') {
+        tagFilterInput.focus();
     }
 });
 
@@ -235,6 +237,8 @@ function sendSearchMessage() {
 
 updateTagList(); // Initial update
 document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
+
+tagFilterInput.focus(); // Focus the tag filter input when the panel is loaded
 
 // Clear the query area
 clearButton.addEventListener('click', () => {
