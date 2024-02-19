@@ -1,4 +1,4 @@
-let queryGroups = [[]]; // Array of Sets
+let queryGroups = []; // Array of Sets
 // each set is a group of tags combined with "AND"
 // sets are combined with "OR"
 let allTags = [];
@@ -212,7 +212,7 @@ function handleTagClick(tag) {
 
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
-    queryGroups = [[]]; // Reset the query groups
+    queryGroups = []; // Reset the query groups
     lastGroup = queryGroups[0];
     document.getElementById('queryArea').innerHTML = '';
 }
@@ -222,7 +222,7 @@ function clearResultsArea() {
 }
 
 function sendSearchMessage() {
-    if (queryGroups.length === 1 && queryGroups[0].length === 0) {
+    if (queryGroups.length === 0) {
         return; // Don't send an empty query
     }
     const searchQuery = JSON.stringify(queryGroups);
