@@ -324,6 +324,7 @@ tagClear.addEventListener('click', () => {
     clearQueryArea();
     clearResultsArea();
     tagFilter.value = ''; // Clear the input field
+    resultFilter.value = ''; // Clear the input field
     updateTagList();
 });
 
