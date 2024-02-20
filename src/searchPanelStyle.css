@@ -244,6 +244,13 @@ hr {
 	display: inline;
 }
 
+#itags-search-renderedFilter {
+    background-color: #eeee88;
+    padding: 0.3px, 0.3px;
+    border-radius: 5px;
+    display: inline;
+}
+
 ::-webkit-scrollbar {
 	width: 7px;
 	height: 7px;

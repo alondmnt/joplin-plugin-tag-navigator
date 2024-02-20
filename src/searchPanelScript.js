@@ -2,12 +2,14 @@ let queryGroups = []; // Array of Sets
 // each set is a group of tags combined with "AND"
 // sets are combined with "OR"
 let allTags = [];
+let results = [];
 
-const tagFilterInput = document.getElementById('itags-search-tagFilter');
-const clearButton = document.getElementById('itags-search-tagClear');
-const searchButton = document.getElementById('itags-search-tagSearch');
+const tagFilter = document.getElementById('itags-search-tagFilter');
+const tagClear = document.getElementById('itags-search-tagClear');
+const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
 const queryArea = document.getElementById('itags-search-queryArea');
+const resultFilter = document.getElementById('itags-search-resultFilter');
 const resultToggle = document.getElementById('itags-search-resultToggle');
 let resultToggleState = 'collapse';
 const resultsArea = document.getElementById('itags-search-resultsArea');
@@ -18,16 +20,16 @@ webviewApi.onMessage((message) => {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
     } else if (message.message.name === 'updateResults') {
-        const results = JSON.parse(message.message.results);
-        updateResultsArea(results);
+        results = JSON.parse(message.message.results);
+        updateResultsArea();
     } else if (message.message.name === 'focusTagFilter') {
-        tagFilterInput.focus();
+        tagFilter.focus();
     }
 });
 
 function updateTagList() {
     tagList.innerHTML = '';
-    const filter = tagFilterInput.value.toLowerCase();
+    const filter = tagFilter.value.toLowerCase();
     allTags.filter(tag => tag.toLowerCase().includes(filter)).forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.classList.add('itags-search-tag');
@@ -81,9 +83,12 @@ function updateQueryArea() {
     });
 }
 
-function updateResultsArea(results) {
+function updateResultsArea() {
+    const filter = resultFilter.value.toLowerCase();
+
     resultsArea.innerHTML = ''; // Clear the current content
-    results.forEach((result, index) => {
+    for (let index = 0; index < results.length; index++) {
+        const result = results[index];
         const resultEl = document.createElement('div');
         resultEl.classList.add('itags-search-resultNote');
         
@@ -96,7 +101,15 @@ function updateResultsArea(results) {
         contentContainer.classList.add('itags-search-resultContent');
         contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
         
-        result.html.forEach((entry, index) => {
+        for (let index = 0; index < result.html.length; index++) {
+            let entry = result.html[index];
+            if (filter !== '') {
+                if (!entry.toLowerCase().includes(filter)) {
+                    continue; // Skip entries that don't match the filter
+                }
+                entry = entry.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
+            }
+
             const entryEl = document.createElement('div');
             entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
@@ -113,13 +126,18 @@ function updateResultsArea(results) {
 
             contentContainer.appendChild(entryEl);
             
-            // Add a dividing line between sections, but not after the last one
-            if (index < result.html.length - 1) {
-                const divider = document.createElement('hr');
-                contentContainer.appendChild(divider);
-            }
-        });
+            // Add a dividing line between sections
+            const divider = document.createElement('hr');
+            contentContainer.appendChild(divider);
+        }
         
+        // Remove the last divider
+        if (contentContainer.lastElementChild) {
+            contentContainer.removeChild(contentContainer.lastElementChild);
+        }
+        if (contentContainer.childElementCount === 0) {
+            continue; // Skip empty results
+        }
         resultEl.appendChild(contentContainer);
         
         // Toggle visibility of the contentContainer on title click
@@ -130,13 +148,16 @@ function updateResultsArea(results) {
         
         resultsArea.appendChild(resultEl);
 
-        // Add a dividing space between notes, but not after the last one
-        if (index < results.length - 1) {
-            const resultSpace = document.createElement('div');
-            resultSpace.classList.add('itags-search-resultSpace');
-            resultsArea.appendChild(resultSpace);
-        }
-    });
+        // Add a dividing space between notes
+        const resultSpace = document.createElement('div');
+        resultSpace.classList.add('itags-search-resultSpace');
+        resultsArea.appendChild(resultSpace);
+    }
+
+    // Remove the last dividing space
+    if (resultsArea.lastElementChild) {
+        resultsArea.removeChild(resultsArea.lastElementChild);
+    }
 }
 
 function createOperatorElement(operator, groupIndex, isGroupOperator, tagIndex) {
@@ -278,33 +299,33 @@ function expandResults() {
 updateTagList(); // Initial update
 document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
 
-tagFilterInput.focus(); // Focus the tag filter input when the panel is loaded
+tagFilter.focus(); // Focus the tag filter input when the panel is loaded
 
 // Clear the query area
-clearButton.addEventListener('click', () => {
+tagClear.addEventListener('click', () => {
     // Assuming you have a function or a way to clear the query area
     clearQueryArea();
     clearResultsArea();
-    tagFilterInput.value = ''; // Clear the input field
+    tagFilter.value = ''; // Clear the input field
     updateTagList();
 });
 
 // Post the search query as JSON
-searchButton.addEventListener('click', () => {
+tagSearch.addEventListener('click', () => {
     sendSearchMessage();
 });
 
-tagFilterInput.addEventListener('keydown', (event) => {
+tagFilter.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
-        if (tagFilterInput.value === '') {
+        if (tagFilter.value === '') {
             sendSearchMessage()
         } else if (tagList.childElementCount === 1) {
             // Get the tag name from the only child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);
             // Optionally, clear the input
-            tagFilterInput.value = '';
+            tagFilter.value = '';
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
         }
@@ -321,7 +342,7 @@ tagFilterInput.addEventListener('keydown', (event) => {
         }
     } else if (event.key === 'Escape') {
         // Clear the input and update the tag list
-        tagFilterInput.value = '';
+        tagFilter.value = '';
         updateTagList();
     } else if (event.key === 'ArrowUp') {
         // Change the last operator
@@ -329,6 +350,18 @@ tagFilterInput.addEventListener('keydown', (event) => {
     } else if (event.key === 'ArrowDown') {
         // Toggle last tag negation
         toggleLastTag();
+    }
+});
+
+resultFilter.addEventListener('input', () => {
+    updateResultsArea();
+});
+
+resultFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        // Clear the input and update the results area
+        resultFilter.value = '';
+        updateResultsArea();
     }
 });
 
