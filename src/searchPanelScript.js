@@ -212,6 +212,30 @@ function handleTagClick(tag) {
     updateQueryArea();
 }
 
+function toggleLastOperator() {
+    // Change the last operator between "AND" and "OR"
+    // using the splitGroup / mergeGroups functions
+    let lastGroup = queryGroups[queryGroups.length - 1];
+    if (lastGroup.length === 0) {
+        return;
+    } else if (lastGroup.length > 1) {
+        splitGroup(queryGroups.length - 1, lastGroup.length - 2);
+    } else if (queryGroups.length > 1){
+        mergeGroups(queryGroups.length - 2);
+    }
+    updateQueryArea();
+}
+
+function toggleLastTag() {
+    // Toggle the negation of the last tag
+    let lastGroup = queryGroups[queryGroups.length - 1];
+    if (lastGroup) {
+        let lastTag = lastGroup[lastGroup.length - 1];
+        lastTag.negated = !lastTag.negated;
+        updateQueryArea();
+    }
+}
+
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
@@ -268,5 +292,26 @@ tagFilterInput.addEventListener('keydown', (event) => {
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
         }
+    } else if (event.key === 'Delete') {
+        // Remove last tag from the last group
+        let lastGroup = queryGroups[queryGroups.length - 1];
+        if (lastGroup) {
+            lastGroup.pop();
+            if (lastGroup.length === 0) {
+                // Remove the group if empty
+                queryGroups.pop();
+            }
+            updateQueryArea();
+        }
+    } else if (event.key === 'Escape') {
+        // Clear the input and update the tag list
+        tagFilterInput.value = '';
+        updateTagList();
+    } else if (event.key === 'ArrowUp') {
+        // Change the last operator
+        toggleLastOperator();
+    } else if (event.key === 'ArrowDown') {
+        // Toggle last tag negation
+        toggleLastTag();
     }
 });
