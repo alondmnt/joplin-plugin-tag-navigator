@@ -61,7 +61,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp): GroupedR
   for (const group of groupedResults) {
     for (const section of group.text) {
       group.html.push(md.render(section
-        .replace(tagRegex, '<span class="renderedTag">$&</span>')
+        .replace(tagRegex, '<span class="itags-search-renderedTag">$&</span>')
         .trim()));
     }
   }
