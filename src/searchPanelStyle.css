@@ -148,7 +148,7 @@ body {
     margin-left: 5px;
 }
 
-#itags-search-resultToggle {
+#itags-search-resultToggle, #itags-search-resultOrder {
     flex-grow: 1;
     min-height: 23px;
     margin-left: 5px;

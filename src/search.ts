@@ -15,8 +15,11 @@ export interface GroupedResult {
   externalId: string;
   lineNumbers: number[];
   text: string[];
-  title: string;
   html: string[];
+  title: string;
+  notebook?: string;
+  updatedTime?: number;
+  createdTime?: number;
 }
 
 export async function getQueryResults(db: any, query: string): Promise<GroupedResult[]> {
@@ -76,8 +79,8 @@ async function processQueryResults(queryResults: QueryResult[]): Promise<Grouped
         externalId: externalId,
         lineNumbers: [],
         text: [],
-        title: '',
         html: [],
+        title: '',
       });
     }
 
@@ -91,9 +94,14 @@ async function processQueryResults(queryResults: QueryResult[]): Promise<Grouped
 }
 
 async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
-  const note = await joplin.data.get(['notes', result.externalId], { fields: ['title', 'body'] });
+  const note = await joplin.data.get(['notes', result.externalId],
+    { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
+  const notebook = await joplin.data.get(['folders', note.parent_id], ['title']);
   const lines: string[] = note.body.split('\n');
   result.title = note.title;
   result.text = result.lineNumbers.map(lineNumber => lines[lineNumber]);
+  result.notebook = notebook.title;
+  result.updatedTime = note.updated_time;
+  result.createdTime = note.created_time;
   return result
 }

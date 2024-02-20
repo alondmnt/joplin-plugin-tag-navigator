@@ -10,8 +10,11 @@ const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
 const queryArea = document.getElementById('itags-search-queryArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
-const resultToggle = document.getElementById('itags-search-resultToggle');
 let resultToggleState = 'collapse';
+const resultSort = document.getElementById('itags-search-resultSort');
+const resultOrder = document.getElementById('itags-search-resultOrder');
+let resultOrderState = 'asc';
+const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 
 // Listen for messages from the main process
@@ -85,6 +88,20 @@ function updateQueryArea() {
 
 function updateResultsArea() {
     const filter = resultFilter.value.toLowerCase();
+    results = results.sort((a, b) => {
+        if (resultSort.value === 'title') {
+            return a.title.localeCompare(b.title);
+        } else if (resultSort.value === 'modified') {
+            return a.updatedTime - b.updatedTime;
+        } else if (resultSort.value === 'created') {
+            return a.createdTime - b.createdTime;
+        } else if (resultSort.value === 'notebook') {
+            return a.notebook.localeCompare(b.notebook);
+        }
+    });
+    if (resultOrderState === 'desc') {
+        results = results.reverse();
+    }
 
     resultsArea.innerHTML = ''; // Clear the current content
     for (let index = 0; index < results.length; index++) {
@@ -363,6 +380,21 @@ resultFilter.addEventListener('keydown', (event) => {
         resultFilter.value = '';
         updateResultsArea();
     }
+});
+
+resultSort.addEventListener('change', () => {
+    updateResultsArea();
+});
+
+resultOrder.addEventListener('click', () => {
+    if (resultOrderState === 'asc') {
+        resultOrderState = 'desc';
+        resultOrder.innerHTML = '<i class="fas fa-sort-amount-up"></i>';
+    } else if (resultOrderState === 'desc') {
+        resultOrderState = 'asc';
+        resultOrder.innerHTML = '<i class="fas fa-sort-amount-down"></i>';
+    }
+    updateResultsArea();
 });
 
 resultToggle.addEventListener('click', () => {
