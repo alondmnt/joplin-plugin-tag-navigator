@@ -5,13 +5,23 @@ import { getTagRegex } from './parser';
 
 export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.setHtml(panel, `
-    <div id="itags-search-userInput">
+    <div id="itags-search-inputTagArea">
       <input type="text" id="itags-search-tagFilter" placeholder="Filter tags..." />
-      <button id="itags-search-clearButton">Clear</button>
-      <button id="itags-search-searchButton">Search</button>
+      <button id="itags-search-tagClear">Clear</button>
+      <button id="itags-search-tagSearch">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
     <div id="itags-search-queryArea"></div>
+    <div id="itags-search-inputResultArea">
+      <input type="text" id="itags-search-resultFilter" placeholder="Filter results..." />
+      <select id="itags-search-resultSort">
+        <option value="modified">Modified</option>
+        <option value="created">Created</option>
+        <option value="title">Title</option>
+        <option value="path">Notebook</option>
+      </select>
+      <button id="itags-search-resultToggle"><i class="fas fa-chevron-up"></i></button>
+    </div>
     <div id='itags-search-resultsArea'></div>
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');

@@ -4,10 +4,12 @@ let queryGroups = []; // Array of Sets
 let allTags = [];
 
 const tagFilterInput = document.getElementById('itags-search-tagFilter');
-const clearButton = document.getElementById('itags-search-clearButton');
-const searchButton = document.getElementById('itags-search-searchButton');
+const clearButton = document.getElementById('itags-search-tagClear');
+const searchButton = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
 const queryArea = document.getElementById('itags-search-queryArea');
+const resultToggle = document.getElementById('itags-search-resultToggle');
+let resultToggleState = 'collapse';
 const resultsArea = document.getElementById('itags-search-resultsArea');
 
 // Listen for messages from the main process
@@ -58,7 +60,7 @@ function updateQueryArea() {
 
             // Append a delete button for each tag
             const deleteBtn = document.createElement('button');
-            deleteBtn.classList.add('itags-delete-btn');
+            deleteBtn.classList.add('itags-search-tagDelete');
             deleteBtn.textContent = 'x';
             deleteBtn.onclick = (e) => {
                 e.stopPropagation(); // Prevent tag toggle event
@@ -92,7 +94,7 @@ function updateResultsArea(results) {
         
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
-        contentContainer.style.display = 'block'; // Initially show the content
+        contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
         
         result.html.forEach((entry, index) => {
             const entryEl = document.createElement('div');
@@ -259,6 +261,20 @@ function sendSearchMessage() {
     });
 }
 
+function collapseResults() {
+    const resultNotes = document.getElementsByClassName('itags-search-resultContent');
+    for (let i = 0; i < resultNotes.length; i++) {
+        resultNotes[i].style.display = 'none';
+    }
+}
+
+function expandResults() {
+    const resultNotes = document.getElementsByClassName('itags-search-resultContent');
+    for (let i = 0; i < resultNotes.length; i++) {
+        resultNotes[i].style.display = 'block';
+    }
+}
+
 updateTagList(); // Initial update
 document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
 
@@ -313,5 +329,19 @@ tagFilterInput.addEventListener('keydown', (event) => {
     } else if (event.key === 'ArrowDown') {
         // Toggle last tag negation
         toggleLastTag();
+    }
+});
+
+resultToggle.addEventListener('click', () => {
+    if (resultToggleState === 'collapse') {
+        collapseResults();
+        resultToggleState = 'expand';
+        resultToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        return;
+    } else if (resultToggleState === 'expand') {
+        expandResults();
+        resultToggleState = 'collapse';
+        resultToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        return;
     }
 });
