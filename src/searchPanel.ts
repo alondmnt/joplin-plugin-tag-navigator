@@ -69,10 +69,11 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
 
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp): GroupedResult[] {
   const md = new MarkdownIt({ html: true });
+  const modifiedTagRegex = new RegExp(`(?<!\`[^\\\`]*)${tagRegex.source}(?![^\\\`]*\`)`, 'g');
   for (const group of groupedResults) {
     for (const section of group.text) {
       group.html.push(md.render(section
-        .replace(tagRegex, '<span class="itags-search-renderedTag">$&</span>')
+        .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
         .trim()));
     }
   }
