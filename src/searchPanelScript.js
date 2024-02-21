@@ -175,6 +175,11 @@ function updateResultsArea() {
     if (resultsArea.lastElementChild) {
         resultsArea.removeChild(resultsArea.lastElementChild);
     }
+
+    const checkboxes = document.querySelectorAll('.task-list-item-checkbox');
+    checkboxes.forEach((checkbox) => {
+        checkbox.setAttribute('disabled', true);
+    });
 }
 
 function createOperatorElement(operator, groupIndex, isGroupOperator, tagIndex) {

@@ -201,6 +201,10 @@ body {
     padding-left: 15px;
 }
 
+#itags-search-resultsArea .contains-task-list {
+    padding-left: 0 !important;
+}
+
 .itags-search-resultNote {
     border: 1px solid rgb(118, 118, 118);
     border-radius: 3px;
@@ -275,4 +279,8 @@ hr {
 
 ::-webkit-scrollbar-thumb:hover {
 	background: rgba(100, 100, 100, 0.7);
+}
+
+.task-list-item {
+    list-style-type: none;  /* Remove the default bullet */
 }

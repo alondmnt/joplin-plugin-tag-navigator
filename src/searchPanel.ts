@@ -1,5 +1,6 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
+import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { GroupedResult } from './search';
 import { getTagRegex } from './parser';
 
@@ -68,7 +69,7 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
 }
 
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp): GroupedResult[] {
-  const md = new MarkdownIt({ html: true });
+  const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const modifiedTagRegex = new RegExp(`(?<!\`[^\\\`]*)${tagRegex.source}(?![^\\\`]*\`)`, 'g');
   for (const group of groupedResults) {
     for (const section of group.text) {
