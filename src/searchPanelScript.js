@@ -120,7 +120,7 @@ function updateResultsArea() {
         
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
-            if (filter !== '') {
+            if (filter.length > 1) {
                 if (!result.text[index].toLowerCase().includes(filter) && !result.title.toLowerCase().includes(filter)) {
                     continue; // Skip entries that don't match the filter
                 }
