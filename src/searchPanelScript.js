@@ -121,10 +121,11 @@ function updateResultsArea() {
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
             if (filter !== '') {
-                if (!entry.toLowerCase().includes(filter)) {
+                if (!result.text[index].toLowerCase().includes(filter) && !result.title.toLowerCase().includes(filter)) {
                     continue; // Skip entries that don't match the filter
                 }
                 entry = entry.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
+                titleEl.innerHTML = titleEl.textContent.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
             }
 
             const entryEl = document.createElement('div');
