@@ -13,7 +13,7 @@ const resultFilter = document.getElementById('itags-search-resultFilter');
 let resultToggleState = 'collapse';
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
-let resultOrderState = 'asc';
+let resultOrderState = 'desc';
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 
