@@ -71,7 +71,7 @@ export async function processAllNotes() {
 
   // Get all notes
   let hasMore = true;
-  let page = 0;
+  let page = 1;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
       fields: ['id', 'body'],
@@ -146,17 +146,4 @@ async function insertOrGetNoteId(db: any, externalId: string): Promise<number | 
   } catch (error) {
     throw error; // Rethrow the error to be handled by the caller
   }
-}
-
-export function getAllTags(db: any): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    db.all(`SELECT tag FROM Tags`, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        const tags: string[] = rows.map(row => row.tag).sort();
-        resolve(tags);
-      }
-    });
-  });
 }

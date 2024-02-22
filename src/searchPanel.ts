@@ -38,20 +38,6 @@ export async function focusSearchPanel(panel: string) {
   }
 }
 
-export async function updatePanelTagData(panel: string, tags: string[]) {
-  const intervalID = setInterval(
-    () => {
-      if(joplin.views.panels.visible(panel)) {
-        joplin.views.panels.postMessage(panel, {
-          name: 'updateTagData',
-          tags: JSON.stringify(tags),
-        });
-      }
-    }
-    , 5000
-  );
-}
-
 export async function updatePanelResults(panel: string, results: GroupedResult[]) {
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(

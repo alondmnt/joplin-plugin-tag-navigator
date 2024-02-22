@@ -3,9 +3,37 @@ import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types'
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
-import { getAllTags, processAllNotes } from './db';
+import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelTagData } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, updatePanelResults } from './searchPanel';
+
+let db = null;
+async function getAllTags(): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT tag FROM Tags`, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const tags: string[] = rows.map(row => row.tag).sort();
+        resolve(tags);
+      }
+    });
+  });
+}
+
+async function updatePanelTagData(panel: string) {
+  const intervalID = setInterval(
+    async () => {
+      if(joplin.views.panels.visible(panel)) {
+        joplin.views.panels.postMessage(panel, {
+          name: 'updateTagData',
+          tags: JSON.stringify(await getAllTags()),
+        });
+      }
+    }
+    , 5000
+  );
+}
 
 joplin.plugins.register({
   onStart: async function() {
@@ -42,12 +70,24 @@ joplin.plugins.register({
         description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
       }
     });
-    const periodicUpdate: number = await joplin.settings.value('itags.periodicUpdate');
-    if (periodicUpdate > 0) {
+
+    // Periodic conversion of tags
+    const periodicConversion: number = await joplin.settings.value('itags.periodicUpdate');
+    if (periodicConversion > 0) {
       setInterval(async () => {
         console.log('Periodic inline tags update');
         await convertAllNotesToJoplinTags();
-      }, periodicUpdate * 60 * 1000);
+      }, periodicConversion * 60 * 1000);
+    }
+
+    // Periodic database update
+    const periodicDBUpdate: number = 1;
+    db = await processAllNotes();
+    if (periodicDBUpdate > 0) {
+      setInterval(async () => {
+        console.log('Periodic inline tags DB update');
+        db = await processAllNotes();
+      }, periodicDBUpdate * 60 * 1000);
     }
 
     await joplin.contentScripts.register(
@@ -77,11 +117,9 @@ joplin.plugins.register({
       },
     });
 
-    let db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
-    let tags = await getAllTags(db);
-    updatePanelTagData(searchPanel, tags);
+    updatePanelTagData(searchPanel);
 
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
@@ -121,8 +159,6 @@ joplin.plugins.register({
         const panelState = await joplin.views.panels.visible(searchPanel);
         (panelState) ? joplin.views.panels.hide(searchPanel) : joplin.views.panels.show(searchPanel);
         if (!panelState) {
-          tags = await getAllTags(db);
-          updatePanelTagData(searchPanel, tags);
           focusSearchPanel(searchPanel);
         }
       },
