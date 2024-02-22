@@ -19,7 +19,7 @@ export async function registerSearchPanel(panel: string) {
         <option value="modified">Modified</option>
         <option value="created">Created</option>
         <option value="title">Title</option>
-        <option value="path">Notebook</option>
+        <option value="notebook">Notebook</option>
       </select>
       <button id="itags-search-resultOrder"><i class="fas fa-sort-amount-up"></i></button>
       <button id="itags-search-resultToggle"><i class="fas fa-chevron-up"></i></button>
