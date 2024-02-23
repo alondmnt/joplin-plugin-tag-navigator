@@ -44,14 +44,24 @@ joplin.plugins.register({
       iconName: 'fas fa-dharmachakra',
     });
     await joplin.settings.registerSettings({
-      'itags.periodicUpdate': {
+      'itags.periodicDBUpdate': {
+        value: 5,
+        type: SettingItemType.Int,
+        minimum: 0,
+        maximum: 1440,
+        section: 'itags',
+        public: true,
+        label: 'Periodic inline tags DB update (minutes)',
+        description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
+      },
+      'itags.periodicConversion': {
         value: 0,
         type: SettingItemType.Int,
         minimum: 0,
         maximum: 1440,
         section: 'itags',
         public: true,
-        label: 'Periodic update (minutes)',
+        label: 'Periodic tag conversion (minutes)',
         description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
       },
       'itags.tagRegex': {
@@ -73,7 +83,7 @@ joplin.plugins.register({
     });
 
     // Periodic conversion of tags
-    const periodicConversion: number = await joplin.settings.value('itags.periodicUpdate');
+    const periodicConversion: number = await joplin.settings.value('itags.periodicConversion');
     if (periodicConversion > 0) {
       setInterval(async () => {
         console.log('Periodic inline tags update');
@@ -114,7 +124,7 @@ joplin.plugins.register({
     updatePanelTagData(searchPanel);
 
     // Periodic database update
-    const periodicDBUpdate: number = 1;
+    const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
     if (periodicDBUpdate > 0) {
       setInterval(async () => {
         console.log('Periodic inline tags DB update');
@@ -170,10 +180,29 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'itags.updateDB',
+      label: 'Update inline tags database',
+      iconName: 'fas fa-database',
+      execute: async () => {
+        console.log('User inline tags DB update');
+        db = await processAllNotes();
+
+        // Update search results
+        const sqlQuery = convertToSQLiteQuery(query);
+        const results = await getQueryResults(db, sqlQuery);
+        updatePanelResults(searchPanel, results);
+      },
+    });
+
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.toggleSearch',
         accelerator: 'Ctrl+Shift+T',
+      },
+      {
+        commandName: 'itags.updateDB',
+        accelerator: 'Ctrl+Shift+D',
       },
       {
         commandName: 'itags.refreshPanel',
