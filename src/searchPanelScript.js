@@ -30,6 +30,7 @@ webviewApi.onMessage((message) => {
     }
 });
 
+// Update areas
 function updateTagList() {
     tagList.innerHTML = '';
     const filter = tagFilter.value.toLowerCase();
@@ -133,13 +134,23 @@ function updateResultsArea() {
             entryEl.innerHTML = entry;
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
 
-            entryEl.addEventListener('click', () => {
+            entryEl.addEventListener('click', (event) => {
                 // Handle click on the content
-                webviewApi.postMessage({
-                    name: 'openNote',
-                    externalId: result.externalId,
-                    line: result.lineNumbers[index],
-                });
+                if (event.target.matches('.task-list-item-checkbox')) {
+                    webviewApi.postMessage({
+                        name: 'setCheckBox',
+                        externalId: result.externalId,
+                        line: result.lineNumbers[index],
+                        text: result.text[index],
+                        checked: event.target.checked,
+                    });
+                } else {
+                    webviewApi.postMessage({
+                        name: 'openNote',
+                        externalId: result.externalId,
+                        line: result.lineNumbers[index],
+                    });
+                }
             });
 
             contentContainer.appendChild(entryEl);
@@ -176,13 +187,9 @@ function updateResultsArea() {
     if (resultsArea.lastElementChild) {
         resultsArea.removeChild(resultsArea.lastElementChild);
     }
-
-    const checkboxes = document.querySelectorAll('.task-list-item-checkbox');
-    checkboxes.forEach((checkbox) => {
-        checkbox.setAttribute('disabled', true);
-    });
 }
 
+// Helper functions for updating the query area
 function createOperatorElement(operator, groupIndex, isGroupOperator, tagIndex) {
     const operatorEl = document.createElement('span');
     operatorEl.classList.add('itags-search-operator');
@@ -282,6 +289,7 @@ function toggleLastTag() {
     }
 }
 
+// Helper functions for clearing areas
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
@@ -293,6 +301,7 @@ function clearResultsArea() {
     document.getElementById('itags-search-resultsArea').innerHTML = '';
 }
 
+// Helper functions for search
 function sendSearchMessage() {
     if (queryGroups.length === 0) {
         return; // Don't send an empty query
@@ -320,11 +329,11 @@ function expandResults() {
 }
 
 updateTagList(); // Initial update
-document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
-
 tagFilter.focus(); // Focus the tag filter input when the panel is loaded
 
-// Clear the query area
+// Event listeners
+document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
+
 tagClear.addEventListener('click', () => {
     // Assuming you have a function or a way to clear the query area
     clearQueryArea();

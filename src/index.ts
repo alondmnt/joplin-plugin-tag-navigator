@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { focusSearchPanel, registerSearchPanel, updatePanelResults } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults } from './searchPanel';
 
 let db = null;
 async function getAllTags(): Promise<string[]> {
@@ -225,6 +225,25 @@ joplin.plugins.register({
           name: 'scrollToTagLine',
           args: [message.line]
         });
+
+      } else if (message.name === 'setCheckBox') {
+        // update note content
+        const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+        const lines: string[] = note.body.split('\n');
+        lines[message.line] = setCheckboxState(lines[message.line], message.text, message.checked);;
+        const newBody = lines.join('\n');
+        await joplin.data.put(['notes', message.externalId], null, { body: newBody });
+
+        // update note editor
+        const selectedNote = await joplin.workspace.selectedNote();
+        if ((selectedNote.id === message.externalId) && (newBody !== note.body)) {
+          // Update note editor if it's the currently selected note
+          await joplin.commands.execute('editor.setText', newBody);
+          await joplin.commands.execute('editor.execCommand', {
+            name: 'scrollToTagLine',
+            args: [message.line]
+          });
+        }
       }
     });
   },

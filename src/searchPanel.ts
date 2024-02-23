@@ -66,3 +66,27 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp): GroupedR
   }
   return groupedResults;
 }
+
+export function setCheckboxState(line: string, text: string, checked: boolean) {
+  // This function modifies the checkbox state in a markdown task list item
+  // line: The markdown string containing the task list item, possibly indented
+  // text: The text of the task list item, in order to ensure that the line matches
+  // checked: A boolean indicating the desired state of the checkbox (true for checked, false for unchecked)
+
+  // Remove the leading checkbox from the text
+  text = text.replace(/^\s*-\s*\[[x ]\]\s*/, '');
+  // Check the line to see if it contains the text
+  if (!line.includes(text)) {
+    console.log('Error in setCheckboxState: The line does not contain the expected text.');
+    return line;
+  }
+
+  if (checked) {
+    // If checked is true, ensure the checkbox is marked as checked (- [x])
+    // \s* accounts for any leading whitespace
+    return line.replace(/^(\s*-\s*\[)\s(\])/g, '$1x$2');
+  } else {
+    // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
+    return line.replace(/^(\s*-\s*\[)x(\])/g, '$1 $2');
+  }
+}
