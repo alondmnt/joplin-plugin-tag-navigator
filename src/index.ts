@@ -7,6 +7,7 @@ import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults } from './searchPanel';
 
+let query: Query[][] = [];
 let db = null;
 async function getAllTags(): Promise<string[]> {
   return new Promise((resolve, reject) => {
@@ -80,16 +81,6 @@ joplin.plugins.register({
       }, periodicConversion * 60 * 1000);
     }
 
-    // Periodic database update
-    const periodicDBUpdate: number = 1;
-    db = await processAllNotes();
-    if (periodicDBUpdate > 0) {
-      setInterval(async () => {
-        console.log('Periodic inline tags DB update');
-        db = await processAllNotes();
-      }, periodicDBUpdate * 60 * 1000);
-    }
-
     await joplin.contentScripts.register(
       ContentScriptType.CodeMirrorPlugin,
       'scroller',
@@ -117,9 +108,24 @@ joplin.plugins.register({
       },
     });
 
+    db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
     updatePanelTagData(searchPanel);
+
+    // Periodic database update
+    const periodicDBUpdate: number = 1;
+    if (periodicDBUpdate > 0) {
+      setInterval(async () => {
+        console.log('Periodic inline tags DB update');
+        db = await processAllNotes(); // update DB
+
+        // Update search results
+        const sqlQuery = convertToSQLiteQuery(query);
+        const results = await getQueryResults(db, sqlQuery);
+        updatePanelResults(searchPanel, results);
+      }, periodicDBUpdate * 60 * 1000);
+    }
 
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
@@ -207,7 +213,7 @@ joplin.plugins.register({
 
     await joplin.views.panels.onMessage(searchPanel, async (message) => {
       if (message.name === 'searchQuery') {
-        const query: Query[][] = JSON.parse(message.query);
+        query = JSON.parse(message.query);
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
         updatePanelResults(searchPanel, results);

@@ -23,6 +23,7 @@ export interface GroupedResult {
 }
 
 export async function getQueryResults(db: any, query: string): Promise<GroupedResult[]> {
+  if (!query) return [];
   return new Promise((resolve, reject) => {
     db.all(query, [], async (err, rows) => {
       if (err) {
@@ -35,6 +36,7 @@ export async function getQueryResults(db: any, query: string): Promise<GroupedRe
 }
 
 export function convertToSQLiteQuery(groups: Query[][]) {
+  if (groups.length === 0) return '';
   // Process each group to create a part of the WHERE clause
   const groupConditions = groups.map(group => {
     // For each tag in the group, create a conditional aggregation check

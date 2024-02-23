@@ -303,9 +303,6 @@ function clearResultsArea() {
 
 // Helper functions for search
 function sendSearchMessage() {
-    if (queryGroups.length === 0) {
-        return; // Don't send an empty query
-    }
     const searchQuery = JSON.stringify(queryGroups);
     // Use webviewApi.postMessage to send the search query back to the plugin
     webviewApi.postMessage({
