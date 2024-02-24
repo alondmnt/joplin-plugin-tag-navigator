@@ -16,6 +16,7 @@ const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
+let resultMarker = true;
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
@@ -27,6 +28,16 @@ webviewApi.onMessage((message) => {
         updateResultsArea();
     } else if (message.message.name === 'focusTagFilter') {
         tagFilter.focus();
+    } else if (message.message.name === 'updateSettings') {
+        const settings = JSON.parse(message.message.settings);
+        resultToggleState = settings.resultToggle ? 'expand' : 'collapse';
+        resultToggle.innerHTML = settings.resultToggle ? 
+            '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+        resultSort.value = settings.resultSort;
+        resultOrderState = settings.resultOrder;
+        resultOrder.innerHTML = resultOrderState === 'asc' ? 
+            '<i class="fas fa-sort-amount-down"></i>' : '<i class="fas fa-sort-amount-up"></i>';
+        resultMarker = settings.resultMarker;
     }
 });
 
@@ -125,8 +136,10 @@ function updateResultsArea() {
                 if (!result.text[index].toLowerCase().includes(filter) && !result.title.toLowerCase().includes(filter)) {
                     continue; // Skip entries that don't match the filter
                 }
-                entry = entry.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
-                titleEl.innerHTML = titleEl.textContent.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
+                if (resultMarker) {
+                    entry = entry.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
+                    titleEl.innerHTML = titleEl.textContent.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
+                }
             }
 
             const entryEl = document.createElement('div');

@@ -39,13 +39,14 @@ export async function focusSearchPanel(panel: string) {
 }
 
 export async function updatePanelResults(panel: string, results: GroupedResult[]) {
+  const resultMarker = await joplin.settings.value('itags.resultMarker');
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(
     () => {
       if(joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
-          results: JSON.stringify(renderHTML(results, tagRegex)),
+          results: JSON.stringify(renderHTML(results, tagRegex, resultMarker)),
         });
       }
       clearInterval(intervalID);
@@ -54,14 +55,38 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   );
 }
 
-function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp): GroupedResult[] {
+export async function updatePanelSettings(panel: string) {
+  const settings = {
+    resultSort: await joplin.settings.value('itags.resultSort'),
+    resultOrder: await joplin.settings.value('itags.resultOrder'),
+    resultToggle: await joplin.settings.value('itags.resultToggle'),
+    resultMarker: await joplin.settings.value('itags.resultMarker'),
+  };
+  const intervalID = setInterval(
+    () => {
+      if(joplin.views.panels.visible(panel)) {
+        joplin.views.panels.postMessage(panel, {
+          name: 'updateSettings',
+          settings: JSON.stringify(settings),
+        });
+      }
+      clearInterval(intervalID);
+    }
+    , 200
+  );
+}
+
+function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const modifiedTagRegex = new RegExp(`(?<!\`[^\\\`]*)${tagRegex.source}(?![^\\\`]*\`)`, 'g');
   for (const group of groupedResults) {
     for (const section of group.text) {
-      group.html.push(md.render(section
-        .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
-        .trim()));
+      let processedSection = section.trim();
+      if (resultMarker) {
+        processedSection = processedSection
+          .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
+      }
+      group.html.push(md.render(processedSection));
     }
   }
   return groupedResults;

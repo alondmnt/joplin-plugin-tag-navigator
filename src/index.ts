@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings } from './searchPanel';
 
 let query: Query[][] = [];
 let db = null;
@@ -44,16 +44,6 @@ joplin.plugins.register({
       iconName: 'fas fa-dharmachakra',
     });
     await joplin.settings.registerSettings({
-      'itags.periodicDBUpdate': {
-        value: 5,
-        type: SettingItemType.Int,
-        minimum: 0,
-        maximum: 1440,
-        section: 'itags',
-        public: true,
-        label: 'Periodic inline tags DB update (minutes)',
-        description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
-      },
       'itags.periodicConversion': {
         value: 0,
         type: SettingItemType.Int,
@@ -63,6 +53,56 @@ joplin.plugins.register({
         public: true,
         label: 'Periodic tag conversion (minutes)',
         description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
+      },
+      'itags.periodicDBUpdate': {
+        value: 5,
+        type: SettingItemType.Int,
+        minimum: 0,
+        maximum: 1440,
+        section: 'itags',
+        public: true,
+        label: 'Search: Periodic inline tags DB update (minutes)',
+        description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
+      },
+      'itags.resultSort': {
+        value: 'modified',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        label: 'Search: Sort by',
+        isEnum: true,
+        options: {
+          modified: 'Modified',
+          created: 'Created',
+          title: 'Title',
+          notebook: 'Notebook',
+        }
+      },
+      'itags.resultOrder': {
+        value: 'desc',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        label: 'Search: Sort order',
+        isEnum: true,
+        options: {
+          desc: 'Descending',
+          asc: 'Ascending',
+        }
+      },
+      'itags.resultToggle': {
+        value: false,
+        type: SettingItemType.Bool,
+        section: 'itags',
+        public: true,
+        label: 'Search: Collapse results',
+      },
+      'itags.resultMarker': {
+        value: true,
+        type: SettingItemType.Bool,
+        section: 'itags',
+        public: true,
+        label: 'Search: Highlight results',
       },
       'itags.tagRegex': {
         value: '',
@@ -122,6 +162,7 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
     updatePanelTagData(searchPanel);
+    updatePanelSettings(searchPanel);
 
     // Periodic database update
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
@@ -137,6 +178,7 @@ joplin.plugins.register({
       }, periodicDBUpdate * 60 * 1000);
     }
 
+    // Navigation panel
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
     await joplin.views.panels.addScript(notePanel, 'notePanelScript.js');
@@ -176,6 +218,7 @@ joplin.plugins.register({
         (panelState) ? joplin.views.panels.hide(searchPanel) : joplin.views.panels.show(searchPanel);
         if (!panelState) {
           focusSearchPanel(searchPanel);
+          updatePanelSettings(searchPanel);
         }
       },
     });
@@ -219,6 +262,15 @@ joplin.plugins.register({
       },
     ], MenuItemLocation.Tools);
     await joplin.views.menuItems.create('itags.convertNoteToJoplinTags', 'itags.convertNoteToJoplinTags', MenuItemLocation.Note);
+
+    await joplin.settings.onChange(async (event) => {
+      if (event.keys.includes('itags.resultSort') || 
+          event.keys.includes('itags.resultOrder') || 
+          event.keys.includes('itags.resultToggle') || 
+          event.keys.includes('itags.resultMarker')) {
+        updatePanelSettings(searchPanel);
+      }
+    });
 
     await joplin.views.panels.onMessage(notePanel, async (message) => {
       if (message.name === 'jumpToLine') {
