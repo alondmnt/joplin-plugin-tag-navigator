@@ -104,6 +104,14 @@ joplin.plugins.register({
         public: true,
         label: 'Search: Highlight results',
       },
+      'itags.searchPanelStyle' : {
+        value: '',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        label: 'Search: Panel style',
+        description: 'Custom CSS for the search panel (toggle panel or restart app).',
+      },
       'itags.tagRegex': {
         value: '',
         type: SettingItemType.String,
@@ -217,6 +225,7 @@ joplin.plugins.register({
         const panelState = await joplin.views.panels.visible(searchPanel);
         (panelState) ? joplin.views.panels.hide(searchPanel) : joplin.views.panels.show(searchPanel);
         if (!panelState) {
+          await registerSearchPanel(searchPanel);
           focusSearchPanel(searchPanel);
           updatePanelSettings(searchPanel);
         }
@@ -268,7 +277,7 @@ joplin.plugins.register({
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
           event.keys.includes('itags.resultMarker')) {
-        updatePanelSettings(searchPanel);
+        await updatePanelSettings(searchPanel);
       }
     });
 

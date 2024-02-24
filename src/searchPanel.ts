@@ -6,6 +6,7 @@ import { getTagRegex } from './parser';
 
 export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.setHtml(panel, `
+    <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
     <div id="itags-search-inputTagArea">
       <input type="text" id="itags-search-tagFilter" placeholder="Filter tags..." />
       <button id="itags-search-tagClear">Clear</button>
