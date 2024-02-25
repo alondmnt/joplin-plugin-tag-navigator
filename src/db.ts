@@ -82,7 +82,6 @@ export async function processAllNotes() {
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
-      console.log(note.markup_language);
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
         continue;
       }
