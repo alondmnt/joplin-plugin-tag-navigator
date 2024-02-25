@@ -52,16 +52,6 @@ joplin.plugins.register({
         label: 'Ignore HTML notes',
         description: 'Ignore inline tags in HTML notes.',
       },
-      'itags.periodicConversion': {
-        value: 0,
-        type: SettingItemType.Int,
-        minimum: 0,
-        maximum: 1440,
-        section: 'itags',
-        public: true,
-        label: 'Periodic tag conversion (minutes)',
-        description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
-      },
       'itags.periodicDBUpdate': {
         value: 5,
         type: SettingItemType.Int,
@@ -119,6 +109,16 @@ joplin.plugins.register({
         public: true,
         label: 'Search: Panel style',
         description: 'Custom CSS for the search panel (toggle panel or restart app).',
+      },
+      'itags.periodicConversion': {
+        value: 0,
+        type: SettingItemType.Int,
+        minimum: 0,
+        maximum: 1440,
+        section: 'itags',
+        public: true,
+        label: 'Periodic tag conversion (minutes)',
+        description: 'Periodically convert all notes to Joplin tags (requires restart). Set to 0 to disable periodic updates.',
       },
       'itags.tagRegex': {
         value: '',
