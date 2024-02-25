@@ -2,12 +2,13 @@ import joplin from 'api';
 import { parseUniqueTags } from './parser';
 
 export async function convertAllNotesToJoplinTags() {
+  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Get all notes
   let hasMore = true;
   let page = 0;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'body'],
+      fields: ['id', 'body', 'markup_language'],
       limit: 50,
       page: page++,
     });
@@ -15,6 +16,9 @@ export async function convertAllNotesToJoplinTags() {
 
     // Process the notes synchronously to avoid issues
     for (const note of notes.items) {
+      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        continue;
+      }
       await convertNoteToJoplinTags(note);
     }
   }

@@ -66,6 +66,7 @@ function get(db: any, sql: string, params = []) {
 }
 
 export async function processAllNotes() {
+  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Create the in-memory database
   const db = await createTables(':memory:');
 
@@ -74,13 +75,17 @@ export async function processAllNotes() {
   let page = 1;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'body'],
+      fields: ['id', 'body', 'markup_language'],
       limit: 50,
       page: page++,
     });
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
+      console.log(note.markup_language);
+      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        continue;
+      }
       await processNote(db, note);
     }
   }

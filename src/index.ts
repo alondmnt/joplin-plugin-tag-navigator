@@ -44,6 +44,14 @@ joplin.plugins.register({
       iconName: 'fas fa-dharmachakra',
     });
     await joplin.settings.registerSettings({
+      'itags.ignoreHtmlNotes': {
+        value: true,
+        type: SettingItemType.Bool,
+        section: 'itags',
+        public: true,
+        label: 'Ignore HTML notes',
+        description: 'Ignore inline tags in HTML notes.',
+      },
       'itags.periodicConversion': {
         value: 0,
         type: SettingItemType.Int,
