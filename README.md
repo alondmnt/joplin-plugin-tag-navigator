@@ -4,7 +4,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 
 - It adds a panel for searching tagged paragraphs across your notes. ([YouTube](https://www.youtube.com/watch?v=im0zjQFoXb0))
 - It adds a panel for navigating between inline tags that appear in the current note.
-- It can convert your existing inline tags to native Joplin tags, so that they are accessible using tag search.
+- It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
@@ -21,7 +21,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 ## Tips
 
 - Tag search can be used to search, filter and toggle checkboxes (inline TODOs) directly from the panel.
-- The definition of a "tag" can be adjusted with user-defined regular expression.
+- The definition of a "tag" can be adjusted with user-defined regular expressions.
     - For example, every word in the text may be defined as a tag using a regex such as `[A-Za-z0-9]+[\w]*`.
 
 ## Motivation
