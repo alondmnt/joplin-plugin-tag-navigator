@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
-import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery } from './searchPanel';
 
 let query: Query[][] = [];
 let db = null;
@@ -201,6 +201,7 @@ joplin.plugins.register({
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
+      await updateQuery(searchPanel, await loadQuery(note.body));
       tagLines = await parseTagsLines(note.body);
       await updateNotePanel(notePanel, tagLines);
     });
@@ -234,8 +235,10 @@ joplin.plugins.register({
         (panelState) ? joplin.views.panels.hide(searchPanel) : joplin.views.panels.show(searchPanel);
         if (!panelState) {
           await registerSearchPanel(searchPanel);
-          focusSearchPanel(searchPanel);
-          updatePanelSettings(searchPanel);
+          await focusSearchPanel(searchPanel);
+          await updatePanelSettings(searchPanel);
+          const note = await joplin.workspace.selectedNote();
+          await updateQuery(searchPanel, await loadQuery(note.body));
         }
       },
     });
@@ -315,6 +318,10 @@ joplin.plugins.register({
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
         updatePanelResults(searchPanel, results);
+
+      } else if (message.name === 'saveQuery') {
+        // Save the query into the current note
+        saveQuery(message.query);
 
       } else if (message.name === 'openNote') {
         const note = await joplin.workspace.selectedNote();

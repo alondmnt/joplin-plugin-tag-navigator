@@ -6,6 +6,7 @@ let results = [];
 
 const tagFilter = document.getElementById('itags-search-tagFilter');
 const tagClear = document.getElementById('itags-search-tagClear');
+const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
 const queryArea = document.getElementById('itags-search-queryArea');
@@ -23,6 +24,20 @@ webviewApi.onMessage((message) => {
     if (message.message.name === 'updateTagData') {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
+    } else if (message.message.name === 'updateQuery') {
+        let queryGroupsCand = [];
+        try {
+            queryGroupsCand = JSON.parse(message.message.query);
+        } catch (e) {
+            console.error('Failed to parse saved query:', message.message.query, e);
+        }
+        if (testQuery(queryGroupsCand)) {
+            queryGroups = queryGroupsCand;
+            updateQueryArea();
+            sendSearchMessage();
+        } else {
+            console.error('Invalid query:', message.message.query);
+        }
     } else if (message.message.name === 'updateResults') {
         results = JSON.parse(message.message.results);
         updateResultsArea();
@@ -52,6 +67,22 @@ function updateTagList() {
         tagEl.onclick = () => handleTagClick(tag);
         tagList.appendChild(tagEl);
     });
+}
+
+function testQuery(queryGroups) {
+    for (let group of queryGroups) {
+        for (let tag of group) {
+            // Check if the format is correct
+            if (typeof tag.tag !== 'string' || typeof tag.negated !== 'boolean') {
+                return false;
+            }
+            // // Check if all tags are included in the allTags list
+            // if (!allTags.includes(tag.tag)) {
+            //     return false;
+            // }
+        }
+    }
+    return true;
 }
 
 function updateQueryArea() {
@@ -351,6 +382,13 @@ tagClear.addEventListener('click', () => {
     tagFilter.value = ''; // Clear the input field
     resultFilter.value = ''; // Clear the input field
     updateTagList();
+});
+
+saveQuery.addEventListener('click', () => {
+    webviewApi.postMessage({
+        name: 'saveQuery',
+        query: JSON.stringify(queryGroups),
+    });
 });
 
 // Post the search query as JSON

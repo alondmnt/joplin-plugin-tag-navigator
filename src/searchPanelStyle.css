@@ -22,7 +22,7 @@ body {
     border-style: solid;
 }
 
-#itags-search-tagClear, #itags-search-tagSearch {
+#itags-search-tagClear, #itags-search-saveQuery, #itags-search-tagSearch {
     flex-grow: 1;
     min-height: 23px;
     margin-left: 5px;

@@ -4,12 +4,17 @@ import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { GroupedResult } from './search';
 import { getTagRegex } from './parser';
 
+const queryStart = '<!-- itags-query-start -->';
+const queryEnd = '<!-- itags-query-end -->';
+const findQuery = new RegExp(`${queryStart}[\\s\\S]*?${queryEnd}`);
+
 export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.setHtml(panel, `
     <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
     <div id="itags-search-inputTagArea">
       <input type="text" id="itags-search-tagFilter" placeholder="Filter tags..." />
       <button id="itags-search-tagClear">Clear</button>
+      <button id="itags-search-saveQuery">Save</button>
       <button id="itags-search-tagSearch">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
@@ -114,5 +119,47 @@ export function setCheckboxState(line: string, text: string, checked: boolean) {
   } else {
     // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
     return line.replace(/^(\s*-\s*\[)x(\])/g, '$1 $2');
+  }
+}
+
+export async function saveQuery(query: string) {
+  // Save the query into the current note
+  const note = await joplin.workspace.selectedNote();
+  if (!note) {
+    return;
+  }
+
+  if (note.body.includes(queryStart) && note.body.includes(queryEnd)) {
+    if (query === '[]') {
+      note.body = note.body.replace(findQuery, '');
+    } else {
+      note.body = note.body.replace(findQuery, `${queryStart}\n${query}\n${queryEnd}`);
+    }
+  } else {
+    note.body = `${note.body}\n${queryStart}\n${query}\n${queryEnd}`;
+  }
+
+  await joplin.data.put(['notes', note.id], null, { body: note.body });
+  await joplin.commands.execute('editor.setText', note.body);
+}
+
+export async function loadQuery(text: string) {
+  if (!text) {
+    return '';
+  }
+  const query = text.match(findQuery);
+  return query ? query[0].replace(queryStart, '').replace(queryEnd, '').trim() : '';
+}
+
+export async function updateQuery(panel: string, query: string) {
+  // Send the query to the search panel
+  if (!query) {
+    return;
+  }
+  if (joplin.views.panels.visible(panel)) {
+    joplin.views.panels.postMessage(panel, {
+      name: 'updateQuery',
+      query: query,
+    });
   }
 }
