@@ -33,6 +33,7 @@ webviewApi.onMessage((message) => {
         }
         if (testQuery(queryGroupsCand)) {
             queryGroups = queryGroupsCand;
+            resultFilter.value = message.message.filter ? message.message.filter : '';
             updateQueryArea();
             sendSearchMessage();
         } else {
@@ -388,6 +389,7 @@ saveQuery.addEventListener('click', () => {
     webviewApi.postMessage({
         name: 'saveQuery',
         query: JSON.stringify(queryGroups),
+        filter: resultFilter.value,
     });
 });
 

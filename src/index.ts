@@ -201,7 +201,8 @@ joplin.plugins.register({
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
-      await updateQuery(searchPanel, await loadQuery(note.body));
+      const query = await loadQuery(note.body);
+      await updateQuery(searchPanel, query.query, query.filter);
       tagLines = await parseTagsLines(note.body);
       await updateNotePanel(notePanel, tagLines);
     });
@@ -238,7 +239,8 @@ joplin.plugins.register({
           await focusSearchPanel(searchPanel);
           await updatePanelSettings(searchPanel);
           const note = await joplin.workspace.selectedNote();
-          await updateQuery(searchPanel, await loadQuery(note.body));
+          const query = await loadQuery(note.body);
+          await updateQuery(searchPanel, query.query, query.filter);
         }
       },
     });
@@ -321,7 +323,7 @@ joplin.plugins.register({
 
       } else if (message.name === 'saveQuery') {
         // Save the query into the current note
-        saveQuery(message.query);
+        saveQuery(message.query, message.filter);
 
       } else if (message.name === 'openNote') {
         const note = await joplin.workspace.selectedNote();

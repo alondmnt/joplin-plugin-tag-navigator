@@ -6,7 +6,7 @@ import { getTagRegex } from './parser';
 
 const queryStart = '<!-- itags-query-start -->';
 const queryEnd = '<!-- itags-query-end -->';
-const findQuery = new RegExp(`${queryStart}[\\s\\S]*?${queryEnd}`);
+const findQuery = new RegExp(`[\n]+${queryStart}[\\s\\S]*?${queryEnd}`);
 
 export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.setHtml(panel, `
@@ -122,7 +122,7 @@ export function setCheckboxState(line: string, text: string, checked: boolean) {
   }
 }
 
-export async function saveQuery(query: string) {
+export async function saveQuery(query: string, filter: string) {
   // Save the query into the current note
   const note = await joplin.workspace.selectedNote();
   if (!note) {
@@ -133,25 +133,31 @@ export async function saveQuery(query: string) {
     if (query === '[]') {
       note.body = note.body.replace(findQuery, '');
     } else {
-      note.body = note.body.replace(findQuery, `${queryStart}\n${query}\n${queryEnd}`);
+      note.body = note.body.replace(findQuery, `\n\n${queryStart}\n${query}\n${filter}\n${queryEnd}`);
     }
   } else {
-    note.body = `${note.body}\n${queryStart}\n${query}\n${queryEnd}`;
+    note.body = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${query}\n${filter}\n${queryEnd}`;
+    // trimming trailing spaces in note body before insertion
   }
 
   await joplin.data.put(['notes', note.id], null, { body: note.body });
   await joplin.commands.execute('editor.setText', note.body);
 }
 
-export async function loadQuery(text: string) {
-  if (!text) {
-    return '';
-  }
+export async function loadQuery(text: string): Promise<{ query: string, filter: string }> {
   const query = text.match(findQuery);
-  return query ? query[0].replace(queryStart, '').replace(queryEnd, '').trim() : '';
+  if (query) {
+    const queryParts = query[0].trim().split('\n').slice(1, -1);
+    return {
+      query: queryParts[0],
+      filter: queryParts[1],
+    };
+  } else {
+    return { query: '', filter: '' };
+  }
 }
 
-export async function updateQuery(panel: string, query: string) {
+export async function updateQuery(panel: string, query: string, filter: string) {
   // Send the query to the search panel
   if (!query) {
     return;
@@ -160,6 +166,7 @@ export async function updateQuery(panel: string, query: string) {
     joplin.views.panels.postMessage(panel, {
       name: 'updateQuery',
       query: query,
+      filter: filter,
     });
   }
 }
