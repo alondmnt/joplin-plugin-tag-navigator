@@ -24,6 +24,7 @@ webviewApi.onMessage((message) => {
     if (message.message.name === 'updateTagData') {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
+
     } else if (message.message.name === 'updateQuery') {
         let queryGroupsCand = [];
         try {
@@ -39,11 +40,17 @@ webviewApi.onMessage((message) => {
         } else {
             console.error('Invalid query:', message.message.query);
         }
+
     } else if (message.message.name === 'updateResults') {
         results = JSON.parse(message.message.results);
-        updateResultsArea();
+        const searchQuery = JSON.stringify(queryGroups);
+        if (searchQuery === message.message.query) {
+            updateResultsArea();
+        }
+
     } else if (message.message.name === 'focusTagFilter') {
         tagFilter.focus();
+
     } else if (message.message.name === 'updateSettings') {
         const settings = JSON.parse(message.message.settings);
         resultToggleState = settings.resultToggle ? 'expand' : 'collapse';

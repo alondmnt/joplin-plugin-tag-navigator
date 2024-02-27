@@ -1,7 +1,7 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
-import { GroupedResult } from './search';
+import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
 
 const queryStart = '<!-- itags-query-start -->';
@@ -44,7 +44,7 @@ export async function focusSearchPanel(panel: string) {
   }
 }
 
-export async function updatePanelResults(panel: string, results: GroupedResult[]) {
+export async function updatePanelResults(panel: string, results: GroupedResult[], query: Query[][]) {
   const resultMarker = await joplin.settings.value('itags.resultMarker');
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(
@@ -53,6 +53,7 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
           results: JSON.stringify(renderHTML(results, tagRegex, resultMarker)),
+          query: JSON.stringify(query),
         });
       }
       clearInterval(intervalID);

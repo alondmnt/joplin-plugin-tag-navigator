@@ -208,7 +208,7 @@ joplin.plugins.register({
         // Update search results
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
-        updatePanelResults(searchPanel, results);
+        updatePanelResults(searchPanel, results, query);
       }, periodicDBUpdate * 60 * 1000);
     }
 
@@ -278,7 +278,7 @@ joplin.plugins.register({
         // Update search results
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
-        updatePanelResults(searchPanel, results);
+        updatePanelResults(searchPanel, results, query);
       },
     });
 
@@ -341,7 +341,7 @@ joplin.plugins.register({
         query = JSON.parse(message.query);
         const sqlQuery = convertToSQLiteQuery(query);
         const results = await getQueryResults(db, sqlQuery);
-        updatePanelResults(searchPanel, results);
+        updatePanelResults(searchPanel, results, query);
 
       } else if (message.name === 'saveQuery') {
         // Save the query into the current note
