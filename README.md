@@ -3,7 +3,7 @@
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in three ways:
 
 - It adds a panel for searching tagged paragraphs across your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
-    - Save favourite search queries in notes and sync them across devices.
+    - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
 - It adds a panel for navigating between inline tags that appear in the current note.
 - It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 
