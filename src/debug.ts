@@ -5,7 +5,8 @@ const sqlite3 = joplin.require('sqlite3');
 export async function dumpInMemoryDbToFile(dbMemory: any, filePath: string) {
   
   return new Promise<void>(async (resolve, reject) => {
-    const dbFile = await createTables(filePath);
+    const plugin_dir = await joplin.plugins.dataDir();
+    const dbFile = await createTables(plugin_dir + '/' + filePath);
     const tables = await fetchTableNames(dbMemory);
     console.log(tables);
 

@@ -20,13 +20,8 @@ export async function parseUniqueTags(text: string): Promise<string[]> {
   return uniqueTags;
 }
 
-export async function parseTagsLines(text: string): Promise<{ tag: string, lines: number[], count: number, index: number }[]> {
-  const userRegex = await joplin.settings.value('itags.tagRegex');
-  let tagRegex = defTagRegex;
-  if (userRegex) {
-    tagRegex = new RegExp(userRegex, 'g');
-  }
-
+export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean):
+    Promise<{ tag: string, lines: number[], count: number, index: number }[]> {
   const tags = await parseUniqueTags(text);
 
   if (tags.length === 0) {
@@ -35,8 +30,16 @@ export async function parseTagsLines(text: string): Promise<{ tag: string, lines
 
   // For each tag, list the lines it appears in
   const lines = text.toLocaleLowerCase().split('\n');
+  let inCodeBlock = false;
   const tagsLines = tags.map((tag) => {
     const tagLines: number[] = lines.reduce((acc, line, index) => {
+      if (line.match('```')) {
+        inCodeBlock = !inCodeBlock;
+      }
+      if (inCodeBlock && ignoreCodeBlocks) {
+        return acc;
+      }
+
       if (line.match(tagRegex)?.includes(tag)) {
         acc.push(index);
       }

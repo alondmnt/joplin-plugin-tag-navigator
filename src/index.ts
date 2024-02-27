@@ -2,10 +2,11 @@ import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types';
 import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
-import { parseTagsLines } from './parser';
+import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery } from './searchPanel';
+import { dumpInMemoryDbToFile } from './debug';
 
 let query: Query[][] = [];
 let db = null;
@@ -51,6 +52,14 @@ joplin.plugins.register({
         public: true,
         label: 'Ignore HTML notes',
         description: 'Ignore inline tags in HTML notes.',
+      },
+      'itags.ignoreCodeBlocks': {
+        value: true,
+        type: SettingItemType.Bool,
+        section: 'itags',
+        public: true,
+        label: 'Ignore code blocks',
+        description: 'Ignore inline tags in code blocks.',
       },
       'itags.periodicDBUpdate': {
         value: 5,
@@ -135,7 +144,16 @@ joplin.plugins.register({
         public: true,
         label: 'Exclude regex',
         description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
-      }
+      },
+      'itags.minCount': {
+        value: 1,
+        type: SettingItemType.Int,
+        minimum: 1,
+        section: 'itags',
+        public: true,
+        label: 'Minimum tag count',
+        description: 'Minimum number of occurrences for a tag to be included.',
+      },
     });
 
     // Periodic conversion of tags
@@ -202,8 +220,10 @@ joplin.plugins.register({
     joplin.workspace.onNoteSelectionChange(async () => {
       const note = await joplin.workspace.selectedNote();
       const query = await loadQuery(note.body);
+      const tagRegex = await getTagRegex();
+      const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       await updateQuery(searchPanel, query.query, query.filter);
-      tagLines = await parseTagsLines(note.body);
+      tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
       await updateNotePanel(notePanel, tagLines);
     });
 
@@ -213,7 +233,9 @@ joplin.plugins.register({
       iconName: 'fas fa-sync',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
-        tagLines = await parseTagsLines(note.body);
+        const tagRegex = await getTagRegex();
+        const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+        tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
         await updateNotePanel(notePanel, tagLines);
       },
     });

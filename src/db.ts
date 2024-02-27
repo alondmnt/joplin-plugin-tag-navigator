@@ -1,15 +1,15 @@
 import joplin from 'api';
-import { parseTagsLines } from './parser';
+import { getTagRegex, parseTagsLines } from './parser';
 const sqlite3 = joplin.require('sqlite3');
 
 
 export async function createTables(path: string) {
-  // Open an in-memory SQLite database
+  // Open a SQLite database
   const db = new sqlite3.Database(path, (err) => {
     if (err) {
       console.error('Error opening database', err.message);
     } else {
-      console.log('Opened in-memory database successfully');
+      console.log(`Opened database successfully in ${path}`);
     }
   });
 
@@ -69,6 +69,8 @@ export async function processAllNotes() {
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Create the in-memory database
   const db = await createTables(':memory:');
+  const tagRegex = await getTagRegex();
+  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
 
   // Get all notes
   let hasMore = true;
@@ -85,19 +87,22 @@ export async function processAllNotes() {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
         continue;
       }
-      await processNote(db, note);
+      await processNote(db, note, tagRegex, ignoreCodeBlocks);
     }
   }
+
+  const minCount = await joplin.settings.value('itags.minCount');
+  await filterTags(db, minCount);
 
   return db;
 }
 
-async function processNote(db: any, note: any) {
+async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean) {
   try {
     // Start a transaction
     await run(db, 'BEGIN TRANSACTION');
 
-    const tagLines = await parseTagsLines(note.body);
+    const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
     const noteId = await insertOrGetNoteId(db, note.id);
 
     // Process each tagLine within the transaction
@@ -150,4 +155,10 @@ async function insertOrGetNoteId(db: any, externalId: string): Promise<number | 
   } catch (error) {
     throw error; // Rethrow the error to be handled by the caller
   }
+}
+
+async function filterTags(db: any, minCount: number) {
+  // delete from Tags and NoteTags where tagId counts are less than minCount
+  await run(db, `DELETE FROM Tags WHERE tagId NOT IN (SELECT tagId FROM NoteTags GROUP BY tagId HAVING COUNT(*) >= ?)`, [minCount]);
+  await run(db, `DELETE FROM NoteTags WHERE tagId NOT IN (SELECT tagId FROM Tags)`);
 }
