@@ -13,22 +13,22 @@ export async function registerSearchPanel(panel: string) {
     <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
     <div id="itags-search-inputTagArea">
       <input type="text" id="itags-search-tagFilter" placeholder="Filter tags..." />
-      <button id="itags-search-tagClear">Clear</button>
-      <button id="itags-search-saveQuery">Save</button>
-      <button id="itags-search-tagSearch">Search</button>
+      <button id="itags-search-tagClear" title="Clear query and results">Clear</button>
+      <button id="itags-search-saveQuery" title="Save query to current note">Save</button>
+      <button id="itags-search-tagSearch" title="Search for text blocks">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
     <div id="itags-search-queryArea"></div>
     <div id="itags-search-inputResultArea">
       <input type="text" id="itags-search-resultFilter" placeholder="Filter results..." />
-      <select id="itags-search-resultSort">
+      <select id="itags-search-resultSort" title="Sort by">
         <option value="modified">Modified</option>
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="notebook">Notebook</option>
       </select>
-      <button id="itags-search-resultOrder"><i class="fas fa-sort-amount-up"></i></button>
-      <button id="itags-search-resultToggle"><i class="fas fa-chevron-up"></i></button>
+      <button id="itags-search-resultOrder" title="Reverse order"><i class="fas fa-sort-amount-up"></i></button>
+      <button id="itags-search-resultToggle" title="Collapse / expand"><i class="fas fa-chevron-up"></i></button>
     </div>
     <div id='itags-search-resultsArea'></div>
   `);
