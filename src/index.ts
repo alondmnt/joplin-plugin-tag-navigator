@@ -6,7 +6,6 @@ import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, convertToSQLiteQuery, getQueryResults } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery } from './searchPanel';
-import { dumpInMemoryDbToFile } from './debug';
 
 let query: Query[][] = [];
 let db = null;
