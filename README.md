@@ -20,9 +20,10 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Tips
 
-- Tag search can be used to search, filter and toggle checkboxes (inline TODOs) directly from the panel.
 - The definition of a "tag" can be adjusted with user-defined regular expressions.
-    - For example, every word in the text may be defined as a tag using a regex such as `[A-Za-z0-9]+[\w]*`.
+    - For example, every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
+- Tag search can be used to search, filter and toggle checkboxes (inline TODOs) directly from the panel.
+    - To support [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates one can use a custom regex such as `(?<=^|\s)[#@+\/]([^\s#@+]*\w)`.
 
 ## Motivation
 
