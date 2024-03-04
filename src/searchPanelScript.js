@@ -67,14 +67,21 @@ webviewApi.onMessage((message) => {
 // Update areas
 function updateTagList() {
     tagList.innerHTML = '';
-    const filter = tagFilter.value.toLowerCase();
-    allTags.filter(tag => tag.toLowerCase().includes(filter)).forEach(tag => {
+    allTags.filter(tag => containsFilter(tag, tagFilter.value)).forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.classList.add('itags-search-tag');
         tagEl.textContent = tag;
         tagEl.onclick = () => handleTagClick(tag);
         tagList.appendChild(tagEl);
     });
+}
+
+// Split filter into words and check that all words are in the target
+function containsFilter(target, filter, min_chars=1) {
+    const lowerTarget = target.toLowerCase();
+    return filter.toLowerCase().split(' ')
+        .filter(word => word.length >= min_chars)
+        .every(word => lowerTarget.includes(word));
 }
 
 function testQuery(queryGroups) {
@@ -138,7 +145,7 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    const filter = resultFilter.value.toLowerCase();
+    const filter = resultFilter.value;
     results = results.sort((a, b) => {
         if (resultSort.value === 'title') {
             return a.title.localeCompare(b.title);
@@ -171,14 +178,16 @@ function updateResultsArea() {
         
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
-            if (filter.length > 1) {
-                if (!result.text[index].toLowerCase().includes(filter) && !result.title.toLowerCase().includes(filter)) {
-                    continue; // Skip entries that don't match the filter
-                }
-                if (resultMarker) {
-                    entry = entry.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
-                    titleEl.innerHTML = titleEl.textContent.replace(new RegExp(`(${filter})`, 'gi'), '<mark id="itags-search-renderedFilter">$1</mark>');
-                }
+            if (!containsFilter(result.text[index], filter, min_chars=2) &&
+                    !containsFilter(result.title, filter, min_chars=2)) {
+                continue; // Skip entries that don't match the filter
+            }
+            const parsedFilter = filter.toLowerCase().split(' ').filter(word => word.length >= 3);
+            if (resultMarker && (parsedFilter.length > 0)) {
+                // Mark any word containing at least 3 characters
+                const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
+                entry = entry.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
+                titleEl.innerHTML = titleEl.textContent.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
             }
 
             const entryEl = document.createElement('div');
