@@ -76,12 +76,27 @@ function updateTagList() {
     });
 }
 
-// Split filter into words and check that all words are in the target
+// Check that all words are in the target
 function containsFilter(target, filter, min_chars=1) {
     const lowerTarget = target.toLowerCase();
-    return filter.toLowerCase().split(' ')
-        .filter(word => word.length >= min_chars)
-        .every(word => lowerTarget.includes(word));
+    const words = parseFilter(filter, min_chars);
+
+    return words.every(word => lowerTarget.includes(word.toLowerCase()));
+}
+
+function parseFilter(filter, min_chars=1) {
+    // Split filter into words and quoted phrases
+    const regex = /"([^"]+)"/g;
+    let match;
+    const quotes = [];
+    while ((match = regex.exec(filter)) !== null) {
+        quotes.push(match[1]);
+        filter = filter.replace(match[0], '');
+    }
+    const words = filter.replace('"', '').toLowerCase()
+        .split(' ').filter(word => word.length >= min_chars)
+        .concat(quotes);
+    return words;
 }
 
 function testQuery(queryGroups) {
@@ -182,7 +197,7 @@ function updateResultsArea() {
                     !containsFilter(result.title, filter, min_chars=2)) {
                 continue; // Skip entries that don't match the filter
             }
-            const parsedFilter = filter.toLowerCase().split(' ').filter(word => word.length >= 3);
+            const parsedFilter = parseFilter(filter, min_chars=3);
             if (resultMarker && (parsedFilter.length > 0)) {
                 // Mark any word containing at least 3 characters
                 const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
