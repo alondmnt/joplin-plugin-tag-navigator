@@ -2,6 +2,7 @@ let queryGroups = []; // Array of Sets
 // each set is a group of tags combined with "AND"
 // sets are combined with "OR"
 let allTags = [];
+let allNotes = [];
 let results = [];
 
 const tagFilter = document.getElementById('itags-search-tagFilter');
@@ -9,6 +10,8 @@ const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
+const noteList = document.getElementById('itags-search-noteList');
+const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
 let resultToggleState = 'collapse';
@@ -24,6 +27,10 @@ webviewApi.onMessage((message) => {
     if (message.message.name === 'updateTagData') {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
+
+    } else if (message.message.name === 'updateNoteData') {
+        allNotes = JSON.parse(message.message.notes);
+        updateNoteList();
 
     } else if (message.message.name === 'updateQuery') {
         let queryGroupsCand = [];
@@ -74,6 +81,35 @@ function updateTagList() {
         tagEl.onclick = () => handleTagClick(tag);
         tagList.appendChild(tagEl);
     });
+}
+
+// Update note dropdown with the current list of notes
+function updateNoteList() {
+    // Preserve the previous selection, if possible
+    const selectedNoteId = noteList.value;
+    noteList.innerHTML = '';
+
+    const titleOpt = document.createElement('option');
+    titleOpt.value = 'default';
+    titleOpt.textContent = 'Select to filter by note mentions';
+    noteList.appendChild(titleOpt);
+
+    const currentOpt = document.createElement('option');
+    currentOpt.value = 'current';
+    currentOpt.textContent = 'Current note';
+    noteList.appendChild(currentOpt);
+
+    allNotes.filter(note => containsFilter(note.title, noteFilter.value)).forEach(note => {
+        const noteEl = document.createElement('option');
+        noteEl.value = note.externalId;
+        noteEl.textContent = note.title;
+        noteList.appendChild(noteEl);
+    });
+
+    // Restore the previous selection, if possible
+    if (selectedNoteId) {
+        noteList.value = selectedNoteId;
+    }
 }
 
 // Check that all words are in the target
@@ -127,11 +163,25 @@ function updateQueryArea() {
         queryArea.appendChild(document.createTextNode('(')); // Start group
 
         group.forEach((item, tagIndex) => {
-            // Display each tag with its state
-            const tagEl = document.createElement('span');
-            tagEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
-            tagEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
-            tagEl.onclick = () => {
+            // If the item has {tag, negated} format add a tag element
+            // If the item has {title, externalId, negated} format add a note element
+            const newEl = document.createElement('span');
+            if (item.title) {
+                newEl.classList.add('itags-search-note', item.negated ? 'negated' : 'selected');
+                newEl.textContent = item.title.slice(0, 20)
+                if (item.title.length >= 20) {
+                    newEl.textContent += '...';
+                }
+                if (item.negated) {
+                    newEl.textContent = `! ${newEl.textContent}`;
+                }
+
+            } else if (item.tag) {
+                // Display each tag with its state
+                newEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
+                newEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
+            }
+            newEl.onclick = () => {
                 toggleTagNegation(groupIndex, tagIndex);
                 updateQueryArea(); // Refresh after toggling negation
             };
@@ -145,8 +195,8 @@ function updateQueryArea() {
                 removeTagFromGroup(groupIndex, tagIndex);
                 updateQueryArea(); // Refresh display after deletion
             };
-            tagEl.appendChild(deleteBtn);
-            queryArea.appendChild(tagEl);
+            newEl.appendChild(deleteBtn);
+            queryArea.appendChild(newEl);
 
             // Add "AND" within a group, except after the last tag
             if (tagIndex < group.length - 1) {
@@ -341,6 +391,28 @@ function handleTagClick(tag) {
     updateQueryArea();
 }
 
+function handleNoteClick(note) {
+    if (!note) {
+        return;
+    }
+    let lastGroup = queryGroups[queryGroups.length - 1];
+    let noteExistsInLastGroup = lastGroup && lastGroup.some(n => n.title === note.title);
+
+    if (!lastGroup) {
+        // Create a new group if there's no last group
+        lastGroup = [{ title: note.title, externalId: note.externalId, negated: false}];
+        queryGroups.push(lastGroup);
+    } else if (!noteExistsInLastGroup) {
+        // Add note to the last group if it doesn't exist
+        lastGroup.push({ title: note.title, externalId: note.externalId, negated: false });
+    } else {
+        // Toggle negation if the note exists in the last group
+        let noteObject = lastGroup.find(n => n.title === note.title);
+        noteObject.negated = !noteObject.negated;
+    }
+    updateQueryArea();
+}
+
 function toggleLastOperator() {
     // Change the last operator between "AND" and "OR"
     // using the splitGroup / mergeGroups functions
@@ -406,6 +478,7 @@ tagFilter.focus(); // Focus the tag filter input when the panel is loaded
 
 // Event listeners
 document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
+document.getElementById('itags-search-noteFilter').addEventListener('input', updateNoteList);
 
 tagClear.addEventListener('click', () => {
     // Assuming you have a function or a way to clear the query area
@@ -465,6 +538,14 @@ tagFilter.addEventListener('keydown', (event) => {
         // Toggle last tag negation
         toggleLastTag();
     }
+});
+
+noteList.addEventListener('change', () => {
+    if (noteList.value === 'current') {
+        handleNoteClick({ title: 'Current note', externalId: 'current', negated: false });
+    }
+    handleNoteClick(allNotes.find(note => note.externalId === noteList.value));
+    noteList.value = 'default'; // Clear the input field
 });
 
 resultFilter.addEventListener('input', () => {

@@ -18,6 +18,10 @@ export async function registerSearchPanel(panel: string) {
       <button id="itags-search-tagSearch" title="Search for text blocks">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
+    <div id="itags-search-inputNoteArea">
+      <input type="text" id="itags-search-noteFilter" placeholder="Filter notes..." />
+      <select id="itags-search-noteList" title="Note mentions"></select>
+    </div>
     <div id="itags-search-queryArea"></div>
     <div id="itags-search-inputResultArea">
       <input type="text" id="itags-search-resultFilter" placeholder="Filter results..." />
