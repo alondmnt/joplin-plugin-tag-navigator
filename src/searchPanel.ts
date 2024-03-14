@@ -91,6 +91,7 @@ export async function updatePanelSettings(panel: string) {
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const modifiedTagRegex = new RegExp(`(?<!\`[^\\\`]*)${tagRegex.source}(?![^\\\`]*\`)`, 'g');
+  const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
   for (const group of groupedResults) {
     for (const section of group.text) {
       let processedSection = section.trim();
@@ -98,6 +99,8 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         processedSection = processedSection
           .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
       }
+      processedSection = processedSection
+        .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
       group.html.push(md.render(processedSection));
     }
   }
