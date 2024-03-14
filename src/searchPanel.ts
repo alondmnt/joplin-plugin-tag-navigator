@@ -3,6 +3,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
+import { getNoteId } from './db';
 
 const queryStart = '<!-- itags-query-start -->';
 const queryEnd = '<!-- itags-query-end -->';
@@ -149,17 +150,54 @@ export async function saveQuery(query: string, filter: string) {
   await joplin.commands.execute('editor.setText', note.body);
 }
 
-export async function loadQuery(text: string): Promise<{ query: string, filter: string }> {
+export async function loadQuery(db:any, text: string): Promise<{ query: string, filter: string }> {
   const query = text.match(findQuery);
   if (query) {
     const queryParts = query[0].trim().split('\n').slice(1, -1);
     return {
-      query: queryParts[0],
+      query: await testQuery(db, queryParts[0]),
       filter: queryParts[1],
     };
   } else {
     return { query: '', filter: '' };
   }
+}
+
+async function testQuery(db: any, query: string) {
+  let queryGroups = JSON.parse(query);
+  for (let [ig, group] of queryGroups.entries()) {
+    for (let [ic, condition] of group.entries()) {
+
+      // Check if the format is correct
+      const format = (typeof condition.negated == 'boolean') &&
+        ((typeof condition.tag == 'string') ||
+         ((typeof condition.title == 'string') && (typeof condition.externalId == 'string')));
+      if (!format) {
+        group[ic] = null;
+      }
+
+      if (condition.tag) {
+        // TODO: maybe check if the tag exists
+
+      } else if (condition.externalId) {
+        if (condition.externalId === 'current') { continue; }
+
+        // Try to update externalId in case it changed
+        const newExternalId = await getNoteId(db, condition.externalId, condition.title);
+        if (newExternalId) {
+          condition.externalId = newExternalId;
+        } else {
+          group[ic] = null;
+        }
+      }
+    }
+    // filter null conditions
+    queryGroups[ig] = group.filter((condition: any) => (condition));
+  }
+  // filter null groups
+  queryGroups = queryGroups.filter((group: any) => group.length > 0);
+
+  return JSON.stringify(queryGroups);
 }
 
 export async function updateQuery(panel: string, query: string, filter: string) {

@@ -25,7 +25,8 @@ export interface GroupedResult {
 }
 
 export async function runSearch(db: any, query: Query[][]): Promise<GroupedResult[]> {
-  const dbQuery = convertToDbQuery(query);
+  const currentNote = (await joplin.workspace.selectedNote());
+  const dbQuery = convertToDbQuery(query, currentNote);
   const queryResults = await getQueryResults(db, dbQuery);
   const groupedResults = await processQueryResults(queryResults);
   return groupedResults;
@@ -44,7 +45,7 @@ async function getQueryResults(db: any, query: string): Promise<QueryResult[]> {
   });
 }
 
-function convertToDbQuery(groups: Query[][]) {
+function convertToDbQuery(groups: Query[][], currentNote: any): string {
   if (groups.length === 0) return '';
 
   // Create a subquery that unifies NoteTags with Tags and NoteLinks
@@ -69,8 +70,12 @@ function convertToDbQuery(groups: Query[][]) {
         return `${condition.negated ? 'SUM(CASE WHEN sub.tag = \'' + condition.tag + '\' THEN 1 ELSE 0 END) = 0' : 'SUM(CASE WHEN sub.tag = \'' + condition.tag + '\' THEN 1 ELSE 0 END) > 0'}`;
 
       } else if (condition.externalId) {
+        let conditionId = condition.externalId;
+        if (condition.externalId == 'current') {
+          conditionId = currentNote.id;
+        }
         // Adjust for presence or absence of the linked note
-        return `${condition.negated ? 'SUM(CASE WHEN sub.linkedNoteId = \'' + condition.externalId + '\' THEN 1 ELSE 0 END) = 0' : 'SUM(CASE WHEN sub.linkedNoteId = \'' + condition.externalId + '\' THEN 1 ELSE 0 END) > 0'}`;
+        return `${condition.negated ? 'SUM(CASE WHEN sub.linkedNoteId = \'' + conditionId + '\' THEN 1 ELSE 0 END) = 0' : 'SUM(CASE WHEN sub.linkedNoteId = \'' + conditionId + '\' THEN 1 ELSE 0 END) > 0'}`;
       }
     }).join(' AND '); // Intersect conditions within a group with AND
 

@@ -237,19 +237,28 @@ joplin.plugins.register({
       }, periodicDBUpdate * 60 * 1000);
     }
 
-    // Navigation panel
+    // Note navigation panel
     const notePanel = await joplin.views.panels.create('itags.notePanel');
     await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
     await joplin.views.panels.addScript(notePanel, 'notePanelScript.js');
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
+      // Search panel update
       const note = await joplin.workspace.selectedNote();
-      const query = await loadQuery(note.body);
+      const savedQuery = await loadQuery(db, note.body);
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-      await updateQuery(searchPanel, query.query, query.filter);
+      await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
+
+      // Note panel update
       tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
       await updateNotePanel(notePanel, tagLines);
+
+      if (query.flatMap(x => x).some(x => x.externalId == 'current')) {
+        // Update search results
+        const results = await runSearch(db, query);
+        updatePanelResults(searchPanel, results, query);
+      }
     });
 
     await joplin.commands.register({
@@ -286,7 +295,7 @@ joplin.plugins.register({
           await focusSearchPanel(searchPanel);
           await updatePanelSettings(searchPanel);
           const note = await joplin.workspace.selectedNote();
-          const query = await loadQuery(note.body);
+          const query = await loadQuery(db, note.body);
           await updateQuery(searchPanel, query.query, query.filter);
         }
       },

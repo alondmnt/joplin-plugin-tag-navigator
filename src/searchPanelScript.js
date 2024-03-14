@@ -39,14 +39,10 @@ webviewApi.onMessage((message) => {
         } catch (e) {
             console.error('Failed to parse saved query:', message.message.query, e);
         }
-        if (testQuery(queryGroupsCand)) {
-            queryGroups = queryGroupsCand;
-            resultFilter.value = message.message.filter ? message.message.filter : '';
-            updateQueryArea();
-            sendSearchMessage();
-        } else {
-            console.error('Invalid query:', message.message.query);
-        }
+        queryGroups = queryGroupsCand;
+        resultFilter.value = message.message.filter ? message.message.filter : '';
+        updateQueryArea();
+        sendSearchMessage();
 
     } else if (message.message.name === 'updateResults') {
         results = JSON.parse(message.message.results);
@@ -133,22 +129,6 @@ function parseFilter(filter, min_chars=1) {
         .split(' ').filter(word => word.length >= min_chars)
         .concat(quotes);
     return words;
-}
-
-function testQuery(queryGroups) {
-    for (let group of queryGroups) {
-        for (let tag of group) {
-            // Check if the format is correct
-            if (typeof tag.tag !== 'string' || typeof tag.negated !== 'boolean') {
-                return false;
-            }
-            // // Check if all tags are included in the allTags list
-            // if (!allTags.includes(tag.tag)) {
-            //     return false;
-            // }
-        }
-    }
-    return true;
 }
 
 function updateQueryArea() {

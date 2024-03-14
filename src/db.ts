@@ -195,7 +195,7 @@ async function insertOrGetNoteId(db: any, externalId: string, title: string): Pr
 
 // search a note by externalId OR title (prefer externalId)
 // currently returning externalId because it is *stable*
-async function getNoteId(db: any, externalId: string, title: string): Promise<number | null> {
+export async function getNoteId(db: any, externalId: string, title: string): Promise<number | null> {
   try {
     const resultById = await get(db, `SELECT externalId FROM Notes WHERE externalId = ?`, [externalId]);
     if (resultById) {
