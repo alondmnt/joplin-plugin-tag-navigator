@@ -85,15 +85,18 @@ function updateNoteList() {
     const selectedNoteId = noteList.value;
     noteList.innerHTML = '';
 
-    const titleOpt = document.createElement('option');
-    titleOpt.value = 'default';
-    titleOpt.textContent = 'Select to filter by note mentions';
-    noteList.appendChild(titleOpt);
-
-    const currentOpt = document.createElement('option');
-    currentOpt.value = 'current';
-    currentOpt.textContent = 'Current note';
-    noteList.appendChild(currentOpt);
+    if (noteFilter.value === '') {
+        const titleOpt = document.createElement('option');
+        titleOpt.value = 'default';
+        titleOpt.textContent = 'Select to filter by note mentions';
+        noteList.appendChild(titleOpt);
+    }
+    if (containsFilter('Current note', noteFilter.value)) {
+        const currentOpt = document.createElement('option');
+        currentOpt.value = 'current';
+        currentOpt.textContent = 'Current note';
+        noteList.appendChild(currentOpt);
+    }
 
     allNotes.filter(note => containsFilter(note.title, noteFilter.value)).forEach(note => {
         const noteEl = document.createElement('option');
@@ -412,12 +415,12 @@ function toggleLastOperator() {
     updateQueryArea();
 }
 
-function toggleLastTag() {
+function toggleLastTagOrNote() {
     // Toggle the negation of the last tag
     let lastGroup = queryGroups[queryGroups.length - 1];
     if (lastGroup) {
-        let lastTag = lastGroup[lastGroup.length - 1];
-        lastTag.negated = !lastTag.negated;
+        let lastEl = lastGroup[lastGroup.length - 1];
+        lastEl.negated = !lastEl.negated;
         updateQueryArea();
     }
 }
@@ -427,11 +430,11 @@ function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
     lastGroup = queryGroups[0];
-    document.getElementById('itags-search-queryArea').innerHTML = '';
+    queryArea.innerHTML = '';
 }
 
 function clearResultsArea() {
-    document.getElementById('itags-search-resultsArea').innerHTML = '';
+    resultsArea.innerHTML = '';
 }
 
 // Helper functions for search
@@ -462,8 +465,8 @@ updateTagList(); // Initial update
 tagFilter.focus(); // Focus the tag filter input when the panel is loaded
 
 // Event listeners
-document.getElementById('itags-search-tagFilter').addEventListener('input', updateTagList);
-document.getElementById('itags-search-noteFilter').addEventListener('input', updateNoteList);
+tagFilter.addEventListener('input', updateTagList);
+noteFilter.addEventListener('input', updateNoteList);
 
 tagClear.addEventListener('click', () => {
     // Assuming you have a function or a way to clear the query area
@@ -521,7 +524,46 @@ tagFilter.addEventListener('keydown', (event) => {
         toggleLastOperator();
     } else if (event.key === 'ArrowDown') {
         // Toggle last tag negation
-        toggleLastTag();
+        toggleLastTagOrNote();
+    }
+});
+
+noteFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        // Check if there's exactly one tag in the filtered list
+        if (noteFilter.value === '') {
+            sendSearchMessage()
+        } else if (noteList.childElementCount === 1) {
+            // Get the tag name from the only child element of tagList
+            const note = {title: noteList.firstChild.textContent, externalId: noteList.firstChild.value};
+            handleNoteClick(note);
+            // Optionally, clear the input
+            noteFilter.value = '';
+            noteList.value = 'default';
+            // Update the tag list to reflect the current filter or clear it
+            updateNoteList();
+        }
+    } else if (event.key === 'Delete') {
+        // Remove last tag from the last group
+        let lastGroup = queryGroups[queryGroups.length - 1];
+        if (lastGroup) {
+            lastGroup.pop();
+            if (lastGroup.length === 0) {
+                // Remove the group if empty
+                queryGroups.pop();
+            }
+            updateQueryArea();
+        }
+    } else if (event.key === 'Escape') {
+        // Clear the input and update the tag list
+        noteFilter.value = '';
+        updateNoteList();
+    } else if (event.key === 'ArrowUp') {
+        // Change the last operator
+        toggleLastOperator();
+    } else if (event.key === 'ArrowDown') {
+        // Toggle last tag negation
+        toggleLastTagOrNote();
     }
 });
 
