@@ -316,7 +316,12 @@ function mergeGroups(groupIndex) {
         // Merge current and next group with deduplication
         const mergedGroup = [...queryGroups[groupIndex], ...queryGroups[groupIndex + 1]];
         const uniqueMergedGroup = mergedGroup.reduce((acc, current) => {
-            const x = acc.find(item => item.tag === current.tag);
+            let x;
+            if (current.tag) {
+                x = acc.find(item => item.tag === current.tag);
+            } else if (current.externalId) {
+                x = acc.find(item => item.externalId === current.externalId);
+            }
             if (!x) {
                 return acc.concat([current]);
             } else {
