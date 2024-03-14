@@ -1,12 +1,14 @@
 import joplin from 'api';
 
 export interface Query {
-  tag: string;
+  tag?: string;
+  title?: string;
+  externalId?: string;
   negated: boolean;
 }
 
 interface QueryResult {
-  noteId: string;
+  noteId: number;
   externalId: string;
   lineNumber: number;
 }
@@ -22,45 +24,95 @@ export interface GroupedResult {
   createdTime?: number;
 }
 
-export async function getQueryResults(db: any, query: string): Promise<GroupedResult[]> {
-  if (!query) return [];
-  return new Promise((resolve, reject) => {
-    db.all(query, [], async (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(await processQueryResults(rows));
+export async function runSearch(db: any, queries: Query[][]): Promise<GroupedResult[]> {
+  const dbQueries = convertToDbQuery(queries);
+  const dbResults =  await executeQueries(db, dbQueries);
+  const logicResults = applyDNFLogic(dbResults);
+  const processedResults = await processQueryResults(logicResults);
+
+  return processedResults;
+}
+
+export function convertToDbQuery(groups: Query[][]): string[][] {
+  return groups.map(group => {
+    return group.map(condition => {
+      // Base query parts
+      let baseQuery = 'SELECT n.noteId, n.externalId, l.lineNumber FROM Notes n';
+      let joinClause = '';
+      let whereClause = 'WHERE ';
+
+      // Construct query based on condition type
+      if (condition.tag) {
+        joinClause += 'INNER JOIN NoteTags l ON l.noteId = n.noteId INNER JOIN Tags t ON l.tagId = t.tagId ';
+        whereClause += `${condition.negated ? 't.tag !=' : 't.tag ='} '${condition.tag}' `;
+
+      } else if (condition.externalId) {
+        joinClause += 'INNER JOIN NoteLinks l ON l.noteId = n.noteId '
+        whereClause += `${condition.negated ? 'l.linkedNoteId !=' : 'l.linkedNoteId ='} '${condition.externalId}' `;
       }
+
+      // Return the final query for this condition
+      return `${baseQuery} ${joinClause} ${whereClause}`.trim();
     });
   });
 }
 
-export function convertToSQLiteQuery(groups: Query[][]) {
-  if (groups.length === 0) return '';
-  // Process each group to create a part of the WHERE clause
-  const groupConditions = groups.map(group => {
-    // For each tag in the group, create a conditional aggregation check
-    const conditions = group.map(({ tag, negated }) => {
-      // Adjust for presence or absence of the tag
-      return `${negated ? 'SUM(CASE WHEN t.tag = \'' + tag + '\' THEN 1 ELSE 0 END) = 0' : 'SUM(CASE WHEN t.tag = \'' + tag + '\' THEN 1 ELSE 0 END) > 0'}`;
-    }).join(' AND '); // Intersect conditions within a group with AND
+function executeQueries(db: any, queries: string[][]): Promise<QueryResult[][][]> {
+  return Promise.all(queries.map(group => {
+    return Promise.all(group.map(query => {
+      return new Promise<QueryResult[]>((resolve, reject) => {
+        db.all(query, [], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows.map(row => ({
+            noteId: row.noteId,
+            externalId: row.externalId,
+            lineNumber: row.lineNumber
+          })));
+        });
+      });
+    }));
+  }));
+}
 
-    // Return the conditional checks for this group, wrapped in HAVING for aggregation filtering
-    return `SELECT nt.noteId, nt.lineNumber FROM NoteTags nt JOIN Tags t ON nt.tagId = t.tagId GROUP BY nt.noteId, nt.lineNumber HAVING ${conditions}`;
+// Finds the intersection of two QueryResult arrays
+function intersectResults(a: QueryResult[], b: QueryResult[]): QueryResult[] {
+  const result = a.filter(item => b.some(other =>
+    (other.noteId === item.noteId) && (other.lineNumber === item.lineNumber)));
+  return result
+}
+
+// Unions two arrays of QueryResult objects
+function unionResults(a: QueryResult[], b: QueryResult[]): QueryResult[] {
+  const combined = [...a, ...b];
+  const unique = Array.from(new Set(combined.map(item => JSON.stringify(item)))).map(item => JSON.parse(item));
+  return unique;
+}
+
+// Disjoint Normal Form (DNF) logic on query results
+function applyDNFLogic(queryResults: QueryResult[][][]): QueryResult[] {
+  // Flatten the structure since each group ultimately contributes a single QueryResult
+  const andResults = queryResults.flatMap(groupResults => {
+    // Apply AND logic within each group to find a common result, if applicable
+    return groupResults.reduce<QueryResult[]>((acc, currentResults, index) => {
+      if (index === 0) return currentResults; // Start with the first item for comparison
+      // Assuming intersectResults can handle comparing and possibly merging or selecting from two QueryResult arrays
+      return intersectResults(acc, currentResults);
+    }, []);
   });
 
-  // Union the groups with OR
-  const finalQuery = groupConditions.length > 1 ? groupConditions.join(' UNION ') : groupConditions[0];
+  // Apply OR logic across all groups, where andResults now correctly represents an array of QueryResult from each group
+  const orResult = andResults.reduce<QueryResult[]>((acc, currentResult) => {
+    // This assumes unionResults can add a QueryResult to an array if it's not already present
+    return unionResults(acc, [currentResult]);
+  }, []);
 
-  return `SELECT sub.noteId, sub.lineNumber, n.externalId
-    FROM (${finalQuery}) AS sub
-    JOIN Notes n ON sub.noteId = n.noteId
-    ORDER BY sub.noteId, sub.lineNumber;`
+  return orResult;
 }
 
 async function processQueryResults(queryResults: QueryResult[]): Promise<GroupedResult[]> {
-  // assuming that queryResults are already sorted by noteId
   // group the results by externalId and get the note content
+  queryResults.sort((a, b) => a.noteId - b.noteId);
+
   const groupedResults: GroupedResult[] = [];
   if (queryResults.length === 0) return groupedResults;
   let lastExternalId = '';

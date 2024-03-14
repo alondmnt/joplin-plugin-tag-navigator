@@ -4,7 +4,7 @@ import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converte
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
-import { Query, convertToSQLiteQuery, getQueryResults } from './search';
+import { Query, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery } from './searchPanel';
 
 let query: Query[][] = [];
@@ -22,6 +22,18 @@ async function getAllTags(): Promise<string[]> {
   });
 }
 
+async function getAllNotes(): Promise<{title: string, noteId: number}[]> {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT title, externalId FROM Notes`, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows.sort((a, b) => a.title.localeCompare(b.title)));
+      }
+    });
+  });
+}
+
 async function updatePanelTagData(panel: string) {
   const intervalID = setInterval(
     async () => {
@@ -29,6 +41,20 @@ async function updatePanelTagData(panel: string) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateTagData',
           tags: JSON.stringify(await getAllTags()),
+        });
+      }
+    }
+    , 5000
+  );
+}
+
+async function updatePanelNoteData(panel: string) {
+  const intervalID = setInterval(
+    async () => {
+      if(joplin.views.panels.visible(panel)) {
+        joplin.views.panels.postMessage(panel, {
+          name: 'updateNoteData',
+          notes: JSON.stringify(await getAllNotes()),
         });
       }
     }
@@ -195,6 +221,7 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
     updatePanelTagData(searchPanel);
+    updatePanelNoteData(searchPanel);
     updatePanelSettings(searchPanel);
 
     // Periodic database update
@@ -205,8 +232,7 @@ joplin.plugins.register({
         db = await processAllNotes(); // update DB
 
         // Update search results
-        const sqlQuery = convertToSQLiteQuery(query);
-        const results = await getQueryResults(db, sqlQuery);
+        const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
       }, periodicDBUpdate * 60 * 1000);
     }
@@ -275,8 +301,7 @@ joplin.plugins.register({
         db = await processAllNotes();
 
         // Update search results
-        const sqlQuery = convertToSQLiteQuery(query);
-        const results = await getQueryResults(db, sqlQuery);
+        const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
       },
     });
@@ -338,8 +363,7 @@ joplin.plugins.register({
     await joplin.views.panels.onMessage(searchPanel, async (message) => {
       if (message.name === 'searchQuery') {
         query = JSON.parse(message.query);
-        const sqlQuery = convertToSQLiteQuery(query);
-        const results = await getQueryResults(db, sqlQuery);
+        const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
 
       } else if (message.name === 'saveQuery') {
