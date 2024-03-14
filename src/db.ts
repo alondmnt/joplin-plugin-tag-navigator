@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { getTagRegex, parseTagsLines } from './parser';
+import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
 const sqlite3 = joplin.require('sqlite3');
 
 
@@ -17,7 +17,8 @@ export async function createTables(path: string) {
     // Create tables
     db.run(`CREATE TABLE IF NOT EXISTS Notes (
     noteId INTEGER PRIMARY KEY AUTOINCREMENT,
-    externalId TEXT NOT NULL
+    externalId TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL
     );`);
     
     db.run(`CREATE TABLE IF NOT EXISTS Tags (
@@ -32,6 +33,16 @@ export async function createTables(path: string) {
     PRIMARY KEY (noteId, tagId, lineNumber),
     FOREIGN KEY (noteId) REFERENCES Notes(noteId),
     FOREIGN KEY (tagId) REFERENCES Tags(tagId)
+    );`);
+    
+    // Here we use externalId for the linked note because it's *stable*
+    db.run(`CREATE TABLE IF NOT EXISTS NoteLinks (
+    noteId INTEGER,
+    linkedNoteId TEXT,
+    lineNumber INTEGER,
+    PRIMARY KEY (noteId, linkedNoteId, lineNumber),
+    FOREIGN KEY (noteId) REFERENCES Notes(noteId),
+    FOREIGN KEY (linkedNoteId) REFERENCES Notes(externalId)
     );`);
     
     // Create indexes
@@ -72,12 +83,28 @@ export async function processAllNotes() {
   const tagRegex = await getTagRegex();
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
 
-  // Get all notes
+  // Build notes table, so we can process link to notes
   let hasMore = true;
   let page = 1;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'body', 'markup_language'],
+      fields: ['id', 'title'],
+      limit: 50,
+      page: page++,
+    });
+    hasMore = notes.has_more;
+
+    for (const note of notes.items) {
+      await insertOrGetNoteId(db, note.id, note.title);
+    }
+  }
+
+  // Get all notes
+  hasMore = true;
+  page = 1;
+  while (hasMore) {
+    const notes = await joplin.data.get(['notes'], {
+      fields: ['id', 'title', 'body', 'markup_language'],
       limit: 50,
       page: page++,
     });
@@ -103,13 +130,22 @@ async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlock
     await run(db, 'BEGIN TRANSACTION');
 
     const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
-    const noteId = await insertOrGetNoteId(db, note.id);
+    const noteId = await insertOrGetNoteId(db, note.id, note.title);
 
     // Process each tagLine within the transaction
     for (const tagLine of tagLines) {
       const tagId = await insertOrGetTagId(db, tagLine.tag);
       for (const lineNumber of tagLine.lines) {
         await insertNoteTag(db, noteId, tagId, lineNumber);
+      }
+    }
+
+    // Process links
+    const linkLines = await parseLinkLines(note.body);
+    for (const linkLine of linkLines) {
+      const linkedNoteId = await getNoteId(db, linkLine.noteId, linkLine.title);
+      if (linkedNoteId) {
+        await run(db, `INSERT INTO NoteLinks (noteId, linkedNoteId, lineNumber) VALUES (?, ?, ?)`, [noteId, linkedNoteId, linkLine.line]);
       }
     }
 
@@ -144,14 +180,30 @@ async function insertOrGetTagId(db: any, tag: string): Promise<number | null> {
   }
 }
 
-async function insertOrGetNoteId(db: any, externalId: string): Promise<number | null> {
+async function insertOrGetNoteId(db: any, externalId: string, title: string): Promise<number | null> {
   try {
     // Attempt to insert the note, ignoring if it already exists
-    await run(db, `INSERT OR IGNORE INTO Notes (externalId) VALUES (?)`, [externalId]);
+    await run(db, `INSERT OR IGNORE INTO Notes (externalId, title) VALUES (?, ?)`, [externalId, title]);
     
-    // Retrieve the noteId for the given tag
+    // Retrieve the noteId for the given note
     const result = await get(db, `SELECT noteId FROM Notes WHERE externalId = ?`, [externalId]);
     return result ? (result as any).noteId : null;
+  } catch (error) {
+    throw error; // Rethrow the error to be handled by the caller
+  }
+}
+
+// search a note by externalId OR title (prefer externalId)
+// currently returning externalId because it is *stable*
+async function getNoteId(db: any, externalId: string, title: string): Promise<number | null> {
+  try {
+    const resultById = await get(db, `SELECT externalId FROM Notes WHERE externalId = ?`, [externalId]);
+    if (resultById) {
+      return (resultById as any).externalId;
+    } else {
+      const resultByTitle = await get(db, `SELECT externalId FROM Notes WHERE title = ? LIMIT 1`, [title]);
+      return resultByTitle ? (resultByTitle as any).externalId : null;
+    }
   } catch (error) {
     throw error; // Rethrow the error to be handled by the caller
   }

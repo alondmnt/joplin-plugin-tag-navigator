@@ -1,6 +1,11 @@
 import joplin from 'api';
 
-const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g;
+const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
+const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
+const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
+const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
+
+type LinkExtract = { title: string; noteId?: string; line: number };
 
 export async function getTagRegex(): Promise<RegExp> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
@@ -55,4 +60,37 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
   tagsLines.sort((a, b) => b.count - a.count);
 
   return tagsLines;
+}
+
+export async function parseLinkLines(text: string): Promise<LinkExtract[]> {
+    return new Promise((resolve) => {
+        const lines = text.split('\n');
+        const results: LinkExtract[] = [];
+
+        lines.forEach((line, index) => {
+            let match;
+            // Extracting Markdown links
+            while ((match = linkRegex.exec(line)) !== null) {
+                results.push({
+                    title: match[1],
+                    noteId: match[2].match(noteIdRegex)?.[0],
+                    line: index,
+                });
+            }
+            // Resetting lastIndex since we are reusing the RegExp
+            linkRegex.lastIndex = 0;
+
+            // Extracting WikiLinks
+            while ((match = wikiLinkRegex.exec(line)) !== null) {
+                results.push({
+                    title: match[1],
+                    line: index,
+                });
+            }
+            // Resetting lastIndex for the same reason
+            wikiLinkRegex.lastIndex = 0;
+        });
+
+        resolve(results);
+    });
 }
