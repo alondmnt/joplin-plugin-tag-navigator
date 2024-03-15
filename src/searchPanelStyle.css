@@ -213,7 +213,7 @@ body {
 }
 
 #itags-search-resultsArea {
-    max-height: calc(100vh - 221px);
+    max-height: calc(100vh - 249px);
     margin-top: 5px;
     margin-bottom: 0px;
     border-color: rgb(118, 118, 118);
