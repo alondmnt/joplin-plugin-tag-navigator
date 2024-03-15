@@ -21,6 +21,7 @@ let resultOrderState = 'desc';
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
+let dropdownIsOpen = false;
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
@@ -81,6 +82,8 @@ function updateTagList() {
 
 // Update note dropdown with the current list of notes
 function updateNoteList() {
+    if (dropdownIsOpen) { return; }
+
     // Preserve the previous selection, if possible
     const selectedNoteId = noteList.value;
     noteList.innerHTML = '';
@@ -573,6 +576,17 @@ noteList.addEventListener('change', () => {
     }
     handleNoteClick(allNotes.find(note => note.externalId === noteList.value));
     noteList.value = 'default'; // Clear the input field
+});
+
+noteList.addEventListener('focus', function() {
+    // The dropdown might be opening (avoid updates)
+    dropdownIsOpen = true;
+});
+
+noteList.addEventListener('blur', function() {
+    // The dropdown is closed (avoid updates)
+    dropdownIsOpen = false;
+    updateNoteList();
 });
 
 resultFilter.addEventListener('input', () => {
