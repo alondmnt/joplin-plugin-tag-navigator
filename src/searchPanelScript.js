@@ -115,8 +115,8 @@ function updateNoteList() {
 }
 
 // Check that all words are in the target
-function containsFilter(target, filter, min_chars=1) {
-    const lowerTarget = target.toLowerCase();
+function containsFilter(target, filter, min_chars=1, otherTarget='') {
+    const lowerTarget = (target + otherTarget).toLowerCase();
     const words = parseFilter(filter, min_chars);
 
     return words.every(word => lowerTarget.includes(word.toLowerCase()));
@@ -249,8 +249,7 @@ function updateResultsArea() {
 
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
-            if (!containsFilter(result.text[index], filter, min_chars=2) &&
-                    !containsFilter(result.title, filter, min_chars=2)) {
+            if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget=result.title)) {
                 continue; // Skip entries that don't match the filter
             }
             const parsedFilter = parseFilter(filter, min_chars=3);
