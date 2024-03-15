@@ -196,6 +196,17 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
+    // Save the current stae of collapsed / expanded notes by their externalId
+    const noteState = {};
+    const resultNotes = document.getElementsByClassName('itags-search-resultContent');
+    for (let i = 0; i < resultNotes.length; i++) {
+        if (resultNotes[i].style.display === 'block') {
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
+        } else {
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
+        }
+    }
+
     const filter = resultFilter.value;
     results = results.sort((a, b) => {
         if (resultSort.value === 'title') {
@@ -225,8 +236,17 @@ function updateResultsArea() {
         
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
-        contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
-        
+
+        // Preserve the state of the content container
+        contentContainer.setAttribute('data-externalId', result.externalId);
+        if (noteState[result.externalId] === 'expanded') {
+            contentContainer.style.display = 'block';
+        } else if (noteState[result.externalId] === 'collapsed') {
+            contentContainer.style.display = 'none';
+        } else {
+            contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
+        }
+
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
             if (!containsFilter(result.text[index], filter, min_chars=2) &&
