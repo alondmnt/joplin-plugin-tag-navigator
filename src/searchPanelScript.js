@@ -556,7 +556,7 @@ noteFilter.addEventListener('keydown', (event) => {
         // Check if there's exactly one tag in the filtered list
         if (noteFilter.value === '') {
             sendSearchMessage()
-        } else if (noteList.childElementCount === 1) {
+        } else {
             // Get the tag name from the only child element of tagList
             const note = {title: noteList.firstChild.textContent, externalId: noteList.firstChild.value};
             handleNoteClick(note);
@@ -580,6 +580,7 @@ noteFilter.addEventListener('keydown', (event) => {
     } else if (event.key === 'Escape') {
         // Clear the input and update the tag list
         noteFilter.value = '';
+        noteList.value = 'default';
         updateNoteList();
     } else if (event.key === 'ArrowUp') {
         // Change the last operator
