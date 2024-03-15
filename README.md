@@ -26,6 +26,16 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - Tag search can be used to search, filter and toggle checkboxes (inline TODOs) directly from the panel.
     - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
     - To support [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates one can use a custom regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@+]*\w)`.
+- Tag / note filter keyboard shortcuts:
+
+| Key | Action |
+| --- | ------ |
+| Enter | Add tag / note to query |
+| 2nd Enter | Search notes based on current query |
+| Delete | Remove last added tag / note from query |
+| Esc | Clear the filter (display all tags / notes) |
+| Arrow-Down | Toggle negation of last tag / note in query |
+| Arrow-Up | Toggle last operator AND <--> OR |
 
 ## Motivation
 
