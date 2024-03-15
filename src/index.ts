@@ -86,6 +86,14 @@ joplin.plugins.register({
         label: 'Ignore code blocks',
         description: 'Ignore inline tags in code blocks.',
       },
+      'itags.inheritTags': {
+        value: true,
+        type: SettingItemType.Bool,
+        section: 'itags',
+        public: true,
+        label: 'Tag inheritance',
+        description: 'Inherit tags from parent items.',
+      },
       'itags.periodicDBUpdate': {
         value: 5,
         type: SettingItemType.Int,
@@ -248,10 +256,11 @@ joplin.plugins.register({
       const savedQuery = await loadQuery(db, note.body);
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+      const inheritTags = await joplin.settings.value('itags.inheritTags');
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
 
       // Note panel update
-      tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
+      tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
       await updateNotePanel(notePanel, tagLines);
 
       if (query.flatMap(x => x).some(x => x.externalId == 'current')) {
@@ -269,7 +278,8 @@ joplin.plugins.register({
         const note = await joplin.workspace.selectedNote();
         const tagRegex = await getTagRegex();
         const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-        tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
+        const inheritTags = await joplin.settings.value('itags.inheritTags');
+        tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
         await updateNotePanel(notePanel, tagLines);
       },
     });

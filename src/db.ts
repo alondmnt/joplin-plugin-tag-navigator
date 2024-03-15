@@ -82,6 +82,7 @@ export async function processAllNotes() {
   const db = await createTables(':memory:');
   const tagRegex = await getTagRegex();
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+  const inheritTags = await joplin.settings.value('itags.inheritTags');
 
   // Build notes table, so we can process link to notes
   let hasMore = true;
@@ -114,7 +115,7 @@ export async function processAllNotes() {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
         continue;
       }
-      await processNote(db, note, tagRegex, ignoreCodeBlocks);
+      await processNote(db, note, tagRegex, ignoreCodeBlocks, inheritTags);
     }
   }
 
@@ -124,12 +125,12 @@ export async function processAllNotes() {
   return db;
 }
 
-async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean) {
+async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean) {
   try {
     // Start a transaction
     await run(db, 'BEGIN TRANSACTION');
 
-    const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks);
+    const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
     const noteId = await insertOrGetNoteId(db, note.id, note.title);
 
     // Process each tagLine within the transaction

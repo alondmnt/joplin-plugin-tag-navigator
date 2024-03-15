@@ -94,7 +94,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
   for (const group of groupedResults) {
     for (const section of group.text) {
-      let processedSection = section.trim();
+      let processedSection = normalizeTextIndentation(section);
       if (resultMarker) {
         processedSection = processedSection
           .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
@@ -105,6 +105,30 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     }
   }
   return groupedResults;
+}
+
+function normalizeTextIndentation(text: string): string {
+  const lines = text.split('\n');
+
+  // Process each line to potentially update the current indentation level and remove it
+  let currentIndentation = Infinity;
+  const normalizedLines = lines.map(line => {
+    if (line.trim().length === 0) {
+      // For empty lines, we just return them as is
+      return line;
+    }
+
+    // Track the current indentation level
+    const lineIndentation = line.match(/^\s*/)[0].length;
+    if (lineIndentation < currentIndentation) {
+      currentIndentation = lineIndentation;
+    }
+
+    // Remove the current indentation level from the line
+    return line.substring(currentIndentation);
+  });
+
+  return normalizedLines.join('\n');
 }
 
 export function setCheckboxState(line: string, text: string, checked: boolean) {

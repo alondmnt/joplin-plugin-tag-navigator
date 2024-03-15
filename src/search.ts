@@ -93,7 +93,14 @@ function convertToDbQuery(groups: Query[][], currentNote: any): string {
 }
 
 async function processQueryResults(queryResults: QueryResult[]): Promise<GroupedResult[]> {
-  queryResults.sort((a, b) => a.noteId - b.noteId);
+  // pre-process the results to sort by noteId and lineNumber
+  queryResults.sort((a, b) => {
+    if (a.noteId === b.noteId) {
+      return a.lineNumber - b.lineNumber;
+    }
+    return a.noteId - b.noteId;
+  });
+
   // group the results by externalId and get the note content
   const groupedResults: GroupedResult[] = [];
   if (queryResults.length === 0) return groupedResults;
@@ -134,10 +141,40 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
   const notebook = await joplin.data.get(['folders', note.parent_id], ['title']);
   const lines: string[] = note.body.split('\n');
+
+  // Group consecutive line numbers
+  let currentGroup = [];
+  const groupedLines = [];
+  let previousLineNum = -2;
+  result.lineNumbers.forEach((lineNumber, index) => {
+    if (lineNumber === previousLineNum + 1) {
+      // This line is consecutive; add it to the current group
+      currentGroup.push(lineNumber);
+    } else {
+      // Not consecutive, start a new group, but first push the current group if it's not empty
+      if (currentGroup.length) {
+        groupedLines.push(currentGroup);
+      }
+      currentGroup = [lineNumber];
+    }
+    previousLineNum = lineNumber;
+  
+    // Ensure the last group is added
+    if (index === result.lineNumbers.length - 1 && currentGroup.length) {
+      groupedLines.push(currentGroup);
+    }
+  });
+  // Now, transform grouped line numbers into text blocks
+  result.text = groupedLines.map(group =>
+    group.map(lineNumber => lines[lineNumber]).join('\n') // Assuming lineNumbers are 1-indexed
+  );
+  // Update lineNumbers to only include the first line of each group
+  result.lineNumbers = groupedLines.map(group => group[0]);
+
   result.title = note.title;
-  result.text = result.lineNumbers.map(lineNumber => lines[lineNumber]);
   result.notebook = notebook.title;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
+
   return result
 }

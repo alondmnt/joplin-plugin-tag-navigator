@@ -25,7 +25,7 @@ export async function parseUniqueTags(text: string): Promise<string[]> {
   return uniqueTags;
 }
 
-export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean):
+export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean):
     Promise<{ tag: string, lines: number[], count: number, index: number }[]> {
   const tags = await parseUniqueTags(text);
 
@@ -34,10 +34,13 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
   }
 
   // For each tag, list the lines it appears in
+  // In an outline or indented text, each child item has all the tags of the parent items
   const lines = text.toLocaleLowerCase().split('\n');
   let inCodeBlock = false;
   const tagsLines = tags.map((tag) => {
+    let tagLevel = -1;
     const tagLines: number[] = lines.reduce((acc, line, index) => {
+      // skip blocks
       if (line.match('```')) {
         inCodeBlock = !inCodeBlock;
       }
@@ -45,10 +48,27 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
         return acc;
       }
 
+      // remove tags from the stack
+      const indentLevel = line.match(/^\s*/)[0].length;
+      if (indentLevel <= tagLevel) {
+        tagLevel = -1;
+      }
+
+      // add tag in line
       if (line.match(tagRegex)?.includes(tag)) {
         acc.push(index);
+        if (tagLevel < 0) {
+          tagLevel = indentLevel;
+        }
+        return acc;
       }
-      return acc;
+
+      // add all the tags from the higher levels
+      if (inheritTags && tagLevel >= 0 && indentLevel > tagLevel) {
+        acc.push(index);
+      }
+
+      return acc
     }, []);
     return { tag, lines: tagLines, count: tagLines.length, index: 0 };
   });
