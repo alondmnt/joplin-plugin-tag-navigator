@@ -91,7 +91,7 @@ function updateNoteList() {
     if (noteFilter.value === '') {
         const titleOpt = document.createElement('option');
         titleOpt.value = 'default';
-        titleOpt.textContent = 'Select to filter by note mentions';
+        titleOpt.textContent = 'Search by note mentions';
         noteList.appendChild(titleOpt);
     }
     if (containsFilter('Current note', noteFilter.value)) {
