@@ -263,16 +263,19 @@ function updateResultsArea() {
             const entryEl = document.createElement('div');
             entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
+            addLineNumberToCheckboxes(entryEl, result.text[index]);
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
 
             entryEl.addEventListener('click', (event) => {
                 // Handle click on the content
                 if (event.target.matches('.task-list-item-checkbox')) {
+                    // get the line number of the clicked checkbox
+                    const line = parseInt(event.target.getAttribute('data-line-number'));
                     webviewApi.postMessage({
                         name: 'setCheckBox',
                         externalId: result.externalId,
-                        line: result.lineNumbers[index],
-                        text: result.text[index],
+                        line: result.lineNumbers[index] + line,
+                        text: result.text[index].split('\n')[line].trim(),
                         checked: event.target.checked,
                     });
                 } else {
@@ -466,6 +469,22 @@ function sendSearchMessage() {
     webviewApi.postMessage({
         name: 'searchQuery',
         query: searchQuery,
+    });
+}
+
+function addLineNumberToCheckboxes(entryEl, text) {
+    const textContent = text.split('\n');
+    let lineNumber = 0;
+    // Use querySelectorAll instead of find to select checkboxes
+    const checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
+  
+    checkboxes.forEach(checkbox => {
+        // Increment line number until the next checkbox is reached in the text content
+        while (lineNumber < textContent.length && !textContent[lineNumber].includes(checkbox.nextSibling.textContent.trim())) {
+        lineNumber++;
+        }
+        // Set the data-line-number attribute to the calculated line number
+        checkbox.setAttribute('data-line-number', lineNumber); // Adjust line number to be 1-based
     });
 }
 
