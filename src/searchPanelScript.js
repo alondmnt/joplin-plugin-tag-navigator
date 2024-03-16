@@ -265,6 +265,10 @@ function updateResultsArea() {
             entryEl.innerHTML = entry;
             addLineNumberToCheckboxes(entryEl, result.text[index]);
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
+            entryEl.querySelectorAll('.itags-search-resultSection > .contains-task-list > .task-list-item').forEach(item => {
+                item.style.position = 'relative'; // Ensure the element's position can be adjusted
+                item.style.left = '-15px'; // Move 15px to the left
+            });
 
             entryEl.addEventListener('click', (event) => {
                 // Handle click on the content
