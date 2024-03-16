@@ -90,14 +90,12 @@ export async function updatePanelSettings(panel: string) {
 
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
-  const modifiedTagRegex = new RegExp(`(?<!\`[^\\\`]*)${tagRegex.source}(?![^\\\`]*\`)`, 'g');
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
   for (const group of groupedResults) {
     for (const section of group.text) {
       let processedSection = normalizeTextIndentation(section);
       if (resultMarker) {
-        processedSection = processedSection
-          .replace(modifiedTagRegex, '<span class="itags-search-renderedTag">$&</span>')
+        processedSection = replaceOutsideBackticks(processedSection, tagRegex, '<span class="itags-search-renderedTag">$&</span>')
       }
       processedSection = processedSection
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
@@ -105,6 +103,27 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     }
   }
   return groupedResults;
+}
+
+// Function to replace or process hashtags outside backticks without altering the original structure
+function replaceOutsideBackticks(text: string, tagRegex: RegExp, replaceString: string) {
+  // Split the input by capturing backticks and content within them
+  const segments = text.split(/(`[^`]*`)/);
+  let processedString = '';
+
+  segments.forEach((segment, index) => {
+    // Even indices are outside backticks; odd indices are content within backticks
+    if (index % 2 === 0) {
+      // Replace or mark the matches in this segment
+      const processedSegment = segment.replace(tagRegex, replaceString);
+      processedString += processedSegment;
+    } else {
+      // Directly concatenate segments within backticks without alteration
+      processedString += segment;
+    }
+  });
+
+  return processedString;
 }
 
 function normalizeTextIndentation(text: string): string {
