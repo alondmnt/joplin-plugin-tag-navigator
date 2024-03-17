@@ -260,7 +260,7 @@ joplin.plugins.register({
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
 
       // Note panel update
-      tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
+      tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);
       await updateNotePanel(notePanel, tagLines);
 
       if (query.flatMap(x => x).some(x => x.externalId == 'current')) {
