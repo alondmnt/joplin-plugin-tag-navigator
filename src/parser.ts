@@ -37,7 +37,7 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
   // In an outline or indented text, each child item has all the tags of the parent items
   const lines = text.toLocaleLowerCase().split('\n');
   let inCodeBlock = false;
-  const tagsLines = tags.map((tag) => {
+  let tagsLines = tags.map((tag) => {
     let tagLevel = -1;
     const tagLines: number[] = lines.reduce((acc, line, index) => {
       // skip blocks
@@ -72,6 +72,9 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
     }, []);
     return { tag, lines: tagLines, count: tagLines.length, index: 0 };
   });
+
+  // Remove tags that don't appear in the note
+  tagsLines = tagsLines.filter((tagLine) => tagLine.count > 0);
 
   // Sort by the tag name
   tagsLines.sort((a, b) => a.tag.localeCompare(b.tag));
