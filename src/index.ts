@@ -262,7 +262,6 @@ joplin.plugins.register({
       const savedQuery = await loadQuery(db, note.body);
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-      const inheritTags = await joplin.settings.value('itags.inheritTags');
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
 
       // Note panel update
@@ -284,8 +283,7 @@ joplin.plugins.register({
         const note = await joplin.workspace.selectedNote();
         const tagRegex = await getTagRegex();
         const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-        const inheritTags = await joplin.settings.value('itags.inheritTags');
-        tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
+        tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);
         await updateNotePanel(notePanel, tagLines);
       },
     });
