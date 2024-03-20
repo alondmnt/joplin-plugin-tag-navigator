@@ -1,3 +1,4 @@
+// modified from: https://github.com/cqroot/joplin-outline/blob/main/src/codeMirrorScroller.js
 function plugin(CodeMirror) {
   CodeMirror.defineExtension('scrollToTagLine', function scrollToTagLine(lineno) {
     // temporary fix: sometimes the first coordinate is incorrect,

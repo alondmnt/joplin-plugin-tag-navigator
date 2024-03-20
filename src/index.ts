@@ -201,8 +201,13 @@ joplin.plugins.register({
 
     await joplin.contentScripts.register(
       ContentScriptType.CodeMirrorPlugin,
-      'scroller',
-      './scroller.js',
+      'cm5scroller',
+      './cm5scroller.js',
+    );
+    await joplin.contentScripts.register(
+      ContentScriptType.CodeMirrorPlugin,
+      'cm6scroller',
+      './cm6scroller.js',
     );
 
     await joplin.commands.register({
