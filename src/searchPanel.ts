@@ -174,6 +174,20 @@ export function setCheckboxState(line: string, text: string, checked: boolean) {
   }
 }
 
+export function removeTagFromText(line: string, text: string, tag: string) {
+  // Check the line to see if it contains the text
+  if (!line.includes(text)) {
+    console.log('Error in removeTagFromText: The line does not contain the expected text.');
+    console.log('Line:', line);
+    console.log('Text:', text);
+    return line;
+  }
+
+  // Remove the tag and any leading space from the line
+  const tagRegex = new RegExp(`\\s*${tag}`);
+  return line.replace(tagRegex, '');
+}
+
 export async function saveQuery(query: string, filter: string) {
   // Save the query into the current note
   const note = await joplin.workspace.selectedNote();

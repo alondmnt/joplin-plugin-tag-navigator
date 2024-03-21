@@ -326,3 +326,24 @@ hr {
 .task-list-item {
     list-style-type: none;  /* Remove the default bullet */
 }
+
+.itags-search-contextMenu {
+    background-color: var(--joplin-background-color);
+    border: 1px solid var(--joplin-divider-color);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px color(var(--joplin-color) alpha(50%));
+    padding: 5px 0;
+    position: fixed;
+    z-index: 1000;
+}
+
+.itags-search-contextMenu span {
+    display: block;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--joplin-color);
+}
+
+.itags-search-contextMenu span:hover {
+    background-color: var(--joplin-background-color-hover3);
+}

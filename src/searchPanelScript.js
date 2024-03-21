@@ -264,14 +264,15 @@ function updateResultsArea() {
             entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
             addLineNumberToCheckboxes(entryEl, result.text[index]);
+            addLineNumberToTags(entryEl, result.text[index]);
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
             entryEl.querySelectorAll('.itags-search-resultSection > .contains-task-list > .task-list-item').forEach(item => {
                 item.style.position = 'relative'; // Ensure the element's position can be adjusted
                 item.style.left = '-15px'; // Move 15px to the left
             });
 
+            // Handle click on the content
             entryEl.addEventListener('click', (event) => {
-                // Handle click on the content
                 if (event.target.matches('.task-list-item-checkbox')) {
                     // get the line number of the clicked checkbox
                     const line = parseInt(event.target.getAttribute('data-line-number'));
@@ -288,6 +289,52 @@ function updateResultsArea() {
                         externalId: result.externalId,
                         line: result.lineNumbers[index],
                     });
+                }
+            });
+
+            // Handle right-click on rendered tags
+            entryEl.addEventListener('contextmenu', (event) => {
+                // Remove previous context menus
+                const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+                contextMenu.forEach(menu => {
+                    if (!menu.contains(event.target)) {
+                        menu.remove();
+                    }
+                });
+                if (event.target.matches('.itags-search-renderedTag')) {
+                    // Prevent the default context menu from appearing
+                    event.preventDefault();
+
+                    // Get the tag text from the event target
+                    const tag = event.target.textContent;
+
+                    // Create the custom context menu container
+                    const contextMenu = document.createElement('div');
+                    contextMenu.classList.add('itags-search-contextMenu');
+                    contextMenu.style.position = 'absolute';
+                    contextMenu.style.left = `${event.clientX}px`;
+                    contextMenu.style.top = `${event.clientY}px`;
+
+                    // Create the "Remove tag" option
+                    const removeTag = document.createElement('span');
+                    const line = parseInt(event.target.getAttribute('data-line-number'));
+                    removeTag.textContent = `Remove tag`;
+                    removeTag.onclick = () => {
+                        webviewApi.postMessage({
+                            name: 'removeTag',
+                            externalId: result.externalId,
+                            line: result.lineNumbers[index] + line,
+                            text: result.text[index].split('\n')[line].trim(),
+                            tag: tag,
+                        });
+                        contextMenu.remove(); // Remove the context menu once the tag is removed
+                    };
+
+                    // Append the removeTag option to the contextMenu
+                    contextMenu.appendChild(removeTag);
+
+                    // Append the contextMenu to the body or a specific container within your application
+                    document.body.appendChild(contextMenu);
                 }
             });
 
@@ -485,10 +532,27 @@ function addLineNumberToCheckboxes(entryEl, text) {
     checkboxes.forEach(checkbox => {
         // Increment line number until the next checkbox is reached in the text content
         while (lineNumber < textContent.length && !textContent[lineNumber].includes(checkbox.nextSibling.textContent.trim())) {
-        lineNumber++;
+            lineNumber++;
         }
         // Set the data-line-number attribute to the calculated line number
-        checkbox.setAttribute('data-line-number', lineNumber); // Adjust line number to be 1-based
+        checkbox.setAttribute('data-line-number', lineNumber);
+    });
+}
+
+function addLineNumberToTags(entryEl, text) {
+    const textContent = text.split('\n');
+    let lineNumber = 0;
+    // Use querySelectorAll instead of find to select tags
+    const tags = entryEl.querySelectorAll('.itags-search-renderedTag');
+  
+    tags.forEach(tag => {
+        // Increment line number until the next tag is reached in the text content
+        while (lineNumber < textContent.length && !textContent[lineNumber].includes(tag.textContent.trim())) {
+            lineNumber++;
+        }
+        // Set the data-line-number attribute to the calculated line number
+        tag.setAttribute('data-line-number', lineNumber);
+        lineNumber++;
     });
 }
 
@@ -670,5 +734,35 @@ resultToggle.addEventListener('click', () => {
         resultToggleState = 'collapse';
         resultToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
         return;
+    }
+});
+
+document.addEventListener('click', (e) => {
+    const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+    contextMenu.forEach(menu => {
+        if (!menu.contains(e.target)) {
+            menu.remove();
+        }
+    });
+});
+
+document.addEventListener('contextmenu', (event) => {
+    if (event.target.matches('.itags-search-renderedTag')) {
+        return;
+    }
+    const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+    contextMenu.forEach(menu => {
+        if (!menu.contains(event.target)) {
+            menu.remove();
+        }
+    });
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+        contextMenu.forEach(menu => {
+            menu.remove();
+        });
     }
 });
