@@ -331,7 +331,7 @@ hr {
     background-color: var(--joplin-background-color);
     border: 1px solid var(--joplin-divider-color);
     border-radius: 5px;
-    box-shadow: 0 2px 10px color(var(--joplin-color) alpha(50%));
+    box-shadow: 0 2px 10px rgba(180, 180, 180, 0.2);
     padding: 5px 0;
     position: fixed;
     z-index: 1000;
@@ -346,4 +346,12 @@ hr {
 
 .itags-search-contextMenu span:hover {
     background-color: var(--joplin-background-color-hover3);
+}
+
+.itags-search-renameTag {
+    font-family: Avenir, Arial, sans-serif;
+    font-size: var(--joplin-font-size);
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-width: 0px;
 }

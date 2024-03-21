@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, runSearch } from './search';
-import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText } from './searchPanel';
 
 let query: Query[][] = [];
 let db = null;
@@ -415,16 +415,7 @@ joplin.plugins.register({
         const newBody = lines.join('\n');
         await joplin.data.put(['notes', message.externalId], null, { body: newBody });
 
-        // update note editor
-        const selectedNote = await joplin.workspace.selectedNote();
-        if ((selectedNote.id === message.externalId) && (newBody !== note.body)) {
-          // Update note editor if it's the currently selected note
-          await joplin.commands.execute('editor.setText', newBody);
-          await joplin.commands.execute('editor.execCommand', {
-            name: 'scrollToTagLine',
-            args: [message.line]
-          });
-        }
+        await updateNoteEditor(message, newBody);
 
       } else if (message.name === 'removeTag') {
         // update note content
@@ -435,16 +426,22 @@ joplin.plugins.register({
         const newBody = lines.join('\n');
         await joplin.data.put(['notes', message.externalId], null, { body: newBody });
 
-        // update note editor
-        const selectedNote = await joplin.workspace.selectedNote();
-        if ((selectedNote.id === message.externalId) && (newBody !== note.body)) {
-          // Update note editor if it's the currently selected note
-          await joplin.commands.execute('editor.setText', newBody);
-          await joplin.commands.execute('editor.execCommand', {
-            name: 'scrollToTagLine',
-            args: [message.line]
-          });
-        }
+        await updateNoteEditor(message, newBody);
+
+        // update the search panel
+        const results = await runSearch(db, query);
+        updatePanelResults(searchPanel, results, query);
+
+      } else if (message.name === 'renameTag') {
+        console.log(message);
+        // update note content
+        const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+        const lines: string[] = note.body.split('\n');
+        lines[message.line] = renameTagInText(lines[message.line], message.text, message.oldTag, message.newTag);
+        const newBody = lines.join('\n');
+        await joplin.data.put(['notes', message.externalId], null, { body: newBody });
+
+        await updateNoteEditor(message, newBody);
 
         // update the search panel
         const results = await runSearch(db, query);
@@ -453,3 +450,15 @@ joplin.plugins.register({
     });
   },
 });
+
+async function updateNoteEditor(message: any, newBody: string) {
+  const selectedNote = await joplin.workspace.selectedNote();
+  if ((selectedNote.id === message.externalId) && (newBody !== selectedNote.body)) {
+    // Update note editor if it's the currently selected note
+    await joplin.commands.execute('editor.setText', newBody);
+    await joplin.commands.execute('editor.execCommand', {
+      name: 'scrollToTagLine',
+      args: [message.line]
+    });
+  }
+}

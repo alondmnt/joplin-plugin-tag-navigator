@@ -91,11 +91,17 @@ export async function updatePanelSettings(panel: string) {
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
+  
   for (const group of groupedResults) {
+    group.html = []; // Ensure group.html is initialized as an empty array if not already done
     for (const section of group.text) {
       let processedSection = normalizeTextIndentation(section);
       if (resultMarker) {
-        processedSection = replaceOutsideBackticks(processedSection, tagRegex, '<span class="itags-search-renderedTag">$&</span>')
+        // Process each section by lines to track line numbers accurately
+        const lines = processedSection.split('\n');
+        processedSection = lines.map((line, lineNumber) => 
+          replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
+        ).join('\n');
       }
       processedSection = processedSection
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
@@ -186,6 +192,19 @@ export function removeTagFromText(line: string, text: string, tag: string) {
   // Remove the tag and any leading space from the line
   const tagRegex = new RegExp(`\\s*${tag}`);
   return line.replace(tagRegex, '');
+}
+
+export function renameTagInText(line: string, text: string, oldTag: string, newTag: string) {
+  // Check the line to see if it contains the text
+  if (!line.includes(text)) {
+    console.log('Error in renameTagInText: The line does not contain the expected text.');
+    console.log('Line:', line);
+    console.log('Text:', text);
+    return line;
+  }
+
+  // Replace the old tag with the new tag
+  return line.replace(oldTag, newTag);
 }
 
 export async function saveQuery(query: string, filter: string) {

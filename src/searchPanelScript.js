@@ -264,7 +264,6 @@ function updateResultsArea() {
             entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
             addLineNumberToCheckboxes(entryEl, result.text[index]);
-            addLineNumberToTags(entryEl, result.text[index]);
             entryEl.style.cursor = 'pointer'; // Make the content look clickable
             entryEl.querySelectorAll('.itags-search-resultSection > .contains-task-list > .task-list-item').forEach(item => {
                 item.style.position = 'relative'; // Ensure the element's position can be adjusted
@@ -302,39 +301,7 @@ function updateResultsArea() {
                     }
                 });
                 if (event.target.matches('.itags-search-renderedTag')) {
-                    // Prevent the default context menu from appearing
-                    event.preventDefault();
-
-                    // Get the tag text from the event target
-                    const tag = event.target.textContent;
-
-                    // Create the custom context menu container
-                    const contextMenu = document.createElement('div');
-                    contextMenu.classList.add('itags-search-contextMenu');
-                    contextMenu.style.position = 'absolute';
-                    contextMenu.style.left = `${event.clientX}px`;
-                    contextMenu.style.top = `${event.clientY}px`;
-
-                    // Create the "Remove tag" option
-                    const removeTag = document.createElement('span');
-                    const line = parseInt(event.target.getAttribute('data-line-number'));
-                    removeTag.textContent = `Remove tag`;
-                    removeTag.onclick = () => {
-                        webviewApi.postMessage({
-                            name: 'removeTag',
-                            externalId: result.externalId,
-                            line: result.lineNumbers[index] + line,
-                            text: result.text[index].split('\n')[line].trim(),
-                            tag: tag,
-                        });
-                        contextMenu.remove(); // Remove the context menu once the tag is removed
-                    };
-
-                    // Append the removeTag option to the contextMenu
-                    contextMenu.appendChild(removeTag);
-
-                    // Append the contextMenu to the body or a specific container within your application
-                    document.body.appendChild(contextMenu);
+                    createContextMenu(event, result, index);
                 }
             });
 
@@ -540,6 +507,7 @@ function addLineNumberToCheckboxes(entryEl, text) {
 }
 
 function addLineNumberToTags(entryEl, text) {
+    console.log(text);
     const textContent = text.split('\n');
     let lineNumber = 0;
     // Use querySelectorAll instead of find to select tags
@@ -554,6 +522,103 @@ function addLineNumberToTags(entryEl, text) {
         tag.setAttribute('data-line-number', lineNumber);
         lineNumber++;
     });
+}
+
+function createContextMenu(event, result, index) {
+    // Prevent the default context menu from appearing
+    event.preventDefault();
+
+    // Get the tag element and its text content
+    const tagElement = event.target;
+    const tag = tagElement.textContent;
+    const line = parseInt(tagElement.getAttribute('data-line-number'));
+
+    // Create the custom context menu container
+    const contextMenu = document.createElement('div');
+    contextMenu.classList.add('itags-search-contextMenu');
+    contextMenu.style.position = 'absolute';
+    contextMenu.style.left = `${event.clientX}px`;
+    contextMenu.style.top = `${event.clientY}px`;
+
+    // Create the "Rename tag" command
+    const renameTag = document.createElement('span');
+    renameTag.textContent = `Rename tag`;
+    renameTag.onclick = () => {
+        const input = document.createElement('input');
+        input.classList.add('itags-search-renameTag');
+        input.type = 'text';
+        input.value = tag; // Set default text to current tag name
+        input.style.width = `${tagElement.offsetWidth}px`;
+
+        // Replace the tag element with the input
+        tagElement.parentNode.replaceChild(input, tagElement);
+
+        // Focus the input and select the text
+        input.focus();
+        input.select();
+
+        let renameProcessed = false; // Flag to prevent multiple processing
+
+        // Define the function to finalize the renaming
+        const finalizeRename = () => {
+            if (renameProcessed) return; // If already processed, do nothing
+            renameProcessed = true; // Set the flag to true to prevent further processing
+
+            const newTag = input.value.trim();
+            if (newTag && newTag !== tag) { // Check if the new tag is different and not empty
+                console.log(line);
+                webviewApi.postMessage({
+                    name: 'renameTag',
+                    externalId: result.externalId,
+                    line: result.lineNumbers[index] + line,
+                    text: result.text[index].split('\n')[line].trim(),
+                    oldTag: tag,
+                    newTag: newTag,
+                });
+            }
+
+            // Replace input with the original tag element or an updated one
+            tagElement.textContent = newTag || tag; // Update tag text or revert if empty
+            if(input.parentNode){ // Check if the input is still in the DOM
+                input.parentNode.replaceChild(tagElement, input);
+            }
+        };
+
+        // Add event listeners to finalize renaming on Enter key or focus out
+        input.addEventListener('blur', finalizeRename);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                finalizeRename();
+                e.preventDefault();
+            } else if (e.key === 'Escape') {
+                input.value = tag; // Revert the input value to the original tag
+                finalizeRename();
+            }
+        });
+
+        contextMenu.remove();
+    };
+
+    // Create the "Remove tag" command
+    const removeTag = document.createElement('span');
+    removeTag.textContent = `Remove tag`;
+    removeTag.onclick = () => {
+        webviewApi.postMessage({
+            name: 'removeTag',
+            externalId: result.externalId,
+            line: result.lineNumbers[index] + line,
+            text: result.text[index].split('\n')[line].trim(),
+            tag: tag,
+        });
+        contextMenu.remove();
+    };
+
+    // Append commands to the contextMenu
+    contextMenu.appendChild(renameTag);
+    contextMenu.appendChild(removeTag);
+
+    // Append the contextMenu to the body or a specific container within your application
+    document.body.appendChild(contextMenu);
 }
 
 function collapseResults() {
