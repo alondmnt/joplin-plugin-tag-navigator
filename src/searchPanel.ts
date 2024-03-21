@@ -156,55 +156,87 @@ function normalizeTextIndentation(text: string): string {
   return normalizedLines.join('\n');
 }
 
-export function setCheckboxState(line: string, text: string, checked: boolean) {
+export async function setCheckboxState(message: any) {
   // This function modifies the checkbox state in a markdown task list item
   // line: The markdown string containing the task list item, possibly indented
   // text: The text of the task list item, in order to ensure that the line matches
   // checked: A boolean indicating the desired state of the checkbox (true for checked, false for unchecked)
+  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  const lines: string[] = note.body.split('\n');
+  const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  text = text.replace(/^\s*-\s*\[[x ]\]\s*/, '');
+  const text = message.text.replace(/^\s*-\s*\[[x ]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.log('Error in setCheckboxState: The line does not contain the expected text.');
-    return line;
+    lines[message.line] = line;
   }
 
-  if (checked) {
+  if (message.checked) {
     // If checked is true, ensure the checkbox is marked as checked (- [x])
     // \s* accounts for any leading whitespace
-    return line.replace(/^(\s*-\s*\[)\s(\])/g, '$1x$2');
+    lines[message.line] = line.replace(/^(\s*-\s*\[)\s(\])/g, '$1x$2');
   } else {
     // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
-    return line.replace(/^(\s*-\s*\[)x(\])/g, '$1 $2');
+    lines[message.line] = line.replace(/^(\s*-\s*\[)x(\])/g, '$1 $2');
   }
+
+  const newBody = lines.join('\n');
+  updateNote(message, newBody);
 }
 
-export function removeTagFromText(line: string, text: string, tag: string) {
+export async function removeTagFromText(message: any) {
+  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  const lines: string[] = note.body.split('\n');
+  const line = lines[message.line];
+
   // Check the line to see if it contains the text
-  if (!line.includes(text)) {
+  if (!line.includes(message.text)) {
     console.log('Error in removeTagFromText: The line does not contain the expected text.');
     console.log('Line:', line);
-    console.log('Text:', text);
+    console.log('Text:', message.text);
     return line;
   }
 
   // Remove the tag and any leading space from the line
-  const tagRegex = new RegExp(`\\s*${tag}`);
-  return line.replace(tagRegex, '');
+  const tagRegex = new RegExp(`\\s*${message.tag}`);
+  lines[message.line] = line.replace(tagRegex, '');
+
+  const newBody = lines.join('\n');
+  await updateNote(message, newBody);
 }
 
-export function renameTagInText(line: string, text: string, oldTag: string, newTag: string) {
+export async function renameTagInText(message: any) {
+  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  const lines: string[] = note.body.split('\n');
+  const line = lines[message.line];
+
   // Check the line to see if it contains the text
-  if (!line.includes(text)) {
+  if (!line.includes(message.text)) {
     console.log('Error in renameTagInText: The line does not contain the expected text.');
     console.log('Line:', line);
-    console.log('Text:', text);
+    console.log('Text:', message.text);
     return line;
   }
 
   // Replace the old tag with the new tag
-  return line.replace(oldTag, newTag);
+  lines[message.line] = line.replace(message.oldTag, message.newTag);
+  const newBody = lines.join('\n');
+  await updateNote(message, newBody);
+}
+
+async function updateNote(message: any, newBody: string) {
+  const selectedNote = await joplin.workspace.selectedNote();
+  if ((selectedNote.id === message.externalId) && (newBody !== selectedNote.body)) {
+    // Update note editor if it's the currently selected note
+    await joplin.commands.execute('editor.setText', newBody);
+    await joplin.commands.execute('editor.execCommand', {
+      name: 'scrollToTagLine',
+      args: [message.line]
+    });
+  }
+  await joplin.data.put(['notes', message.externalId], null, { body: newBody });
 }
 
 export async function saveQuery(query: string, filter: string) {
