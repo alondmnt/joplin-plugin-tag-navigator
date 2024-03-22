@@ -256,7 +256,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.refreshPanel',
-      label: 'Refresh inline tags panel',
+      label: 'Refresh inline tags navigation panel',
       iconName: 'fas fa-sync',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
@@ -293,6 +293,17 @@ joplin.plugins.register({
         }
       },
     });
+
+    await joplin.commands.register({
+      name: 'itags.loadQuery',
+      label: 'Load inline tags search query',
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+        const query = await loadQuery(db, note.body);
+        await updateQuery(searchPanel, query.query, query.filter);
+      },
+    })
 
     await joplin.commands.register({
       name: 'itags.updateDB',
@@ -337,6 +348,10 @@ joplin.plugins.register({
       {
         commandName: 'itags.updateDB',
         accelerator: 'Ctrl+Shift+D',
+      },
+      {
+        commandName: 'itags.loadQuery',
+        accelerator: 'Ctrl+Shift+L',
       },
       {
         commandName: 'itags.refreshPanel',
