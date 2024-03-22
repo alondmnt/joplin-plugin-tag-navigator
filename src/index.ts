@@ -210,27 +210,6 @@ joplin.plugins.register({
       './cm6scroller.js',
     );
 
-    await joplin.commands.register({
-      name: 'itags.convertNoteToJoplinTags',
-      label: "Convert note's inline tags to Joplin tags",
-      iconName: 'fas fa-tags',
-      execute: async () => {
-        // Get the selected note
-        const note = await joplin.workspace.selectedNote();
-
-        await convertNoteToJoplinTags(note);
-      },
-    });
-
-    await joplin.commands.register({
-      name: 'itags.convertAllNotesToJoplinTags',
-      label: "Convert all notes' inline tags to Joplin tags",
-      iconName: 'fas fa-tags',
-      execute: async () => {
-        await convertAllNotesToJoplinTags();
-      },
-    });
-
     db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
@@ -326,6 +305,27 @@ joplin.plugins.register({
         // Update search results
         const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'itags.convertNoteToJoplinTags',
+      label: "Convert note's inline tags to Joplin tags",
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        // Get the selected note
+        const note = await joplin.workspace.selectedNote();
+
+        await convertNoteToJoplinTags(note);
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'itags.convertAllNotesToJoplinTags',
+      label: "Convert all notes' inline tags to Joplin tags",
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        await convertAllNotesToJoplinTags();
       },
     });
 
