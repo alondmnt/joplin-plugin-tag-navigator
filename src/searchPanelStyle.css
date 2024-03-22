@@ -289,6 +289,7 @@ hr {
 	border-radius: 5px;
 	display: inline;
 }
+.itags-search-renderedTag:hover { background-color: #7aaab8; }
 
 #itags-search-renderedFilter {
     background-color: #eeee88;
