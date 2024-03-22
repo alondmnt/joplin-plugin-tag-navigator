@@ -226,6 +226,25 @@ export async function renameTagInText(message: any) {
   await updateNote(message, newBody);
 }
 
+export async function addTagToText(message: any) {
+  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  const lines: string[] = note.body.split('\n');
+  const line = lines[message.line];
+
+  // Check the line to see if it contains the text
+  if (!line.includes(message.text)) {
+    console.log('Error in addTagToText: The line does not contain the expected text.');
+    console.log('Line:', line);
+    console.log('Text:', message.text);
+    return line;
+  }
+
+  // Add the tag to the line
+  lines[message.line] = `${line} ${message.tag}`;
+  const newBody = lines.join('\n');
+  await updateNote(message, newBody);
+}
+
 async function updateNote(message: any, newBody: string) {
   const selectedNote = await joplin.workspace.selectedNote();
   if ((selectedNote.id === message.externalId) && (newBody !== selectedNote.body)) {

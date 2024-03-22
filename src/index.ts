@@ -5,7 +5,7 @@ import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
 import { Query, runSearch } from './search';
-import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText } from './searchPanel';
+import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
 let query: Query[][] = [];
 let db = null;
@@ -434,6 +434,13 @@ joplin.plugins.register({
 
       } else if (message.name === 'renameTag') {
         await renameTagInText(message);
+
+        // update the search panel
+        const results = await runSearch(db, query);
+        updatePanelResults(searchPanel, results, query);
+
+      } else if (message.name === 'addTag') {
+        await addTagToText(message);
 
         // update the search panel
         const results = await runSearch(db, query);

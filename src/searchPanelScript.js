@@ -530,7 +530,7 @@ function createContextMenu(event, result, index) {
 
     // Get the tag element and its text content
     const tagElement = event.target;
-    const tag = tagElement.textContent;
+    const currentTag = tagElement.textContent;
     const line = parseInt(tagElement.getAttribute('data-line-number'));
 
     // Create the custom context menu container
@@ -540,62 +540,44 @@ function createContextMenu(event, result, index) {
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
 
+    // Create the "Add tag" command
+    const addTag = document.createElement('span');
+    addTag.textContent = `Add tag`;
+    addTag.onclick = () => {
+        // Create an input field to add a new tag
+        const input = createInputField('#new-tag', tagElement, (input) => {
+            const newTag = input.value;
+            if (newTag && newTag !== '#new-tag') {
+                webviewApi.postMessage({
+                    name: 'addTag',
+                    externalId: result.externalId,
+                    line: result.lineNumbers[index] + line,
+                    text: result.text[index].split('\n')[line].trim(),
+                    tag: newTag,
+                });
+            }
+        });
+        contextMenu.remove();
+    };
+
     // Create the "Rename tag" command
     const renameTag = document.createElement('span');
     renameTag.textContent = `Rename tag`;
     renameTag.onclick = () => {
-        const input = document.createElement('input');
-        input.classList.add('itags-search-renameTag');
-        input.type = 'text';
-        input.value = tag; // Set default text to current tag name
-        input.style.width = `${tagElement.offsetWidth}px`;
-
-        // Replace the tag element with the input
-        tagElement.parentNode.replaceChild(input, tagElement);
-
-        // Focus the input and select the text
-        input.focus();
-        input.select();
-
-        let renameProcessed = false; // Flag to prevent multiple processing
-
-        // Define the function to finalize the renaming
-        const finalizeRename = () => {
-            if (renameProcessed) return; // If already processed, do nothing
-            renameProcessed = true; // Set the flag to true to prevent further processing
-
-            const newTag = input.value.trim();
-            if (newTag && newTag !== tag) { // Check if the new tag is different and not empty
-                console.log(line);
+        // Create an input field with the tag text
+        const input = createInputField(currentTag, tagElement, (input) => {
+            const newTag = input.value;
+            if (newTag && newTag !== currentTag) {
                 webviewApi.postMessage({
                     name: 'renameTag',
                     externalId: result.externalId,
                     line: result.lineNumbers[index] + line,
                     text: result.text[index].split('\n')[line].trim(),
-                    oldTag: tag,
+                    oldTag: currentTag,
                     newTag: newTag,
                 });
             }
-
-            // Replace input with the original tag element or an updated one
-            tagElement.textContent = newTag || tag; // Update tag text or revert if empty
-            if(input.parentNode){ // Check if the input is still in the DOM
-                input.parentNode.replaceChild(tagElement, input);
-            }
-        };
-
-        // Add event listeners to finalize renaming on Enter key or focus out
-        input.addEventListener('blur', finalizeRename);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                finalizeRename();
-                e.preventDefault();
-            } else if (e.key === 'Escape') {
-                input.value = tag; // Revert the input value to the original tag
-                finalizeRename();
-            }
         });
-
         contextMenu.remove();
     };
 
@@ -608,17 +590,60 @@ function createContextMenu(event, result, index) {
             externalId: result.externalId,
             line: result.lineNumbers[index] + line,
             text: result.text[index].split('\n')[line].trim(),
-            tag: tag,
+            tag: currentTag,
         });
         contextMenu.remove();
     };
 
     // Append commands to the contextMenu
+    contextMenu.appendChild(addTag);
     contextMenu.appendChild(renameTag);
     contextMenu.appendChild(removeTag);
 
     // Append the contextMenu to the body or a specific container within your application
     document.body.appendChild(contextMenu);
+}
+
+function createInputField(defaultTag, tagElement, finalizeFunction) {
+    const input = document.createElement('input');
+    input.classList.add('itags-search-renameTag');
+    input.type = 'text';
+    input.value = defaultTag;
+    input.style.width = `${tagElement.offsetWidth}px`;
+
+    // Replace the tag element with the input
+    tagElement.parentNode.replaceChild(input, tagElement);
+    // Focus the input and select the text
+    input.focus();
+    input.select();
+
+    let renameProcessed = false; // Flag to prevent multiple processing
+
+    // Define the function to finalize the renaming
+    const finalizeInput = () => {
+        if (renameProcessed) return; // If already processed, do nothing
+        renameProcessed = true; // Set the flag to true to prevent further processing
+
+        finalizeFunction(input);
+
+        // Replace input with the original tag element
+        const newTag = input.value;
+        if(input.parentNode){ // Check if the input is still in the DOM
+            input.parentNode.replaceChild(tagElement, input);
+        }
+    }
+
+    // Add event listeners to finalize renaming on Enter key or focus out
+    input.addEventListener('blur', finalizeInput);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            finalizeInput();
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            input.value = defaultTag; // Revert the input value to the original tag
+            finalizeInput();
+        }
+    });
 }
 
 function collapseResults() {
