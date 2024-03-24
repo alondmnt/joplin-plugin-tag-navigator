@@ -142,7 +142,7 @@ async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlock
     }
 
     // Process links
-    const linkLines = await parseLinkLines(note.body);
+    const linkLines = await parseLinkLines(note.body, ignoreCodeBlocks, inheritTags);
     for (const linkLine of linkLines) {
       const linkedNoteId = await getNoteId(db, linkLine.noteId, linkLine.title);
       if (linkedNoteId) {

@@ -57,7 +57,7 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
         if (!tagsLevel.has(tag)) {
           tagsLevel.set(tag, indentLevel);
         } else if (tagsLevel.get(tag) < 0) {
-            tagsLevel.set(tag, indentLevel);
+          tagsLevel.set(tag, indentLevel);
         }
 
         const tagInfo = tagsMap.get(tag);
@@ -82,35 +82,77 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
   return tagsLines;
 }
 
-export async function parseLinkLines(text: string): Promise<LinkExtract[]> {
-    return new Promise((resolve) => {
-        const lines = text.split('\n');
-        const results: LinkExtract[] = [];
+export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<LinkExtract[]> {
+  const lines = text.split('\n');
+  const results: LinkExtract[] = [];
+  let linkLevel = new Map<string, number>();
+  let inCodeBlock = false;
 
-        lines.forEach((line, index) => {
-            let match;
-            // Extracting Markdown links
-            while ((match = linkRegex.exec(line)) !== null) {
-                results.push({
-                    title: match[1],
-                    noteId: match[2].match(noteIdRegex)?.[0],
-                    line: index,
-                });
-            }
-            // Resetting lastIndex since we are reusing the RegExp
-            linkRegex.lastIndex = 0;
+  lines.forEach((line, index) => {
+    // Toggle code block status
+    if (line.match('```')) {
+      inCodeBlock = !inCodeBlock;
+    }
+    // Skip code blocks if needed
+    if (inCodeBlock && ignoreCodeBlocks) {
+      return;
+    }
 
-            // Extracting WikiLinks
-            while ((match = wikiLinkRegex.exec(line)) !== null) {
-                results.push({
-                    title: match[1],
-                    line: index,
-                });
-            }
-            // Resetting lastIndex for the same reason
-            wikiLinkRegex.lastIndex = 0;
+    const indentLevel = line.match(/^\s*/)[0].length;
+    // Go over all linkLevel
+    linkLevel.forEach((level, key) => {
+      if (indentLevel <= level) {
+        // We're above the level where the link was found, reset it
+        linkLevel.set(key, -1);
+      } else if (inheritTags && level >= 0) {
+        // Add the line to the link
+        const result = JSON.parse(key);
+        results.push({
+          title: result.title,
+          noteId: result.noteId,
+          line: index,
         });
-
-        resolve(results);
+      }
     });
+
+    let match: RegExpExecArray;
+    // Extracting Markdown links
+    while ((match = linkRegex.exec(line)) !== null) {
+      results.push({
+          title: match[1],
+          noteId: match[2].match(noteIdRegex)?.[0],
+          line: index,
+      });
+
+      // Set link level
+      const key = JSON.stringify({ title: match[1], noteId: match[2].match(noteIdRegex)?.[0] });
+      if (!linkLevel.has(key)) {
+        linkLevel.set(key, indentLevel);
+      } else if (linkLevel.get(key) < 0) {
+        linkLevel.set(key, indentLevel);
+      }
+    }
+    // Resetting lastIndex since we are reusing the RegExp
+    linkRegex.lastIndex = 0;
+
+    // Extracting WikiLinks
+    while ((match = wikiLinkRegex.exec(line)) !== null) {
+      results.push({
+          title: match[1],
+          line: index,
+      });
+
+      // Set link level
+      const key = JSON.stringify({ title: match[1] });
+      if (!linkLevel.has(key)) {
+        linkLevel.set(key, indentLevel);
+      } else if (linkLevel.get(key) < 0) {
+        linkLevel.set(key, indentLevel);
+      }
+    }
+    // Resetting lastIndex for the same reason
+    wikiLinkRegex.lastIndex = 0;
+  });
+
+  return results;
 }
