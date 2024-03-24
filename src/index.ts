@@ -397,10 +397,11 @@ joplin.plugins.register({
           }
         }
         // Navigate to the line
-        if (message.line > 0) {
+        const lineIndex = parseInt(message.line);
+        if (lineIndex > 0) {
           await joplin.commands.execute('editor.execCommand', {
             name: 'scrollToTagLine',
-            args: [message.line]
+            args: [lineIndex]
           });
         }
         // Update the panel
@@ -429,7 +430,7 @@ joplin.plugins.register({
 
         await joplin.commands.execute('editor.execCommand', {
           name: 'scrollToTagLine',
-          args: [message.line]
+          args: [parseInt(message.line)]
         });
 
       } else if (message.name === 'setCheckBox') {
