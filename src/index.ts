@@ -195,7 +195,10 @@ joplin.plugins.register({
     if (periodicConversion > 0) {
       setInterval(async () => {
         console.log('Periodic inline tags update');
-        await convertAllNotesToJoplinTags();
+        const tagRegex = await getTagRegex();
+        const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+        const inheritTags = await joplin.settings.value('itags.inheritTags');
+        await convertAllNotesToJoplinTags(tagRegex, ignoreCodeBlocks, inheritTags);
       }, periodicConversion * 60 * 1000);
     }
 
@@ -245,6 +248,7 @@ joplin.plugins.register({
 
       // Note panel update
       tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);
+      console.log(tagLines);
       await updateNotePanel(notePanel, tagLines);
 
       if (query.flatMap(x => x).some(x => x.externalId == 'current')) {
@@ -327,7 +331,10 @@ joplin.plugins.register({
         // Get the selected note
         const note = await joplin.workspace.selectedNote();
 
-        await convertNoteToJoplinTags(note);
+        const tagRegex = await getTagRegex();
+        const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+        const inheritTags = await joplin.settings.value('itags.inheritTags');
+        await convertNoteToJoplinTags(note, tagRegex, ignoreCodeBlocks, inheritTags);
       },
     });
 
@@ -336,7 +343,10 @@ joplin.plugins.register({
       label: "Convert all notes' inline tags to Joplin tags",
       iconName: 'fas fa-tags',
       execute: async () => {
-        await convertAllNotesToJoplinTags();
+        const tagRegex = await getTagRegex();
+        const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+        const inheritTags = await joplin.settings.value('itags.inheritTags');
+        await convertAllNotesToJoplinTags(tagRegex, ignoreCodeBlocks, inheritTags);
       },
     });
 

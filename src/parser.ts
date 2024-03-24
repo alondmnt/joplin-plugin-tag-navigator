@@ -7,80 +7,77 @@ const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
 
 type LinkExtract = { title: string; noteId?: string; line: number };
 
+interface TagLineInfo {
+  tag: string;
+  lines: number[];
+  count: number;
+  index: number;
+}
+
 export async function getTagRegex(): Promise<RegExp> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
   return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
 }
 
-export async function parseUniqueTags(text: string): Promise<string[]> {
-  const tagsMatch = text.toLowerCase().match(await getTagRegex());
-  let uniqueTags = tagsMatch ? [...new Set(tagsMatch)] : [];
-
-  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
-  if (excludeRegex) {
-    const excludeReg = new RegExp(excludeRegex, 'g');
-    uniqueTags = uniqueTags.filter((tag) => !tag.match(excludeReg)) || [];
-  }
-
-  return uniqueTags;
-}
-
-export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean):
-    Promise<{ tag: string, lines: number[], count: number, index: number }[]> {
-  const tags = await parseUniqueTags(text);
-
-  if (tags.length === 0) {
-    return [];
-  }
-
-  // For each tag, list the lines it appears in
-  // In an outline or indented text, each child item has all the tags of the parent items
-  const lines = text.toLocaleLowerCase().split('\n');
+export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
-  let tagsLines = tags.map((tag) => {
-    let tagLevel = -1;
-    const tagLines: number[] = lines.reduce((acc, line, index) => {
-      // skip blocks
-      if (line.match('```')) {
-        inCodeBlock = !inCodeBlock;
-      }
-      if (inCodeBlock && ignoreCodeBlocks) {
-        return acc;
-      }
+  let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
+  let tagsLevel = new Map<string, number>();
+  const lines = text.toLocaleLowerCase().split('\n');
 
-      // remove tags from the stack
-      const indentLevel = line.match(/^\s*/)[0].length;
-      if (indentLevel <= tagLevel) {
-        tagLevel = -1;
-      }
+  lines.forEach((line, lineIndex) => {
+    // Toggle code block status
+    if (line.match('```')) {
+      inCodeBlock = !inCodeBlock;
+    }
+    // Skip code blocks if needed
+    if (inCodeBlock && ignoreCodeBlocks) {
+      return;
+    }
 
-      // add tag in line
-      if (line.match(tagRegex)?.includes(tag)) {
-        acc.push(index);
-        if (tagLevel < 0) {
-          tagLevel = indentLevel;
+    const indentLevel = line.match(/^\s*/)[0].length;
+    // Go over all tagsLevel
+    tagsLevel.forEach((level, tag) => {
+      if (indentLevel <= level) {
+        // We're above the level where the tag was found, reset it
+        tagsLevel.set(tag, -1);
+      } else if (inheritTags && level >= 0) {
+        // Add the line to the tag
+        tagsMap.get(tag).lines.add(lineIndex);
+      }
+    });
+
+    const matches = line.match(tagRegex);
+    if (matches) {
+      matches.forEach((tag) => {
+        if (!tagsMap.has(tag)) {
+          tagsMap.set(tag, { lines: new Set<number>(), count: 0 });
         }
-        return acc;
-      }
+        // Set tag level
+        if (!tagsLevel.has(tag)) {
+          tagsLevel.set(tag, indentLevel);
+        } else if (tagsLevel.get(tag) < 0) {
+            tagsLevel.set(tag, indentLevel);
+        }
 
-      // add all the tags from the higher levels
-      if (inheritTags && tagLevel >= 0 && indentLevel > tagLevel) {
-        acc.push(index);
-      }
-
-      return acc
-    }, []);
-    return { tag, lines: tagLines, count: tagLines.length, index: 0 };
+        const tagInfo = tagsMap.get(tag);
+        tagInfo.lines.add(lineIndex);
+        tagInfo.count++;
+        tagsMap.set(tag, tagInfo);
+      });
+    }
   });
 
-  // Remove tags that don't appear in the note
-  tagsLines = tagsLines.filter((tagLine) => tagLine.count > 0);
+  // Convert Map to array structure
+  let tagsLines: TagLineInfo[] = Array.from(tagsMap.keys()).map((tag) => ({
+    tag: tag,
+    lines: Array.from(tagsMap.get(tag).lines),
+    count: tagsMap.get(tag).count,
+    index: 0,
+  }));
 
-  // Sort by the tag name
-  tagsLines.sort((a, b) => a.tag.localeCompare(b.tag));
-
-  // Sort by the number of appearances (most common tags first)
-  tagsLines.sort((a, b) => b.count - a.count);
+  // Sort the result as needed
+  tagsLines.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 
   return tagsLines;
 }
