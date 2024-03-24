@@ -436,6 +436,10 @@ joplin.plugins.register({
       } else if (message.name === 'setCheckBox') {
         await setCheckboxState(message);
 
+        // update the search panel
+        const results = await runSearch(db, query);
+        updatePanelResults(searchPanel, results, query);
+
       } else if (message.name === 'removeTag') {
         await removeTagFromText(message);
 
