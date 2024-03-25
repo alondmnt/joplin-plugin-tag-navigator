@@ -5,6 +5,8 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 - It adds a panel for searching tagged paragraphs across your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
     - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
     - Tag-by-notes: You may also search for links or [[wikilinks]] to notes.
+    - Add, replace and remove inline tags via the panel context menu (right-click on a tag).
+    - Toggle checkboxes / TODOs from the panel.
 - It adds a panel for navigating between inline tags that appear in the current note.
 - It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 
@@ -24,9 +26,9 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - The definition of a "tag" can be adjusted with user-defined regular expressions.
     - For example, every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
-- Tag search can be used to search, filter and toggle checkboxes (inline TODOs) directly from the panel.
+- Inline TODOs:
     - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
-    - To support [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates one can use a custom regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@+]*\w)`.
+    - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@+]*\w)`.
 - Tag / note filter keyboard shortcuts:
 
 | Key | Action |
