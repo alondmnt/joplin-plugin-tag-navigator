@@ -24,6 +24,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Tips
 
+- If any of the actions on note results does not work (toggling checkboxses, editing tags), this is usually resolved by a database update (Ctrl+Shift+D).
 - The definition of a "tag" can be adjusted with user-defined regular expressions.
     - For example, every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - Inline TODOs:
