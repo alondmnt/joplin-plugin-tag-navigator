@@ -86,7 +86,7 @@ body {
 }
 
 #itags-search-queryArea {
-    max-height: 105px; /* Adjust the height as needed */
+    height: 38px;
     margin-top: 5px;
     margin-bottom: 5px;
     border-color: rgb(118, 118, 118);
@@ -94,7 +94,9 @@ body {
     border-style: solid;
     border-radius: 3px;
     padding: 5px;
-    overflow-y: auto;
+    white-space: nowrap;
+    overflow-y: hidden;
+    overflow-x: auto;
     font-size: var(--joplin-font-size);
     box-sizing: border-box;
 }
