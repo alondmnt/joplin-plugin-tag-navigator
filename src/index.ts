@@ -248,7 +248,6 @@ joplin.plugins.register({
 
       // Note panel update
       tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);
-      console.log(tagLines);
       await updateNotePanel(notePanel, tagLines);
 
       if (query.flatMap(x => x).some(x => x.externalId == 'current')) {
@@ -430,7 +429,7 @@ joplin.plugins.register({
 
         await joplin.commands.execute('editor.execCommand', {
           name: 'scrollToTagLine',
-          args: [parseInt(message.line)]
+          args: [message.line]
         });
 
       } else if (message.name === 'setCheckBox') {
