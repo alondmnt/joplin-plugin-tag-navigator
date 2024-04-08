@@ -41,6 +41,25 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 | Arrow-Down | Toggle negation of last tag / note in query |
 | Arrow-Up | Toggle last operator AND <--> OR |
 
+## Companion plugins
+
+- The excellent [Inline Tags](https://github.com/roman-r-m/joplin-inline-tags-plugin) plugin can help you add tags on the fly.
+- You can highlight tags in the Markdown editor using [Rich Markdown](https://github.com/CalebJohn/joplin-rich-markdown) (version ≥ 0.14).
+    - In `Joplin settings --> Rich Markdown --> Advanced Settings --> Custom classes JSON` enter:
+    ```
+    [{"name": "rm-tag", "regex": "(?<=^|\\s)#([^\\s#]*\\w)"}]
+    ```
+    - In `Joplin settings --> Appearance --> Custom stylesheet for Joplin-wide app styles` add the following to the style sheet:
+    ```
+    div.CodeMirror .cm-rm-tag {
+        background-color: #7698b3;
+        color: white !important;
+        padding: 0em 0.2em;
+        border-radius: 0.5em;
+        display: inline;
+    }
+    ```
+
 ## Motivation
 
 - Notes are arguably the atomic blocks of information in [Joplin](https://joplinapp.org). They can be linked to, tagged, and come up in search results. Joplin is optimised for this, and these features are pretty efficient.
@@ -53,11 +72,5 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 1. Be able to tag and efficiently search single paragraphs among all notes, using tags and free text.
 2. Browse the entire content of these paragraphs without having to open each note.
 3. Make this accessible and user-friendly.
-
-## Companion plugins
-
-- The excellent [Inline Tags](https://github.com/roman-r-m/joplin-inline-tags-plugin) plugin can help you add tags on the fly
-- I created a fork for the [Rich Markdown](https://github.com/alondmnt/joplin-rich-markdown) plugin and updated the "Stylish" style to highlight inline tags in notes ([download](https://github.com/alondmnt/joplin-rich-markdown/releases/download/cm-rm-tag/plugin.calebjohn.rich-markdown.jpl))
-
 
 [![DOI](https://zenodo.org/badge/753598497.svg)](https://zenodo.org/doi/10.5281/zenodo.10701718)
