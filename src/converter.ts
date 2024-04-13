@@ -24,6 +24,29 @@ export async function convertAllNotesToJoplinTags(tagRegex: RegExp, ignoreCodeBl
   }
 }
 
+export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix: string, location: string) {
+  const ignoreHtmlNotes = true;
+  // Get all notes
+  let hasMore = true;
+  let page = 0;
+  while (hasMore) {
+    const notes = await joplin.data.get(['notes'], {
+      fields: ['id', 'body', 'markup_language'],
+      limit: 50,
+      page: page++,
+    });
+    hasMore = notes.has_more;
+
+    // Process the notes synchronously to avoid issues
+    for (const note of notes.items) {
+      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        continue;
+      }
+      await convertNoteToInlineTags(note, listPrefix, tagPrefix, location);
+    }
+  }
+}
+
 export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean) {
 
   // Prase all inline tags from the note
@@ -65,4 +88,23 @@ export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, ignor
       id: note.id
     });
   }
+}
+
+export async function convertNoteToInlineTags(note: any, listPrefix: string, tagPrefix: string, location: string) {
+  const noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
+  const tagList = listPrefix + noteTags.items
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .map(tag => tagPrefix + tag.title).join(' ');
+  if (note.body.includes(tagList + '\n')) { return; }
+
+  // need to remove previous lists
+  const lines = note.body.split('\n');
+  const filteredLines = lines.filter(line => !line.startsWith(listPrefix));
+  if (location === 'top') {
+    note.body = tagList + '\n' + filteredLines.join('\n');
+  } else {
+    note.body = filteredLines.join('\n') + '\n' + tagList;
+  }
+
+  await joplin.data.put(['notes', note.id], null, { body: note.body });
 }

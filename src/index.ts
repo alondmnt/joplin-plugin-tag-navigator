@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types';
-import { convertAllNotesToJoplinTags, convertNoteToJoplinTags } from './converter';
+import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes } from './db';
@@ -188,6 +188,38 @@ joplin.plugins.register({
         label: 'Minimum tag count',
         description: 'Minimum number of occurrences for a tag to be included.',
       },
+      'itags.tagPrefix': {
+        value: '#',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        advanced: true,
+        label: 'Tag prefix',
+        description: 'Prefix for converted Joplin tags.',
+      },
+      'itags.listPrefix': {
+        value: 'tags: ',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        advanced: true,
+        label: 'List prefix',
+        description: 'How the line with converted Joplin tags should begin.',
+      },
+      'itags.location': {
+        value: 'top',
+        type: SettingItemType.String,
+        section: 'itags',
+        public: true,
+        advanced: true,
+        label: 'Location',
+        description: 'Location for converted Joplin tags.',
+        isEnum: true,
+        options: {
+          top: 'Top',
+          bottom: 'Bottom',
+        }
+      },
     });
 
     // Periodic conversion of tags
@@ -349,6 +381,36 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'itags.convertNoteToInlineTags',
+      label: "Convert note's Joplin tags to inline tags",
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        // Get the selected note
+        let note = await joplin.workspace.selectedNote();
+        const listPrefix = await joplin.settings.value('itags.listPrefix');
+        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+        const location = await joplin.settings.value('itags.location');
+        await convertNoteToInlineTags(note, listPrefix, tagPrefix, location);
+        note = await joplin.workspace.selectedNote();
+        await joplin.commands.execute('editor.setText', note.body);
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'itags.convertAllNotesToInlineTags',
+      label: "Convert all notes' Joplin tags to inline tags",
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        const listPrefix = await joplin.settings.value('itags.listPrefix');
+        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+        const location = await joplin.settings.value('itags.location');
+        await convertAllNotesToInlineTags(listPrefix, tagPrefix, location);
+        const note = await joplin.workspace.selectedNote();
+        await joplin.commands.execute('editor.setText', note.body);
+      },
+    });
+
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.toggleSearch',
@@ -374,6 +436,12 @@ joplin.plugins.register({
       },
       {
         commandName: 'itags.convertAllNotesToJoplinTags',
+      },
+      {
+        commandName: 'itags.convertNoteToInlineTags',
+      },
+      {
+        commandName: 'itags.convertAllNotesToInlineTags',
       },
     ], MenuItemLocation.Tools);
     await joplin.views.menuItems.create('itags.convertNoteToJoplinTags', 'itags.convertNoteToJoplinTags', MenuItemLocation.Note);
