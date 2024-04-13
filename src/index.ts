@@ -1,9 +1,10 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, SettingItemType } from 'api/types';
+import * as debounce from 'lodash.debounce';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
-import { processAllNotes } from './db';
+import { processAllNotes, processNote, removeNoteLinks, removeNoteTags } from './db';
 import { Query, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
@@ -224,6 +225,21 @@ joplin.plugins.register({
         }
       },
     });
+
+    const processNoteTags = debounce(async () => {
+      console.log('note change');
+      const note = await joplin.workspace.selectedNote();
+      const tagRegex = await getTagRegex();
+      const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+      const inheritTags = await joplin.settings.value('itags.inheritTags');
+      await removeNoteTags(db, note.id);
+      await removeNoteLinks(db, note.id);
+      await processNote(db, note, tagRegex, ignoreCodeBlocks, inheritTags);
+
+      // Update search results
+      const results = await runSearch(db, query);
+      updatePanelResults(searchPanel, results, query);
+    }, 1000);
 
     // Periodic conversion of tags
     const periodicConversion: number = await joplin.settings.value('itags.periodicConversion');
@@ -456,6 +472,10 @@ joplin.plugins.register({
           event.keys.includes('itags.resultMarker')) {
         await updatePanelSettings(searchPanel);
       }
+    });
+
+    await joplin.workspace.onNoteChange(async () => {
+      await processNoteTags();
     });
 
     await joplin.views.panels.onMessage(notePanel, async (message) => {

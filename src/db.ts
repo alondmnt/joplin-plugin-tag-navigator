@@ -125,7 +125,7 @@ export async function processAllNotes() {
   return db;
 }
 
-async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean) {
+export async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean) {
   try {
     // Start a transaction
     await run(db, 'BEGIN TRANSACTION');
@@ -214,4 +214,14 @@ async function filterTags(db: any, minCount: number) {
   // delete from Tags and NoteTags where tagId counts are less than minCount
   await run(db, `DELETE FROM Tags WHERE tagId NOT IN (SELECT tagId FROM NoteTags GROUP BY tagId HAVING COUNT(*) >= ?)`, [minCount]);
   await run(db, `DELETE FROM NoteTags WHERE tagId NOT IN (SELECT tagId FROM Tags)`);
+}
+
+export async function removeNoteTags(db: any, noteId: string) {
+  const numId = await insertOrGetNoteId(db, noteId, '');
+  await run(db, `DELETE FROM NoteTags WHERE noteId = ?`, [numId]);
+}
+
+export async function removeNoteLinks(db: any, noteId: string) {
+  const numId = await insertOrGetNoteId(db, noteId, '');
+  await run(db, `DELETE FROM NoteLinks WHERE noteId = ?`, [numId]);
 }
