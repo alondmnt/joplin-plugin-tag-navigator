@@ -1,6 +1,6 @@
 # Inline Tag Navigator
 
-This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in three ways:
+This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in four ways:
 
 - It adds a panel for searching tagged paragraphs across your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
     - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
@@ -9,6 +9,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Toggle checkboxes / TODOs from the panel.
 - It adds a panel for navigating between inline tags that appear in the current note.
 - It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
+- It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin).
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
