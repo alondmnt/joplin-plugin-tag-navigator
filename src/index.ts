@@ -208,7 +208,7 @@ joplin.plugins.register({
         public: true,
         advanced: true,
         label: 'List prefix',
-        description: 'How the line with converted Joplin tags should begin.',
+        description: 'How the line with converted Joplin tags should begin (at least 3 chars long).',
       },
       'itags.location': {
         value: 'top',

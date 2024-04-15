@@ -99,7 +99,10 @@ export async function convertNoteToInlineTags(note: any, listPrefix: string, tag
 
   // need to remove previous lists
   const lines = note.body.split('\n');
-  const filteredLines = lines.filter(line => !line.startsWith(listPrefix));
+  let filteredLines = lines;
+  if (listPrefix.length > 2) {
+    filteredLines = lines.filter(line => !line.startsWith(listPrefix));
+  }
   if (location === 'top') {
     note.body = tagList + '\n' + filteredLines.join('\n');
   } else {
