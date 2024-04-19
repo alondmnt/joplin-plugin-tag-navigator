@@ -20,7 +20,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
         }
 
         // Scroll to line, place the line at the *top* of the editor
-        const lineInfo = editor.state.doc.line(lineNumber);
+        const lineInfo = editor.state.doc.line(lineNumber + 1);
         editor.dispatch(editor.state.update({
             effects: EditorView.scrollIntoView(lineInfo.from, {y: 'start'})
         }));
