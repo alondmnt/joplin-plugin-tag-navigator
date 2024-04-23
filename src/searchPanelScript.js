@@ -247,15 +247,15 @@ function updateResultsArea() {
             contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
         }
 
+        const parsedFilter = parseFilter(filter, min_chars=3);
+        const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
             if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget=result.title)) {
                 continue; // Skip entries that don't match the filter
             }
-            const parsedFilter = parseFilter(filter, min_chars=3);
             if (resultMarker && (parsedFilter.length > 0)) {
                 // Mark any word containing at least 3 characters
-                const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
                 entry = entry.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
                 titleEl.innerHTML = titleEl.textContent.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
             }

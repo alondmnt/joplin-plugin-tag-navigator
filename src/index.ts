@@ -5,7 +5,7 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes, processNote, removeNoteLinks, removeNoteTags } from './db';
-import { Query, runSearch } from './search';
+import { Query, displayResults, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
 let query: Query[][] = [];
@@ -227,7 +227,6 @@ joplin.plugins.register({
     });
 
     const processNoteTags = debounce(async () => {
-      console.log('note change');
       const note = await joplin.workspace.selectedNote();
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
@@ -296,6 +295,11 @@ joplin.plugins.register({
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
+
+      // Update results in note
+      if (savedQuery.displayInNote) {
+        await displayResults(db, savedQuery.query, savedQuery.filter, note);
+      }
 
       // Note panel update
       tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);

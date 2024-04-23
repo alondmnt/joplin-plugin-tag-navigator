@@ -24,6 +24,9 @@ export interface GroupedResult {
   createdTime?: number;
 }
 
+export const resultsStart = '<!-- itags-results-start -->';
+export const resultsEnd = '<!-- itags-results-end -->';
+
 export async function runSearch(db: any, query: Query[][]): Promise<GroupedResult[]> {
   const currentNote = (await joplin.workspace.selectedNote());
   const dbQuery = convertToDbQuery(query, currentNote);
@@ -177,4 +180,70 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
   result.createdTime = note.created_time;
 
   return result
+}
+
+export async function displayResults(db: any, query: string, filter: string, note: any) {
+  const results = await runSearch(db, JSON.parse(query));
+  const filteredResults = filterResults(results, filter);
+
+  // TODO: sort results according to default settings
+
+  // Create the results string
+  let resultsString = resultsStart;
+  for (const result of filteredResults) {
+    resultsString += `\n## ${result.title}\n`;
+    for (let i = 0; i < result.text.length; i++) {
+      resultsString += `${result.text[i]}\n\n---\n`;
+    }
+  }
+  resultsString += resultsEnd;
+
+  // Update the note
+  const resultsRegExp = new RegExp(`${resultsStart}.*${resultsEnd}`, 's')
+  if (resultsRegExp.test(note.body)) {
+    note.body = note.body.replace(resultsRegExp, resultsString);
+  } else {
+    note.body += '\n' + resultsString;
+  }
+  await joplin.data.put(['notes', note.id], null, { body: note.body });
+  await joplin.commands.execute('editor.setText', note.body);
+}
+
+// Filter results, like the search panel
+function filterResults(results: GroupedResult[], filter: string): GroupedResult[] {
+  if (!filter) { return results; }
+
+  const parsedFilter = parseFilter(filter);
+  const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
+  for (const note of results) {
+    note.text = note.text.filter(text => containsFilter(text, filter, 2, note.title));
+    if ((parsedFilter.length > 0)) {
+      note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
+      note.title = note.title.replace(filterRegExp, '==$1==');
+    }
+  }
+  return results.filter(note => note.text.length > 0);
+}
+
+// Check that all words are in the target, like the search panel
+function containsFilter(target: string, filter: string, min_chars: number=1, otherTarget: string=''): boolean {
+  const lowerTarget = (target + otherTarget).toLowerCase();
+  const words = parseFilter(filter, min_chars);
+
+  return words.every((word: string) => lowerTarget.includes(word.toLowerCase()));
+}
+
+// Split filter into words and quoted phrases, like the search panel
+function parseFilter(filter, min_chars=1) {
+  const regex = /"([^"]+)"/g;
+  let match: RegExpExecArray;
+  const quotes = [];
+  while ((match = regex.exec(filter)) !== null) {
+      quotes.push(match[1]);
+      filter = filter.replace(match[0], '');
+  }
+  const words = filter.replace('"', '').toLowerCase()
+      .split(' ').filter((word: string) => word.length >= min_chars)
+      .concat(quotes);
+  return words;
 }

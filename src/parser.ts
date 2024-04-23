@@ -1,4 +1,5 @@
 import joplin from 'api';
+import { resultsStart, resultsEnd } from './search';
 
 const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
@@ -21,6 +22,7 @@ export async function getTagRegex(): Promise<RegExp> {
 
 export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
+  let isResultBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
   let tagsLevel = new Map<string, number>();
   const lines = text.toLocaleLowerCase().split('\n');
@@ -30,8 +32,14 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
     if (line.match('```')) {
       inCodeBlock = !inCodeBlock;
     }
+    if (line.match(resultsStart)) {
+      isResultBlock = true;
+    }
+    if (line.match(resultsEnd)) {
+      isResultBlock = false;
+    }
     // Skip code blocks if needed
-    if (inCodeBlock && ignoreCodeBlocks) {
+    if ((inCodeBlock && ignoreCodeBlocks) || isResultBlock) {
       return;
     }
 

@@ -265,7 +265,7 @@ export async function saveQuery(query: string, filter: string) {
     return;
   }
 
-  if (note.body.includes(queryStart) && note.body.includes(queryEnd)) {
+  if (findQuery.test(note.body)) {
     if (query === '[]') {
       note.body = note.body.replace(findQuery, '');
     } else {
@@ -280,16 +280,17 @@ export async function saveQuery(query: string, filter: string) {
   await joplin.commands.execute('editor.setText', note.body);
 }
 
-export async function loadQuery(db:any, text: string): Promise<{ query: string, filter: string }> {
+export async function loadQuery(db:any, text: string): Promise<{ query: string, filter: string, displayInNote: boolean }> {
   const query = text.match(findQuery);
   if (query) {
     const queryParts = query[0].trim().split('\n').slice(1, -1);
     return {
       query: await testQuery(db, queryParts[0]),
       filter: queryParts[1],
+      displayInNote: parseInt(queryParts[2]) ? true : false,
     };
   } else {
-    return { query: '', filter: '' };
+    return { query: '', filter: '', displayInNote: false };
   }
 }
 
