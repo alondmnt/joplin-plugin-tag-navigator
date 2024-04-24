@@ -381,7 +381,7 @@ async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
 
 export async function updateQuery(panel: string, query: Query[][], filter: string) {
   // Send the query to the search panel
-  if (!query) {
+  if (!query || query[0].length === 0) {
     return;
   }
   if (joplin.views.panels.visible(panel)) {
