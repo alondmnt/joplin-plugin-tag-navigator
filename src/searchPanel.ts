@@ -1,12 +1,11 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
+import { queryEnd, queryStart } from './settings';
 import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
 import { getNoteId } from './db';
 
-const queryStart = '<!-- itags-query-start -->';
-const queryEnd = '<!-- itags-query-end -->';
 const findQuery = new RegExp(`[\n]+${queryStart}[\\s\\S]*?${queryEnd}`);
 
 export async function registerSearchPanel(panel: string) {

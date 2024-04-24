@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { resultsStart, resultsEnd } from './search';
+import { resultsStart, resultsEnd } from './settings';
 
 const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)

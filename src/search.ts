@@ -1,6 +1,7 @@
 import joplin from 'api';
 import { loadQuery } from './searchPanel';
 import { getResultNotes } from './db';
+import { resultsEnd, resultsStart } from './settings';
 
 export interface Query {
   tag?: string;
@@ -25,9 +26,6 @@ export interface GroupedResult {
   updatedTime?: number;
   createdTime?: number;
 }
-
-export const resultsStart = '<!-- itags-results-start -->';
-export const resultsEnd = '<!-- itags-results-end -->';
 
 export async function runSearch(db: any, query: Query[][]): Promise<GroupedResult[]> {
   const currentNote = (await joplin.workspace.selectedNote());
