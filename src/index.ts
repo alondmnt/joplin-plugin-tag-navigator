@@ -355,7 +355,8 @@ joplin.plugins.register({
 
       } else if (message.name === 'saveQuery') {
         // Save the query into the current note
-        saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: false});
+        const currentQuery = await loadQuery(db, await joplin.workspace.selectedNote());
+        saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
       } else if (message.name === 'openNote') {
         const note = await joplin.workspace.selectedNote();
