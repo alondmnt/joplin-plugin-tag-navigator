@@ -137,7 +137,7 @@ function replaceOutsideBackticks(text: string, tagRegex: RegExp, replaceString: 
   return processedString;
 }
 
-function normalizeTextIndentation(text: string): string {
+export function normalizeTextIndentation(text: string): string {
   const lines = text.split('\n');
 
   // Process each line to potentially update the current indentation level and remove it

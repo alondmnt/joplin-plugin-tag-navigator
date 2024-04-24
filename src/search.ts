@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { loadQuery } from './searchPanel';
+import { loadQuery, normalizeTextIndentation } from './searchPanel';
 import { getResultNotes } from './db';
 import { resultsEnd, resultsStart } from './settings';
 
@@ -194,16 +194,14 @@ export async function displayInAllNotes(db: any) {
 export async function displayResults(db: any, note: any) {
   const savedQuery = await loadQuery(db, note);
   const results = await runSearch(db, savedQuery.query);
-  const filteredResults = filterResults(results, savedQuery.filter);
-
-  // TODO: sort results according to default settings
+  const filteredResults = await filterAndSortResults(results, savedQuery.filter);
 
   // Create the results string
   let resultsString = resultsStart;
   for (const result of filteredResults) {
-    resultsString += `\n## ${result.title}\n`;
+    resultsString += `\n## ${result.title}\n\n`;
     for (let i = 0; i < result.text.length; i++) {
-      resultsString += `${result.text[i]}\n\n---\n`;
+      resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
     }
   }
   resultsString += resultsEnd;
@@ -222,21 +220,40 @@ export async function displayResults(db: any, note: any) {
   }
 }
 
-// Filter results, like the search panel
-function filterResults(results: GroupedResult[], filter: string): GroupedResult[] {
-  if (!filter) { return results; }
+// Filter and sort results, like the search panel
+async function filterAndSortResults(results: GroupedResult[], filter: string): Promise<GroupedResult[]> {
+  // Sort results
+  const sortBy = await joplin.settings.value('itags.resultSort');
+  const sortOrder = await joplin.settings.value('itags.resultOrder');
+  let sortedResults = results.sort((a, b) => {
+    if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+    } else if (sortBy === 'modified') {
+        return a.updatedTime - b.updatedTime;
+    } else if (sortBy === 'created') {
+        return a.createdTime - b.createdTime;
+    } else if (sortBy === 'notebook') {
+        return a.notebook.localeCompare(b.notebook);
+    }
+  });
+  if (sortOrder === 'desc') {
+      sortedResults = sortedResults.reverse();
+  }
 
+  if (!filter) { return sortedResults; }
+
+  const highlight = await joplin.settings.value('itags.resultMarker');
   const parsedFilter = parseFilter(filter);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
-  for (const note of results) {
+  for (const note of sortedResults) {
     note.text = note.text.filter(text => containsFilter(text, filter, 2, note.title));
-    if ((parsedFilter.length > 0)) {
+    if ((parsedFilter.length > 0 && highlight)) {
       // TODO: use settings to determine whether to highlight
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
   }
-  return results.filter(note => note.text.length > 0);
+  return sortedResults.filter(note => note.text.length > 0);
 }
 
 // Check that all words are in the target, like the search panel
