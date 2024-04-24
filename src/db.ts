@@ -1,5 +1,6 @@
 import joplin from 'api';
 import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
+import { loadQuery } from './searchPanel';
 const sqlite3 = joplin.require('sqlite3');
 
 
@@ -45,6 +46,11 @@ export async function createTables(path: string) {
     FOREIGN KEY (linkedNoteId) REFERENCES Notes(externalId)
     );`);
     
+    // Keep a list of notes where results are displayed
+    db.run(`CREATE TABLE IF NOT EXISTS Results (
+    externalId TEXT NOT NULL
+    );`);
+    
     // Create indexes
     db.run(`CREATE INDEX IF NOT EXISTS idx_noteId ON NoteTags(noteId);`);
   });
@@ -71,6 +77,18 @@ function get(db: any, sql: string, params = []) {
         reject(err);
       } else {
         resolve(result);
+      }
+    });
+  });
+}
+
+function all(db: any, sql: string, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
       }
     });
   });
@@ -150,6 +168,12 @@ export async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCo
       }
     }
 
+    // Insert into Results table if results should be displayed
+    const searchQuery = await loadQuery(db, note.body);
+    if (searchQuery.displayInNote) {
+      await run(db, `INSERT INTO Results (externalId) VALUES (?)`, [note.id]);
+    }
+
     // Commit the transaction
     await run(db, 'COMMIT');
     // console.log(`Processed note ${note.id} successfully.`);
@@ -224,4 +248,9 @@ export async function removeNoteTags(db: any, noteId: string) {
 export async function removeNoteLinks(db: any, noteId: string) {
   const numId = await insertOrGetNoteId(db, noteId, '');
   await run(db, `DELETE FROM NoteLinks WHERE noteId = ?`, [numId]);
+}
+
+export async function getResultNotes(db: any): Promise<string[]> {
+  const results = await all(db, `SELECT externalId FROM Results`);
+  return (results as any).map((result: any) => result.externalId);
 }

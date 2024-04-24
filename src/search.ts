@@ -1,4 +1,6 @@
 import joplin from 'api';
+import { loadQuery } from './searchPanel';
+import { getResultNotes } from './db';
 
 export interface Query {
   tag?: string;
@@ -182,9 +184,19 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
   return result
 }
 
-export async function displayResults(db: any, query: string, filter: string, note: any) {
-  const results = await runSearch(db, JSON.parse(query));
-  const filteredResults = filterResults(results, filter);
+export async function displayInAllNotes(db: any) {
+  // Display results in notes
+  const noteIds = (await getResultNotes(db));
+  for (const id of noteIds) {
+    const note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
+    await displayResults(db, note);
+  }
+}
+
+export async function displayResults(db: any, note: any) {
+  const savedQuery = await loadQuery(db, note.body);
+  const results = await runSearch(db, JSON.parse(savedQuery.query));
+  const filteredResults = filterResults(results, savedQuery.filter);
 
   // TODO: sort results according to default settings
 
@@ -206,7 +218,10 @@ export async function displayResults(db: any, query: string, filter: string, not
     note.body += '\n' + resultsString;
   }
   await joplin.data.put(['notes', note.id], null, { body: note.body });
-  await joplin.commands.execute('editor.setText', note.body);
+  const currentNote = await joplin.workspace.selectedNote();
+  if (currentNote.id === note.id) {
+    await joplin.commands.execute('editor.setText', note.body);
+  }
 }
 
 // Filter results, like the search panel
@@ -218,6 +233,7 @@ function filterResults(results: GroupedResult[], filter: string): GroupedResult[
   for (const note of results) {
     note.text = note.text.filter(text => containsFilter(text, filter, 2, note.title));
     if ((parsedFilter.length > 0)) {
+      // TODO: use settings to determine whether to highlight
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
