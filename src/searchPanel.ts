@@ -6,7 +6,13 @@ import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
 import { getNoteId } from './db';
 
-const findQuery = new RegExp(`[\n]+${queryStart}[\\s\\S]*?${queryEnd}`);
+const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
+
+interface QueryRecord {
+  query: Query[][];
+  filter: string;
+  displayInNote: boolean;
+}
 
 export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.setHtml(panel, `
@@ -257,44 +263,93 @@ async function updateNote(message: any, newBody: string) {
   await joplin.data.put(['notes', message.externalId], null, { body: newBody });
 }
 
-export async function saveQuery(query: string, filter: string) {
-  // Save the query into the current note
-  const note = await joplin.workspace.selectedNote();
+export async function saveQuery(query: QueryRecord, noteId: string=null): Promise<string> {
+  // Save the query into the current note, or to given noteId
+  let note:any = null;
+  if (noteId) {
+    note = await joplin.data.get(['notes', noteId], { fields: ['title', 'body', 'id'] });
+  } else {
+    note = await joplin.workspace.selectedNote();
+  }
   if (!note) {
     return;
   }
 
   if (findQuery.test(note.body)) {
-    if (query === '[]') {
+    if (query.query[0].length === 0) {
       note.body = note.body.replace(findQuery, '');
     } else {
-      note.body = note.body.replace(findQuery, `\n\n${queryStart}\n${query}\n${filter}\n${queryEnd}`);
+      note.body = note.body.replace(findQuery, `\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`);
     }
   } else {
-    note.body = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${query}\n${filter}\n${queryEnd}`;
+    note.body = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`;
     // trimming trailing spaces in note body before insertion
   }
 
   await joplin.data.put(['notes', note.id], null, { body: note.body });
-  await joplin.commands.execute('editor.setText', note.body);
+  const currentNote = await joplin.workspace.selectedNote();
+  if (note.id === currentNote.id) {
+    await joplin.commands.execute('editor.setText', note.body);
+  }
+
+  return note.body;
 }
 
-export async function loadQuery(db:any, text: string): Promise<{ query: string, filter: string, displayInNote: boolean }> {
-  const query = text.match(findQuery);
-  if (query) {
-    const queryParts = query[0].trim().split('\n').slice(1, -1);
-    return {
-      query: await testQuery(db, queryParts[0]),
-      filter: queryParts[1],
-      displayInNote: parseInt(queryParts[2]) ? true : false,
-    };
+export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
+  const upgradedText = await upgradeQuery(db, note);  // from ver1 to ver2
+  const record = upgradedText.match(findQuery);
+  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: false };
+  if (record) {
+    try {
+      const savedQuery = await testQuery(db, JSON.parse(record[1]));
+      if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
+        loadedQuery = savedQuery;
+      }
+    } catch (error) {
+      console.error('Error loading query:', record[1], error);
+    }
+  }
+  return loadedQuery;
+}
+
+export async function upgradeQuery(db: any, note: any): Promise<string> {
+  // try to upgrade the saved query format
+  const record = note.body.match(findQuery);
+  if (!record) { return note.body; }
+
+  const queryParts = record[1].split('\n');
+  let savedQuery = {
+    query: JSON.parse(queryParts[0]),
+    filter: queryParts[1],
+    displayInNote: parseInt(queryParts[2]) ? true : false,
+  };
+  try {
+    savedQuery = await testQuery(db, savedQuery);
+  } catch {
+    return note.body;
+  }
+
+  if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
+    // save the upgraded query and return the updated note body
+    return saveQuery(savedQuery, note.id);
   } else {
-    return { query: '', filter: '', displayInNote: false };
+    return note.body;
   }
 }
 
-async function testQuery(db: any, query: string) {
-  let queryGroups = JSON.parse(query);
+async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
+  // Test if the query is valid
+  if (!query.query) {
+    return query;
+  }
+  if (typeof query.filter !== 'string') {
+    query.filter = null;
+  }
+  if (typeof query.displayInNote !== 'boolean') {
+    query.displayInNote = null;
+  }
+
+  let queryGroups = query.query;
   for (let [ig, group] of queryGroups.entries()) {
     for (let [ic, condition] of group.entries()) {
 
@@ -325,12 +380,12 @@ async function testQuery(db: any, query: string) {
     queryGroups[ig] = group.filter((condition: any) => (condition));
   }
   // filter null groups
-  queryGroups = queryGroups.filter((group: any) => group.length > 0);
+  query.query = queryGroups.filter((group: any) => group.length > 0);
 
-  return JSON.stringify(queryGroups);
+  return query;
 }
 
-export async function updateQuery(panel: string, query: string, filter: string) {
+export async function updateQuery(panel: string, query: Query[][], filter: string) {
   // Send the query to the search panel
   if (!query) {
     return;
@@ -338,7 +393,7 @@ export async function updateQuery(panel: string, query: string, filter: string) 
   if (joplin.views.panels.visible(panel)) {
     joplin.views.panels.postMessage(panel, {
       name: 'updateQuery',
-      query: query,
+      query: JSON.stringify(query),
       filter: filter,
     });
   }

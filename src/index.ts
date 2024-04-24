@@ -134,7 +134,7 @@ joplin.plugins.register({
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
       const note = await joplin.workspace.selectedNote();
-      const savedQuery = await loadQuery(db, note.body);
+      const savedQuery = await loadQuery(db, note);
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
@@ -189,7 +189,7 @@ joplin.plugins.register({
           await focusSearchPanel(searchPanel);
           await updatePanelSettings(searchPanel);
           const note = await joplin.workspace.selectedNote();
-          const query = await loadQuery(db, note.body);
+          const query = await loadQuery(db, note);
           await updateQuery(searchPanel, query.query, query.filter);
         }
       },
@@ -201,7 +201,7 @@ joplin.plugins.register({
       iconName: 'fas fa-tags',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
-        const query = await loadQuery(db, note.body);
+        const query = await loadQuery(db, note);
         await updateQuery(searchPanel, query.query, query.filter);
       },
     })
@@ -355,7 +355,7 @@ joplin.plugins.register({
 
       } else if (message.name === 'saveQuery') {
         // Save the query into the current note
-        saveQuery(message.query, message.filter);
+        saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: false});
 
       } else if (message.name === 'openNote') {
         const note = await joplin.workspace.selectedNote();

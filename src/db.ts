@@ -169,7 +169,7 @@ export async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCo
     }
 
     // Insert into Results table if results should be displayed
-    const searchQuery = await loadQuery(db, note.body);
+    const searchQuery = await loadQuery(db, note);
     if (searchQuery.displayInNote) {
       await run(db, `INSERT INTO Results (externalId) VALUES (?)`, [note.id]);
     }
@@ -220,7 +220,7 @@ async function insertOrGetNoteId(db: any, externalId: string, title: string): Pr
 
 // search a note by externalId OR title (prefer externalId)
 // currently returning externalId because it is *stable*
-export async function getNoteId(db: any, externalId: string, title: string): Promise<number | null> {
+export async function getNoteId(db: any, externalId: string, title: string): Promise<string | null> {
   try {
     const resultById = await get(db, `SELECT externalId FROM Notes WHERE externalId = ?`, [externalId]);
     if (resultById) {

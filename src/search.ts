@@ -192,8 +192,8 @@ export async function displayInAllNotes(db: any) {
 }
 
 export async function displayResults(db: any, note: any) {
-  const savedQuery = await loadQuery(db, note.body);
-  const results = await runSearch(db, JSON.parse(savedQuery.query));
+  const savedQuery = await loadQuery(db, note);
+  const results = await runSearch(db, savedQuery.query);
   const filteredResults = filterResults(results, savedQuery.filter);
 
   // TODO: sort results according to default settings
