@@ -4,16 +4,17 @@ Type inline #tags in the note editor. View your tagged paragraphs and list items
 
 ## Features
 
-This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in four ways:
+This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
     - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
     - Tag-by-notes: Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - Toggle checkboxes / TODOs from the panel.
-2. It adds a panel for quickly navigating between inline tags that appear in the current note.
-3. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
-4. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin).
+2. It can generate a note with all tagged paragaraph that match a saved query (dynamically updated).
+3. It adds a panel for quickly navigating between inline tags that appear in the current note.
+4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
+5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin).
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
