@@ -174,7 +174,7 @@ export async function setCheckboxState(message: any) {
   const text = message.text.replace(/^\s*-\s*\[[x ]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
-    console.log('Error in setCheckboxState: The line does not contain the expected text.');
+    console.error('Error in setCheckboxState: The line does not contain the expected text.');
     lines[message.line] = line;
   }
 
@@ -198,9 +198,7 @@ export async function removeTagFromText(message: any) {
 
   // Check the line to see if it contains the text
   if (!line.includes(message.text)) {
-    console.log('Error in removeTagFromText: The line does not contain the expected text.');
-    console.log('Line:', line);
-    console.log('Text:', message.text);
+    console.error('Error in removeTagFromText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
     return line;
   }
 
@@ -219,9 +217,7 @@ export async function renameTagInText(message: any) {
 
   // Check the line to see if it contains the text
   if (!line.includes(message.text)) {
-    console.log('Error in renameTagInText: The line does not contain the expected text.');
-    console.log('Line:', line);
-    console.log('Text:', message.text);
+    console.error('Error in renameTagInText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
     return line;
   }
 
@@ -238,9 +234,7 @@ export async function addTagToText(message: any) {
 
   // Check the line to see if it contains the text
   if (!line.includes(message.text)) {
-    console.log('Error in addTagToText: The line does not contain the expected text.');
-    console.log('Line:', line);
-    console.log('Text:', message.text);
+    console.error('Error in addTagToText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
     return line;
   }
 
