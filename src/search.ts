@@ -220,6 +220,18 @@ export async function displayResults(db: any, note: any) {
   }
 }
 
+export async function removeResults(note: any) {
+  const resultsRegExp = new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's')
+  if (resultsRegExp.test(note.body)) {
+    note.body = note.body.replace(resultsRegExp, '');
+    await joplin.data.put(['notes', note.id], null, { body: note.body });
+    const currentNote = await joplin.workspace.selectedNote();
+    if (currentNote.id === note.id) {
+      await joplin.commands.execute('editor.setText', note.body);
+    }
+  }
+}
+
 // Filter and sort results, like the search panel
 async function filterAndSortResults(results: GroupedResult[], filter: string): Promise<GroupedResult[]> {
   // Sort results

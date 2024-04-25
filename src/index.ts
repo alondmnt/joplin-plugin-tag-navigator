@@ -6,7 +6,7 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes, processNote, removeNoteLinks, removeNoteTags } from './db';
-import { Query, displayInAllNotes, displayResults, runSearch } from './search';
+import { Query, displayInAllNotes, displayResults, removeResults, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
 let query: Query[][] = [];
@@ -204,7 +204,26 @@ joplin.plugins.register({
         const query = await loadQuery(db, note);
         await updateQuery(searchPanel, query.query, query.filter);
       },
-    })
+    });
+
+    await joplin.commands.register({
+      name: 'itags.toggleNoteView',
+      label: 'Toggle search results display in note',
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+        const query = await loadQuery(db, note);
+        // toggle display
+        query.displayInNote = !query.displayInNote;
+
+        note.body = await saveQuery(query);
+        if (query.displayInNote) {
+          await displayResults(db, note);
+        } else {
+          await removeResults(note);
+        }
+      },
+    });
 
     await joplin.commands.register({
       name: 'itags.updateDB',
@@ -290,6 +309,9 @@ joplin.plugins.register({
       {
         commandName: 'itags.loadQuery',
         accelerator: 'Ctrl+Shift+L',
+      },
+      {
+        commandName: 'itags.toggleNoteView',
       },
       {
         commandName: 'itags.refreshPanel',
