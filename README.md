@@ -11,7 +11,8 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Tag-by-notes: Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - Toggle checkboxes / TODOs from the panel.
-2. It can generate a note with all tagged paragaraph that match a saved query (dynamically updated).
+2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated).
+    - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
 3. It adds a panel for quickly navigating between inline tags that appear in the current note.
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin).
