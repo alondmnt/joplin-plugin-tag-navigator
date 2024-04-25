@@ -187,11 +187,11 @@ export async function displayInAllNotes(db: any) {
   const noteIds = (await getResultNotes(db));
   for (const id of noteIds) {
     const note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    await displayResults(db, note);
+    await displayResultsInNote(db, note);
   }
 }
 
-export async function displayResults(db: any, note: any) {
+export async function displayResultsInNote(db: any, note: any) {
   const savedQuery = await loadQuery(db, note);
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, savedQuery.filter);
@@ -199,7 +199,7 @@ export async function displayResults(db: any, note: any) {
   // Create the results string
   let resultsString = resultsStart;
   for (const result of filteredResults) {
-    resultsString += `\n## ${result.title}\n\n`;
+    resultsString += `\n## [${result.title}](:/${result.externalId})\n\n`;
     for (let i = 0; i < result.text.length; i++) {
       resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
     }

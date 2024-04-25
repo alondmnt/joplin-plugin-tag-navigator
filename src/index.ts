@@ -6,7 +6,7 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { processAllNotes, processNote, removeNoteLinks, removeNoteTags } from './db';
-import { Query, displayInAllNotes, displayResults, removeResults, runSearch } from './search';
+import { Query, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
 let query: Query[][] = [];
@@ -141,7 +141,7 @@ joplin.plugins.register({
 
       // Update results in note
       if (savedQuery.displayInNote) {
-        await displayResults(db, note);
+        await displayResultsInNote(db, note);
       }
 
       // Note panel update
@@ -218,7 +218,7 @@ joplin.plugins.register({
 
         note.body = await saveQuery(query);
         if (query.displayInNote) {
-          await displayResults(db, note);
+          await displayResultsInNote(db, note);
         } else {
           await removeResults(note);
         }
