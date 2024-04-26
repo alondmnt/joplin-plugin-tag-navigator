@@ -2,6 +2,13 @@
 
 Type inline #tags in the note editor. View your tagged paragraphs and list items in an advanced search panel, or in a generated note. Convert inline and Obsidian tags into Joplin tags, and vice versa.
 
+- [Features](#features)
+- [Demos](#demos)
+- [Tips](#tips)
+- [Companion plugins](#companion-plugins)
+- [Motivation](#motivation)
+- [Objectives](#objectives)
+
 ## Features
 
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
