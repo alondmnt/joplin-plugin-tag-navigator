@@ -1,6 +1,6 @@
 # Inline Tag Navigator
 
-Type inline #tags in the note editor. View your tagged paragraphs and list items in an advanced search panel. Convert inline and Obsidian tags into Joplin tags, and vice versa.
+Type inline #tags in the note editor. View your tagged paragraphs and list items in an advanced search panel, or in a generated note. Convert inline and Obsidian tags into Joplin tags, and vice versa.
 
 ## Features
 
@@ -50,7 +50,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Companion plugins
 
-- The excellent [Inline Tags](https://github.com/roman-r-m/joplin-inline-tags-plugin) plugin can help you add tags on the fly.
+- The excellent [Inline Tags](https://github.com/roman-r-m/joplin-inline-tags-plugin) plugin can autocomplete tags while typing.
 - You can highlight tags in the Markdown editor using [Rich Markdown](https://github.com/CalebJohn/joplin-rich-markdown) (version ≥ 0.14).
     - In `Joplin settings --> Rich Markdown --> Advanced Settings --> Custom classes JSON` enter:
     ```
