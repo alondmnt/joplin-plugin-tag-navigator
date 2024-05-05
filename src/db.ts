@@ -135,11 +135,11 @@ export class NoteDatabase {
     return Object.keys(this.tags).sort();
   }
 
-  getNotes(): { title: string, noteId: string }[] {
+  getNotes(): { title: string, externalId: string }[] {
     // Return a list of note titles and ids
     return Object.values(this.notes)
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map(note => { return {title: note.title, noteId: note.id}; });
+      .map(note => { return {title: note.title, externalId: note.id}; });
   }
 
   getNoteId(title: string): string {
