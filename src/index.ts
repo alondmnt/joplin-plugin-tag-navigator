@@ -5,36 +5,12 @@ import { registerSettings } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
-import { processAllNotes, processNote, removeNoteLinks, removeNoteTags } from './db';
+import { NoteDatabase, processAllNotes, processNote } from './db';
 import { Query, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
 import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
 
 let query: Query[][] = [];
-let db = null;
-async function getAllTags(): Promise<string[]> {
-  return new Promise((resolve, reject) => {
-    db.all(`SELECT tag FROM Tags`, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        const tags: string[] = rows.map(row => row.tag).sort();
-        resolve(tags);
-      }
-    });
-  });
-}
-
-async function getAllNotes(): Promise<{title: string, noteId: number}[]> {
-  return new Promise((resolve, reject) => {
-    db.all(`SELECT title, externalId FROM Notes`, (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows.sort((a, b) => a.title.localeCompare(b.title)));
-      }
-    });
-  });
-}
+let db: NoteDatabase;
 
 async function updatePanelTagData(panel: string) {
   const intervalID = setInterval(
@@ -42,7 +18,7 @@ async function updatePanelTagData(panel: string) {
       if(joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateTagData',
-          tags: JSON.stringify(await getAllTags()),
+          tags: JSON.stringify(db.getTags()),
         });
       }
     }
@@ -56,7 +32,7 @@ async function updatePanelNoteData(panel: string) {
       if(joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateNoteData',
-          notes: JSON.stringify(await getAllNotes()),
+          notes: JSON.stringify(db.getNotes()),
         });
       }
     }
@@ -73,8 +49,6 @@ joplin.plugins.register({
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       const inheritTags = await joplin.settings.value('itags.inheritTags');
-      await removeNoteTags(db, note.id);
-      await removeNoteLinks(db, note.id);
       await processNote(db, note, tagRegex, ignoreCodeBlocks, inheritTags);
 
       // Update search results

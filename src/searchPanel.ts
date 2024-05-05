@@ -4,7 +4,7 @@ import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { queryEnd, queryStart } from './settings';
 import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
-import { getNoteId } from './db';
+import { NoteDatabase } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 
@@ -331,7 +331,7 @@ export async function upgradeQuery(db: any, note: any): Promise<string> {
   }
 }
 
-async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
+async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRecord> {
   // Test if the query is valid
   if (!query.query) {
     return query;
@@ -362,7 +362,7 @@ async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
         if (condition.externalId === 'current') { continue; }
 
         // Try to update externalId in case it changed
-        const newExternalId = await getNoteId(db, condition.externalId, condition.title);
+        const newExternalId = db.getNoteId(condition.title);
         if (newExternalId) {
           condition.externalId = newExternalId;
         } else {
