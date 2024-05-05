@@ -59,11 +59,11 @@ webviewApi.onMessage((message) => {
         const settings = JSON.parse(message.message.settings);
         resultToggleState = settings.resultToggle ? 'expand' : 'collapse';
         resultToggle.innerHTML = settings.resultToggle ? 
-            'E' : 'C';
+            '>' : 'v';  // Button shows the current state (expand / collapse)
         resultSort.value = settings.resultSort;
         resultOrderState = settings.resultOrder;
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
-            'A' : 'D';
+            '↓' : '↑';  // Button shows the current state (asc / desc)
         resultMarker = settings.resultMarker;
     }
 });
@@ -805,10 +805,10 @@ resultSort.addEventListener('change', () => {
 resultOrder.addEventListener('click', () => {
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
-        resultOrder.innerHTML = 'A';
+        resultOrder.innerHTML = '↑';  // Button shows the currrent state (desc)
     } else if (resultOrderState === 'desc') {
         resultOrderState = 'asc';
-        resultOrder.innerHTML = 'D';
+        resultOrder.innerHTML = '↓';  // Button shows the current state (asc)
     }
     updateResultsArea();
 });
@@ -817,12 +817,12 @@ resultToggle.addEventListener('click', () => {
     if (resultToggleState === 'collapse') {
         collapseResults();
         resultToggleState = 'expand';
-        resultToggle.innerHTML = 'E';
+        resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
         return;
     } else if (resultToggleState === 'expand') {
         expandResults();
         resultToggleState = 'collapse';
-        resultToggle.innerHTML = 'C';
+        resultToggle.innerHTML = 'v';  // Button shows the current state (expand)
         return;
     }
 });
