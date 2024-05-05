@@ -59,11 +59,11 @@ webviewApi.onMessage((message) => {
         const settings = JSON.parse(message.message.settings);
         resultToggleState = settings.resultToggle ? 'expand' : 'collapse';
         resultToggle.innerHTML = settings.resultToggle ? 
-            '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+            'E' : 'C';
         resultSort.value = settings.resultSort;
         resultOrderState = settings.resultOrder;
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
-            '<i class="fas fa-sort-amount-down"></i>' : '<i class="fas fa-sort-amount-up"></i>';
+            'A' : 'D';
         resultMarker = settings.resultMarker;
     }
 });
@@ -805,10 +805,10 @@ resultSort.addEventListener('change', () => {
 resultOrder.addEventListener('click', () => {
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
-        resultOrder.innerHTML = '<i class="fas fa-sort-amount-up"></i>';
+        resultOrder.innerHTML = 'A';
     } else if (resultOrderState === 'desc') {
         resultOrderState = 'asc';
-        resultOrder.innerHTML = '<i class="fas fa-sort-amount-down"></i>';
+        resultOrder.innerHTML = 'D';
     }
     updateResultsArea();
 });
@@ -817,12 +817,12 @@ resultToggle.addEventListener('click', () => {
     if (resultToggleState === 'collapse') {
         collapseResults();
         resultToggleState = 'expand';
-        resultToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        resultToggle.innerHTML = 'E';
         return;
     } else if (resultToggleState === 'expand') {
         expandResults();
         resultToggleState = 'collapse';
-        resultToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        resultToggle.innerHTML = 'C';
         return;
     }
 });

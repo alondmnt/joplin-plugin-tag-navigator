@@ -36,9 +36,9 @@ export async function registerSearchPanel(panel: string) {
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="notebook">Notebook</option>
-      </select>
-      <button id="itags-search-resultOrder" title="Reverse order"><i class="fas fa-sort-amount-up"></i></button>
-      <button id="itags-search-resultToggle" title="Collapse / expand"><i class="fas fa-chevron-up"></i></button>
+        </select>
+        <button id="itags-search-resultOrder" title="Ascend / descend">A</button>
+      <button id="itags-search-resultToggle" title="Collapse / expand">C</button>
     </div>
     <div id='itags-search-resultsArea'></div>
   `);
