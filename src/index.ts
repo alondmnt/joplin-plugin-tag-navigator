@@ -11,6 +11,7 @@ import { focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelRes
 
 let query: Query[][] = [];
 let db: NoteDatabase;
+let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
 
 async function updatePanelTagData(panel: string) {
   if (!joplin.views.panels.visible(panel)) { return; }
@@ -77,7 +78,7 @@ joplin.plugins.register({
         updatePanelTagData(searchPanel);
         updatePanelNoteData(searchPanel);
         await updateQuery(searchPanel, query, '');
-        updatePanelSettings(searchPanel);
+        updatePanelSettings(searchPanel, panelSettings);
         const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
 
@@ -132,6 +133,10 @@ joplin.plugins.register({
         // update the search panel
         const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
+
+      } else if (message.name === 'updateSetting') {
+
+        panelSettings[message.field] = message.value;
       }
     });
 
@@ -214,7 +219,7 @@ joplin.plugins.register({
         if (!panelState) {
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
-          await updatePanelSettings(searchPanel);
+          await updatePanelSettings(searchPanel, panelSettings);
           const note = await joplin.workspace.selectedNote();
           const query = await loadQuery(db, note);
           await updateQuery(searchPanel, query.query, query.filter);
@@ -367,7 +372,7 @@ joplin.plugins.register({
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
           event.keys.includes('itags.resultMarker')) {
-        await updatePanelSettings(searchPanel);
+        updatePanelSettings(searchPanel);
       }
     });
 

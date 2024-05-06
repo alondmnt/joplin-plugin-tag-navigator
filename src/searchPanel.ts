@@ -72,11 +72,11 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   );
 }
 
-export async function updatePanelSettings(panel: string) {
+export async function updatePanelSettings(panel: string, override: { resultSort?: string, resultOrder?: string, resultToggle?: boolean }={}) {
   const settings = {
-    resultSort: await joplin.settings.value('itags.resultSort'),
-    resultOrder: await joplin.settings.value('itags.resultOrder'),
-    resultToggle: await joplin.settings.value('itags.resultToggle'),
+    resultSort: override.resultSort === undefined ? await joplin.settings.value('itags.resultSort') : override.resultSort,
+    resultOrder: override.resultOrder === undefined ? await joplin.settings.value('itags.resultOrder') : override.resultOrder,
+    resultToggle: override.resultToggle === undefined ? await joplin.settings.value('itags.resultToggle') : override.resultToggle,
     resultMarker: await joplin.settings.value('itags.resultMarker'),
   };
   const intervalID = setInterval(

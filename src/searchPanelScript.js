@@ -14,7 +14,7 @@ const noteList = document.getElementById('itags-search-noteList');
 const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
-let resultToggleState = 'collapse';
+let resultToggleState = 'expand';
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
@@ -57,14 +57,21 @@ webviewApi.onMessage((message) => {
 
     } else if (message.message.name === 'updateSettings') {
         const settings = JSON.parse(message.message.settings);
-        resultToggleState = settings.resultToggle ? 'expand' : 'collapse';
+        resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
+        if ( resultToggleState === 'collapse' ) {
+            collapseResults();
+        } else {
+            expandResults();
+        }
+        console.log('resultToggleState', resultToggleState);
         resultToggle.innerHTML = settings.resultToggle ? 
-            '>' : 'v';  // Button shows the current state (expand / collapse)
+            '>' : 'v';  // Button shows the current state (collapse / expand)
         resultSort.value = settings.resultSort;
         resultOrderState = settings.resultOrder;
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
             '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
         resultMarker = settings.resultMarker;
+        updateResultsArea();
     }
 });
 
@@ -196,14 +203,14 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    // Save the current stae of collapsed / expanded notes by their externalId
+    // Save the current stae of expandd / collapseed notes by their externalId
     const noteState = {};
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapseed';
         } else {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expandd';
         }
     }
 
@@ -239,12 +246,12 @@ function updateResultsArea() {
 
         // Preserve the state of the content container
         contentContainer.setAttribute('data-externalId', result.externalId);
-        if (noteState[result.externalId] === 'expanded') {
+        if (noteState[result.externalId] === 'collapseed') {
             contentContainer.style.display = 'block';
-        } else if (noteState[result.externalId] === 'collapsed') {
+        } else if (noteState[result.externalId] === 'expandd') {
             contentContainer.style.display = 'none';
         } else {
-            contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
+            contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
@@ -488,6 +495,14 @@ function sendSearchMessage() {
         name: 'searchQuery',
         query: searchQuery,
     });
+}
+
+function sendSetting(field, value) {
+    webviewApi.postMessage({
+        name: 'updateSetting',
+        field: field,
+        value: value,
+    })
 }
 
 function addLineNumberToCheckboxes(entryEl, text) {
@@ -802,6 +817,7 @@ resultFilter.addEventListener('keydown', (event) => {
 });
 
 resultSort.addEventListener('change', () => {
+    sendSetting('resultSort', resultSort.value);
     updateResultsArea();
 });
 
@@ -813,19 +829,22 @@ resultOrder.addEventListener('click', () => {
         resultOrderState = 'asc';
         resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
     }
+    sendSetting('resultOrder', resultOrderState);
     updateResultsArea();
 });
 
 resultToggle.addEventListener('click', () => {
-    if (resultToggleState === 'collapse') {
+    if (resultToggleState === 'expand') {
         collapseResults();
-        resultToggleState = 'expand';
-        resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
-        return;
-    } else if (resultToggleState === 'expand') {
-        expandResults();
         resultToggleState = 'collapse';
+        resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
+        sendSetting('resultToggle', true);
+        return;
+    } else if (resultToggleState === 'collapse') {
+        expandResults();
+        resultToggleState = 'expand';
         resultToggle.innerHTML = 'v';  // Button shows the current state (expand)
+        sendSetting('resultToggle', false);
         return;
     }
 });
