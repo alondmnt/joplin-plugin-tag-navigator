@@ -158,8 +158,10 @@ joplin.plugins.register({
       // Search panel update
       const note = await joplin.workspace.selectedNote();
       const savedQuery = await loadQuery(db, note);
-      const tagRegex = await getTagRegex();
-      const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+      if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
+        // Updating this variable will ensure it's sent to the panel on initPanel
+        query = savedQuery.query;
+      }
       await updateQuery(searchPanel, savedQuery.query, savedQuery.filter);
 
       // Update results in note
@@ -168,6 +170,8 @@ joplin.plugins.register({
       }
 
       // Note panel update
+      const tagRegex = await getTagRegex();
+      const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, false);
       await updateNotePanel(notePanel, tagLines);
 
