@@ -150,7 +150,11 @@ joplin.plugins.register({
         // Update search results
         const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
-        displayInAllNotes(db);
+
+        // Update note view
+        if (await joplin.settings.value('itags.periodicNoteUpdate')) {
+          displayInAllNotes(db);  
+        }
       }, periodicDBUpdate * 60 * 1000);
     }
 
@@ -268,7 +272,11 @@ joplin.plugins.register({
         // Update search results
         const results = await runSearch(db, query);
         updatePanelResults(searchPanel, results, query);
-        displayInAllNotes(db);
+
+        // Update note view
+        if (await joplin.settings.value('itags.periodicNoteUpdate')) {
+          displayInAllNotes(db);
+        }
       },
     });
 
