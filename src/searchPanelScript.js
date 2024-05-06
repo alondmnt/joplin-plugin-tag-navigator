@@ -115,6 +115,10 @@ function updateNoteList() {
         noteList.appendChild(noteEl);
     });
 
+    // Duplicate the first option to be the first
+    const firstOpt = noteList.firstChild.cloneNode(true);
+    noteList.insertBefore(firstOpt, noteList.firstChild);
+
     // Restore the previous selection, if possible
     if (selectedNoteId) {
         noteList.value = selectedNoteId;
