@@ -376,7 +376,7 @@ function mergeGroups(groupIndex) {
         }, []);
         queryGroups.splice(groupIndex, 2, uniqueMergedGroup);
     }
-}    
+}
 
 function splitGroup(groupIndex, tagIndex) {
     const groupToSplit = queryGroups[groupIndex];
@@ -677,6 +677,9 @@ tagClear.addEventListener('click', () => {
 });
 
 saveQuery.addEventListener('click', () => {
+    if (queryGroups.length === 0) {
+        return;
+    }
     webviewApi.postMessage({
         name: 'saveQuery',
         query: JSON.stringify(queryGroups),
@@ -855,4 +858,8 @@ document.addEventListener('keydown', (event) => {
             menu.remove();
         });
     }
+});
+
+webviewApi.postMessage({
+    name: 'initPanel',
 });
