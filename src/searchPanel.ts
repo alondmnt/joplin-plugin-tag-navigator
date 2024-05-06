@@ -381,7 +381,7 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
 
 export async function updateQuery(panel: string, query: Query[][], filter: string) {
   // Send the query to the search panel
-  if (!query || query[0].length === 0) {
+  if (!query || query.length ===0 || query[0].length === 0) {
     return;
   }
   if (joplin.views.panels.visible(panel)) {
