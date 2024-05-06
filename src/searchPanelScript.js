@@ -63,7 +63,7 @@ webviewApi.onMessage((message) => {
         resultSort.value = settings.resultSort;
         resultOrderState = settings.resultOrder;
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
-            '↓' : '↑';  // Button shows the current state (asc / desc)
+            '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
         resultMarker = settings.resultMarker;
     }
 });
@@ -808,10 +808,10 @@ resultSort.addEventListener('change', () => {
 resultOrder.addEventListener('click', () => {
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
-        resultOrder.innerHTML = '↑';  // Button shows the currrent state (desc)
+        resultOrder.innerHTML = '<b>↑</b>';  // Button shows the currrent state (desc)
     } else if (resultOrderState === 'desc') {
         resultOrderState = 'asc';
-        resultOrder.innerHTML = '↓';  // Button shows the current state (asc)
+        resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
     }
     updateResultsArea();
 });
