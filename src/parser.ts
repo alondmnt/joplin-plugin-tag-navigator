@@ -45,8 +45,9 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
     if (line.match(queryEnd)) {
       isQueryBlock = false;
     }
+    const emptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks if needed
-    if ((inCodeBlock && ignoreCodeBlocks) || isResultBlock) {
+    if ((inCodeBlock && ignoreCodeBlocks) || isResultBlock || isQueryBlock || emptyLine) {
       return;
     }
 
@@ -102,14 +103,29 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
   const results: LinkExtract[] = [];
   let linkLevel = new Map<string, number>();
   let inCodeBlock = false;
+  let isResultBlock = false;
+  let isQueryBlock = false;
 
   lines.forEach((line, index) => {
     // Toggle code block status
     if (line.match('```')) {
       inCodeBlock = !inCodeBlock;
     }
+    if (line.match(resultsStart)) {
+      isResultBlock = true;
+    }
+    if (line.match(resultsEnd)) {
+      isResultBlock = false;
+    }
+    if (line.match(queryStart)) {
+      isQueryBlock = true;
+    }
+    if (line.match(queryEnd)) {
+      isQueryBlock = false;
+    }
+    const emptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks if needed
-    if (inCodeBlock && ignoreCodeBlocks) {
+    if ((inCodeBlock && ignoreCodeBlocks) || isResultBlock || isQueryBlock || emptyLine) {
       return;
     }
 

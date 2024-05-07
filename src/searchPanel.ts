@@ -4,7 +4,7 @@ import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { queryEnd, queryStart } from './settings';
 import { GroupedResult, Query } from './search';
 import { getTagRegex } from './parser';
-import { getNoteId } from './db';
+import { NoteDatabase } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 
@@ -36,9 +36,9 @@ export async function registerSearchPanel(panel: string) {
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="notebook">Notebook</option>
-      </select>
-      <button id="itags-search-resultOrder" title="Reverse order"><i class="fas fa-sort-amount-up"></i></button>
-      <button id="itags-search-resultToggle" title="Collapse / expand"><i class="fas fa-chevron-up"></i></button>
+        </select>
+        <button id="itags-search-resultOrder" title="Ascend / descend"><b>↑</b></button>
+      <button id="itags-search-resultToggle" title="Collapse / expand">v</button>
     </div>
     <div id='itags-search-resultsArea'></div>
   `);
@@ -72,11 +72,11 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   );
 }
 
-export async function updatePanelSettings(panel: string) {
+export async function updatePanelSettings(panel: string, override: { resultSort?: string, resultOrder?: string, resultToggle?: boolean }={}) {
   const settings = {
-    resultSort: await joplin.settings.value('itags.resultSort'),
-    resultOrder: await joplin.settings.value('itags.resultOrder'),
-    resultToggle: await joplin.settings.value('itags.resultToggle'),
+    resultSort: override.resultSort === undefined ? await joplin.settings.value('itags.resultSort') : override.resultSort,
+    resultOrder: override.resultOrder === undefined ? await joplin.settings.value('itags.resultOrder') : override.resultOrder,
+    resultToggle: override.resultToggle === undefined ? await joplin.settings.value('itags.resultToggle') : override.resultToggle,
     resultMarker: await joplin.settings.value('itags.resultMarker'),
   };
   const intervalID = setInterval(
@@ -246,6 +246,7 @@ export async function addTagToText(message: any) {
 
 async function updateNote(message: any, newBody: string) {
   const selectedNote = await joplin.workspace.selectedNote();
+  await joplin.data.put(['notes', message.externalId], null, { body: newBody });
   if ((selectedNote.id === message.externalId) && (newBody !== selectedNote.body)) {
     // Update note editor if it's the currently selected note
     await joplin.commands.execute('editor.setText', newBody);
@@ -254,7 +255,6 @@ async function updateNote(message: any, newBody: string) {
       args: [message.line]
     });
   }
-  await joplin.data.put(['notes', message.externalId], null, { body: newBody });
 }
 
 export async function saveQuery(query: QueryRecord, noteId: string=null): Promise<string> {
@@ -331,7 +331,7 @@ export async function upgradeQuery(db: any, note: any): Promise<string> {
   }
 }
 
-async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
+async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRecord> {
   // Test if the query is valid
   if (!query.query) {
     return query;
@@ -362,7 +362,7 @@ async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
         if (condition.externalId === 'current') { continue; }
 
         // Try to update externalId in case it changed
-        const newExternalId = await getNoteId(db, condition.externalId, condition.title);
+        const newExternalId = db.getNoteId(condition.title);
         if (newExternalId) {
           condition.externalId = newExternalId;
         } else {
@@ -381,7 +381,7 @@ async function testQuery(db: any, query: QueryRecord): Promise<QueryRecord> {
 
 export async function updateQuery(panel: string, query: Query[][], filter: string) {
   // Send the query to the search panel
-  if (!query || query[0].length === 0) {
+  if (!query || query.length ===0 || query[0].length === 0) {
     return;
   }
   if (joplin.views.panels.visible(panel)) {

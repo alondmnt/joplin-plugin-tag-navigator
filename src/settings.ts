@@ -46,6 +46,14 @@ export async function registerSettings() {
       label: 'Search: Periodic inline tags DB update (minutes)',
       description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
     },
+    'itags.periodicNoteUpdate': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Periodic update of results display in notes',
+      description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
+    },
     'itags.resultSort': {
       value: 'modified',
       type: SettingItemType.String,

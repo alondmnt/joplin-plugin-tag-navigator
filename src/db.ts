@@ -1,126 +1,213 @@
 import joplin from 'api';
 import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
-const sqlite3 = joplin.require('sqlite3');
 
+export type ResultSet = { [id: string]: Set<number> };
 
-export async function createTables(path: string) {
-  // Open a SQLite database
-  const db = new sqlite3.Database(path, (err) => {
-    if (err) {
-      console.error('Error opening database', err.message);
-    } else {
-      console.log(`Opened database successfully in ${path}`);
+class Note {
+  id: string;
+  title: string;
+  tags: { [tag: string]: Set<number> };
+  noteLinksById: { [noteId: string]: Set<number> };
+  noteLinksByTitle: { [title: string]: Set<number> };
+  displayResults: boolean;
+
+  constructor(id: string, title: string) {
+    this.id = id;
+    this.title = title;
+    this.tags = {};
+    this.noteLinksById = {};
+    this.noteLinksByTitle = {};
+    this.displayResults = false;
+  }
+
+  addTag(tag: string, lineNumber: number) {
+    if (!this.tags[tag]) {
+      this.tags[tag] = new Set();
     }
-  });
+    this.tags[tag].add(lineNumber);
+  }
 
-  db.serialize(() => {
-    // Create tables
-    db.run(`CREATE TABLE IF NOT EXISTS Notes (
-    noteId INTEGER PRIMARY KEY AUTOINCREMENT,
-    externalId TEXT NOT NULL UNIQUE,
-    title TEXT NOT NULL
-    );`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS Tags (
-    tagId INTEGER PRIMARY KEY AUTOINCREMENT,
-    tag TEXT NOT NULL UNIQUE
-    );`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS NoteTags (
-    noteId INTEGER,
-    tagId INTEGER,
-    lineNumber INTEGER,
-    PRIMARY KEY (noteId, tagId, lineNumber),
-    FOREIGN KEY (noteId) REFERENCES Notes(noteId),
-    FOREIGN KEY (tagId) REFERENCES Tags(tagId)
-    );`);
-    
-    // Here we use externalId for the linked note because it's *stable*
-    db.run(`CREATE TABLE IF NOT EXISTS NoteLinks (
-    noteId INTEGER,
-    linkedNoteId TEXT,
-    lineNumber INTEGER,
-    PRIMARY KEY (noteId, linkedNoteId, lineNumber),
-    FOREIGN KEY (noteId) REFERENCES Notes(noteId),
-    FOREIGN KEY (linkedNoteId) REFERENCES Notes(externalId)
-    );`);
-    
-    // Keep a list of notes where results are displayed
-    db.run(`CREATE TABLE IF NOT EXISTS Results (
-    externalId TEXT NOT NULL
-    );`);
-    
-    // Create indexes
-    db.run(`CREATE INDEX IF NOT EXISTS idx_noteId ON NoteTags(noteId);`);
-  });
-  
-  return db;
+  setDisplay(display: boolean) {
+    this.displayResults = display;
+  }
+
+  addLink(title: string, noteId: string, lineNumber: number) {
+    if (!this.noteLinksById[noteId]) {
+      this.noteLinksById[noteId] = new Set();
+    }
+    this.noteLinksById[noteId].add(lineNumber);
+
+    if (!this.noteLinksByTitle[title]) {
+      this.noteLinksByTitle[title] = new Set();
+    }
+    this.noteLinksByTitle[title].add(lineNumber);
+  }
+
+  addTagLines(tag: string, lines: Set<number>) {
+    // batch function
+    if (!this.tags[tag]) {
+      this.tags[tag] = new Set();
+    }
+    lines.forEach(line => this.tags[tag].add(line));
+  }
+
+  addLinkIdLines(noteId: string, lines: Set<number>) {
+    // batch function
+    if (!this.noteLinksById[noteId]) {
+      this.noteLinksById[noteId] = new Set();
+    }
+    lines.forEach(line => this.noteLinksById[noteId].add(line));
+  }
+
+  addLinkTitleLines(title: string, lines: Set<number>) {
+    // batch function
+    if (!this.noteLinksByTitle[title]) {
+      this.noteLinksByTitle[title] = new Set();
+    }
+    lines.forEach(line => this.noteLinksByTitle[title].add(line));
+  }
+
+  getNoteLines(): Set<number> {
+    let allPos: Set<number> = new Set();
+    for (const tag in this.tags) {
+      allPos = unionSets(allPos, this.tags[tag]);
+    }
+    for (const noteId in this.noteLinksById) {
+      allPos = unionSets(allPos, this.noteLinksById[noteId]);
+    }
+    for (const title in this.noteLinksByTitle) {
+      allPos = unionSets(allPos, this.noteLinksByTitle[title]);
+    }
+    return allPos;
+  }
 }
 
-function run(db: any, sql: string, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(this);
+export class NoteDatabase {
+  notes: { [id: string]: Note }
+  tags: { [tag: string]: number }  // Used to filter tags
+
+  constructor() {
+    this.notes = {};
+    this.tags = {};
+  }
+
+  addNote(note: Note): void {
+    // Add a note to the database
+    // Check if note already exists
+    if (this.notes[note.id]) {
+      console.log(`Note with id ${note.id} already exists in the database.`);
+      this.removeNote(note.id);
+    }
+    // Add or update the note in the database
+    this.notes[note.id] = note;
+    // Update tags count
+    for (const tag in note.tags) {
+      this.tags[tag] = (this.tags[tag] || 0) + note.tags[tag].size;
+    }
+  }
+
+  removeNote(id: string): void {
+    // Remove a note from the database
+    if (!this.notes[id]) {
+      console.error(`Note with id ${id} does not exist in the database.`);
+      return
+    }
+    // Update tags count
+    for (const tag in this.notes[id].tags) {
+      this.tags[tag] = this.tags[tag] - this.notes[id].tags[tag].size;
+    }
+    // Remove the note from the database
+    delete this.notes[id];
+  }
+
+  filterTags(minCount: number): void {
+    // Filter tags with count less than minCount
+    for (const tag in this.tags) {
+      if (this.tags[tag] < minCount) {
+        delete this.tags[tag];
       }
-    });
-  });
-}
+    }
+  }
 
-function get(db: any, sql: string, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result);
+  getTags(): string[] {
+    // Return a list of tags sorted alphabetically
+    return Object.keys(this.tags).sort();
+  }
+
+  getNotes(): { title: string, externalId: string }[] {
+    // Return a list of note titles and ids
+    return Object.values(this.notes)
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map(note => { return {title: note.title, externalId: note.id}; });
+  }
+
+  getNoteId(title: string): string {
+    // Return the note id given the note title
+    return Object.values(this.notes).find(note => note.title === title)?.id;
+  }
+
+  getResultNotes(): string[] {
+    // Return a list of note ids that should display results
+    return Object.values(this.notes).filter(note => note.displayResults).map(note => note.id);
+  }
+
+  searchBy(by: string, query: string, negated: boolean): ResultSet {
+    // Return a dictionary of note ids and positions of the given tag
+    // If negated is true, all positions without the tag are returned
+    const result: ResultSet = {};
+    for (const noteId in this.notes) {
+      let resPos: Set<number> = new Set();
+      switch (by) {
+        case 'tag':
+          resPos = this.notes[noteId].tags[query];
+          break;
+        case 'noteLinkId':
+          resPos = this.notes[noteId].noteLinksById[query];
+          break;
+        case 'noteLinkTitle':
+          resPos = this.notes[noteId].noteLinksByTitle[query];
+          break;
       }
-    });
-  });
-}
 
-function all(db: any, sql: string, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) {
-        reject(err);
+      if (!negated) {
+        if (resPos) { result[noteId] = resPos; }
       } else {
-        resolve(rows);
+        const allPos = this.notes[noteId].getNoteLines();
+        result[noteId] = diffSets(allPos, resPos);
       }
-    });
-  });
+    }
+    return result;
+  }
 }
 
-export async function processAllNotes() {
+export function intersectSets(setA: Set<number>, setB: Set<number>): Set<number> {
+  // Return the intersection of two sets
+  return new Set([...setA].filter(x => setB.has(x)));
+}
+
+export function unionSets(setA: Set<number>, setB: Set<number>): Set<number> {
+  // Return the union of two sets
+  return new Set([...setA, ...setB]);
+}
+
+function diffSets(setA: Set<number>, setB: Set<number>): Set<number> {
+  // Return the set difference of two sets
+  if (!setB) { return setA; }
+  return new Set([...setA].filter(x => !setB.has(x)));
+}
+
+export async function processAllNotes(): Promise<NoteDatabase> {
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Create the in-memory database
-  const db = await createTables(':memory:');
+  const db = new NoteDatabase();
   const tagRegex = await getTagRegex();
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
 
-  // Build notes table, so we can process link to notes
+  // Get all notes
   let hasMore = true;
   let page = 1;
-  while (hasMore) {
-    const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'title'],
-      limit: 50,
-      page: page++,
-    });
-    hasMore = notes.has_more;
-
-    for (const note of notes.items) {
-      await insertOrGetNoteId(db, note.id, note.title);
-    }
-  }
-
-  // Get all notes
-  hasMore = true;
-  page = 1;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
       fields: ['id', 'title', 'body', 'markup_language'],
@@ -138,119 +225,37 @@ export async function processAllNotes() {
   }
 
   const minCount = await joplin.settings.value('itags.minCount');
-  await filterTags(db, minCount);
+  db.filterTags(minCount);
 
   return db;
 }
 
-export async function processNote(db: any, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean) {
+export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean): Promise<void> {
   try {
-    // Start a transaction
-    await run(db, 'BEGIN TRANSACTION');
-
+    const noteRecord = new Note(note.id, note.title);
     const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
-    const noteId = await insertOrGetNoteId(db, note.id, note.title);
 
     // Process each tagLine within the transaction
     for (const tagLine of tagLines) {
-      const tagId = await insertOrGetTagId(db, tagLine.tag);
       for (const lineNumber of tagLine.lines) {
-        await insertNoteTag(db, noteId, tagId, lineNumber);
+        noteRecord.addTag(tagLine.tag, lineNumber);
       }
     }
 
     // Process links
     const linkLines = await parseLinkLines(note.body, ignoreCodeBlocks, inheritTags);
     for (const linkLine of linkLines) {
-      const linkedNoteId = await getNoteId(db, linkLine.noteId, linkLine.title);
-      if (linkedNoteId) {
-        await run(db, `INSERT INTO NoteLinks (noteId, linkedNoteId, lineNumber) VALUES (?, ?, ?)`, [noteId, linkedNoteId, linkLine.line]);
-      }
+      noteRecord.addLink(linkLine.title, linkLine.noteId, linkLine.line);
     }
 
     // Insert into Results table if results should be displayed
     const searchQuery = await loadQuery(db, note);
-    if (searchQuery.displayInNote) {
-      await run(db, `INSERT INTO Results (externalId) VALUES (?)`, [note.id]);
-    }
+    noteRecord.setDisplay(searchQuery.displayInNote);
 
-    // Commit the transaction
-    await run(db, 'COMMIT');
-    // console.log(`Processed note ${note.id} successfully.`);
+    // Add the note to the database
+    db.addNote(noteRecord);
+
   } catch (error) {
-    // Roll back the transaction in case of an error
-    await run(db, 'ROLLBACK');
     console.error(`Error processing note ${note.id}:`, error);
   }
-}
-
-async function insertNoteTag(db: any, noteId: number, tagId: number, lineNumber: number) {
-  try {
-    await run(db, `INSERT INTO NoteTags (noteId, tagId, lineNumber) VALUES (?, ?, ?)`, [noteId, tagId, lineNumber]);
-  } catch (error) {
-    throw error; // Rethrow the error to be handled by the caller
-  }
-}
-
-async function insertOrGetTagId(db: any, tag: string): Promise<number | null> {
-  try {
-    // Attempt to insert the tag, ignoring if it already exists
-    await run(db, `INSERT OR IGNORE INTO Tags (tag) VALUES (?)`, [tag]);
-    
-    // Retrieve the tagId for the given tag
-    const result = await get(db, `SELECT tagId FROM Tags WHERE tag = ?`, [tag]);
-    return result ? (result as any).tagId : null;
-  } catch (error) {
-    throw error; // Rethrow the error to be handled by the caller
-  }
-}
-
-async function insertOrGetNoteId(db: any, externalId: string, title: string): Promise<number | null> {
-  try {
-    // Attempt to insert the note, ignoring if it already exists
-    await run(db, `INSERT OR IGNORE INTO Notes (externalId, title) VALUES (?, ?)`, [externalId, title]);
-    
-    // Retrieve the noteId for the given note
-    const result = await get(db, `SELECT noteId FROM Notes WHERE externalId = ?`, [externalId]);
-    return result ? (result as any).noteId : null;
-  } catch (error) {
-    throw error; // Rethrow the error to be handled by the caller
-  }
-}
-
-// search a note by externalId OR title (prefer externalId)
-// currently returning externalId because it is *stable*
-export async function getNoteId(db: any, externalId: string, title: string): Promise<string | null> {
-  try {
-    const resultById = await get(db, `SELECT externalId FROM Notes WHERE externalId = ?`, [externalId]);
-    if (resultById) {
-      return (resultById as any).externalId;
-    } else {
-      const resultByTitle = await get(db, `SELECT externalId FROM Notes WHERE title = ? LIMIT 1`, [title]);
-      return resultByTitle ? (resultByTitle as any).externalId : null;
-    }
-  } catch (error) {
-    throw error; // Rethrow the error to be handled by the caller
-  }
-}
-
-async function filterTags(db: any, minCount: number) {
-  // delete from Tags and NoteTags where tagId counts are less than minCount
-  await run(db, `DELETE FROM Tags WHERE tagId NOT IN (SELECT tagId FROM NoteTags GROUP BY tagId HAVING COUNT(*) >= ?)`, [minCount]);
-  await run(db, `DELETE FROM NoteTags WHERE tagId NOT IN (SELECT tagId FROM Tags)`);
-}
-
-export async function removeNoteTags(db: any, noteId: string) {
-  const numId = await insertOrGetNoteId(db, noteId, '');
-  await run(db, `DELETE FROM NoteTags WHERE noteId = ?`, [numId]);
-}
-
-export async function removeNoteLinks(db: any, noteId: string) {
-  const numId = await insertOrGetNoteId(db, noteId, '');
-  await run(db, `DELETE FROM NoteLinks WHERE noteId = ?`, [numId]);
-}
-
-export async function getResultNotes(db: any): Promise<string[]> {
-  const results = await all(db, `SELECT externalId FROM Results`);
-  return (results as any).map((result: any) => result.externalId);
 }

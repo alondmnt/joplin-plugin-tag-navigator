@@ -14,7 +14,7 @@ const noteList = document.getElementById('itags-search-noteList');
 const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
-let resultToggleState = 'collapse';
+let resultToggleState = 'expand';
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
@@ -57,14 +57,21 @@ webviewApi.onMessage((message) => {
 
     } else if (message.message.name === 'updateSettings') {
         const settings = JSON.parse(message.message.settings);
-        resultToggleState = settings.resultToggle ? 'expand' : 'collapse';
+        resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
+        if ( resultToggleState === 'collapse' ) {
+            collapseResults();
+        } else {
+            expandResults();
+        }
+        console.log('resultToggleState', resultToggleState);
         resultToggle.innerHTML = settings.resultToggle ? 
-            '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+            '>' : 'v';  // Button shows the current state (collapse / expand)
         resultSort.value = settings.resultSort;
         resultOrderState = settings.resultOrder;
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
-            '<i class="fas fa-sort-amount-down"></i>' : '<i class="fas fa-sort-amount-up"></i>';
+            '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
         resultMarker = settings.resultMarker;
+        updateResultsArea();
     }
 });
 
@@ -107,6 +114,10 @@ function updateNoteList() {
         noteEl.textContent = note.title;
         noteList.appendChild(noteEl);
     });
+
+    // Duplicate the first option to be the first
+    const firstOpt = noteList.firstChild.cloneNode(true);
+    noteList.insertBefore(firstOpt, noteList.firstChild);
 
     // Restore the previous selection, if possible
     if (selectedNoteId) {
@@ -196,14 +207,14 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    // Save the current stae of collapsed / expanded notes by their externalId
+    // Save the current stae of expandd / collapseed notes by their externalId
     const noteState = {};
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapseed';
         } else {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expandd';
         }
     }
 
@@ -239,12 +250,12 @@ function updateResultsArea() {
 
         // Preserve the state of the content container
         contentContainer.setAttribute('data-externalId', result.externalId);
-        if (noteState[result.externalId] === 'expanded') {
+        if (noteState[result.externalId] === 'collapseed') {
             contentContainer.style.display = 'block';
-        } else if (noteState[result.externalId] === 'collapsed') {
+        } else if (noteState[result.externalId] === 'expandd') {
             contentContainer.style.display = 'none';
         } else {
-            contentContainer.style.display = (resultToggleState === 'collapse') ? 'block': 'none';
+            contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
@@ -376,7 +387,7 @@ function mergeGroups(groupIndex) {
         }, []);
         queryGroups.splice(groupIndex, 2, uniqueMergedGroup);
     }
-}    
+}
 
 function splitGroup(groupIndex, tagIndex) {
     const groupToSplit = queryGroups[groupIndex];
@@ -488,6 +499,14 @@ function sendSearchMessage() {
         name: 'searchQuery',
         query: searchQuery,
     });
+}
+
+function sendSetting(field, value) {
+    webviewApi.postMessage({
+        name: 'updateSetting',
+        field: field,
+        value: value,
+    })
 }
 
 function addLineNumberToCheckboxes(entryEl, text) {
@@ -677,6 +696,9 @@ tagClear.addEventListener('click', () => {
 });
 
 saveQuery.addEventListener('click', () => {
+    if (queryGroups.length === 0) {
+        return;
+    }
     webviewApi.postMessage({
         name: 'saveQuery',
         query: JSON.stringify(queryGroups),
@@ -799,30 +821,34 @@ resultFilter.addEventListener('keydown', (event) => {
 });
 
 resultSort.addEventListener('change', () => {
+    sendSetting('resultSort', resultSort.value);
     updateResultsArea();
 });
 
 resultOrder.addEventListener('click', () => {
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
-        resultOrder.innerHTML = '<i class="fas fa-sort-amount-up"></i>';
+        resultOrder.innerHTML = '<b>↑</b>';  // Button shows the currrent state (desc)
     } else if (resultOrderState === 'desc') {
         resultOrderState = 'asc';
-        resultOrder.innerHTML = '<i class="fas fa-sort-amount-down"></i>';
+        resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
     }
+    sendSetting('resultOrder', resultOrderState);
     updateResultsArea();
 });
 
 resultToggle.addEventListener('click', () => {
-    if (resultToggleState === 'collapse') {
+    if (resultToggleState === 'expand') {
         collapseResults();
-        resultToggleState = 'expand';
-        resultToggle.innerHTML = '<i class="fas fa-chevron-down"></i>';
-        return;
-    } else if (resultToggleState === 'expand') {
-        expandResults();
         resultToggleState = 'collapse';
-        resultToggle.innerHTML = '<i class="fas fa-chevron-up"></i>';
+        resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
+        sendSetting('resultToggle', true);
+        return;
+    } else if (resultToggleState === 'collapse') {
+        expandResults();
+        resultToggleState = 'expand';
+        resultToggle.innerHTML = 'v';  // Button shows the current state (expand)
+        sendSetting('resultToggle', false);
         return;
     }
 });
@@ -855,4 +881,8 @@ document.addEventListener('keydown', (event) => {
             menu.remove();
         });
     }
+});
+
+webviewApi.postMessage({
+    name: 'initPanel',
 });
