@@ -270,7 +270,7 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
   }
 
   if (findQuery.test(note.body)) {
-    if (query.query[0].length === 0) {
+    if (query.query.length === 0) {
       note.body = note.body.replace(findQuery, '');
     } else {
       note.body = note.body.replace(findQuery, `\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`);

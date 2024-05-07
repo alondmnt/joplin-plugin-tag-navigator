@@ -696,9 +696,6 @@ tagClear.addEventListener('click', () => {
 });
 
 saveQuery.addEventListener('click', () => {
-    if (queryGroups.length === 0) {
-        return;
-    }
     webviewApi.postMessage({
         name: 'saveQuery',
         query: JSON.stringify(queryGroups),
