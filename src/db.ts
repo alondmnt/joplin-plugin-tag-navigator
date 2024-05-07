@@ -210,16 +210,15 @@ export async function processAllNotes(): Promise<NoteDatabase> {
   let page = 1;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'title', 'body', 'markup_language'],
+      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict'],
       limit: 50,
       page: page++,
     });
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
-      if (ignoreHtmlNotes && (note.markup_language === 2)) {
-        continue;
-      }
+      if (ignoreHtmlNotes && (note.markup_language === 2)) { continue; }
+      if (note.is_conflict == 1) { continue; }
       await processNote(db, note, tagRegex, ignoreCodeBlocks, inheritTags);
     }
   }
