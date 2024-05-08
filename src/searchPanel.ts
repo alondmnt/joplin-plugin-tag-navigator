@@ -97,11 +97,11 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
-  const xitOpen = /^[\s]*- \[ \] (.*)$/gm;
-  const xitDone = /^[\s]*- \[x\] (.*)$/gm;
-  const xitOngoing = /^[\s]*- \[@\] (.*)$/gm;
-  const xitObsolete = /^[\s]*- \[~\] (.*)$/gm;
-  const xitInQuestion = /^[\s]*- \[\?\] (.*)$/gm;
+  const xitOpen = /(^[\s]*)- \[ \] (.*)$/gm;
+  const xitDone = /(^[\s]*)- \[x\] (.*)$/gm;
+  const xitOngoing = /(^[\s]*)- \[@\] (.*)$/gm;
+  const xitObsolete = /(^[\s]*)- \[~\] (.*)$/gm;
+  const xitInQuestion = /(^[\s]*)- \[\?\] (.*)$/gm;
 
   for (const group of groupedResults) {
     group.html = []; // Ensure group.html is initialized as an empty array if not already done
@@ -118,11 +118,11 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
       if (colorTodos) {
         processedSection = processedSection
-          .replace(xitOpen, '- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$1</span>\n')
-          .replace(xitDone, '- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$1</span>\n')
-          .replace(xitOngoing, '- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$1</span>\n')
-          .replace(xitObsolete, '- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$1</span>\n')
-          .replace(xitInQuestion, '- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$1</span>\n');
+          .replace(xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
+          .replace(xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
+          .replace(xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
+          .replace(xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
+          .replace(xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n');
       }
       group.html.push(md.render(processedSection));
     }
