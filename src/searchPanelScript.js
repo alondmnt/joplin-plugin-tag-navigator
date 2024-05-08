@@ -293,6 +293,16 @@ function updateResultsArea() {
                         text: result.text[index].split('\n')[line].trim(),
                         checked: event.target.checked,
                     });
+                } else if (event.target.matches('.itags-search-checkbox')) {
+                    // get the line number of the clicked coloured checkbox
+                    const line = parseInt(event.target.getAttribute('data-line-number'));
+                    webviewApi.postMessage({
+                        name: 'setCheckBox',
+                        externalId: result.externalId,
+                        line: result.lineNumbers[index] + line,
+                        text: result.text[index].split('\n')[line].trim(),
+                        checked: event.target.getAttribute('data-checked') === 'true' ? false : true,
+                    });
                 } else {
                     webviewApi.postMessage({
                         name: 'openNote',
@@ -512,9 +522,20 @@ function sendSetting(field, value) {
 function addLineNumberToCheckboxes(entryEl, text) {
     const textContent = text.split('\n');
     let lineNumber = 0;
-    // Use querySelectorAll instead of find to select checkboxes
-    const checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
+    let checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
   
+    checkboxes.forEach(checkbox => {
+        // Increment line number until the next checkbox is reached in the text content
+        while (lineNumber < textContent.length && !textContent[lineNumber].includes(checkbox.nextSibling.textContent.trim())) {
+            lineNumber++;
+        }
+        // Set the data-line-number attribute to the calculated line number
+        checkbox.setAttribute('data-line-number', lineNumber);
+    });
+
+    // Custom coloured checkboxes
+    checkboxes = entryEl.querySelectorAll('.itags-search-checkbox');
+    lineNumber = 0;
     checkboxes.forEach(checkbox => {
         // Increment line number until the next checkbox is reached in the text content
         while (lineNumber < textContent.length && !textContent[lineNumber].includes(checkbox.nextSibling.textContent.trim())) {

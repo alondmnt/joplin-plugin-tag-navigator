@@ -331,8 +331,49 @@ hr {
     list-style-type: none;  /* Remove the default bullet */
 }
 
-.itags-search-xitOpen {
-    color: #4178be;
+/* Base style for all custom checkboxes */
+.itags-search-checkbox {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #999;
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+/* Custom checkmark style, same for all colors */
+.itags-search-checkbox[data-checked="true"]::before {
+    content: '✔';              /* Using a Unicode checkmark */
+    position: absolute;
+    top: -1px;                 /* Adjust position as necessary */
+    left: 0;                   /* Center horizontally within the checkbox */
+    color: white;              /* White checkmark for contrast */
+    font-size: 10px;           /* Font size to fit the checkmark within the checkbox */
+    width: 10px;               /* Match the width of the checkbox */
+    text-align: center;        /* Center the checkmark horizontally */
+}
+
+/* Color-specific styles */
+.itags-search-checkbox.xitOpen {
+    background-color: #4178be;
+}
+
+.itags-search-checkbox.xitDone {
+    background-color: #64a073;
+}
+
+.itags-search-checkbox.xitOngoing {
+    background-color: #cb55c2;
+}
+
+.itags-search-checkbox.xitObsolete {
+    background-color: #999;
+}
+
+.itags-search-checkbox.xitInQuestion {
+    background-color: #cc913f;
 }
 
 .itags-search-xitDone {
@@ -341,17 +382,12 @@ hr {
 }
 
 .itags-search-xitOngoing {
-    color: #cb55c2;
     font-weight: bold;
 }
 
 .itags-search-xitObsolete {
     color: #999;
     text-decoration: line-through;
-}
-
-.itags-search-xitInQuestion {
-    color: #cc913f;
 }
 
 .itags-search-contextMenu {

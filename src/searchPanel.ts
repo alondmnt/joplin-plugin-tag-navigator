@@ -118,11 +118,11 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
       if (colorTodos) {
         processedSection = processedSection
-          .replace(xitOpen, '- [ ] <span class="itags-search-xitOpen">$1</span>\n')
-          .replace(xitDone, '- [x] <span class="itags-search-xitDone">$1</span>\n')
-          .replace(xitOngoing, '- [ ] <span class="itags-search-xitOngoing">$1</span>\n')
-          .replace(xitObsolete, '- [ ] <span class="itags-search-xitObsolete">$1</span>\n')
-          .replace(xitInQuestion, '- [ ] <span class="itags-search-xitInQuestion">$1</span>\n');
+          .replace(xitOpen, '- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$1</span>\n')
+          .replace(xitDone, '- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$1</span>\n')
+          .replace(xitOngoing, '- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$1</span>\n')
+          .replace(xitObsolete, '- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$1</span>\n')
+          .replace(xitInQuestion, '- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$1</span>\n');
       }
       group.html.push(md.render(processedSection));
     }
@@ -185,7 +185,7 @@ export async function setCheckboxState(message: any) {
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  const text = message.text.replace(/^\s*- \[[x|\s]\]\s*/, '');
+  const text = message.text.replace(/^\s*- \[[x|\s|@|\?|~]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.error('Error in setCheckboxState: The line does not contain the expected text.');
