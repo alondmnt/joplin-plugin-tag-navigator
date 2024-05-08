@@ -56,13 +56,14 @@ export async function focusSearchPanel(panel: string) {
 
 export async function updatePanelResults(panel: string, results: GroupedResult[], query: Query[][]) {
   const resultMarker = await joplin.settings.value('itags.resultMarker');
+  const colorTodos = await joplin.settings.value('itags.colorTodos');
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(
     () => {
       if(joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
-          results: JSON.stringify(renderHTML(results, tagRegex, resultMarker)),
+          results: JSON.stringify(renderHTML(results, tagRegex, resultMarker, colorTodos)),
           query: JSON.stringify(query),
         });
       }
@@ -93,10 +94,15 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
   );
 }
 
-function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean): GroupedResult[] {
+function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
-  
+  const xitOpen = /^[\s]*- \[ \] (.*)$/gm;
+  const xitDone = /^[\s]*- \[x\] (.*)$/gm;
+  const xitOngoing = /^[\s]*- \[@\] (.*)$/gm;
+  const xitObsolete = /^[\s]*- \[~\] (.*)$/gm;
+  const xitInQuestion = /^[\s]*- \[\?\] (.*)$/gm;
+
   for (const group of groupedResults) {
     group.html = []; // Ensure group.html is initialized as an empty array if not already done
     for (const section of group.text) {
@@ -110,6 +116,14 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
       }
       processedSection = processedSection
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
+      if (colorTodos) {
+        processedSection = processedSection
+          .replace(xitOpen, '- [ ] <span class="itags-search-xitOpen">$1</span>\n')
+          .replace(xitDone, '- [x] <span class="itags-search-xitDone">$1</span>\n')
+          .replace(xitOngoing, '- [ ] <span class="itags-search-xitOngoing">$1</span>\n')
+          .replace(xitObsolete, '- [ ] <span class="itags-search-xitObsolete">$1</span>\n')
+          .replace(xitInQuestion, '- [ ] <span class="itags-search-xitInQuestion">$1</span>\n');
+      }
       group.html.push(md.render(processedSection));
     }
   }
@@ -171,7 +185,7 @@ export async function setCheckboxState(message: any) {
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  const text = message.text.replace(/^\s*-\s*\[[x ]\]\s*/, '');
+  const text = message.text.replace(/^\s*- \[[x|\s]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.error('Error in setCheckboxState: The line does not contain the expected text.');
@@ -181,10 +195,10 @@ export async function setCheckboxState(message: any) {
   if (message.checked) {
     // If checked is true, ensure the checkbox is marked as checked (- [x])
     // \s* accounts for any leading whitespace
-    lines[message.line] = line.replace(/^(\s*-\s*\[)\s(\])/g, '$1x$2');
+    lines[message.line] = line.replace(/^(\s*- \[)[\s|@|\?](\])/g, '$1x$2');
   } else {
     // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
-    lines[message.line] = line.replace(/^(\s*-\s*\[)x(\])/g, '$1 $2');
+    lines[message.line] = line.replace(/^(\s*- \[)x(\])/g, '$1 $2');
   }
 
   const newBody = lines.join('\n');

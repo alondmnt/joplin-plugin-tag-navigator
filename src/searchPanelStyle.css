@@ -331,6 +331,29 @@ hr {
     list-style-type: none;  /* Remove the default bullet */
 }
 
+.itags-search-xitOpen {
+    color: #4178be;
+}
+
+.itags-search-xitDone {
+    color: #64a073;
+    text-decoration: line-through;
+}
+
+.itags-search-xitOngoing {
+    color: #cb55c2;
+    font-weight: bold;
+}
+
+.itags-search-xitObsolete {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.itags-search-xitInQuestion {
+    color: #cc913f;
+}
+
 .itags-search-contextMenu {
     background-color: var(--joplin-background-color);
     border: 1px solid var(--joplin-divider-color);
