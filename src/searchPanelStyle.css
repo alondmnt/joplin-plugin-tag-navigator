@@ -334,8 +334,8 @@ hr {
 /* Base style for all custom checkboxes */
 .itags-search-checkbox {
     position: relative;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border: 1px solid #999;
     display: inline-block;
     vertical-align: middle;
@@ -345,14 +345,14 @@ hr {
 
 /* Custom checkmark style, same for all colors */
 .itags-search-checkbox[data-checked="true"]::before {
-    content: '✔';              /* Using a Unicode checkmark */
+    content: '✔';
     position: absolute;
-    top: -1px;                 /* Adjust position as necessary */
-    left: 0;                   /* Center horizontally within the checkbox */
-    color: white;              /* White checkmark for contrast */
-    font-size: 10px;           /* Font size to fit the checkmark within the checkbox */
-    width: 10px;               /* Match the width of the checkbox */
-    text-align: center;        /* Center the checkmark horizontally */
+    top: -1px;
+    left: 0;
+    color: white;
+    font-size: 12px;
+    width: 12px;               /* Match the width of the checkbox */
+    text-align: center;
 }
 
 /* Color-specific styles */
@@ -376,6 +376,7 @@ hr {
     background-color: #cc913f;
 }
 
+/* Checkbox-specific text style */
 .itags-search-xitDone {
     color: #64a073;
     text-decoration: line-through;
