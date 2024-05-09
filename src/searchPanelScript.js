@@ -10,6 +10,7 @@ const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
+const noteArea = document.getElementById('itags-search-inputNoteArea');
 const noteList = document.getElementById('itags-search-noteList');
 const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
@@ -71,6 +72,18 @@ webviewApi.onMessage((message) => {
         resultOrder.innerHTML = resultOrderState === 'asc' ? 
             '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
         resultMarker = settings.resultMarker;
+
+        if (settings.showNotes) {
+            noteArea.classList.remove('hidden');
+            noteFilter.classList.remove('hidden');
+            noteList.classList.remove('hidden');
+            resultsArea.classList.remove('extended');
+        } else {
+            noteArea.classList.add('hidden');
+            noteFilter.classList.add('hidden');
+            noteList.classList.add('hidden');
+            resultsArea.classList.add('extended');
+        }
         updateResultsArea();
     }
 });

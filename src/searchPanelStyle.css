@@ -63,6 +63,12 @@ body {
     font-size: var(--joplin-font-size);
 }
 
+.hidden {
+    display: none;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}
+
 #itags-search-noteList {
     width: 52%;
     min-height: 23px;
@@ -228,6 +234,10 @@ body {
     font-size: var(--joplin-font-size);
     box-sizing: border-box;
     font-family: Avenir, Arial, sans-serif;
+}
+
+.extended {
+    max-height: calc(100vh - 249px + 33px) !important;
 }
 
 #itags-search-resultsArea::-webkit-scrollbar {

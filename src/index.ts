@@ -14,7 +14,6 @@ let db: NoteDatabase;
 let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
 
 async function updatePanelTagData(panel: string) {
-  if (!joplin.views.panels.visible(panel)) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
     tags: JSON.stringify(db.getTags()),
@@ -22,7 +21,6 @@ async function updatePanelTagData(panel: string) {
 }
 
 async function updatePanelNoteData(panel: string) {
-  if (!joplin.views.panels.visible(panel)) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateNoteData',
     notes: JSON.stringify(db.getNotes()),
