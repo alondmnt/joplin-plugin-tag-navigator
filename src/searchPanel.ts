@@ -260,8 +260,11 @@ export async function addTagToText(message: any) {
 
 async function updateNote(message: any, newBody: string) {
   const selectedNote = await joplin.workspace.selectedNote();
+  const targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  if (newBody === targetNote.body) { return; }
+
   await joplin.data.put(['notes', message.externalId], null, { body: newBody });
-  if ((selectedNote.id === message.externalId) && (newBody !== selectedNote.body)) {
+  if (selectedNote.id === message.externalId) {
     // Update note editor if it's the currently selected note
     await joplin.commands.execute('editor.setText', newBody);
     await joplin.commands.execute('editor.execCommand', {
