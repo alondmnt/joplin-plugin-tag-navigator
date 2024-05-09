@@ -100,7 +100,7 @@ async function processQueryResults(queryResults: ResultSet): Promise<GroupedResu
   for (const externalId in queryResults) {
     groupedResults.push({
       externalId: externalId,
-      lineNumbers: Array.from(queryResults[externalId]),
+      lineNumbers: Array.from(queryResults[externalId]).sort((a, b) => a - b),
       text: [],
       html: [],
       title: '',
