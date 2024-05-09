@@ -520,10 +520,13 @@ function sendSetting(field, value) {
 }
 
 function addLineNumberToCheckboxes(entryEl, text) {
-    const textContent = text.split('\n');
+    const textContent = text
+        .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')  // strip links
+        .replace(/\[\[([^\]]+)\]\]/g, '$1')  // strip wikilinks
+        .split('\n');
     let lineNumber = 0;
     let checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
-  
+
     checkboxes.forEach(checkbox => {
         // Increment line number until the next checkbox is reached in the text content
         while (lineNumber < textContent.length && !textContent[lineNumber].includes(checkbox.nextSibling.textContent.trim())) {
