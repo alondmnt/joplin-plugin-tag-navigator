@@ -69,7 +69,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
         background-color: #7698b3;
         color: white !important;
         padding: 0em 0.2em;
-        border-radius: 0.5em;
+        border-radius: 5px;
         display: inline;
     }
     ```
