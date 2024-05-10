@@ -61,6 +61,13 @@ export async function registerSettings() {
       public: true,
       label: 'Search: Show note mentions section',
     },
+    'itags.showResultFilter': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Show results filter section',
+    },
     'itags.resultSort': {
       value: 'modified',
       type: SettingItemType.String,

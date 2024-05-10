@@ -14,6 +14,7 @@ const noteArea = document.getElementById('itags-search-inputNoteArea');
 const noteList = document.getElementById('itags-search-noteList');
 const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
+const resultFilterArea = document.getElementById('itags-search-inputResultArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
 let resultToggleState = 'expand';
 const resultSort = document.getElementById('itags-search-resultSort');
@@ -57,34 +58,7 @@ webviewApi.onMessage((message) => {
         tagFilter.focus();
 
     } else if (message.message.name === 'updateSettings') {
-        const settings = JSON.parse(message.message.settings);
-        resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
-        if ( resultToggleState === 'collapse' ) {
-            collapseResults();
-        } else {
-            expandResults();
-        }
-        console.log('resultToggleState', resultToggleState);
-        resultToggle.innerHTML = settings.resultToggle ? 
-            '>' : 'v';  // Button shows the current state (collapse / expand)
-        resultSort.value = settings.resultSort;
-        resultOrderState = settings.resultOrder;
-        resultOrder.innerHTML = resultOrderState === 'asc' ? 
-            '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
-        resultMarker = settings.resultMarker;
-
-        if (settings.showNotes) {
-            noteArea.classList.remove('hidden');
-            noteFilter.classList.remove('hidden');
-            noteList.classList.remove('hidden');
-            resultsArea.classList.remove('extended');
-        } else {
-            noteArea.classList.add('hidden');
-            noteFilter.classList.add('hidden');
-            noteList.classList.add('hidden');
-            resultsArea.classList.add('extended');
-        }
-        updateResultsArea();
+        updatePanelSettings(message);
     }
 });
 
@@ -159,6 +133,63 @@ function parseFilter(filter, min_chars=1) {
         .split(' ').filter(word => word.length >= min_chars)
         .concat(quotes);
     return words;
+}
+
+function updatePanelSettings(message) {
+    const settings = JSON.parse(message.message.settings);
+    resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
+    if ( resultToggleState === 'collapse' ) {
+        collapseResults();
+    } else {
+        expandResults();
+    }
+    console.log('resultToggleState', resultToggleState);
+    resultToggle.innerHTML = settings.resultToggle ? 
+        '>' : 'v';  // Button shows the current state (collapse / expand)
+    resultSort.value = settings.resultSort;
+    resultOrderState = settings.resultOrder;
+    resultOrder.innerHTML = resultOrderState === 'asc' ? 
+        '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
+    resultMarker = settings.resultMarker;
+
+    hideElements(settings);
+    updateResultsArea();
+}
+
+function hideElements(settings) {
+    if (settings.showNotes) {
+        noteArea.classList.remove('hidden');
+        noteFilter.classList.remove('hidden');
+        noteList.classList.remove('hidden');
+        resultsArea.classList.remove('extended');
+    } else {
+        noteArea.classList.add('hidden');
+        noteFilter.classList.add('hidden');
+        noteList.classList.add('hidden');
+        resultsArea.classList.add('extended');
+    }
+    if (settings.showResultFilter) {
+        resultFilterArea.classList.remove('hidden');
+        resultFilter.classList.remove('hidden');
+        resultSort.classList.remove('hidden');
+        resultOrder.classList.remove('hidden');
+        resultToggle.classList.remove('hidden');
+    } else {
+        resultFilterArea.classList.add('hidden');
+        resultFilter.classList.add('hidden');
+        resultSort.classList.add('hidden');
+        resultOrder.classList.add('hidden');
+        resultToggle.classList.add('hidden');
+        resultsArea.classList.add('extended');
+    }
+    if (settings.showNotes && settings.showResultFilter) {
+        resultsArea.classList.remove('extended');
+        resultsArea.classList.remove('extended2X');
+    }
+    if (!settings.showNotes && !settings.showResultFilter) {
+        resultsArea.classList.remove('extended');
+        resultsArea.classList.add('extended2X');
+    }
 }
 
 function updateQueryArea() {

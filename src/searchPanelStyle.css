@@ -237,7 +237,11 @@ body {
 }
 
 .extended {
-    max-height: calc(100vh - 249px + 33px) !important;
+    max-height: calc(100vh - 249px + 36px) !important;
+}
+
+.extended2X {
+    max-height: calc(100vh - 249px + 72px) !important;
 }
 
 #itags-search-resultsArea::-webkit-scrollbar {

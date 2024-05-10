@@ -80,6 +80,7 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
     resultToggle: override.resultToggle === undefined ? await joplin.settings.value('itags.resultToggle') : override.resultToggle,
     resultMarker: await joplin.settings.value('itags.resultMarker'),
     showNotes: await joplin.settings.value('itags.showNotes'),
+    showResultFilter: await joplin.settings.value('itags.showResultFilter'),
   };
   const intervalID = setInterval(
     () => {
