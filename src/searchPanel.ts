@@ -219,7 +219,7 @@ export async function removeTagFromText(message: any) {
   }
 
   // Remove the tag and any leading space from the line
-  const tagRegex = new RegExp(`\\s*${message.tag}`);
+  const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`);
   lines[message.line] = line.replace(tagRegex, '');
 
   const newBody = lines.join('\n');
@@ -258,6 +258,12 @@ export async function addTagToText(message: any) {
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
   await updateNote(message, newBody);
+}
+
+export function escapeRegex(string: string): string {
+  return string
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .trim();
 }
 
 async function updateNote(message: any, newBody: string) {
