@@ -143,7 +143,6 @@ function updatePanelSettings(message) {
     } else {
         expandResults();
     }
-    console.log('resultToggleState', resultToggleState);
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
     resultSort.value = settings.resultSort;
@@ -595,7 +594,6 @@ function addLineNumberToCheckboxes(entryEl, text) {
 }
 
 function addLineNumberToTags(entryEl, text) {
-    console.log(text);
     const textContent = text.split('\n');
     let lineNumber = 0;
     // Use querySelectorAll instead of find to select tags

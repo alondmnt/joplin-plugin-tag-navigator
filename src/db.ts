@@ -96,7 +96,6 @@ export class NoteDatabase {
     // Add a note to the database
     // Check if note already exists
     if (this.notes[note.id]) {
-      console.log(`Note with id ${note.id} already exists in the database.`);
       this.removeNote(note.id);
     }
     // Add or update the note in the database

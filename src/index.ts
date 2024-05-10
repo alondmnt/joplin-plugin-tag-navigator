@@ -47,7 +47,6 @@ joplin.plugins.register({
     const periodicConversion: number = await joplin.settings.value('itags.periodicConversion');
     if (periodicConversion > 0) {
       setInterval(async () => {
-        console.log('Periodic inline tags update');
         const tagRegex = await getTagRegex();
         const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
         const inheritTags = await joplin.settings.value('itags.inheritTags');
