@@ -567,6 +567,7 @@ function addLineNumberToCheckboxes(entryEl, text) {
     const textContent = text
         .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')  // strip links
         .replace(/\[\[([^\]]+)\]\]/g, '$1')  // strip wikilinks
+        .replace(/`([^`]+)`/g, '$1')  // strip inline code
         .split('\n');
     let lineNumber = 0;
     let checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
