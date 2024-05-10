@@ -17,7 +17,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
     - Tag-by-notes: Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - Add, replace and remove inline tags via the panel context menu (right-click on a tag).
-    - Toggle checkboxes / TODOs from the panel.
+    - Toggle checkboxes / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes.
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated).
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
 3. It adds a panel for quickly navigating between inline tags that appear in the current note.
@@ -73,6 +73,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
         display: inline;
     }
     ```
+    - On the mobile app, since it is impossible to edit the stylesheet, one could instead define the name of the tag class to be `"name": "searchMatch"`. This will use the same highlighting style as Joplin search results.
 
 ## Motivation
 
