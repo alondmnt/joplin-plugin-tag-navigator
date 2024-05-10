@@ -46,6 +46,13 @@ export async function registerSettings() {
       label: 'Search: Periodic inline tags DB update (minutes)',
       description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
     },
+    'itags.updateAfterSync': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Update inline tags DB after sync',
+    },
     'itags.periodicNoteUpdate': {
       value: true,
       type: SettingItemType.Bool,

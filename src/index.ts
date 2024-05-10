@@ -142,7 +142,6 @@ joplin.plugins.register({
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
     if (periodicDBUpdate > 0) {
       setInterval(async () => {
-        console.log('Periodic inline tags DB update');
         db = await processAllNotes(); // update DB
 
         // Update search results
@@ -264,7 +263,6 @@ joplin.plugins.register({
       label: 'Update inline tags database',
       iconName: 'fas fa-database',
       execute: async () => {
-        console.log('User inline tags DB update');
         db = await processAllNotes();
 
         // Update search results
@@ -384,6 +382,20 @@ joplin.plugins.register({
 
     await joplin.workspace.onNoteChange(async () => {
       await processNoteTags();
+    });
+
+    await joplin.workspace.onSyncComplete(async () => {
+      if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
+      db = await processAllNotes();
+
+      // Update search results
+      const results = await runSearch(db, query);
+      updatePanelResults(searchPanel, results, query);
+
+      // Update note view
+      if (await joplin.settings.value('itags.periodicNoteUpdate')) {
+        displayInAllNotes(db);
+      }
     });
 
     await joplin.views.panels.onMessage(notePanel, async (message) => {
