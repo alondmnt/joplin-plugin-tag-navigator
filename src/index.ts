@@ -223,6 +223,7 @@ joplin.plugins.register({
         const panelState = await joplin.views.panels.visible(searchPanel);
         (panelState) ? await joplin.views.panels.hide(searchPanel) : await joplin.views.panels.show(searchPanel);
         if (!panelState) {
+          await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
         }
       },
