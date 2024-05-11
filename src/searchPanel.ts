@@ -8,7 +8,7 @@ import { NoteDatabase } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 
-interface QueryRecord {
+export interface QueryRecord {
   query: Query[][];
   filter: string;
   displayInNote: boolean;

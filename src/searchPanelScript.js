@@ -759,6 +759,7 @@ tagClear.addEventListener('click', () => {
     clearResultsArea();
     tagFilter.value = ''; // Clear the input field
     resultFilter.value = ''; // Clear the input field
+    sendSetting('filter', '');
     updateTagList();
 });
 
@@ -874,6 +875,7 @@ noteList.addEventListener('blur', function() {
 
 resultFilter.addEventListener('input', () => {
     updateResultsArea();
+    sendSetting('filter', resultFilter.value);
 });
 
 resultFilter.addEventListener('keydown', (event) => {
@@ -881,6 +883,7 @@ resultFilter.addEventListener('keydown', (event) => {
         // Clear the input and update the results area
         resultFilter.value = '';
         updateResultsArea();
+        sendSetting('filter', '');
     }
 });
 
