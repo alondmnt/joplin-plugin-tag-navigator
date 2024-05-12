@@ -201,6 +201,7 @@ export async function processAllNotes(): Promise<NoteDatabase> {
   // Create the in-memory database
   const db = new NoteDatabase();
   const tagRegex = await getTagRegex();
+  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
 
@@ -218,7 +219,7 @@ export async function processAllNotes(): Promise<NoteDatabase> {
     for (const note of notes.items) {
       if (ignoreHtmlNotes && (note.markup_language === 2)) { continue; }
       if (note.is_conflict == 1) { continue; }
-      await processNote(db, note, tagRegex, ignoreCodeBlocks, inheritTags);
+      await processNote(db, note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
     }
   }
 
@@ -228,10 +229,10 @@ export async function processAllNotes(): Promise<NoteDatabase> {
   return db;
 }
 
-export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean): Promise<void> {
+export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp, excludeRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean): Promise<void> {
   try {
     const noteRecord = new Note(note.id, note.title);
-    const tagLines = await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags);
+    const tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
 
     // Process each tagLine within the transaction
     for (const tagLine of tagLines) {

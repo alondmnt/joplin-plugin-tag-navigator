@@ -1,8 +1,13 @@
 import joplin from 'api';
-import { parseTagsLines } from './parser';
+import { parseTagsLines, getTagRegex } from './parser';
 
-export async function convertAllNotesToJoplinTags(tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean) {
+export async function convertAllNotesToJoplinTags() {
+  const tagRegex = await getTagRegex();
+  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
+  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
+  const inheritTags = await joplin.settings.value('itags.inheritTags');
+
   // Get all notes
   let hasMore = true;
   let page = 0;
@@ -19,7 +24,7 @@ export async function convertAllNotesToJoplinTags(tagRegex: RegExp, ignoreCodeBl
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
         continue;
       }
-      await convertNoteToJoplinTags(note, tagRegex, ignoreCodeBlocks, inheritTags);
+      await convertNoteToJoplinTags(note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
     }
   }
 }
@@ -47,10 +52,10 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
   }
 }
 
-export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean) {
+export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, excludeRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean) {
 
   // Prase all inline tags from the note
-  const tags = (await parseTagsLines(note.body, tagRegex, ignoreCodeBlocks, inheritTags))
+  const tags = (await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags))
     .map(tag => tag.tag.replace('#', ''));
 
   if (tags.length === 0) {

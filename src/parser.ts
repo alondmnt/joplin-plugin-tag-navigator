@@ -20,7 +20,8 @@ export async function getTagRegex(): Promise<RegExp> {
   return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
 }
 
-export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<TagLineInfo[]> {
+export async function parseTagsLines(text: string, tagRegex: RegExp, excludeRegex: RegExp,
+    ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
   let isResultBlock = false;
   let isQueryBlock = false;
@@ -66,6 +67,9 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, ignoreCodeB
     const matches = line.match(tagRegex);
     if (matches) {
       matches.forEach((tag) => {
+        if (excludeRegex && tag.match(excludeRegex)) {
+          return;
+        }
         if (!tagsMap.has(tag)) {
           tagsMap.set(tag, { lines: new Set<number>(), count: 0 });
         }
