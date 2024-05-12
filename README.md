@@ -68,7 +68,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     div.CodeMirror .cm-rm-tag {
         background-color: #7698b3;
         color: white !important;
-        padding: 0em 0.2em;
+        padding: 0em 2px;
         border-radius: 5px;
         display: inline;
     }
