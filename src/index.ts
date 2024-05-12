@@ -263,6 +263,8 @@ joplin.plugins.register({
       iconName: 'fas fa-database',
       execute: async () => {
         db = await processAllNotes();
+        await updatePanelTagData(searchPanel);
+        await updatePanelNoteData(searchPanel);
 
         // Update search results
         const results = await runSearch(db, searchParams.query);
@@ -384,6 +386,8 @@ joplin.plugins.register({
     await joplin.workspace.onSyncComplete(async () => {
       if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
       db = await processAllNotes();
+      await updatePanelTagData(searchPanel);
+      await updatePanelNoteData(searchPanel);
 
       // Update search results
       const results = await runSearch(db, searchParams.query);
