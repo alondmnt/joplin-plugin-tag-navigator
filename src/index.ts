@@ -74,7 +74,6 @@ joplin.plugins.register({
       if (message.name === 'initPanel') {
         updatePanelTagData(searchPanel);
         updatePanelNoteData(searchPanel);
-        console.log(searchParams);
         await updateQuery(searchPanel, searchParams.query, searchParams.filter);
         updatePanelSettings(searchPanel, panelSettings);
         const results = await runSearch(db, searchParams.query);
@@ -138,7 +137,6 @@ joplin.plugins.register({
           panelSettings[message.field] = message.value;
         } else {
           searchParams.filter = message.value;
-          console.log(searchParams);
         }
       }
     });
