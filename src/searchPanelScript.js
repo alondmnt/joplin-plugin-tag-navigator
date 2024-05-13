@@ -626,6 +626,30 @@ function createContextMenu(event, result, index) {
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
 
+    // Create the "Search tag" command
+    const searchTag = document.createElement('span');
+    searchTag.textContent = `Search tag`;
+    searchTag.onclick = () => {
+        clearQueryArea();
+        clearResultsArea();
+        tagFilter.value = '';
+        resultFilter.value = '';
+        sendSetting('filter', '');
+        handleTagClick(currentTag.toLowerCase());
+        updateTagList();
+        sendSearchMessage();
+        contextMenu.remove();
+    };
+
+    // Create the "Extend query" command
+    const extendQuery = document.createElement('span');
+    extendQuery.textContent = `Extend query`;
+    extendQuery.onclick = () => {
+        handleTagClick(currentTag.toLowerCase());
+        sendSearchMessage();
+        contextMenu.remove();
+    };
+
     // Create the "Add tag" command
     const addTag = document.createElement('span');
     addTag.textContent = `Add tag`;
@@ -682,6 +706,8 @@ function createContextMenu(event, result, index) {
     };
 
     // Append commands to the contextMenu
+    contextMenu.appendChild(searchTag);
+    contextMenu.appendChild(extendQuery);
     contextMenu.appendChild(addTag);
     contextMenu.appendChild(renameTag);
     contextMenu.appendChild(removeTag);
@@ -754,7 +780,6 @@ tagFilter.addEventListener('input', updateTagList);
 noteFilter.addEventListener('input', updateNoteList);
 
 tagClear.addEventListener('click', () => {
-    // Assuming you have a function or a way to clear the query area
     clearQueryArea();
     clearResultsArea();
     tagFilter.value = ''; // Clear the input field
