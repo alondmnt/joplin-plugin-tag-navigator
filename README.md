@@ -1,5 +1,7 @@
 # Inline Tag Navigator
 
+![downloads](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=downloads&query=%24.totalDownloads&url=https%3A%2F%2Fjoplin-plugin-downloads.vercel.app%2Fapi%3Fplugin%3Djoplin.plugin.alondmnt.tag-navigator)
+
 Type inline #tags in the note editor. View your tagged paragraphs and list items in an advanced search panel, or in a generated note. Convert inline and Obsidian tags into Joplin tags, and vice versa.
 
 - [Features](#features)
