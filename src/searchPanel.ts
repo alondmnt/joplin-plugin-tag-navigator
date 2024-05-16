@@ -109,6 +109,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     group.html = []; // Ensure group.html is initialized as an empty array if not already done
     for (const section of group.text) {
       let processedSection = normalizeTextIndentation(section);
+      processedSection = normalizeHeadingLevel(processedSection);
       if (resultMarker) {
         // Process each section by lines to track line numbers accurately
         const lines = processedSection.split('\n');
@@ -175,6 +176,30 @@ export function normalizeTextIndentation(text: string): string {
   });
 
   return normalizedLines.join('\n');
+}
+
+function normalizeHeadingLevel(text: string): string {
+  const minHeadingLevel = 3;
+  const maxHeadingLevel = 3;
+
+  const lines = text.split('\n');
+  const processedLines = lines.map(line => {
+      const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+      
+      if (headingMatch) {
+          const currentHeadingLevel = headingMatch[1].length;
+          const newHeadingLevel = Math.max(currentHeadingLevel, minHeadingLevel);
+          const adjustedHeadingLevel = Math.min(newHeadingLevel, maxHeadingLevel);
+
+          // Reconstruct the heading with the new level
+          return `${'#'.repeat(adjustedHeadingLevel)} ${headingMatch[2]}`;
+      } else {
+          // If it's not a heading, return the line unchanged
+          return line;
+      }
+  });
+
+  return processedLines.join('\n');
 }
 
 export async function setCheckboxState(message: any) {
