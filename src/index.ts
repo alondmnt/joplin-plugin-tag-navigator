@@ -7,25 +7,11 @@ import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { NoteDatabase, processAllNotes, processNote } from './db';
 import { displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
-import { QueryRecord, focusSearchPanel, registerSearchPanel, setCheckboxState, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, removeTagFromText, renameTagInText, addTagToText } from './searchPanel';
+import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
 let db: NoteDatabase;
 let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
-
-async function updatePanelTagData(panel: string) {
-  joplin.views.panels.postMessage(panel, {
-    name: 'updateTagData',
-    tags: JSON.stringify(db.getTags()),
-  });
-}
-
-async function updatePanelNoteData(panel: string) {
-  joplin.views.panels.postMessage(panel, {
-    name: 'updateNoteData',
-    notes: JSON.stringify(db.getNotes()),
-  });
-}
 
 joplin.plugins.register({
   onStart: async function() {
@@ -67,76 +53,8 @@ joplin.plugins.register({
     db = await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
-
-    await joplin.views.panels.onMessage(searchPanel, async (message) => {
-      if (message.name === 'initPanel') {
-        updatePanelTagData(searchPanel);
-        updatePanelNoteData(searchPanel);
-        await updateQuery(searchPanel, searchParams.query, searchParams.filter);
-        updatePanelSettings(searchPanel, panelSettings);
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'searchQuery') {
-        searchParams.query = JSON.parse(message.query);
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'saveQuery') {
-        // Save the query into the current note
-        const currentQuery = await loadQuery(db, await joplin.workspace.selectedNote());
-        saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
-
-      } else if (message.name === 'openNote') {
-        const note = await joplin.workspace.selectedNote();
-
-        if (note.id !== message.externalId) {
-          await joplin.commands.execute('openNote', message.externalId);
-          // Wait for the note to be opened for 1 second
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        await joplin.commands.execute('editor.execCommand', {
-          name: 'scrollToTagLine',
-          args: [message.line]
-        });
-
-      } else if (message.name === 'setCheckBox') {
-        await setCheckboxState(message);
-
-        // update the search panel
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'removeTag') {
-        await removeTagFromText(message);
-
-        // update the search panel
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'renameTag') {
-        await renameTagInText(message);
-
-        // update the search panel
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'addTag') {
-        await addTagToText(message);
-
-        // update the search panel
-        const results = await runSearch(db, searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
-
-      } else if (message.name === 'updateSetting') {
-
-        if (message.field !== 'filter') {
-          panelSettings[message.field] = message.value;
-        } else {
-          searchParams.filter = message.value;
-        }
-      }
+    await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
+      processMessage(message, searchPanel, db, searchParams, panelSettings);
     });
 
     // Periodic database update
@@ -263,8 +181,8 @@ joplin.plugins.register({
       iconName: 'fas fa-database',
       execute: async () => {
         db = await processAllNotes();
-        await updatePanelTagData(searchPanel);
-        await updatePanelNoteData(searchPanel);
+        await updatePanelTagData(searchPanel, db);
+        await updatePanelNoteData(searchPanel, db);
 
         // Update search results
         const results = await runSearch(db, searchParams.query);
@@ -386,8 +304,8 @@ joplin.plugins.register({
     await joplin.workspace.onSyncComplete(async () => {
       if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
       db = await processAllNotes();
-      await updatePanelTagData(searchPanel);
-      await updatePanelNoteData(searchPanel);
+      await updatePanelTagData(searchPanel, db);
+      await updatePanelNoteData(searchPanel, db);
 
       // Update search results
       const results = await runSearch(db, searchParams.query);
