@@ -5,12 +5,11 @@ import { registerSettings } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
-import { NoteDatabase, processAllNotes, processNote } from './db';
+import { DatabaseManager, processAllNotes, processNote } from './db';
 import { displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
-let db: NoteDatabase;
 let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
 
 joplin.plugins.register({
@@ -23,10 +22,10 @@ joplin.plugins.register({
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       const inheritTags = await joplin.settings.value('itags.inheritTags');
       const excludeRegex = await joplin.settings.value('itags.excludeRegex');
-      await processNote(db, note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      await processNote(DatabaseManager.getDatabase(), note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
 
       // Update search results
-      const results = await runSearch(db, searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
       updatePanelResults(searchPanel, results, searchParams.query);
     }, 1000);
 
@@ -50,26 +49,26 @@ joplin.plugins.register({
     );
 
     // Search panel
-    db = await processAllNotes();
+    await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      processMessage(message, searchPanel, db, searchParams, panelSettings);
+      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, panelSettings);
     });
 
     // Periodic database update
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
     if (periodicDBUpdate > 0) {
       setInterval(async () => {
-        db = await processAllNotes(); // update DB
+        await processAllNotes(); // update DB
 
         // Update search results
-        const results = await runSearch(db, searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
         updatePanelResults(searchPanel, results, searchParams.query);
 
         // Update note view
         if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-          displayInAllNotes(db);  
+          displayInAllNotes(DatabaseManager.getDatabase());  
         }
       }, periodicDBUpdate * 60 * 1000);
     }
@@ -82,7 +81,7 @@ joplin.plugins.register({
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
       const note = await joplin.workspace.selectedNote();
-      const savedQuery = await loadQuery(db, note);
+      const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
       if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
         searchParams = savedQuery;
@@ -91,7 +90,7 @@ joplin.plugins.register({
 
       // Update results in note
       if (savedQuery.displayInNote) {
-        await displayResultsInNote(db, note);
+        await displayResultsInNote(DatabaseManager.getDatabase(), note);
       }
 
       // Note panel update
@@ -103,7 +102,7 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(db, searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
         updatePanelResults(searchPanel, results, searchParams.query);
       }
     });
@@ -151,7 +150,7 @@ joplin.plugins.register({
       iconName: 'fas fa-tags',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
-        const query = await loadQuery(db, note);
+        const query = await loadQuery(DatabaseManager.getDatabase(), note);
         await updateQuery(searchPanel, query.query, query.filter);
       },
     });
@@ -162,13 +161,13 @@ joplin.plugins.register({
       iconName: 'fas fa-tags',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
-        const query = await loadQuery(db, note);
+        const query = await loadQuery(DatabaseManager.getDatabase(), note);
         // toggle display
         query.displayInNote = !query.displayInNote;
 
         note.body = await saveQuery(query);
         if (query.displayInNote) {
-          await displayResultsInNote(db, note);
+          await displayResultsInNote(DatabaseManager.getDatabase(), note);
         } else {
           await removeResults(note);
         }
@@ -180,17 +179,17 @@ joplin.plugins.register({
       label: 'Update inline tags database',
       iconName: 'fas fa-database',
       execute: async () => {
-        db = await processAllNotes();
-        await updatePanelTagData(searchPanel, db);
-        await updatePanelNoteData(searchPanel, db);
+        await processAllNotes();
+        await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
+        await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
         // Update search results
-        const results = await runSearch(db, searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
         updatePanelResults(searchPanel, results, searchParams.query);
 
         // Update note view
         if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-          displayInAllNotes(db);
+          displayInAllNotes(DatabaseManager.getDatabase());
         }
       },
     });
@@ -303,17 +302,17 @@ joplin.plugins.register({
 
     await joplin.workspace.onSyncComplete(async () => {
       if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
-      db = await processAllNotes();
-      await updatePanelTagData(searchPanel, db);
-      await updatePanelNoteData(searchPanel, db);
+      await processAllNotes();
+      await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
+      await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(db, searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
       updatePanelResults(searchPanel, results, searchParams.query);
 
       // Update note view
       if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-        displayInAllNotes(db);
+        displayInAllNotes(DatabaseManager.getDatabase());
       }
     });
 

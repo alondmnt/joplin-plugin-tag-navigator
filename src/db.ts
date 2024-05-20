@@ -2,6 +2,23 @@ import joplin from 'api';
 import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
 
+export class DatabaseManager {
+  static db: NoteDatabase = null;
+
+  static getDatabase() {
+    if (!DatabaseManager.db) {
+      DatabaseManager.db = new NoteDatabase();
+    }
+    return DatabaseManager.db;
+  }
+
+  static clearDatabase() {
+    if (DatabaseManager.db) {
+      DatabaseManager.db.clearData();
+    }
+  }
+}
+
 export type ResultSet = { [id: string]: Set<number> };
 
 class Note {
@@ -129,6 +146,12 @@ export class NoteDatabase {
     }
   }
 
+  // Clear all data
+  clearData() {
+    this.notes = {};
+    this.tags = {};
+  }
+
   getTags(): string[] {
     // Return a list of tags sorted alphabetically
     return Object.keys(this.tags).sort();
@@ -196,10 +219,11 @@ function diffSets(setA: Set<number>, setB: Set<number>): Set<number> {
   return new Set([...setA].filter(x => !setB.has(x)));
 }
 
-export async function processAllNotes(): Promise<NoteDatabase> {
+export async function processAllNotes() {
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Create the in-memory database
-  const db = new NoteDatabase();
+  DatabaseManager.clearDatabase();
+  const db = DatabaseManager.getDatabase();
   const tagRegex = await getTagRegex();
   const excludeRegex = await joplin.settings.value('itags.excludeRegex');
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
@@ -225,8 +249,6 @@ export async function processAllNotes(): Promise<NoteDatabase> {
 
   const minCount = await joplin.settings.value('itags.minCount');
   db.filterTags(minCount);
-
-  return db;
 }
 
 export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp, excludeRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean): Promise<void> {
