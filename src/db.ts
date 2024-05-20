@@ -233,7 +233,7 @@ export async function processAllNotes() {
   let hasMore = true;
   let page = 1;
   while (hasMore) {
-    const notes = await joplin.data.get(['notes'], {
+    let notes = await joplin.data.get(['notes'], {
       fields: ['id', 'title', 'body', 'markup_language', 'is_conflict'],
       limit: 50,
       page: page++,
@@ -245,6 +245,8 @@ export async function processAllNotes() {
       if (note.is_conflict == 1) { continue; }
       await processNote(db, note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
     }
+    // Remove the reference to the notes to avoid memory leaks
+    notes = null;
   }
 
   const minCount = await joplin.settings.value('itags.minCount');
@@ -279,4 +281,7 @@ export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp,
   } catch (error) {
     console.error(`Error processing note ${note.id}:`, error);
   }
+  // Remove the reference to the note to avoid memory leaks
+  note.body = null;
+  note = null;
 }
