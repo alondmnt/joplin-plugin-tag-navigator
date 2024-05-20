@@ -24,6 +24,7 @@ const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
 let dropdownIsOpen = false;
+const eventListenersMap = new Map();  // Map to store event listeners and clear them later
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
@@ -64,7 +65,7 @@ webviewApi.onMessage((message) => {
 
 // Update areas
 function updateTagList() {
-    tagList.innerHTML = '';
+    clearNode(tagList);
     allTags.filter(tag => containsFilter(tag, tagFilter.value)).forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.classList.add('itags-search-tag');
@@ -80,7 +81,7 @@ function updateNoteList() {
 
     // Preserve the previous selection, if possible
     const selectedNoteId = noteList.value;
-    noteList.innerHTML = '';
+    clearNode(noteList);
 
     if (noteFilter.value === '') {
         const titleOpt = document.createElement('option');
@@ -192,7 +193,7 @@ function hideElements(settings) {
 }
 
 function updateQueryArea() {
-    queryArea.innerHTML = ''; // Clear the current content
+    clearNode(queryArea);
     queryGroups.forEach((group, groupIndex) => {
         if (groupIndex > 0) {
             // Use OR between groups
@@ -277,7 +278,7 @@ function updateResultsArea() {
         results = results.reverse();
     }
 
-    resultsArea.innerHTML = ''; // Clear the current content
+    clearNode(resultsArea);
     for (let index = 0; index < results.length; index++) {
         const result = results[index];
         const resultEl = document.createElement('div');
@@ -325,7 +326,7 @@ function updateResultsArea() {
             });
 
             // Handle click on the content
-            entryEl.addEventListener('click', (event) => {
+            addEventListenerWithTracking(entryEl, 'click', (event) => {
                 if (event.target.matches('.task-list-item-checkbox')) {
                     // get the line number of the clicked checkbox
                     const line = parseInt(event.target.getAttribute('data-line-number'));
@@ -356,7 +357,7 @@ function updateResultsArea() {
             });
 
             // Handle right-click on rendered tags
-            entryEl.addEventListener('contextmenu', (event) => {
+            addEventListenerWithTracking(entryEl, 'contextmenu', (event) => {
                 // Remove previous context menus
                 const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
                 contextMenu.forEach(menu => {
@@ -386,7 +387,7 @@ function updateResultsArea() {
         resultEl.appendChild(contentContainer);
         
         // Toggle visibility of the contentContainer on title click
-        titleEl.addEventListener('click', () => {
+        addEventListenerWithTracking(titleEl, 'click', () => {
             const isHidden = contentContainer.style.display === 'none';
             contentContainer.style.display = isHidden ? 'block' : 'none';
         });
@@ -406,6 +407,33 @@ function updateResultsArea() {
 }
 
 // Helper functions for updating the query area
+function addEventListenerWithTracking(element, event, listener) {
+    element.addEventListener(event, listener);
+    if (!eventListenersMap.has(element)) {
+        eventListenersMap.set(element, []);
+    }
+    eventListenersMap.get(element).push({ event, listener });
+}
+
+function removeEventListeners(element) {
+    if (eventListenersMap.has(element)) {
+        const listeners = eventListenersMap.get(element);
+        for (const { event, listener } of listeners) {
+            element.removeEventListener(event, listener);
+        }
+        eventListenersMap.delete(element);
+    }
+}
+
+function clearNode(node) {
+    // Remove all child nodes to avoid memory leaks
+    while (node.firstChild) {
+        clearNode(node.firstChild);  // Recursively clear child nodes
+        removeEventListeners(node.firstChild);
+        node.removeChild(node.firstChild);
+    }
+}
+
 function createOperatorElement(operator, groupIndex, isGroupOperator, tagIndex) {
     const operatorEl = document.createElement('span');
     operatorEl.classList.add('itags-search-operator');
@@ -537,11 +565,11 @@ function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
     lastGroup = queryGroups[0];
-    queryArea.innerHTML = '';
+    clearNode(queryArea);
 }
 
 function clearResultsArea() {
-    resultsArea.innerHTML = '';
+    clearNode(resultsArea);
 }
 
 // Helper functions for search
@@ -746,8 +774,8 @@ function createInputField(defaultTag, tagElement, finalizeFunction) {
     }
 
     // Add event listeners to finalize renaming on Enter key or focus out
-    input.addEventListener('blur', finalizeInput);
-    input.addEventListener('keydown', (e) => {
+    addEventListenerWithTracking(input, 'blur', finalizeInput);
+    addEventListenerWithTracking(input, 'keydown', (e) => {
         if (e.key === 'Enter') {
             finalizeInput();
             e.preventDefault();
@@ -776,10 +804,10 @@ updateTagList(); // Initial update
 tagFilter.focus(); // Focus the tag filter input when the panel is loaded
 
 // Event listeners
-tagFilter.addEventListener('input', updateTagList);
-noteFilter.addEventListener('input', updateNoteList);
+addEventListenerWithTracking(tagFilter, 'input', updateTagList);
+addEventListenerWithTracking(noteFilter, 'input', updateNoteList);
 
-tagClear.addEventListener('click', () => {
+addEventListenerWithTracking(tagClear, 'click', () => {
     clearQueryArea();
     clearResultsArea();
     tagFilter.value = ''; // Clear the input field
@@ -788,7 +816,7 @@ tagClear.addEventListener('click', () => {
     updateTagList();
 });
 
-saveQuery.addEventListener('click', () => {
+addEventListenerWithTracking(saveQuery, 'click', () => {
     webviewApi.postMessage({
         name: 'saveQuery',
         query: JSON.stringify(queryGroups),
@@ -797,11 +825,9 @@ saveQuery.addEventListener('click', () => {
 });
 
 // Post the search query as JSON
-tagSearch.addEventListener('click', () => {
-    sendSearchMessage();
-});
+addEventListenerWithTracking(tagSearch, 'click', sendSearchMessage);
 
-tagFilter.addEventListener('keydown', (event) => {
+addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
         if (tagFilter.value === '') {
@@ -839,7 +865,7 @@ tagFilter.addEventListener('keydown', (event) => {
     }
 });
 
-noteFilter.addEventListener('keydown', (event) => {
+addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
         if (noteFilter.value === '') {
@@ -879,7 +905,7 @@ noteFilter.addEventListener('keydown', (event) => {
     }
 });
 
-noteList.addEventListener('change', () => {
+addEventListenerWithTracking(noteList, 'change', () => {
     if (noteList.value === 'current') {
         handleNoteClick({ title: 'Current note', externalId: 'current', negated: false });
     }
@@ -887,23 +913,23 @@ noteList.addEventListener('change', () => {
     noteList.value = 'default'; // Clear the input field
 });
 
-noteList.addEventListener('focus', function() {
+addEventListenerWithTracking(noteList, 'focus', () => {
     // The dropdown might be opening (avoid updates)
     dropdownIsOpen = true;
 });
 
-noteList.addEventListener('blur', function() {
+addEventListenerWithTracking(noteList, 'blur', () => {
     // The dropdown is closed (avoid updates)
     dropdownIsOpen = false;
     updateNoteList();
 });
 
-resultFilter.addEventListener('input', () => {
+addEventListenerWithTracking(resultFilter, 'input', () => {
     updateResultsArea();
     sendSetting('filter', resultFilter.value);
 });
 
-resultFilter.addEventListener('keydown', (event) => {
+addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
     if (event.key === 'Escape') {
         // Clear the input and update the results area
         resultFilter.value = '';
@@ -912,12 +938,13 @@ resultFilter.addEventListener('keydown', (event) => {
     }
 });
 
-resultSort.addEventListener('change', () => {
+addEventListenerWithTracking(resultSort, 'change', () => {
     sendSetting('resultSort', resultSort.value);
     updateResultsArea();
 });
 
-resultOrder.addEventListener('click', () => {
+
+addEventListenerWithTracking(resultOrder, 'click', () => {
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
         resultOrder.innerHTML = '<b>↑</b>';  // Button shows the currrent state (desc)
@@ -929,7 +956,7 @@ resultOrder.addEventListener('click', () => {
     updateResultsArea();
 });
 
-resultToggle.addEventListener('click', () => {
+addEventListenerWithTracking(resultToggle, 'click', () => {
     if (resultToggleState === 'expand') {
         collapseResults();
         resultToggleState = 'collapse';
@@ -945,16 +972,16 @@ resultToggle.addEventListener('click', () => {
     }
 });
 
-document.addEventListener('click', (e) => {
+addEventListenerWithTracking(document, 'click', (event) => {
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
     contextMenu.forEach(menu => {
-        if (!menu.contains(e.target)) {
+        if (!menu.contains(event.target)) {
             menu.remove();
         }
     });
 });
 
-document.addEventListener('contextmenu', (event) => {
+addEventListenerWithTracking(document, 'contextmenu', (event) => {
     if (event.target.matches('.itags-search-renderedTag')) {
         return;
     }
@@ -966,7 +993,7 @@ document.addEventListener('contextmenu', (event) => {
     });
 });
 
-document.addEventListener('keydown', (event) => {
+addEventListenerWithTracking(document, 'keydown', (event) => {
     if (event.key === 'Escape') {
         const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
         contextMenu.forEach(menu => {
