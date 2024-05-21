@@ -1,6 +1,7 @@
 import joplin from 'api';
 import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
+import { clearNoteReferences } from './search';
 
 export class DatabaseManager {
   static db: NoteDatabase = null;
@@ -281,7 +282,5 @@ export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp,
   } catch (error) {
     console.error(`Error processing note ${note.id}:`, error);
   }
-  // Remove the reference to the note to avoid memory leaks
-  note.body = null;
-  note = null;
+  note = clearNoteReferences(note);
 }

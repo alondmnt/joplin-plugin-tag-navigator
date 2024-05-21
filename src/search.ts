@@ -2,6 +2,7 @@ import joplin from 'api';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
 import { resultsEnd, resultsStart } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
+import { clear } from 'console';
 
 export interface Query {
   tag?: string;
@@ -22,9 +23,10 @@ export interface GroupedResult {
 }
 
 export async function runSearch(db: NoteDatabase, query: Query[][]): Promise<GroupedResult[]> {
-  const currentNote = (await joplin.workspace.selectedNote());
+  let currentNote = (await joplin.workspace.selectedNote());
   const queryResults = getQueryResults(db, query, currentNote);
   const groupedResults = await processQueryResults(queryResults);
+  currentNote = clearNoteReferences(currentNote);
   return groupedResults;
 }
 
@@ -114,9 +116,9 @@ async function processQueryResults(queryResults: ResultSet): Promise<GroupedResu
 }
 
 async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
-  const note = await joplin.data.get(['notes', result.externalId],
+  let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
-  const notebook = await joplin.data.get(['folders', note.parent_id], ['title']);
+  let notebook = await joplin.data.get(['folders', note.parent_id], ['title']);
   const lines: string[] = note.body.split('\n');
 
   // Group consecutive line numbers
@@ -152,6 +154,8 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
   result.notebook = notebook.title;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
+
+  note = clearNoteReferences(note);
 
   return result
 }
@@ -266,4 +270,17 @@ function parseFilter(filter, min_chars=1) {
       .split(' ').filter((word: string) => word.length >= min_chars)
       .concat(quotes);
   return words;
+}
+
+export function clearNoteReferences(note: any): null {
+  // Remove references to the note
+  note.body = null;
+  note.title = null;
+  note.id = null;
+  note.parent_id = null;
+  note.updated_time = null;
+  note.created_time = null;
+  note = null;
+
+  return null;
 }

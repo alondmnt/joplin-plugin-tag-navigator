@@ -6,7 +6,7 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { updateNotePanel } from './notePanel';
 import { getTagRegex, parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
-import { displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
+import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
@@ -80,7 +80,7 @@ joplin.plugins.register({
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
-      const note = await joplin.workspace.selectedNote();
+      let note = await joplin.workspace.selectedNote();
       const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
       if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
@@ -99,6 +99,8 @@ joplin.plugins.register({
       const excludeRegex = await joplin.settings.value('itags.excludeRegex');
       tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, false);
       await updateNotePanel(notePanel, tagLines);
+
+      note = clearNoteReferences(note);
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
