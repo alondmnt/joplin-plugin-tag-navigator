@@ -182,17 +182,17 @@ export async function displayResultsInNote(db: any, note: any) {
 
   // Update the note
   const resultsRegExp = new RegExp(`${resultsStart}.*${resultsEnd}`, 's');
-  let new_body = note.body;
+  let newBody = note.body;
   if (resultsRegExp.test(note.body)) {
-    new_body = new_body.replace(resultsRegExp, resultsString);
+    newBody = newBody.replace(resultsRegExp, resultsString);
   } else {
-    new_body += '\n' + resultsString;
+    newBody += '\n' + resultsString;
   }
-  if (new_body !== note.body) {
-    await joplin.data.put(['notes', note.id], null, { body: new_body });
+  if (newBody !== note.body) {
+    await joplin.data.put(['notes', note.id], null, { body: newBody });
     const currentNote = await joplin.workspace.selectedNote();
     if (currentNote.id === note.id) {
-      await joplin.commands.execute('editor.setText', new_body);
+      await joplin.commands.execute('editor.setText', newBody);
     }
   }
 }
