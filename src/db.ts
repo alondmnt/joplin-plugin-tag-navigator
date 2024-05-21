@@ -234,20 +234,27 @@ export async function processAllNotes() {
   let hasMore = true;
   let page = 1;
   while (hasMore) {
-    let notes = await joplin.data.get(['notes'], {
+    const notes = await joplin.data.get(['notes'], {
       fields: ['id', 'title', 'body', 'markup_language', 'is_conflict'],
       limit: 50,
       page: page++,
     });
     hasMore = notes.has_more;
 
-    for (const note of notes.items) {
-      if (ignoreHtmlNotes && (note.markup_language === 2)) { continue; }
-      if (note.is_conflict == 1) { continue; }
+    for (let note of notes.items) {
+      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        note = clearNoteReferences(note);
+        continue;
+      }
+      if (note.is_conflict == 1) {
+        note = clearNoteReferences(note);
+        continue;
+      }
       await processNote(db, note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      note = clearNoteReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
-    notes = null;
+    notes.items = null;
   }
 
   const minCount = await joplin.settings.value('itags.minCount');
@@ -282,5 +289,4 @@ export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp,
   } catch (error) {
     console.error(`Error processing note ${note.id}:`, error);
   }
-  note = clearNoteReferences(note);
 }

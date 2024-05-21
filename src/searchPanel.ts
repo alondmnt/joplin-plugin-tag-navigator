@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { queryEnd, queryStart } from './settings';
-import { GroupedResult, Query, runSearch } from './search';
+import { GroupedResult, Query, clearNoteReferences, runSearch } from './search';
 import { getTagRegex } from './parser';
 import { NoteDatabase } from './db';
 
@@ -69,13 +69,14 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
   } else if (message.name === 'openNote') {
-    const note = await joplin.workspace.selectedNote();
+    let note = await joplin.workspace.selectedNote();
 
     if (note.id !== message.externalId) {
       await joplin.commands.execute('openNote', message.externalId);
       // Wait for the note to be opened for 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
+    note = clearNoteReferences(note);
 
     await joplin.commands.execute('editor.execCommand', {
       name: 'scrollToTagLine',
@@ -295,7 +296,7 @@ export async function setCheckboxState(message: any) {
   // line: The markdown string containing the task list item, possibly indented
   // text: The text of the task list item, in order to ensure that the line matches
   // checked: A boolean indicating the desired state of the checkbox (true for checked, false for unchecked)
-  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
 
@@ -318,10 +319,11 @@ export async function setCheckboxState(message: any) {
 
   const newBody = lines.join('\n');
   updateNote(message, newBody);
+  note = clearNoteReferences(note);
 }
 
 export async function removeTagFromText(message: any) {
-  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
 
@@ -337,10 +339,11 @@ export async function removeTagFromText(message: any) {
 
   const newBody = lines.join('\n');
   await updateNote(message, newBody);
+  note = clearNoteReferences(note);
 }
 
 export async function renameTagInText(message: any) {
-  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
 
@@ -354,10 +357,11 @@ export async function renameTagInText(message: any) {
   lines[message.line] = line.replace(message.oldTag, message.newTag);
   const newBody = lines.join('\n');
   await updateNote(message, newBody);
+  note = clearNoteReferences(note);
 }
 
 export async function addTagToText(message: any) {
-  const note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
 
@@ -371,6 +375,7 @@ export async function addTagToText(message: any) {
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
   await updateNote(message, newBody);
+  note = clearNoteReferences(note);
 }
 
 export function escapeRegex(string: string): string {
@@ -380,19 +385,22 @@ export function escapeRegex(string: string): string {
 }
 
 async function updateNote(message: any, newBody: string) {
-  const selectedNote = await joplin.workspace.selectedNote();
-  const targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
-  if (newBody === targetNote.body) { return; }
-
-  await joplin.data.put(['notes', message.externalId], null, { body: newBody });
-  if (selectedNote.id === message.externalId) {
-    // Update note editor if it's the currently selected note
-    await joplin.commands.execute('editor.setText', newBody);
-    await joplin.commands.execute('editor.execCommand', {
-      name: 'scrollToTagLine',
-      args: [message.line]
-    });
+  let selectedNote = await joplin.workspace.selectedNote();
+  let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  if (newBody !== targetNote.body) {
+    await joplin.data.put(['notes', message.externalId], null, { body: newBody });
+    if (selectedNote.id === message.externalId) {
+      // Update note editor if it's the currently selected note
+      await joplin.commands.execute('editor.setText', newBody);
+      await joplin.commands.execute('editor.execCommand', {
+        name: 'scrollToTagLine',
+        args: [message.line]
+      });
+    }
   }
+  // Clear the reference to the note to avoid memory leaks
+  targetNote = clearNoteReferences(targetNote);
+  selectedNote = clearNoteReferences(selectedNote);
 }
 
 export async function saveQuery(query: QueryRecord, noteId: string=null): Promise<string> {
@@ -407,24 +415,27 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
     return;
   }
 
+  let newBody = '';
   if (findQuery.test(note.body)) {
     if (query.query.length === 0) {
-      note.body = note.body.replace(findQuery, '');
+      newBody = note.body.replace(findQuery, '');
     } else {
-      note.body = note.body.replace(findQuery, `\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`);
+      newBody = note.body.replace(findQuery, `\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`);
     }
   } else {
-    note.body = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`;
+    newBody = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`;
     // trimming trailing spaces in note body before insertion
   }
 
-  await joplin.data.put(['notes', note.id], null, { body: note.body });
-  const currentNote = await joplin.workspace.selectedNote();
+  await joplin.data.put(['notes', note.id], null, { body: newBody });
+  let currentNote = await joplin.workspace.selectedNote();
   if (note.id === currentNote.id) {
-    await joplin.commands.execute('editor.setText', note.body);
+    await joplin.commands.execute('editor.setText', newBody);
   }
 
-  return note.body;
+  note = clearNoteReferences(note);
+  currentNote = clearNoteReferences(currentNote);
+  return newBody;
 }
 
 export async function loadQuery(db: any, note: any): Promise<QueryRecord> {

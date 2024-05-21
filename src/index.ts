@@ -17,12 +17,13 @@ joplin.plugins.register({
     await registerSettings()
 
     const processNoteTags = debounce(async () => {
-      const note = await joplin.workspace.selectedNote();
+      let note = await joplin.workspace.selectedNote();
       const tagRegex = await getTagRegex();
       const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
       const inheritTags = await joplin.settings.value('itags.inheritTags');
       const excludeRegex = await joplin.settings.value('itags.excludeRegex');
       await processNote(DatabaseManager.getDatabase(), note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      note = clearNoteReferences(note);
 
       // Update search results
       const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
@@ -114,12 +115,13 @@ joplin.plugins.register({
       label: 'Refresh inline tags navigation panel',
       iconName: 'fas fa-sync',
       execute: async () => {
-        const note = await joplin.workspace.selectedNote();
+        let note = await joplin.workspace.selectedNote();
         const tagRegex = await getTagRegex();
         const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
         const excludeRegex = await joplin.settings.value('itags.excludeRegex');
         tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, false);
         await updateNotePanel(notePanel, tagLines);
+        note = clearNoteReferences(note);
       },
     });
 
@@ -151,9 +153,10 @@ joplin.plugins.register({
       label: 'Load inline tags search query',
       iconName: 'fas fa-tags',
       execute: async () => {
-        const note = await joplin.workspace.selectedNote();
+        let note = await joplin.workspace.selectedNote();
         const query = await loadQuery(DatabaseManager.getDatabase(), note);
         await updateQuery(searchPanel, query.query, query.filter);
+        note = clearNoteReferences(note);
       },
     });
 
@@ -162,7 +165,7 @@ joplin.plugins.register({
       label: 'Toggle search results display in note',
       iconName: 'fas fa-tags',
       execute: async () => {
-        const note = await joplin.workspace.selectedNote();
+        let note = await joplin.workspace.selectedNote();
         const query = await loadQuery(DatabaseManager.getDatabase(), note);
         // toggle display
         query.displayInNote = !query.displayInNote;
@@ -173,6 +176,7 @@ joplin.plugins.register({
         } else {
           await removeResults(note);
         }
+        note = clearNoteReferences(note);
       },
     });
 
@@ -202,13 +206,14 @@ joplin.plugins.register({
       iconName: 'fas fa-tags',
       execute: async () => {
         // Get the selected note
-        const note = await joplin.workspace.selectedNote();
+        let note = await joplin.workspace.selectedNote();
 
         const tagRegex = await getTagRegex();
         const excludeRegex = await joplin.settings.value('itags.excludeRegex');
         const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
         const inheritTags = await joplin.settings.value('itags.inheritTags');
         await convertNoteToJoplinTags(note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+        note = clearNoteReferences(note);
       },
     });
 
@@ -232,8 +237,10 @@ joplin.plugins.register({
         const tagPrefix = await joplin.settings.value('itags.tagPrefix');
         const location = await joplin.settings.value('itags.location');
         await convertNoteToInlineTags(note, listPrefix, tagPrefix, location);
+        note = clearNoteReferences(note);
         note = await joplin.workspace.selectedNote();
         await joplin.commands.execute('editor.setText', note.body);
+        note = clearNoteReferences(note);
       },
     });
 
@@ -246,8 +253,9 @@ joplin.plugins.register({
         const tagPrefix = await joplin.settings.value('itags.tagPrefix');
         const location = await joplin.settings.value('itags.location');
         await convertAllNotesToInlineTags(listPrefix, tagPrefix, location);
-        const note = await joplin.workspace.selectedNote();
+        let note = await joplin.workspace.selectedNote();
         await joplin.commands.execute('editor.setText', note.body);
+        note = clearNoteReferences(note);
       },
     });
 

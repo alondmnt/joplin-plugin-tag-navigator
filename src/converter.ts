@@ -1,5 +1,6 @@
 import joplin from 'api';
 import { parseTagsLines, getTagRegex } from './parser';
+import { clearNoteReferences } from './search';
 
 export async function convertAllNotesToJoplinTags() {
   const tagRegex = await getTagRegex();
@@ -20,12 +21,16 @@ export async function convertAllNotesToJoplinTags() {
     hasMore = notes.has_more;
 
     // Process the notes synchronously to avoid issues
-    for (const note of notes.items) {
+    for (let note of notes.items) {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        note = clearNoteReferences(note);
         continue;
       }
       await convertNoteToJoplinTags(note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      note = clearNoteReferences(note);
     }
+    // Remove the reference to the notes to avoid memory leaks
+    notes.items = null;
   }
 }
 
@@ -43,12 +48,16 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
     hasMore = notes.has_more;
 
     // Process the notes synchronously to avoid issues
-    for (const note of notes.items) {
+    for (let note of notes.items) {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        note = clearNoteReferences(note);
         continue;
       }
       await convertNoteToInlineTags(note, listPrefix, tagPrefix, location);
+      note = clearNoteReferences(note);
     }
+    // Remove the reference to the notes to avoid memory leaks
+    notes.items = null;
   }
 }
 
@@ -63,7 +72,7 @@ export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, exclu
   }
 
   // Get note tags
-  const noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
+  let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const noteTagNames = noteTags.items.map(tag => tag.title);
   const tagsToAdd = tags.filter(tag => !noteTagNames.includes(tag));
 
@@ -72,7 +81,7 @@ export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, exclu
   }
 
   // Get the existing tags
-  const allTags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
+  let allTags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
   const allTagNames = allTags.items.map(tag => tag.title);
 
   // Create the tags that don't exist
@@ -93,10 +102,13 @@ export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, exclu
       id: note.id
     });
   }
+
+  noteTags = clearNoteReferences(noteTags);
+  allTags = clearNoteReferences(allTags);
 }
 
 export async function convertNoteToInlineTags(note: any, listPrefix: string, tagPrefix: string, location: string) {
-  const noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
+  let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const tagList = listPrefix + noteTags.items
     .sort((a, b) => a.title.localeCompare(b.title))
     .map(tag => tagPrefix + tag.title).join(' ');
@@ -115,4 +127,5 @@ export async function convertNoteToInlineTags(note: any, listPrefix: string, tag
   }
 
   await joplin.data.put(['notes', note.id], null, { body: note.body });
+  noteTags = clearNoteReferences(noteTags);
 }

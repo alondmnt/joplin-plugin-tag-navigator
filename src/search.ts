@@ -2,7 +2,6 @@ import joplin from 'api';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
 import { resultsEnd, resultsStart } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
-import { clear } from 'console';
 
 export interface Query {
   tag?: string;
@@ -164,8 +163,9 @@ export async function displayInAllNotes(db: any) {
   // Display results in notes
   const noteIds = db.getResultNotes();
   for (const id of noteIds) {
-    const note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
+    let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
     await displayResultsInNote(db, note);
+    note = clearNoteReferences(note);
   }
 }
 
@@ -194,22 +194,24 @@ export async function displayResultsInNote(db: any, note: any) {
   }
   if (newBody !== note.body) {
     await joplin.data.put(['notes', note.id], null, { body: newBody });
-    const currentNote = await joplin.workspace.selectedNote();
+    let currentNote = await joplin.workspace.selectedNote();
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
+    currentNote = clearNoteReferences(currentNote);
   }
 }
 
 export async function removeResults(note: any) {
   const resultsRegExp = new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's')
   if (resultsRegExp.test(note.body)) {
-    note.body = note.body.replace(resultsRegExp, '');
-    await joplin.data.put(['notes', note.id], null, { body: note.body });
-    const currentNote = await joplin.workspace.selectedNote();
+    const newBody = note.body.replace(resultsRegExp, '');
+    await joplin.data.put(['notes', note.id], null, { body: newBody });
+    let currentNote = await joplin.workspace.selectedNote();
     if (currentNote.id === note.id) {
-      await joplin.commands.execute('editor.setText', note.body);
+      await joplin.commands.execute('editor.setText', newBody);
     }
+    currentNote = clearNoteReferences(currentNote);
   }
 }
 
