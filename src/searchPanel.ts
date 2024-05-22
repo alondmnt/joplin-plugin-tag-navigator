@@ -197,6 +197,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
   const xitOngoing = /(^[\s]*)- \[@\] (.*)$/gm;
   const xitObsolete = /(^[\s]*)- \[~\] (.*)$/gm;
   const xitInQuestion = /(^[\s]*)- \[\?\] (.*)$/gm;
+  const xitBlocked = /(^[\s]*)- \[!\] (.*)$/gm;  // not officially a [x]it! checkbox
 
   for (const group of groupedResults) {
     group.html = []; // Ensure group.html is initialized as an empty array if not already done
@@ -218,7 +219,8 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
           .replace(xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
           .replace(xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
           .replace(xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
-          .replace(xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n');
+          .replace(xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
+          .replace(xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
       }
       group.html.push(md.render(processedSection));
     }
@@ -305,7 +307,7 @@ export async function setCheckboxState(message: any) {
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  const text = message.text.replace(/^\s*- \[[x|\s|@|\?|~]\]\s*/, '');
+  const text = message.text.replace(/^\s*- \[[x|\s|@|\?!|~]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.error('Error in setCheckboxState: The line does not contain the expected text.');
@@ -315,7 +317,7 @@ export async function setCheckboxState(message: any) {
   if (message.checked) {
     // If checked is true, ensure the checkbox is marked as checked (- [x])
     // \s* accounts for any leading whitespace
-    lines[message.line] = line.replace(/^(\s*- \[)[\s|@|\?](\])/g, '$1x$2');
+    lines[message.line] = line.replace(/^(\s*- \[)[\s|@|\?!](\])/g, '$1x$2');
   } else {
     // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
     lines[message.line] = line.replace(/^(\s*- \[)x(\])/g, '$1 $2');

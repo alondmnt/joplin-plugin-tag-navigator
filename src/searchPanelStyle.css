@@ -396,6 +396,10 @@ hr {
     background-color: #cc913f;
 }
 
+.itags-search-checkbox.xitBlocked {
+    background-color: #e22d2d;
+}
+
 /* Checkbox-specific text style */
 .itags-search-xitDone {
     color: #64a073;
