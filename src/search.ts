@@ -41,7 +41,7 @@ function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): 
         partResults = db.searchBy('tag', queryPart.tag, queryPart.negated);
 
       } else if (queryPart.externalId) {
-        if (queryPart.externalId === 'current') {
+        if ((queryPart.externalId === 'current') && (currentNote.id)) {
           partResults = db.searchBy('noteLinkId', currentNote.id, queryPart.negated);
 
         } else {
@@ -195,6 +195,7 @@ export async function displayResultsInNote(db: any, note: any) {
   if (newBody !== note.body) {
     await joplin.data.put(['notes', note.id], null, { body: newBody });
     let currentNote = await joplin.workspace.selectedNote();
+    if (!currentNote) { return; }
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
@@ -208,6 +209,7 @@ export async function removeResults(note: any) {
     const newBody = note.body.replace(resultsRegExp, '');
     await joplin.data.put(['notes', note.id], null, { body: newBody });
     let currentNote = await joplin.workspace.selectedNote();
+    if (!currentNote) { return; }
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
@@ -275,6 +277,8 @@ function parseFilter(filter, min_chars=1) {
 }
 
 export function clearNoteReferences(note: any): null {
+  if (!note) { return null; }
+
   // Remove references to the note
   note.body = null;
   note.title = null;

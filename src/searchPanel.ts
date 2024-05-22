@@ -65,13 +65,17 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
   } else if (message.name === 'saveQuery') {
     // Save the query into the current note
-    const currentQuery = await loadQuery(db, await joplin.workspace.selectedNote());
+    let currentNote = await joplin.workspace.selectedNote();
+    if (!currentNote) { return; }
+    const currentQuery = await loadQuery(db, currentNote);
+    clearNoteReferences(currentNote);
+
     saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
   } else if (message.name === 'openNote') {
     let note = await joplin.workspace.selectedNote();
 
-    if (note.id !== message.externalId) {
+    if ((!note) || (note.id !== message.externalId)) {
       await joplin.commands.execute('openNote', message.externalId);
       // Wait for the note to be opened for 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -389,7 +393,7 @@ async function updateNote(message: any, newBody: string) {
   let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   if (newBody !== targetNote.body) {
     await joplin.data.put(['notes', message.externalId], null, { body: newBody });
-    if (selectedNote.id === message.externalId) {
+    if ((selectedNote) && (selectedNote.id === message.externalId)) {
       // Update note editor if it's the currently selected note
       await joplin.commands.execute('editor.setText', newBody);
       await joplin.commands.execute('editor.execCommand', {
@@ -429,7 +433,7 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
 
   await joplin.data.put(['notes', note.id], null, { body: newBody });
   let currentNote = await joplin.workspace.selectedNote();
-  if (note.id === currentNote.id) {
+  if ((currentNote) && (note.id === currentNote.id)) {
     await joplin.commands.execute('editor.setText', newBody);
   }
 
