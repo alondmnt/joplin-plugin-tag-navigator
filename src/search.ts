@@ -33,7 +33,7 @@ function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): 
   // Get the note locations that matches the DNF query
   let resultsSet: ResultSet = {};
   for (const clause of query) {
-    let clauseResultsSet: ResultSet = {};
+    let clauseResultsSet: ResultSet = null;
 
     for (const queryPart of clause) {
       let partResults: ResultSet = {};
@@ -52,7 +52,7 @@ function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): 
         partResults = db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated);
       }
       // Intersect the results of each part of the clause
-      if (Object.keys(clauseResultsSet).length === 0) {
+      if (!clauseResultsSet) {
         clauseResultsSet = partResults;
       } else {
         clauseResultsSet = intersectResults(clauseResultsSet, partResults);
