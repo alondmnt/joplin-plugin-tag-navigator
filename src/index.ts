@@ -97,11 +97,13 @@ joplin.plugins.register({
       }
 
       // Note panel update
-      const tagRegex = await getTagRegex();
-      const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-      const excludeRegex = await joplin.settings.value('itags.excludeRegex');
-      tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, false);
-      await updateNotePanel(notePanel, tagLines);
+      if (await joplin.views.panels.visible(notePanel)) {
+        const tagRegex = await getTagRegex();
+        const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+        const excludeRegex = await joplin.settings.value('itags.excludeRegex');
+        tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, false);
+        await updateNotePanel(notePanel, tagLines);
+      }
 
       note = clearNoteReferences(note);
 
@@ -133,7 +135,12 @@ joplin.plugins.register({
       label: 'Toggle inline tags navigation panel',
       iconName: 'fas fa-tags',
       execute: async () => {
-        (await joplin.views.panels.visible(notePanel)) ? joplin.views.panels.hide(notePanel) : joplin.views.panels.show(notePanel);
+        if (await joplin.views.panels.visible(notePanel)) {
+          joplin.views.panels.hide(notePanel)
+        } else {
+          await joplin.views.panels.show(notePanel);
+          await joplin.commands.execute('itags.refreshPanel');
+        }
       },
     });
 
