@@ -165,8 +165,12 @@ joplin.plugins.register({
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
-        const query = await loadQuery(DatabaseManager.getDatabase(), note);
-        await updateQuery(searchPanel, query.query, query.filter);
+        const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
+        if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
+          // Updating this variable will ensure it's sent to the panel on initPanel
+          searchParams = savedQuery;
+          await updateQuery(searchPanel, searchParams.query, searchParams.filter);
+        }
         note = clearNoteReferences(note);
       },
     });
