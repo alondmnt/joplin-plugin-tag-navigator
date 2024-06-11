@@ -1,13 +1,10 @@
 import joplin from 'api';
-import { parseTagsLines, getTagRegex } from './parser';
+import { parseTagsLines } from './parser';
 import { clearNoteReferences } from './search';
+import { TagSettings, getTagSettings } from './settings';
 
 export async function convertAllNotesToJoplinTags() {
-  const tagRegex = await getTagRegex();
-  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
-  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
-  const inheritTags = await joplin.settings.value('itags.inheritTags');
+  const tagSettings = await getTagSettings();
 
   // Get all notes
   let hasMore = true;
@@ -22,11 +19,11 @@ export async function convertAllNotesToJoplinTags() {
 
     // Process the notes synchronously to avoid issues
     for (let note of notes.items) {
-      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+      if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
         note = clearNoteReferences(note);
         continue;
       }
-      await convertNoteToJoplinTags(note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      await convertNoteToJoplinTags(note, tagSettings);
       note = clearNoteReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
@@ -61,10 +58,10 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
   }
 }
 
-export async function convertNoteToJoplinTags(note: any, tagRegex: RegExp, excludeRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags: boolean) {
+export async function convertNoteToJoplinTags(note: any, tagSettings: TagSettings) {
 
   // Prase all inline tags from the note
-  const tags = (await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags))
+  const tags = (await parseTagsLines(note.body, tagSettings))
     .map(tag => tag.tag.replace('#', ''));
 
   if (tags.length === 0) {

@@ -1,10 +1,35 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
+import { defTagRegex } from './parser';
 
 export const queryStart = '<!-- itags-query-start -->';
 export const queryEnd = '<!-- itags-query-end -->';
 export const resultsStart = '<!-- itags-results-start -->';
 export const resultsEnd = '<!-- itags-results-end -->';
+
+export interface TagSettings {
+  tagRegex: RegExp;
+  excludeRegex: RegExp;
+  ignoreHtmlNotes: boolean;
+  ignoreCodeBlocks: boolean;
+  inheritTags: boolean;
+}
+
+export async function getTagRegex(): Promise<RegExp> {
+  const userRegex = await joplin.settings.value('itags.tagRegex');
+  return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
+}
+
+export async function getTagSettings(): Promise<TagSettings> {
+  const tagRegex = await getTagRegex();
+  const excludeRegexString = await joplin.settings.value('itags.excludeRegex');
+  const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'g') : null;
+  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
+  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+  const inheritTags = await joplin.settings.value('itags.inheritTags');
+
+  return {tagRegex, excludeRegex, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags};
+}
 
 export async function registerSettings() {
   await joplin.settings.registerSection('itags', {

@@ -1,7 +1,8 @@
 import joplin from 'api';
-import { getTagRegex, parseLinkLines, parseTagsLines } from './parser';
+import { parseLinkLines, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
 import { clearNoteReferences } from './search';
+import { TagSettings, getTagSettings } from './settings';
 
 export class DatabaseManager {
   static db: NoteDatabase = null;
@@ -221,14 +222,10 @@ function diffSets(setA: Set<number>, setB: Set<number>): Set<number> {
 }
 
 export async function processAllNotes() {
-  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   // Create the in-memory database
   DatabaseManager.clearDatabase();
   const db = DatabaseManager.getDatabase();
-  const tagRegex = await getTagRegex();
-  const excludeRegex = await joplin.settings.value('itags.excludeRegex');
-  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-  const inheritTags = await joplin.settings.value('itags.inheritTags');
+  const tagSettings = await getTagSettings();
 
   // Get all notes
   let hasMore = true;
@@ -242,7 +239,7 @@ export async function processAllNotes() {
     hasMore = notes.has_more;
 
     for (let note of notes.items) {
-      if (ignoreHtmlNotes && (note.markup_language === 2)) {
+      if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
         note = clearNoteReferences(note);
         continue;
       }
@@ -250,7 +247,7 @@ export async function processAllNotes() {
         note = clearNoteReferences(note);
         continue;
       }
-      await processNote(db, note, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+      await processNote(db, note, tagSettings);
       note = clearNoteReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
@@ -261,10 +258,10 @@ export async function processAllNotes() {
   db.filterTags(minCount);
 }
 
-export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp, excludeRegex: RegExp, ignoreCodeBlocks: boolean, inheritTags:boolean): Promise<void> {
+export async function processNote(db: NoteDatabase, note: any, tagSettings: TagSettings): Promise<void> {
   try {
     const noteRecord = new Note(note.id, note.title);
-    const tagLines = await parseTagsLines(note.body, tagRegex, excludeRegex, ignoreCodeBlocks, inheritTags);
+    const tagLines = await parseTagsLines(note.body, tagSettings);
 
     // Process each tagLine within the transaction
     for (const tagLine of tagLines) {
@@ -274,7 +271,7 @@ export async function processNote(db: NoteDatabase, note: any, tagRegex: RegExp,
     }
 
     // Process links
-    const linkLines = await parseLinkLines(note.body, ignoreCodeBlocks, inheritTags);
+    const linkLines = await parseLinkLines(note.body, tagSettings.ignoreCodeBlocks, tagSettings.inheritTags);
     for (const linkLine of linkLines) {
       noteRecord.addLink(linkLine.title, linkLine.noteId, linkLine.line);
     }

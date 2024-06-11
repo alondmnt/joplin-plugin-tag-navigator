@@ -1,9 +1,8 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
-import { queryEnd, queryStart } from './settings';
+import { getTagRegex, queryEnd, queryStart } from './settings';
 import { GroupedResult, Query, clearNoteReferences, runSearch } from './search';
-import { getTagRegex } from './parser';
 import { NoteDatabase } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);

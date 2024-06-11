@@ -1,7 +1,6 @@
-import joplin from 'api';
-import { resultsStart, resultsEnd, queryStart, queryEnd } from './settings';
+import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 
-const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
+export const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
@@ -15,13 +14,7 @@ interface TagLineInfo {
   index: number;
 }
 
-export async function getTagRegex(): Promise<RegExp> {
-  const userRegex = await joplin.settings.value('itags.tagRegex');
-  return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
-}
-
-export async function parseTagsLines(text: string, tagRegex: RegExp, excludeRegex: RegExp,
-    ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<TagLineInfo[]> {
+export async function parseTagsLines(text: string, tagSettings: TagSettings): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
   let isResultBlock = false;
   let isQueryBlock = false;
@@ -48,7 +41,7 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, excludeRege
     }
     const emptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks if needed
-    if ((inCodeBlock && ignoreCodeBlocks) || isResultBlock || isQueryBlock || emptyLine) {
+    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isResultBlock || isQueryBlock || emptyLine) {
       return;
     }
 
@@ -58,16 +51,16 @@ export async function parseTagsLines(text: string, tagRegex: RegExp, excludeRege
       if (indentLevel <= level) {
         // We're above the level where the tag was found, reset it
         tagsLevel.set(tag, -1);
-      } else if (inheritTags && level >= 0) {
+      } else if (tagSettings.inheritTags && level >= 0) {
         // Add the line to the tag
         tagsMap.get(tag).lines.add(lineIndex);
       }
     });
 
-    const matches = line.match(tagRegex);
+    const matches = line.match(tagSettings.tagRegex);
     if (matches) {
       matches.forEach((tag) => {
-        if (excludeRegex && tag.match(excludeRegex)) {
+        if (tagSettings.excludeRegex && tag.match(tagSettings.excludeRegex)) {
           return;
         }
         if (!tagsMap.has(tag)) {
