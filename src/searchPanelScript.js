@@ -703,16 +703,16 @@ function createContextMenu(event, result, index) {
         contextMenu.remove();
     };
 
-    // Create the "Rename tag" command
-    const renameTag = document.createElement('span');
-    renameTag.textContent = `Rename tag`;
-    renameTag.onclick = () => {
+    // Create the "Replace tag" command
+    const replaceTag = document.createElement('span');
+    replaceTag.textContent = `Replace tag`;
+    replaceTag.onclick = () => {
         // Create an input field with the tag text
         const input = createInputField(currentTag, tagElement, (input) => {
             const newTag = input.value;
             if (newTag && newTag !== currentTag) {
                 webviewApi.postMessage({
-                    name: 'renameTag',
+                    name: 'replaceTag',
                     externalId: result.externalId,
                     line: result.lineNumbers[index] + line,
                     text: result.text[index].split('\n')[line].trim(),
@@ -742,7 +742,7 @@ function createContextMenu(event, result, index) {
     contextMenu.appendChild(searchTag);
     contextMenu.appendChild(extendQuery);
     contextMenu.appendChild(addTag);
-    contextMenu.appendChild(renameTag);
+    contextMenu.appendChild(replaceTag);
     contextMenu.appendChild(removeTag);
 
     // Append the contextMenu to the body or a specific container within your application
@@ -751,7 +751,7 @@ function createContextMenu(event, result, index) {
 
 function createInputField(defaultTag, tagElement, finalizeFunction) {
     const input = document.createElement('input');
-    input.classList.add('itags-search-renameTag');
+    input.classList.add('itags-search-replaceTag');
     input.type = 'text';
     input.value = defaultTag;
     input.style.width = `${tagElement.offsetWidth}px`;

@@ -101,8 +101,8 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
-  } else if (message.name === 'renameTag') {
-    await renameTagInText(message);
+  } else if (message.name === 'replaceTag') {
+    await replaceTagInText(message.externalId, [message.line], [message.text], message.oldTag, message.newTag);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
@@ -348,21 +348,28 @@ export async function removeTagFromText(message: any) {
   note = clearNoteReferences(note);
 }
 
-export async function renameTagInText(message: any) {
-  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string, newTag: string) {
+  // batch replace oldTag with newTag in the given line numbers
+  if (lineNumbers.length !== texts.length) {
+    console.error('Error in renameTagInText: The number of line numbers does not match the number of text strings.');
+    return;
+  }
+  let note = await joplin.data.get(['notes', externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
-  const line = lines[message.line];
 
-  // Check the line to see if it contains the text
-  if (!line.includes(message.text)) {
-    console.error('Error in renameTagInText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
-    return line;
+  for (let i = 0; i < lineNumbers.length; i++) {
+    const line = lines[lineNumbers[i]];
+    // Check the line to see if it contains the text
+    if (!line.includes(texts[i])) {
+      console.error('Error in renameTagInText: The line does not contain the expected text.', '\nLine:', line, '\nText:', texts[i]);
+    }
+
+    // Replace the old tag with the new tag
+    lines[lineNumbers[i]] = line.replace(oldTag, newTag);
   }
 
-  // Replace the old tag with the new tag
-  lines[message.line] = line.replace(message.oldTag, message.newTag);
   const newBody = lines.join('\n');
-  await updateNote(message, newBody);
+  await updateNote({externalId: externalId, line: lineNumbers[0]}, newBody);
   note = clearNoteReferences(note);
 }
 
