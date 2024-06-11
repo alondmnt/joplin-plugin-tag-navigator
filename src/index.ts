@@ -51,8 +51,9 @@ joplin.plugins.register({
     await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     await registerSearchPanel(searchPanel);
+    const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, panelSettings);
+      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, panelSettings, tagSettings);
     });
 
     // Periodic database update

@@ -1,9 +1,9 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
-import { getTagRegex, queryEnd, queryStart } from './settings';
+import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
 import { GroupedResult, Query, clearNoteReferences, runSearch } from './search';
-import { NoteDatabase } from './db';
+import { NoteDatabase, processNote } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 
@@ -47,7 +47,8 @@ export async function registerSearchPanel(panel: string) {
 
 export async function processMessage(message: any, searchPanel: string, db: NoteDatabase,
     searchParams: QueryRecord,
-    panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean }) {
+    panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean },
+    tagSettings: TagSettings) {
 
   if (message.name === 'initPanel') {
     updatePanelTagData(searchPanel, db);
@@ -87,28 +88,31 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     });
 
   } else if (message.name === 'setCheckBox') {
-    await setCheckboxState(message);
+    await setCheckboxState(message, db, tagSettings);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeTag') {
-    await removeTagFromText(message);
+    await removeTagFromText(message, db, tagSettings);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'replaceTag') {
-    await replaceTagInText(message.externalId, [message.line], [message.text], message.oldTag, message.newTag);
+    await replaceTagInText(
+      message.externalId, [message.line], [message.text],
+      message.oldTag, message.newTag,
+      db, tagSettings);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'addTag') {
-    await addTagToText(message);
+    await addTagToText(message, db, tagSettings);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
@@ -296,7 +300,9 @@ function normalizeHeadingLevel(text: string): string {
   return processedLines.join('\n');
 }
 
-export async function setCheckboxState(message: any) {
+/// Note editing functions ///
+
+export async function setCheckboxState(message: any, db: NoteDatabase, tagSettings: TagSettings) {
   // This function modifies the checkbox state in a markdown task list item
   // line: The markdown string containing the task list item, possibly indented
   // text: The text of the task list item, in order to ensure that the line matches
@@ -323,11 +329,11 @@ export async function setCheckboxState(message: any) {
   }
 
   const newBody = lines.join('\n');
-  updateNote(message, newBody);
+  updateNote(message, newBody, db, tagSettings);
   note = clearNoteReferences(note);
 }
 
-export async function removeTagFromText(message: any) {
+export async function removeTagFromText(message: any, db: NoteDatabase, tagSettings: TagSettings) {
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
@@ -343,11 +349,11 @@ export async function removeTagFromText(message: any) {
   lines[message.line] = line.replace(tagRegex, '');
 
   const newBody = lines.join('\n');
-  await updateNote(message, newBody);
+  await updateNote(message, newBody, db, tagSettings);
   note = clearNoteReferences(note);
 }
 
-export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string, newTag: string) {
+export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string, newTag: string, db: NoteDatabase, tagSettings: TagSettings) {
   // batch replace oldTag with newTag in the given line numbers
   if (lineNumbers.length !== texts.length) {
     console.error('Error in renameTagInText: The number of line numbers does not match the number of text strings.');
@@ -368,11 +374,11 @@ export async function replaceTagInText(externalId: string, lineNumbers: number[]
   }
 
   const newBody = lines.join('\n');
-  await updateNote({externalId: externalId, line: lineNumbers[0]}, newBody);
+  await updateNote({externalId: externalId, line: lineNumbers[0]}, newBody, db, tagSettings);
   note = clearNoteReferences(note);
 }
 
-export async function addTagToText(message: any) {
+export async function addTagToText(message: any, db: NoteDatabase, tagSettings: TagSettings) {
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
@@ -386,7 +392,7 @@ export async function addTagToText(message: any) {
   // Add the tag to the line
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
-  await updateNote(message, newBody);
+  await updateNote(message, newBody, db, tagSettings);
   note = clearNoteReferences(note);
 }
 
@@ -396,11 +402,13 @@ export function escapeRegex(string: string): string {
     .trim();
 }
 
-async function updateNote(message: any, newBody: string) {
+async function updateNote(message: any, newBody: string, db: NoteDatabase, tagSettings: TagSettings) {
   let selectedNote = await joplin.workspace.selectedNote();
-  let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body'] });
+
   if (newBody !== targetNote.body) {
     await joplin.data.put(['notes', message.externalId], null, { body: newBody });
+
     if ((selectedNote) && (selectedNote.id === message.externalId)) {
       // Update note editor if it's the currently selected note
       await joplin.commands.execute('editor.setText', newBody);
@@ -409,6 +417,9 @@ async function updateNote(message: any, newBody: string) {
         args: [message.line]
       });
     }
+
+    targetNote.body = newBody;
+    await processNote(db, targetNote, tagSettings);
   }
   // Clear the reference to the note to avoid memory leaks
   targetNote = clearNoteReferences(targetNote);
