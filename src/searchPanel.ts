@@ -53,7 +53,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
   if (message.name === 'initPanel') {
     updatePanelTagData(searchPanel, db);
     updatePanelNoteData(searchPanel, db);
-    await updateQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     updatePanelSettings(searchPanel, panelSettings);
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
@@ -130,7 +130,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
         }
       }
     }
-    updateQuery(searchPanel, searchParams.query, searchParams.filter);
+    updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     updatePanelTagData(searchPanel, db);
     // TODO: make sure that we replace the tag in saved queries
     const results = await runSearch(db, searchParams.query);
@@ -576,7 +576,7 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
   return query;
 }
 
-export async function updateQuery(panel: string, query: Query[][], filter: string) {
+export async function updatePanelQuery(panel: string, query: Query[][], filter: string) {
   // Send the query to the search panel
   if (!query || query.length ===0 || query[0].length === 0) {
     return;

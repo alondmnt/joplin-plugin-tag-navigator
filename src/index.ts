@@ -7,7 +7,7 @@ import { updateNotePanel } from './notePanel';
 import { parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
 import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
-import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updateQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
+import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
 let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
@@ -86,7 +86,7 @@ joplin.plugins.register({
       if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
         searchParams = savedQuery;
-        await updateQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
       }
 
       // Update results in note
@@ -165,7 +165,7 @@ joplin.plugins.register({
         if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
           // Updating this variable will ensure it's sent to the panel on initPanel
           searchParams = savedQuery;
-          await updateQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         }
         note = clearNoteReferences(note);
       },
