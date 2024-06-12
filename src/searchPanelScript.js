@@ -703,6 +703,24 @@ function createContextMenu(event, result, index) {
         contextMenu.remove();
     };
 
+    // Create the "Replace all" command
+    const replaceAll = document.createElement('span');
+    replaceAll.textContent = `Replace all`;
+    replaceAll.onclick = () => {
+        // Create an input field with the tag text
+        const input = createInputField(currentTag, tagElement, (input) => {
+            const newTag = input.value;
+            if (newTag && newTag !== currentTag) {
+                webviewApi.postMessage({
+                    name: 'replaceAll',
+                    oldTag: currentTag,
+                    newTag: newTag,
+                });
+            }
+        });
+        contextMenu.remove();
+    };
+
     // Create the "Replace tag" command
     const replaceTag = document.createElement('span');
     replaceTag.textContent = `Replace tag`;
@@ -743,6 +761,7 @@ function createContextMenu(event, result, index) {
     contextMenu.appendChild(extendQuery);
     contextMenu.appendChild(addTag);
     contextMenu.appendChild(replaceTag);
+    contextMenu.appendChild(replaceAll);
     contextMenu.appendChild(removeTag);
 
     // Append the contextMenu to the body or a specific container within your application

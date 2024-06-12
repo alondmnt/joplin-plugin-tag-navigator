@@ -111,6 +111,31 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
+  } else if (message.name === 'replaceAll') {
+    // update all notes with the old tag
+    const notes = db.searchBy('tag', message.oldTag, false);
+    for (const externalId in notes) {
+      const lineNumbers = Array.from(notes[externalId]);
+      const texts = lineNumbers.map(() => '');  // skip text validation
+      await replaceTagInText(
+        externalId, lineNumbers, texts,
+        message.oldTag, message.newTag,
+        db, tagSettings);
+    }
+    // update the current query
+    for (const group of searchParams.query) {
+      for (const condition of group) {
+        if (condition.tag === message.oldTag) {
+          condition.tag = message.newTag;
+        }
+      }
+    }
+    updateQuery(searchPanel, searchParams.query, searchParams.filter);
+    updatePanelTagData(searchPanel, db);
+    // TODO: make sure that we replace the tag in saved queries
+    const results = await runSearch(db, searchParams.query);
+    updatePanelResults(searchPanel, results, searchParams.query);
+
   } else if (message.name === 'addTag') {
     await addTagToText(message, db, tagSettings);
 
