@@ -112,29 +112,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'replaceAll') {
-    // update all notes with the old tag
-    const notes = db.searchBy('tag', message.oldTag, false);
-    for (const externalId in notes) {
-      const lineNumbers = Array.from(notes[externalId]);
-      const texts = lineNumbers.map(() => '');  // skip text validation
-      await replaceTagInText(
-        externalId, lineNumbers, texts,
-        message.oldTag, message.newTag,
-        db, tagSettings);
-    }
-    // update the current query
-    for (const group of searchParams.query) {
-      for (const condition of group) {
-        if (condition.tag === message.oldTag) {
-          condition.tag = message.newTag;
-        }
-      }
-    }
-    updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-    updatePanelTagData(searchPanel, db);
-    // TODO: make sure that we replace the tag in saved queries
-    const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await replaceTagAll(message, db, tagSettings, searchPanel, searchParams);
 
   } else if (message.name === 'addTag') {
     await addTagToText(message, db, tagSettings);
@@ -376,6 +354,49 @@ export async function removeTagFromText(message: any, db: NoteDatabase, tagSetti
   const newBody = lines.join('\n');
   await updateNote(message, newBody, db, tagSettings);
   note = clearNoteReferences(note);
+}
+
+async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+    // update all notes with the old tag
+    const notes = db.searchBy('tag', message.oldTag, false);
+    for (const externalId in notes) {
+      const lineNumbers = Array.from(notes[externalId]);
+      const texts = lineNumbers.map(() => '');  // skip text validation
+      await replaceTagInText(
+        externalId, lineNumbers, texts,
+        message.oldTag, message.newTag,
+        db, tagSettings);
+    }
+    // update the current query
+    replaceTagInQuery(searchParams, message.oldTag, message.newTag);
+    // update all saved queries
+    const queryNotes = db.getQueryNotes();
+    for (const externalId of queryNotes) {
+      let note = await joplin.data.get(['notes', externalId], { fields: ['id', 'body'] });
+      const savedQuery = await loadQuery(db, note);
+      if (replaceTagInQuery(savedQuery, message.oldTag, message.newTag)) {
+        await saveQuery(savedQuery, externalId);
+      };
+      note = clearNoteReferences(note);
+    }
+    // update the search panel
+    updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    updatePanelTagData(searchPanel, db);
+    const results = await runSearch(db, searchParams.query);
+    updatePanelResults(searchPanel, results, searchParams.query);
+}
+
+function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): boolean {
+  let changed = false;
+  for (const group of query.query) {
+    for (const condition of group) {
+      if (condition.tag === oldTag) {
+        condition.tag = newTag;
+        changed = true;
+      }
+    }
+  }
+  return changed;
 }
 
 export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string, newTag: string, db: NoteDatabase, tagSettings: TagSettings) {

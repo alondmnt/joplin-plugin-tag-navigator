@@ -29,6 +29,7 @@ class Note {
   tags: { [tag: string]: Set<number> };
   noteLinksById: { [noteId: string]: Set<number> };
   noteLinksByTitle: { [title: string]: Set<number> };
+  savedQuery: boolean;
   displayResults: boolean;
 
   constructor(id: string, title: string) {
@@ -37,6 +38,7 @@ class Note {
     this.tags = {};
     this.noteLinksById = {};
     this.noteLinksByTitle = {};
+    this.savedQuery = false;
     this.displayResults = false;
   }
 
@@ -45,6 +47,10 @@ class Note {
       this.tags[tag] = new Set();
     }
     this.tags[tag].add(lineNumber);
+  }
+
+  setSavedQuery(saved: boolean) {
+    this.savedQuery = saved;
   }
 
   setDisplay(display: boolean) {
@@ -171,6 +177,11 @@ export class NoteDatabase {
     return Object.values(this.notes).find(note => note.title === title)?.id;
   }
 
+  getQueryNotes(): string[] {
+    // Return a list of note ids that contain a saved query
+    return Object.values(this.notes).filter(note => note.savedQuery).map(note => note.id);
+  }
+
   getResultNotes(): string[] {
     // Return a list of note ids that should display results
     return Object.values(this.notes).filter(note => note.displayResults).map(note => note.id);
@@ -278,6 +289,9 @@ export async function processNote(db: NoteDatabase, note: any, tagSettings: TagS
 
     // Insert into Results table if results should be displayed
     const searchQuery = await loadQuery(db, note);
+    if (searchQuery.query[0].length > 0) {
+      noteRecord.setSavedQuery(true);
+    }
     noteRecord.setDisplay(searchQuery.displayInNote);
 
     // Add the note to the database
