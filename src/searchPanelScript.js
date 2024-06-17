@@ -303,7 +303,7 @@ function updateResultsArea() {
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
-        const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
+        const filterRegExp = new RegExp(`(?<!<[^>]*)(${parsedFilter.join('|')})(?![^<]*>)`, 'gi');  // ignore html tags
         for (let index = 0; index < result.html.length; index++) {
             let entry = result.html[index];
             if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget=result.title)) {
