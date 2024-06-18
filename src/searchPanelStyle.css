@@ -250,8 +250,6 @@ body {
 
 #itags-search-resultsArea a {
     color: var(--joplin-url-color);
-    cursor: not-allowed;
-    pointer-events: none;
     overflow-y: auto;
 }
 

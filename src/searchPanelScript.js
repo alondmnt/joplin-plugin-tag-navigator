@@ -5,6 +5,8 @@ let allTags = [];
 let allNotes = [];
 let results = [];
 
+const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
+
 const tagFilter = document.getElementById('itags-search-tagFilter');
 const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
@@ -346,6 +348,16 @@ function updateResultsArea() {
                         text: result.text[index].split('\n')[line].trim(),
                         checked: event.target.getAttribute('data-checked') === 'true' ? false : true,
                     });
+                } else if (event.target.matches('a')) {
+                    event.preventDefault();
+                    const externalId = event.target.href.match(noteIdRegex)[0];
+                    if (externalId) {
+                        webviewApi.postMessage({
+                            name: 'openNote',
+                            externalId: externalId,
+                            line: 0,
+                        });
+                    }
                 } else {
                     webviewApi.postMessage({
                         name: 'openNote',
