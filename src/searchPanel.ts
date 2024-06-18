@@ -95,7 +95,11 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeTag') {
-    await removeTagFromText(message, db, tagSettings);
+    const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`);
+    await replaceTagInText(
+      message.externalId, [message.line], [message.text],
+      tagRegex, '',
+      db, tagSettings);
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
@@ -336,26 +340,6 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
   note = clearNoteReferences(note);
 }
 
-export async function removeTagFromText(message: any, db: NoteDatabase, tagSettings: TagSettings) {
-  let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
-  const lines: string[] = note.body.split('\n');
-  const line = lines[message.line];
-
-  // Check the line to see if it contains the text
-  if (!line.includes(message.text)) {
-    console.error('Error in removeTagFromText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
-    return line;
-  }
-
-  // Remove the tag and any leading space from the line
-  const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`);
-  lines[message.line] = line.replace(tagRegex, '');
-
-  const newBody = lines.join('\n');
-  await updateNote(message, newBody, db, tagSettings);
-  note = clearNoteReferences(note);
-}
-
 async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
     // update all notes with the old tag
     const notes = db.searchBy('tag', message.oldTag, false);
@@ -399,7 +383,7 @@ function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): 
   return changed;
 }
 
-export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string, newTag: string, db: NoteDatabase, tagSettings: TagSettings) {
+export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string|RegExp, newTag: string, db: NoteDatabase, tagSettings: TagSettings) {
   // batch replace oldTag with newTag in the given line numbers
   if (lineNumbers.length !== texts.length) {
     console.error('Error in renameTagInText: The number of line numbers does not match the number of text strings.');
