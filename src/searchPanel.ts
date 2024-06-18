@@ -344,6 +344,9 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
 }
 
 async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+    const cancel = await joplin.views.dialogs.showMessageBox(
+      `Are you sure you want to replace all instances of ${message.oldTag} with ${message.newTag}?`);
+    if (cancel) { return; }
     // update all notes with the old tag
     const notes = db.searchBy('tag', message.oldTag, false);
     for (const externalId in notes) {
@@ -374,6 +377,9 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
 }
 
 async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+  const cancel = await joplin.views.dialogs.showMessageBox(
+    `Are you sure you want to remove all instances of ${message.tag}?`);
+  if (cancel) { return; }
   // update all notes with the old tag
   const notes = db.searchBy('tag', message.tag, false);
   for (const externalId in notes) {
