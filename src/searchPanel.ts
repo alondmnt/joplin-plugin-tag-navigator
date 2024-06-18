@@ -102,6 +102,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
       db, tagSettings);
 
     // update the search panel
+    await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
@@ -115,6 +116,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
       db, tagSettings);
 
     // update the search panel
+    await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
