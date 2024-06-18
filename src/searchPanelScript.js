@@ -117,8 +117,7 @@ function updateNoteList() {
 function containsFilter(target, filter, min_chars=1, otherTarget='') {
     const lowerTarget = (target + otherTarget).toLowerCase();
     const words = parseFilter(filter, min_chars);
-
-    return words.every(word => lowerTarget.includes(word.toLowerCase()));
+    return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
 }
 
 function parseFilter(filter, min_chars=1) {
