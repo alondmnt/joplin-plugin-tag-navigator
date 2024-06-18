@@ -1,6 +1,6 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 
-export const defTagRegex = /(?<=^|\s)#([^\s#]*\w)/g; // Matches tag names starting with #
+export const defTagRegex = /(?<=^|\s)#([^\s#'"]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
