@@ -755,6 +755,17 @@ function createContextMenu(event, result, index) {
         contextMenu.remove();
     };
 
+    // Create the "Remove all" command
+    const removeAll = document.createElement('span');
+    removeAll.textContent = `Remove all`;
+    removeAll.onclick = () => {
+        webviewApi.postMessage({
+            name: 'removeAll',
+            tag: currentTag,
+        });
+        contextMenu.remove();
+    }
+
     // Append commands to the contextMenu
     contextMenu.appendChild(searchTag);
     contextMenu.appendChild(extendQuery);
@@ -762,6 +773,7 @@ function createContextMenu(event, result, index) {
     contextMenu.appendChild(replaceTag);
     contextMenu.appendChild(replaceAll);
     contextMenu.appendChild(removeTag);
+    contextMenu.appendChild(removeAll);
 
     // Append the contextMenu to the body or a specific container within your application
     document.body.appendChild(contextMenu);

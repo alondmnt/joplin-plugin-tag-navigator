@@ -105,6 +105,9 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
 
+  } else if (message.name === 'removeAll') {
+    await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
+
   } else if (message.name === 'replaceTag') {
     await replaceTagInText(
       message.externalId, [message.line], [message.text],
@@ -368,6 +371,23 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
     updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query);
     updatePanelResults(searchPanel, results, searchParams.query);
+}
+
+async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+  // update all notes with the old tag
+  const notes = db.searchBy('tag', message.tag, false);
+  for (const externalId in notes) {
+    const lineNumbers = Array.from(notes[externalId]);
+    const texts = lineNumbers.map(() => '');  // skip text validation
+    await replaceTagInText(
+      externalId, lineNumbers, texts,
+      new RegExp(`\\s*${escapeRegex(message.tag)}`), '',
+      db, tagSettings);
+  }
+  // update the search panel
+  updatePanelTagData(searchPanel, db);
+  const results = await runSearch(db, searchParams.query);
+  updatePanelResults(searchPanel, results, searchParams.query);
 }
 
 function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): boolean {
