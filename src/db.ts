@@ -140,6 +140,9 @@ export class NoteDatabase {
     // Update tags count
     for (const tag in this.notes[id].tags) {
       this.tags[tag] = this.tags[tag] - this.notes[id].tags[tag].size;
+      if (this.tags[tag] === 0) {
+        delete this.tags[tag];
+      }
     }
     // Remove the note from the database
     delete this.notes[id];
