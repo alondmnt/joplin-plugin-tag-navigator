@@ -23,6 +23,9 @@ joplin.plugins.register({
       await processNote(DatabaseManager.getDatabase(), note, tagSettings);
       note = clearNoteReferences(note);
 
+      // Update tags
+      await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
+
       // Update search results
       const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
       await updatePanelResults(searchPanel, results, searchParams.query);
@@ -50,17 +53,21 @@ joplin.plugins.register({
     // Search panel
     await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
-    await registerSearchPanel(searchPanel);
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
       processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, panelSettings, tagSettings);
     });
+    await registerSearchPanel(searchPanel);
 
     // Periodic database update
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
     if (periodicDBUpdate > 0) {
       setInterval(async () => {
         await processAllNotes(); // update DB
+
+        // Update tags & notes
+        await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
+        await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
         // Update search results
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
@@ -197,7 +204,9 @@ joplin.plugins.register({
       label: 'Update inline tags database',
       iconName: 'fas fa-database',
       execute: async () => {
-        await processAllNotes();
+        await processAllNotes(); // update DB
+
+        // Update tags & notes
         await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
         await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
@@ -324,7 +333,9 @@ joplin.plugins.register({
 
     await joplin.workspace.onSyncComplete(async () => {
       if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
-      await processAllNotes();
+      await processAllNotes(); // update DB
+
+      // Update tags & notes
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
