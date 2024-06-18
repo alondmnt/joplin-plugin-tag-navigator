@@ -25,7 +25,7 @@ joplin.plugins.register({
 
       // Update search results
       const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-      updatePanelResults(searchPanel, results, searchParams.query);
+      await updatePanelResults(searchPanel, results, searchParams.query);
     }, 1000);
 
     // Periodic conversion of tags
@@ -64,7 +64,7 @@ joplin.plugins.register({
 
         // Update search results
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
+        await updatePanelResults(searchPanel, results, searchParams.query);
 
         // Update note view
         if (await joplin.settings.value('itags.periodicNoteUpdate')) {
@@ -107,7 +107,7 @@ joplin.plugins.register({
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
+        await updatePanelResults(searchPanel, results, searchParams.query);
       }
     });
 
@@ -203,7 +203,7 @@ joplin.plugins.register({
 
         // Update search results
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-        updatePanelResults(searchPanel, results, searchParams.query);
+        await updatePanelResults(searchPanel, results, searchParams.query);
 
         // Update note view
         if (await joplin.settings.value('itags.periodicNoteUpdate')) {
@@ -314,7 +314,7 @@ joplin.plugins.register({
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
           event.keys.includes('itags.resultMarker')) {
-        updatePanelSettings(searchPanel);
+        await updatePanelSettings(searchPanel);
       }
     });
 
@@ -330,7 +330,7 @@ joplin.plugins.register({
 
       // Update search results
       const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-      updatePanelResults(searchPanel, results, searchParams.query);
+      await updatePanelResults(searchPanel, results, searchParams.query);
 
       // Update note view
       if (await joplin.settings.value('itags.periodicNoteUpdate')) {

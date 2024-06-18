@@ -51,17 +51,17 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     tagSettings: TagSettings) {
 
   if (message.name === 'initPanel') {
-    updatePanelTagData(searchPanel, db);
-    updatePanelNoteData(searchPanel, db);
+    await updatePanelTagData(searchPanel, db);
+    await updatePanelNoteData(searchPanel, db);
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-    updatePanelSettings(searchPanel, panelSettings);
+    await updatePanelSettings(searchPanel, panelSettings);
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'searchQuery') {
     searchParams.query = JSON.parse(message.query);
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'saveQuery') {
     // Save the query into the current note
@@ -70,7 +70,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     const currentQuery = await loadQuery(db, currentNote);
     clearNoteReferences(currentNote);
 
-    saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
+    await saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
   } else if (message.name === 'openNote') {
     let note = await joplin.workspace.selectedNote();
@@ -92,7 +92,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeTag') {
     const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`);
@@ -103,7 +103,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeAll') {
     await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
@@ -116,7 +116,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'replaceAll') {
     await replaceTagAll(message, db, tagSettings, searchPanel, searchParams);
@@ -126,7 +126,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
     // update the search panel
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'updateSetting') {
 
@@ -139,14 +139,14 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 }
 
 export async function focusSearchPanel(panel: string) {
-  if (joplin.views.panels.visible(panel)) {
-    joplin.views.panels.postMessage(panel, {
-      name: 'focusTagFilter',
-    });
-  }
+  if (!joplin.views.panels.visible(panel)) { return; }
+  joplin.views.panels.postMessage(panel, {
+    name: 'focusTagFilter',
+  });
 }
 
 export async function updatePanelTagData(panel: string, db: NoteDatabase) {
+  if (!joplin.views.panels.visible(panel)) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
     tags: JSON.stringify(db.getTags()),
@@ -154,6 +154,7 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase) {
 }
 
 export async function updatePanelNoteData(panel: string, db: NoteDatabase) {
+  if (!joplin.views.panels.visible(panel)) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateNoteData',
     notes: JSON.stringify(db.getNotes()),
@@ -166,7 +167,7 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(
     () => {
-      if(joplin.views.panels.visible(panel)) {
+      if (joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
           results: JSON.stringify(renderHTML(results, tagRegex, resultMarker, colorTodos)),
@@ -190,7 +191,7 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
   };
   const intervalID = setInterval(
     () => {
-      if(joplin.views.panels.visible(panel)) {
+      if (joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateSettings',
           settings: JSON.stringify(settings),
@@ -370,10 +371,10 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
       note = clearNoteReferences(note);
     }
     // update the search panel
-    updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-    updatePanelTagData(searchPanel, db);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query);
-    updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelResults(searchPanel, results, searchParams.query);
 }
 
 async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
@@ -391,9 +392,9 @@ async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSett
       db, tagSettings);
   }
   // update the search panel
-  updatePanelTagData(searchPanel, db);
+  await updatePanelTagData(searchPanel, db);
   const results = await runSearch(db, searchParams.query);
-  updatePanelResults(searchPanel, results, searchParams.query);
+  await updatePanelResults(searchPanel, results, searchParams.query);
 }
 
 function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): boolean {
@@ -612,11 +613,10 @@ export async function updatePanelQuery(panel: string, query: Query[][], filter: 
   if (!query || query.length ===0 || query[0].length === 0) {
     return;
   }
-  if (joplin.views.panels.visible(panel)) {
-    joplin.views.panels.postMessage(panel, {
-      name: 'updateQuery',
-      query: JSON.stringify(query),
-      filter: filter,
-    });
-  }
+  if (!joplin.views.panels.visible(panel)) { return; }
+  joplin.views.panels.postMessage(panel, {
+    name: 'updateQuery',
+    query: JSON.stringify(query),
+    filter: filter,
+  });
 }
