@@ -250,12 +250,12 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    // Save the current stae of expandd / collapseed notes by their externalId
+    // Save the current stae of expandd / collapsed notes by their externalId
     const noteState = {};
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapseed';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
         } else {
             noteState[resultNotes[i].getAttribute('data-externalId')] = 'expandd';
         }
@@ -293,7 +293,7 @@ function updateResultsArea() {
 
         // Preserve the state of the content container
         contentContainer.setAttribute('data-externalId', result.externalId);
-        if (noteState[result.externalId] === 'collapseed') {
+        if (noteState[result.externalId] === 'collapsed') {
             contentContainer.style.display = 'block';
         } else if (noteState[result.externalId] === 'expandd') {
             contentContainer.style.display = 'none';
