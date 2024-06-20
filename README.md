@@ -54,7 +54,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 | Key | Action |
 | --- | ------ |
-| Enter | Add tag / note to query |
+| Enter | Add tag(s) / note to query |
 | 2nd Enter | Search notes based on current query |
 | Delete | Remove last added tag / note from query |
 | Esc | Clear the filter (display all tags / notes) |

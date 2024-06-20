@@ -883,7 +883,22 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
             // Get the tag name from the only child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);
-            // Optionally, clear the input
+            // Clear the input
+            tagFilter.value = '';
+            // Update the tag list to reflect the current filter or clear it
+            updateTagList();
+        } else {
+            // Create multiple groups, one for each tag
+            const tags = Array.from(tagList.children).map(tag => tag.textContent);
+            tags.forEach(tag => {
+                if (queryGroups.some(group =>
+                        (group.length === 1) & (group[0].tag === tag) & (group[0].negated === false))) {
+                    return;
+                }
+                queryGroups.push([{ tag: tag, negated: false }]);
+            });
+            updateQueryArea();
+            // Clear the input
             tagFilter.value = '';
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
