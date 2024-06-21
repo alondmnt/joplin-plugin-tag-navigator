@@ -8,6 +8,8 @@ export interface Query {
   title?: string;
   externalId?: string;
   negated: boolean;
+  minValue: string;
+  maxValue: string;
 }
 
 export interface GroupedResult {
@@ -50,6 +52,13 @@ function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): 
 
       } else if (queryPart.title) {
         partResults = db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated);
+
+      } else if (queryPart.minValue || queryPart.maxValue) {
+        for (const tag of db.getTags()) {
+          if (queryPart.minValue && tag < queryPart.minValue) { continue; }
+          if (queryPart.maxValue && tag > queryPart.maxValue) { break; }
+          partResults = unionResults(partResults, db.searchBy('tag', tag, false));
+        }
       }
       // Intersect the results of each part of the clause
       if (!clauseResultsSet) {

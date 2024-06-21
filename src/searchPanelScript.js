@@ -218,15 +218,26 @@ function updateQueryArea() {
                     newEl.textContent = `! ${newEl.textContent}`;
                 }
 
+                newEl.onclick = () => {
+                    toggleTagNegation(groupIndex, tagIndex);
+                    updateQueryArea(); // Refresh after toggling negation
+                };
+
             } else if (item.tag) {
                 // Display each tag with its state
                 newEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
                 newEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
+
+                newEl.onclick = () => {
+                    toggleTagNegation(groupIndex, tagIndex);
+                    updateQueryArea(); // Refresh after toggling negation
+                };
+
+            } else if (item.minValue) {
+                // Display range
+                newEl.classList.add('itags-search-tag', 'selected');
+                newEl.textContent = `${item.minValue} -> ${item.maxValue}`;
             }
-            newEl.onclick = () => {
-                toggleTagNegation(groupIndex, tagIndex);
-                updateQueryArea(); // Refresh after toggling negation
-            };
 
             // Append a delete button for each tag
             const deleteBtn = document.createElement('button');

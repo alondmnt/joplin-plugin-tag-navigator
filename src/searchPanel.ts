@@ -579,9 +579,10 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
     for (let [ic, condition] of group.entries()) {
 
       // Check if the format is correct
-      const format = (typeof condition.negated == 'boolean') &&
+      const format = ((typeof condition.negated == 'boolean') &&
         ((typeof condition.tag == 'string') ||
-         ((typeof condition.title == 'string') && (typeof condition.externalId == 'string')));
+         ((typeof condition.title == 'string') && (typeof condition.externalId == 'string')))) ||
+         ((typeof condition.minValue == 'string') && (typeof condition.maxValue == 'string'));
       if (!format) {
         group[ic] = null;
       }
