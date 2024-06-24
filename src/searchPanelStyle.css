@@ -7,7 +7,7 @@ body {
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
     margin-bottom: 5px;
-    margin-top: 5px;
+    /* margin-top: 5px; */
     font-size: var(--joplin-font-size);
 }
 
@@ -48,10 +48,52 @@ body {
     border-style: solid;
     border-radius: 3px;
     padding: 5px;
-    margin-bottom: 5px; /* Space between the tag list and the next element */
-    margin-top: 5px; /* Space between the tag list and the previous element */
+    margin-bottom: 5px;
+    /* margin-top: 5px; */
     font-size: var(--joplin-font-size);
     box-sizing: border-box;
+}
+
+#itags-search-tagRangeArea {
+    display: flex;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    margin-bottom: 5px;
+    /* margin-top: 5px; */
+    font-size: var(--joplin-font-size);
+}
+
+#itags-search-tagRangeArea button:hover {
+    background-color: var(--joplin-background-color-hover3);
+}
+
+#itags-search-tagRangeMin, #itags-search-tagRangeMax {
+    width: 41%;
+    min-height: 23px;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
+#itags-search-tagRangeMax {
+    margin-left: 5px;
+}
+
+#itags-search-tagRangeAdd {
+    width: 18%;
+    min-height: 23px;
+    margin-left: 5px;
+    cursor: pointer;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-spacing: 5px;
+    border-style: solid;
 }
 
 #itags-search-inputNoteArea {
@@ -59,7 +101,7 @@ body {
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
     margin-bottom: 5px;
-    margin-top: 5px;
+    /* margin-top: 5px; */
     font-size: var(--joplin-font-size);
 }
 
@@ -69,8 +111,19 @@ body {
     margin-bottom: 0px !important;
 }
 
+#itags-search-noteFilter {
+    width: 45%;
+    min-height: 23px;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
 #itags-search-noteList {
-    width: 52%;
+    width: 55%;
     min-height: 23px;
     margin-left: 5px;
     color: var(--joplin-color);
@@ -81,20 +134,9 @@ body {
     border-style: solid;
 }
 
-#itags-search-noteFilter {
-    width: 48%;
-    min-height: 23px;
-    color: var(--joplin-color);
-    background-color: var(--joplin-background-color);
-    border-color: rgb(118, 118, 118);
-    border-width: 1px;
-    border-radius: 3px;
-    border-style: solid;
-}
-
 #itags-search-queryArea {
     height: 38px;
-    margin-top: 5px;
+    /* margin-top: 5px; */
     margin-bottom: 5px;
     border-color: rgb(118, 118, 118);
     border-width: 1px;
@@ -176,12 +218,12 @@ body {
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
     margin-bottom: 5px;
-    margin-top: 5px;
+    /* margin-top: 5px; */
     font-size: var(--joplin-font-size);
 }
 
 #itags-search-resultFilter {
-    width: 48%;
+    width: 46%;
     min-height: 23px;
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
@@ -192,7 +234,7 @@ body {
 }
 
 #itags-search-resultSort {
-    width: 24%;
+    width: 26%;
     min-height: 23px;
     color: var(--joplin-color);
     background-color: var(--joplin-background-color);
@@ -223,7 +265,7 @@ body {
 
 #itags-search-resultsArea {
     max-height: calc(100vh - 249px);
-    margin-top: 5px;
+    /* margin-top: 5px; */
     margin-bottom: 0px;
     border-color: rgb(118, 118, 118);
     border-width: 1px;

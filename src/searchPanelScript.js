@@ -12,6 +12,10 @@ const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
 const tagList = document.getElementById('itags-search-tagList');
+const tagRangeArea = document.getElementById('itags-search-tagRangeArea');
+const tagRangeMin = document.getElementById('itags-search-tagRangeMin');
+const tagRangeMax = document.getElementById('itags-search-tagRangeMax');
+const tagRangeAdd = document.getElementById('itags-search-tagRangeAdd');
 const noteArea = document.getElementById('itags-search-inputNoteArea');
 const noteList = document.getElementById('itags-search-noteList');
 const noteFilter = document.getElementById('itags-search-noteFilter');
@@ -233,10 +237,17 @@ function updateQueryArea() {
                     updateQueryArea(); // Refresh after toggling negation
                 };
 
-            } else if (item.minValue) {
+            } else if (item.minValue || item.maxValue) {
                 // Display range
                 newEl.classList.add('itags-search-tag', 'selected');
-                newEl.textContent = `${item.minValue} -> ${item.maxValue}`;
+                newEl.textContent = '';
+                if (item.minValue) {
+                    newEl.textContent += item.minValue;
+                }
+                newEl.textContent += ' -> ';
+                if (item.maxValue) {
+                    newEl.textContent += item.maxValue;
+                }
             }
 
             // Append a delete button for each tag
@@ -532,6 +543,21 @@ function handleTagClick(tag) {
         // Toggle negation if the tag exists in the last group
         let tagObject = lastGroup.find(t => t.tag === tag);
         tagObject.negated = !tagObject.negated;
+    }
+    updateQueryArea();
+}
+
+function handleRangeClick(minValue, maxValue) {
+    let lastGroup = queryGroups[queryGroups.length - 1];
+    let tagExistsInLastGroup = lastGroup && lastGroup.some(t => t.minValue === minValue && t.maxValue === maxValue);
+
+    if (!lastGroup) {
+        // Create a new group if there's no last group
+        lastGroup = [{ minValue: minValue, maxValue: maxValue }];
+        queryGroups.push(lastGroup);
+    } else if (!tagExistsInLastGroup) {
+        // Add tag to the last group if it doesn't exist
+        lastGroup.push({ minValue: minValue, maxValue: maxValue });
     }
     updateQueryArea();
 }
@@ -889,7 +915,7 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
         if (tagFilter.value === '') {
-            sendSearchMessage()
+            sendSearchMessage();
         } else if (tagList.childElementCount === 1) {
             // Get the tag name from the only child element of tagList
             const tag = tagList.firstChild.textContent;
@@ -936,6 +962,50 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
         // Toggle last tag negation
         toggleLastTagOrNote();
     }
+});
+
+addEventListenerWithTracking(tagRangeMin, 'keydown', (event) => {
+    if (event.key === 'Enter') {
+        tagRangeMax.focus();
+    } else if (event.key === 'ArrowUp') {
+        // Change the last operator
+        toggleLastOperator();
+    } else if (event.key === 'ArrowDown') {
+        // Toggle last tag negation
+        toggleLastTagOrNote();
+    }
+});
+
+addEventListenerWithTracking(tagRangeMax, 'keydown', (event) => {
+    if (event.key === 'Enter') {
+        if (tagRangeMin.value.length == 0 && tagRangeMax.value.length == 0) {
+            sendSearchMessage();
+            return;
+        }
+        tagRangeAdd.click();
+    } else if (event.key === 'ArrowUp') {
+        // Change the last operator
+        toggleLastOperator();
+    } else if (event.key === 'ArrowDown') {
+        // Toggle last tag negation
+        toggleLastTagOrNote();
+    }
+});
+
+addEventListenerWithTracking(tagRangeAdd, 'click', () => {
+    const newRange = {};
+    if (tagRangeMin.value.length == 0 && tagRangeMax.value.length == 0) {
+        return;
+    }
+    if (tagRangeMin.value.length > 0) {
+        newRange['minValue'] = tagRangeMin.value;
+    }
+    if (tagRangeMax.value.length > 0) {
+        newRange['maxValue'] = tagRangeMax.value;
+    }
+    handleRangeClick(newRange['minValue'], newRange['maxValue']);
+    tagRangeMin.value = '';
+    tagRangeMax.value = '';
 });
 
 addEventListenerWithTracking(noteFilter, 'keydown', (event) => {

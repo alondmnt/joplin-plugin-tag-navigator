@@ -23,6 +23,11 @@ export async function registerSearchPanel(panel: string) {
       <button id="itags-search-tagSearch" title="Search for text blocks">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
+    <div id="itags-search-tagRangeArea">
+      <input type="text" id="itags-search-tagRangeMin" placeholder="Range min" />
+      <input type="text" id="itags-search-tagRangeMax" placeholder="Range max" />
+      <button id="itags-search-tagRangeAdd" title="Add tag range to query">Add</button>
+    </div>
     <div id="itags-search-inputNoteArea">
       <input type="text" id="itags-search-noteFilter" placeholder="Filter notes..." />
       <select id="itags-search-noteList" title="Note mentions"></select>
