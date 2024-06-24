@@ -587,7 +587,7 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
       const format = ((typeof condition.negated == 'boolean') &&
         ((typeof condition.tag == 'string') ||
          ((typeof condition.title == 'string') && (typeof condition.externalId == 'string')))) ||
-         ((typeof condition.minValue == 'string') && (typeof condition.maxValue == 'string'));
+         ((typeof condition.minValue == 'string') || (typeof condition.maxValue == 'string'));
       if (!format) {
         group[ic] = null;
       }
