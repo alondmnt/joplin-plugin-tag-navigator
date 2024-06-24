@@ -193,6 +193,7 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
     resultOrder: override.resultOrder === undefined ? await joplin.settings.value('itags.resultOrder') : override.resultOrder,
     resultToggle: override.resultToggle === undefined ? await joplin.settings.value('itags.resultToggle') : override.resultToggle,
     resultMarker: await joplin.settings.value('itags.resultMarker'),
+    showTagRange: await joplin.settings.value('itags.showTagRange'),
     showNotes: await joplin.settings.value('itags.showNotes'),
     showResultFilter: await joplin.settings.value('itags.showResultFilter'),
   };

@@ -162,6 +162,7 @@ function updatePanelSettings(message) {
 }
 
 function hideElements(settings) {
+    let hiddenCount = 0;
     if (settings.showNotes) {
         noteArea.classList.remove('hidden');
         noteFilter.classList.remove('hidden');
@@ -172,6 +173,7 @@ function hideElements(settings) {
         noteFilter.classList.add('hidden');
         noteList.classList.add('hidden');
         resultsArea.classList.add('extended');
+        hiddenCount++;
     }
     if (settings.showResultFilter) {
         resultFilterArea.classList.remove('hidden');
@@ -185,15 +187,22 @@ function hideElements(settings) {
         resultSort.classList.add('hidden');
         resultOrder.classList.add('hidden');
         resultToggle.classList.add('hidden');
-        resultsArea.classList.add('extended');
+        hiddenCount++;
     }
-    if (settings.showNotes && settings.showResultFilter) {
-        resultsArea.classList.remove('extended');
-        resultsArea.classList.remove('extended2X');
+    if (settings.showTagRange) {
+        tagRangeArea.classList.remove('hidden');
+        tagRangeMin.classList.remove('hidden');
+        tagRangeMax.classList.remove('hidden');
+        tagRangeAdd.classList.remove('hidden');
+    } else {
+        tagRangeArea.classList.add('hidden');
+        tagRangeMin.classList.add('hidden');
+        tagRangeMax.classList.add('hidden');
+        tagRangeAdd.classList.add('hidden');
+        hiddenCount++;
     }
-    if (!settings.showNotes && !settings.showResultFilter) {
-        resultsArea.classList.remove('extended');
-        resultsArea.classList.add('extended2X');
+    if (hiddenCount) {
+        resultsArea.classList.add('extended' + hiddenCount + 'X');
     }
 }
 

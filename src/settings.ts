@@ -86,6 +86,13 @@ export async function registerSettings() {
       label: 'Search: Periodic update of results display in notes',
       description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
     },
+    'itags.showTagRange': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Show tag range section',
+    },
     'itags.showNotes': {
       value: true,
       type: SettingItemType.Bool,

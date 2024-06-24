@@ -278,12 +278,16 @@ body {
     font-family: Avenir, Arial, sans-serif;
 }
 
-.extended {
-    max-height: calc(100vh - 249px + 36px) !important;
+.extended1X {
+    max-height: calc(100vh - 249px + 31px) !important;
 }
 
 .extended2X {
-    max-height: calc(100vh - 249px + 72px) !important;
+    max-height: calc(100vh - 249px + 62px) !important;
+}
+
+.extended3X {
+    max-height: calc(100vh - 249px + 94px) !important;
 }
 
 #itags-search-resultsArea::-webkit-scrollbar {
