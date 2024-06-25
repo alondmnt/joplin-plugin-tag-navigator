@@ -29,6 +29,7 @@ let resultOrderState = 'desc';
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
+let searchWithRegex = false;
 let dropdownIsOpen = false;
 const eventListenersMap = new Map();  // Map to store event listeners and clear them later
 
@@ -123,7 +124,11 @@ function updateNoteList() {
 function containsFilter(target, filter, min_chars=1, otherTarget='') {
     const lowerTarget = (target + otherTarget).toLowerCase();
     const words = parseFilter(filter, min_chars);
-    return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
+    if (searchWithRegex) {
+        return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
+    } else {
+        return words.every(word => lowerTarget.includes(word));
+    }
 }
 
 function parseFilter(filter, min_chars=1) {
@@ -143,6 +148,7 @@ function parseFilter(filter, min_chars=1) {
 
 function updatePanelSettings(message) {
     const settings = JSON.parse(message.message.settings);
+    searchWithRegex = settings.searchWithRegex;
     resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
     if ( resultToggleState === 'collapse' ) {
         collapseResults();

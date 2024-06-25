@@ -322,7 +322,11 @@ joplin.plugins.register({
       if (event.keys.includes('itags.resultSort') || 
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
-          event.keys.includes('itags.resultMarker')) {
+          event.keys.includes('itags.resultMarker') ||
+          event.keys.includes('itags.showTagRange') ||
+          event.keys.includes('itags.showNotes') ||
+          event.keys.includes('itags.showResultFilter') ||
+          event.keys.includes('itags.searchWithRegex')) {
         await updatePanelSettings(searchPanel);
       }
     });

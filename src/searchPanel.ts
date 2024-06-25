@@ -196,6 +196,7 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
     showTagRange: await joplin.settings.value('itags.showTagRange'),
     showNotes: await joplin.settings.value('itags.showNotes'),
     showResultFilter: await joplin.settings.value('itags.showResultFilter'),
+    searchWithRegex: await joplin.settings.value('itags.searchWithRegex'),
   };
   const intervalID = setInterval(
     () => {
