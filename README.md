@@ -50,6 +50,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ![custom checkboxes](img/checkboxes.png)
 
+- You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
 - Tag / note filter keyboard shortcuts:
 
 | Key | Action |
