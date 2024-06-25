@@ -23,7 +23,11 @@ export async function convertAllNotesToJoplinTags() {
         note = clearNoteReferences(note);
         continue;
       }
-      await convertNoteToJoplinTags(note, tagSettings);
+      try {
+        await convertNoteToJoplinTags(note, tagSettings);
+      } catch (error) {
+        console.error(`Error converting note ${note.id} to tags: ${error}`);
+      }
       note = clearNoteReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
@@ -60,9 +64,10 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
 
 export async function convertNoteToJoplinTags(note: any, tagSettings: TagSettings) {
 
-  // Prase all inline tags from the note
+  // Parse all inline tags from the note
   const tags = (await parseTagsLines(note.body, tagSettings))
     .map(tag => tag.tag.replace('#', ''));
+  // TODO: Use tag prefix from settings
 
   if (tags.length === 0) {
     return;
