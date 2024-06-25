@@ -988,6 +988,10 @@ addEventListenerWithTracking(tagRangeMin, 'keydown', (event) => {
     } else if (event.key === 'ArrowDown') {
         // Toggle last tag negation
         toggleLastTagOrNote();
+    } else if (event.key === 'Escape') {
+        // Clear the input
+        tagRangeMin.value = '';
+        tagRangeMax.value = '';
     }
 });
 
@@ -1004,6 +1008,11 @@ addEventListenerWithTracking(tagRangeMax, 'keydown', (event) => {
     } else if (event.key === 'ArrowDown') {
         // Toggle last tag negation
         toggleLastTagOrNote();
+    } else if (event.key === 'Escape') {
+        // Clear the input
+        tagRangeMin.value = '';
+        tagRangeMax.value = '';
+        tagRangeMin.focus();
     }
 });
 
