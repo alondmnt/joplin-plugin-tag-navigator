@@ -29,6 +29,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
+    "date-fns": "^3.6.0",
     "lodash.debounce": "^4.0.8",
     "markdown-it": "^14.0.0",
     "markdown-it-task-lists": "^2.1.1"

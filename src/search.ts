@@ -1,7 +1,8 @@
 import joplin from 'api';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
-import { resultsEnd, resultsStart } from './settings';
+import { getTagSettings, resultsEnd, resultsStart } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
+import { parseDateTag } from './parser';
 
 export interface Query {
   tag?: string;
@@ -25,13 +26,13 @@ export interface GroupedResult {
 
 export async function runSearch(db: NoteDatabase, query: Query[][]): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
-  const queryResults = getQueryResults(db, query, currentNote);
+  const queryResults = await getQueryResults(db, query, currentNote);
   const groupedResults = await processQueryResults(queryResults);
   currentNote = clearNoteReferences(currentNote);
   return groupedResults;
 }
 
-function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): ResultSet {
+async function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): Promise<ResultSet> {
   // Get the note locations that matches the DNF query
   let resultsSet: ResultSet = {};
   for (const clause of query) {
@@ -54,9 +55,13 @@ function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: any): 
         partResults = db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated);
 
       } else if (queryPart.minValue || queryPart.maxValue) {
+        const tagSettings = await getTagSettings();
+        const minValue = parseDateTag(queryPart.minValue.toLowerCase(), tagSettings);
+        const maxValue = parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings);
+
         for (const tag of db.getTags()) {
-          if (queryPart.minValue && tag < queryPart.minValue) { continue; }
-          if (queryPart.maxValue && tag > queryPart.maxValue) { break; }
+          if (minValue && tag < minValue) { continue; }
+          if (maxValue && tag > maxValue) { break; }
           partResults = unionResults(partResults, db.searchBy('tag', tag, false));
         }
       }

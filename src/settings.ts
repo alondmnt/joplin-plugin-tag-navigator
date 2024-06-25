@@ -10,6 +10,8 @@ export const resultsEnd = '<!-- itags-results-end -->';
 export interface TagSettings {
   tagRegex: RegExp;
   excludeRegex: RegExp;
+  todayTag: string;
+  dateFormat: string;
   ignoreHtmlNotes: boolean;
   ignoreCodeBlocks: boolean;
   inheritTags: boolean;
@@ -24,11 +26,17 @@ export async function getTagSettings(): Promise<TagSettings> {
   const tagRegex = await getTagRegex();
   const excludeRegexString = await joplin.settings.value('itags.excludeRegex');
   const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'g') : null;
+  let todayTag = (await joplin.settings.value('itags.todayTag')).toLowerCase();
+  if (todayTag.length == 0) {
+    // Ensure it's not empty
+    todayTag = '#today';
+  }
+  const dateFormat = await joplin.settings.value('itags.dateFormat');
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
 
-  return {tagRegex, excludeRegex, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags};
+  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags};
 }
 
 export async function registerSettings() {
@@ -193,6 +201,24 @@ export async function registerSettings() {
       advanced: true,
       label: 'Exclude regex',
       description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
+    },
+    'itags.todayTag': {
+      value: '#today',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Today',
+      description: 'Use this tag to tag or find notes relative to today\'s date. Usage: #today, #today+1, #today-5',
+    },
+    'itags.dateFormat': {
+      value: '#yyyy-MM-dd',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Date format',
+      description: 'Format for date tags. Default: #yyyy-MM-dd. See https://date-fns.org/docs/format for options.',
     },
     'itags.minCount': {
       value: 1,
