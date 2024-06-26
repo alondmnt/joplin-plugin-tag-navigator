@@ -1022,10 +1022,10 @@ addEventListenerWithTracking(tagRangeAdd, 'click', () => {
         return;
     }
     if (tagRangeMin.value.length > 0) {
-        newRange['minValue'] = tagRangeMin.value;
+        newRange['minValue'] = tagRangeMin.value.toLowerCase();
     }
     if (tagRangeMax.value.length > 0) {
-        newRange['maxValue'] = tagRangeMax.value;
+        newRange['maxValue'] = tagRangeMax.value.toLowerCase();
     }
     handleRangeClick(newRange['minValue'], newRange['maxValue']);
     tagRangeMin.value = '';
