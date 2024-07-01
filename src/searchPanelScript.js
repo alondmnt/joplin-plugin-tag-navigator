@@ -658,11 +658,11 @@ function addLineNumberToCheckboxes(entryEl, text) {
         .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')  // strip links
         .replace(/\[\[([^\]]+)\]\]/g, '$1')  // strip wikilinks
         .replace(/`([^`]+)`/g, '$1')  // strip inline code
-        .replace(/\*\*(.*?)\*\*/g, "$1")  // strip bold
-        .replace(/__(.*?)__/g, "$1")  // strip bold
-        .replace(/\*(.*?)\*/g, "$1")  // strip italic
-        .replace(/_(.*?)_/g, "$1")  // strip italic
-        .replace(/~~(.*?)~~/g, "$1")  // strip strikethrough
+        .replace(/(?<!\w)\*\*(.*?)\*\*(?!\w)/g, '$1')  // strip bold
+        .replace(/(?<!\w)__(.*?)__(?!\w)/g, '$1')  // strip bold
+        .replace(/(?<!\w)\*(.*?)\*(?!\w)/g, '$1')  // strip italic
+        .replace(/(?<!\w)_(.*?)_(?!\w)/g, '$1')  // strip italic
+        .replace(/~~(.*?)~~/g, '$1')  // strip strikethrough
         .split('\n');
     let lineNumber = 0;
     let checkboxes = entryEl.querySelectorAll('input[type="checkbox"]');
