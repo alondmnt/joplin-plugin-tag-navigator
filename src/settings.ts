@@ -15,6 +15,7 @@ export interface TagSettings {
   ignoreHtmlNotes: boolean;
   ignoreCodeBlocks: boolean;
   inheritTags: boolean;
+  nestedTags: boolean;
 }
 
 export async function getTagRegex(): Promise<RegExp> {
@@ -35,8 +36,9 @@ export async function getTagSettings(): Promise<TagSettings> {
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
+  const nestedTags = await joplin.settings.value('itags.nestedTags');
 
-  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags};
+  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags, nestedTags};
 }
 
 export async function registerSettings() {
@@ -68,6 +70,14 @@ export async function registerSettings() {
       public: true,
       label: 'Tag inheritance',
       description: 'Inherit tags from parent items.',
+    },
+    'itags.nestedTags': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Nested tag hierarchy',
+      description: 'Support nested tags in the form of #parent/child (up to infinite nesting levels).',
     },
     'itags.periodicDBUpdate': {
       value: 5,

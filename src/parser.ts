@@ -40,9 +40,9 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
     if (line.match(queryEnd)) {
       isQueryBlock = false;
     }
-    const emptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
+    const isEmptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks if needed
-    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isResultBlock || isQueryBlock || emptyLine) {
+    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isResultBlock || isQueryBlock || isEmptyLine) {
       return;
     }
 
@@ -58,27 +58,45 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
       }
     });
 
-    const matches = line.match(tagSettings.tagRegex);
-    if (matches) {
-      matches.forEach((tag) => {
+    const tagMatches = line.match(tagSettings.tagRegex);
+    if (tagMatches) {
+      tagMatches.forEach((tag) => {
         if (tagSettings.excludeRegex && tag.match(tagSettings.excludeRegex)) {
           return;
         }
-        tag = parseDateTag(tag, tagSettings);
-        if (!tagsMap.has(tag)) {
-          tagsMap.set(tag, { lines: new Set<number>(), count: 0 });
-        }
-        // Set tag level
-        if (!tagsLevel.has(tag)) {
-          tagsLevel.set(tag, indentLevel);
-        } else if (tagsLevel.get(tag) < 0) {
-          tagsLevel.set(tag, indentLevel);
-        }
+        // Replace the today tag with the current date
+        tag = parseDateTag(tag, tagSettings);  // Should probably go here and not inside the loop
 
-        const tagInfo = tagsMap.get(tag);
-        tagInfo.lines.add(lineIndex);
-        tagInfo.count++;
-        tagsMap.set(tag, tagInfo);
+        let tagFamily: string[];
+        if (tagSettings.nestedTags) {
+          tagFamily = tag.split('/');  // Split #parent/child into nested parts
+        } else {
+          tagFamily = [tag];
+        }
+        const uniqueSet = new Set<string>();
+        for (let i = 1; i <= tagFamily.length; i++) {
+          let child = tagFamily.slice(0, i).join('/');
+          // Trim all separators from the end of the child
+          child = child.replace(/\/+$/, '');
+          if (child.length === 0) { continue; }
+          if (uniqueSet.has(child)) { continue; }
+          uniqueSet.add(child);
+
+          if (!tagsMap.has(child)) {
+            tagsMap.set(child, { lines: new Set<number>(), count: 0 });
+          }
+          // Set tag level
+          if (!tagsLevel.has(child)) {
+            tagsLevel.set(child, indentLevel);
+          } else if (tagsLevel.get(child) < 0) {
+            tagsLevel.set(child, indentLevel);
+          }
+
+          const tagInfo = tagsMap.get(child);
+          tagInfo.lines.add(lineIndex);
+          tagInfo.count++;
+          tagsMap.set(child, tagInfo);
+        }
       });
     }
   });
