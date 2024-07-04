@@ -146,14 +146,16 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 }
 
 export async function focusSearchPanel(panel: string) {
-  if (!joplin.views.panels.visible(panel)) { return; }
+  const visible = joplin.views.panels.visible(panel);
+  if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'focusTagFilter',
   });
 }
 
 export async function updatePanelTagData(panel: string, db: NoteDatabase) {
-  if (!joplin.views.panels.visible(panel)) { return; }
+  const visible = joplin.views.panels.visible(panel);
+  if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
     tags: JSON.stringify(db.getTags()),
@@ -161,7 +163,8 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase) {
 }
 
 export async function updatePanelNoteData(panel: string, db: NoteDatabase) {
-  if (!joplin.views.panels.visible(panel)) { return; }
+  const visible = joplin.views.panels.visible(panel);
+  if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateNoteData',
     notes: JSON.stringify(db.getNotes()),
@@ -173,8 +176,8 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   const colorTodos = await joplin.settings.value('itags.colorTodos');
   const tagRegex = await getTagRegex();
   const intervalID = setInterval(
-    () => {
-      if (joplin.views.panels.visible(panel)) {
+    async () => {
+      if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
           results: JSON.stringify(renderHTML(results, tagRegex, resultMarker, colorTodos)),
@@ -199,8 +202,8 @@ export async function updatePanelSettings(panel: string, override: { resultSort?
     searchWithRegex: await joplin.settings.value('itags.searchWithRegex'),
   };
   const intervalID = setInterval(
-    () => {
-      if (joplin.views.panels.visible(panel)) {
+    async () => {
+      if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateSettings',
           settings: JSON.stringify(settings),
@@ -623,7 +626,8 @@ export async function updatePanelQuery(panel: string, query: Query[][], filter: 
   if (!query || query.length ===0 || query[0].length === 0) {
     return;
   }
-  if (!joplin.views.panels.visible(panel)) { return; }
+  const visible = joplin.views.panels.visible(panel);
+  if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
     name: 'updateQuery',
     query: JSON.stringify(query),
