@@ -729,6 +729,9 @@ function createContextMenu(event, result, index) {
         clearQueryArea();
         clearResultsArea();
         tagFilter.value = '';
+        tagRangeMin.value = '';
+        tagRangeMax.value = '';
+        noteFilter.value = '';
         resultFilter.value = '';
         sendSetting('filter', '');
         handleTagClick(currentTag.toLowerCase());
@@ -909,8 +912,11 @@ addEventListenerWithTracking(noteFilter, 'input', updateNoteList);
 addEventListenerWithTracking(tagClear, 'click', () => {
     clearQueryArea();
     clearResultsArea();
-    tagFilter.value = ''; // Clear the input field
-    resultFilter.value = ''; // Clear the input field
+    tagFilter.value = '';
+    tagRangeMin.value = '';
+    tagRangeMax.value = '';
+    noteFilter.value = '';
+    resultFilter.value = '';
     sendSetting('filter', '');
     updateTagList();
 });
