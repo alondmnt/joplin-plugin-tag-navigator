@@ -156,9 +156,14 @@ export async function focusSearchPanel(panel: string) {
 export async function updatePanelTagData(panel: string, db: NoteDatabase) {
   const visible = joplin.views.panels.visible(panel);
   if (!visible) { return; }
+  const tagSort = await joplin.settings.value('itags.tagSort');
+  let allTags = db.getTags();
+  if (tagSort === 'count') {
+    allTags = allTags.sort((a, b) => db.getTagCount(b) - db.getTagCount(a));
+  }
   joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
-    tags: JSON.stringify(db.getTags()),
+    tags: JSON.stringify(allTags),
   });
 }
 

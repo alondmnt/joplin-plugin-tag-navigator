@@ -168,6 +168,11 @@ export class NoteDatabase {
     return Object.keys(this.tags).sort();
   }
 
+  getTagCount(tag: string): number {
+    // Return the count of a tag
+    return this.tags[tag] || 0;
+  }
+
   getNotes(): { title: string, externalId: string }[] {
     // Return a list of note titles and ids
     return Object.values(this.notes)

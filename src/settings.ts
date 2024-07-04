@@ -133,12 +133,24 @@ export async function registerSettings() {
       public: true,
       label: 'Search: Show results filter section',
     },
+    'itags.tagSort': {
+      value: 'name',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Search: Tag sort by',
+      isEnum: true,
+      options: {
+        name: 'Name',
+        count: 'Count',
+      }
+    },
     'itags.resultSort': {
       value: 'modified',
       type: SettingItemType.String,
       section: 'itags',
       public: true,
-      label: 'Search: Sort by',
+      label: 'Search: Result sort by',
       isEnum: true,
       options: {
         modified: 'Modified',
@@ -152,7 +164,7 @@ export async function registerSettings() {
       type: SettingItemType.String,
       section: 'itags',
       public: true,
-      label: 'Search: Sort order',
+      label: 'Search: Result sort order',
       isEnum: true,
       options: {
         desc: 'Descending',
