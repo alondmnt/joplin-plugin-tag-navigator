@@ -29,6 +29,7 @@ let resultOrderState = 'desc';
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
+let selectMultiTags = 'first';
 let searchWithRegex = false;
 let dropdownIsOpen = false;
 const eventListenersMap = new Map();  // Map to store event listeners and clear them later
@@ -149,6 +150,7 @@ function parseFilter(filter, min_chars=1) {
 function updatePanelSettings(message) {
     const settings = JSON.parse(message.message.settings);
     searchWithRegex = settings.searchWithRegex;
+    selectMultiTags = settings.selectMultiTags;
     resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
     if ( resultToggleState === 'collapse' ) {
         collapseResults();
@@ -937,7 +939,7 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
         // Check if there's exactly one tag in the filtered list
         if (tagFilter.value === '') {
             sendSearchMessage();
-        } else if (tagList.childElementCount === 1) {
+        } else if (selectMultiTags === 'first' || tagList.childElementCount === 1) {
             // Get the tag name from the only child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);
@@ -945,7 +947,7 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
             tagFilter.value = '';
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
-        } else {
+        } else if (selectMultiTags === 'all') {
             // Create multiple groups, one for each tag
             const tags = Array.from(tagList.children).map(tag => tag.textContent);
             tags.forEach(tag => {

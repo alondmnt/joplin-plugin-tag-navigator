@@ -105,6 +105,20 @@ export async function registerSettings() {
       label: 'Search: Periodic update of results display in notes',
       description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
     },
+    'itags.selectMultiTags': {
+      value: 'first',
+      type: SettingItemType.String,
+      isEnum: true,
+      section: 'itags',
+      public: true,
+      label: 'Search: When multiple tags are matched, select',
+      description: 'Add the first / all / none from the list of tags to the search query',
+      options: {
+        first: 'First',
+        all: 'All',
+        none: 'None',
+      }
+    },
     'itags.searchWithRegex': {
       value: false,
       type: SettingItemType.Bool,
