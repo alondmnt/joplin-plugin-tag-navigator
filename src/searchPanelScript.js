@@ -79,6 +79,7 @@ function updateTagList() {
         tagEl.classList.add('itags-search-tag');
         tagEl.textContent = tag;
         tagEl.onclick = () => handleTagClick(tag);
+
         tagList.appendChild(tagEl);
     });
 }
@@ -256,7 +257,7 @@ function updateQueryArea() {
 
             } else if (item.minValue || item.maxValue) {
                 // Display range
-                newEl.classList.add('itags-search-tag', 'selected');
+                newEl.classList.add('itags-search-tag', 'selected', 'range');
                 newEl.textContent = '';
                 if (item.minValue) {
                     newEl.textContent += item.minValue;
@@ -708,13 +709,19 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result, index) {
+function createContextMenu(event, result=null, index=null, commands=['searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll']) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
     // Get the tag element and its text content
     const tagElement = event.target;
-    const currentTag = tagElement.textContent;
+    let currentTag = tagElement.textContent;
+    if (tagElement.classList.contains('selected')) {
+        currentTag = currentTag.slice(0, -1);
+    }
+    if (tagElement.classList.contains('negated')) {
+        currentTag = currentTag.slice(2, -1);
+    }
     const line = parseInt(tagElement.getAttribute('data-line-number'));
 
     // Create the custom context menu container
@@ -724,125 +731,137 @@ function createContextMenu(event, result, index) {
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
 
-    // Create the "Search tag" command
-    const searchTag = document.createElement('span');
-    searchTag.textContent = `Search tag`;
-    searchTag.onclick = () => {
-        clearQueryArea();
-        clearResultsArea();
-        tagFilter.value = '';
-        tagRangeMin.value = '';
-        tagRangeMax.value = '';
-        noteFilter.value = '';
-        resultFilter.value = '';
-        sendSetting('filter', '');
-        handleTagClick(currentTag.toLowerCase());
-        updateTagList();
-        sendSearchMessage();
-        contextMenu.remove();
-    };
-
-    // Create the "Extend query" command
-    const extendQuery = document.createElement('span');
-    extendQuery.textContent = `Extend query`;
-    extendQuery.onclick = () => {
-        handleTagClick(currentTag.toLowerCase());
-        sendSearchMessage();
-        contextMenu.remove();
-    };
-
-    // Create the "Add tag" command
-    const addTag = document.createElement('span');
-    addTag.textContent = `Add tag`;
-    addTag.onclick = () => {
-        // Create an input field to add a new tag
-        const input = createInputField('#new-tag', tagElement, (input) => {
-            const newTag = input.value;
-            if (newTag && newTag !== '#new-tag') {
-                webviewApi.postMessage({
-                    name: 'addTag',
-                    externalId: result.externalId,
-                    line: result.lineNumbers[index] + line,
-                    text: result.text[index].split('\n')[line].trim(),
-                    tag: newTag,
-                });
-            }
-        });
-        contextMenu.remove();
-    };
-
-    // Create the "Replace all" command
-    const replaceAll = document.createElement('span');
-    replaceAll.textContent = `Replace all`;
-    replaceAll.onclick = () => {
-        // Create an input field with the tag text
-        const input = createInputField(currentTag, tagElement, (input) => {
-            const newTag = input.value;
-            if (newTag && newTag !== currentTag) {
-                webviewApi.postMessage({
-                    name: 'replaceAll',
-                    oldTag: currentTag,
-                    newTag: newTag,
-                });
-            }
-        });
-        contextMenu.remove();
-    };
-
-    // Create the "Replace tag" command
-    const replaceTag = document.createElement('span');
-    replaceTag.textContent = `Replace tag`;
-    replaceTag.onclick = () => {
-        // Create an input field with the tag text
-        const input = createInputField(currentTag, tagElement, (input) => {
-            const newTag = input.value;
-            if (newTag && newTag !== currentTag) {
-                webviewApi.postMessage({
-                    name: 'replaceTag',
-                    externalId: result.externalId,
-                    line: result.lineNumbers[index] + line,
-                    text: result.text[index].split('\n')[line].trim(),
-                    oldTag: currentTag,
-                    newTag: newTag,
-                });
-            }
-        });
-        contextMenu.remove();
-    };
-
-    // Create the "Remove tag" command
-    const removeTag = document.createElement('span');
-    removeTag.textContent = `Remove tag`;
-    removeTag.onclick = () => {
-        webviewApi.postMessage({
-            name: 'removeTag',
-            externalId: result.externalId,
-            line: result.lineNumbers[index] + line,
-            text: result.text[index].split('\n')[line].trim(),
-            tag: currentTag,
-        });
-        contextMenu.remove();
-    };
-
-    // Create the "Remove all" command
-    const removeAll = document.createElement('span');
-    removeAll.textContent = `Remove all`;
-    removeAll.onclick = () => {
-        webviewApi.postMessage({
-            name: 'removeAll',
-            tag: currentTag,
-        });
-        contextMenu.remove();
+    if (commands.includes('searchTag')) {
+        // Create the "Search tag" command
+        const searchTag = document.createElement('span');
+        searchTag.textContent = `Search tag`;
+        searchTag.onclick = () => {
+            clearQueryArea();
+            clearResultsArea();
+            tagFilter.value = '';
+            tagRangeMin.value = '';
+            tagRangeMax.value = '';
+            noteFilter.value = '';
+            resultFilter.value = '';
+            sendSetting('filter', '');
+            handleTagClick(currentTag.toLowerCase());
+            updateTagList();
+            sendSearchMessage();
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(searchTag);
     }
 
-    // Append commands to the contextMenu
-    contextMenu.appendChild(searchTag);
-    contextMenu.appendChild(extendQuery);
-    contextMenu.appendChild(addTag);
-    contextMenu.appendChild(replaceTag);
-    contextMenu.appendChild(replaceAll);
-    contextMenu.appendChild(removeTag);
-    contextMenu.appendChild(removeAll);
+    if (commands.includes('extendQuery')) {
+        // Create the "Extend query" command
+        const extendQuery = document.createElement('span');
+        extendQuery.textContent = `Extend query`;
+        extendQuery.onclick = () => {
+            handleTagClick(currentTag.toLowerCase());
+            sendSearchMessage();
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(extendQuery);
+    }
+
+    if (commands.includes('addTag')) {
+        // Create the "Add tag" command
+        const addTag = document.createElement('span');
+        addTag.textContent = `Add tag`;
+        addTag.onclick = () => {
+            // Create an input field to add a new tag
+            const input = createInputField('#new-tag', tagElement, (input) => {
+                const newTag = input.value;
+                if (newTag && newTag !== '#new-tag') {
+                    webviewApi.postMessage({
+                        name: 'addTag',
+                        externalId: result.externalId,
+                        line: result.lineNumbers[index] + line,
+                        text: result.text[index].split('\n')[line].trim(),
+                        tag: newTag,
+                    });
+                }
+            });
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(addTag);
+    }
+
+    if (commands.includes('replaceTag')) {
+        // Create the "Replace tag" command
+        const replaceTag = document.createElement('span');
+        replaceTag.textContent = `Replace tag`;
+        replaceTag.onclick = () => {
+            // Create an input field with the tag text
+            const input = createInputField(currentTag, tagElement, (input) => {
+                const newTag = input.value;
+                if (newTag && newTag !== currentTag) {
+                    webviewApi.postMessage({
+                        name: 'replaceTag',
+                        externalId: result.externalId,
+                        line: result.lineNumbers[index] + line,
+                        text: result.text[index].split('\n')[line].trim(),
+                        oldTag: currentTag,
+                        newTag: newTag,
+                    });
+                }
+            });
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(replaceTag);
+    }
+
+    if (commands.includes('replaceAll')) {
+        // Create the "Replace all" command
+        const replaceAll = document.createElement('span');
+        replaceAll.textContent = `Replace all`;
+        replaceAll.onclick = () => {
+            // Create an input field with the tag text
+            const input = createInputField(currentTag, tagElement, (input) => {
+                const newTag = input.value;
+                if (newTag && newTag !== currentTag) {
+                    webviewApi.postMessage({
+                        name: 'replaceAll',
+                        oldTag: currentTag,
+                        newTag: newTag,
+                    });
+                }
+            });
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(replaceAll);
+    }
+
+    if (commands.includes('removeTag')) {
+        // Create the "Remove tag" command
+        const removeTag = document.createElement('span');
+        removeTag.textContent = `Remove tag`;
+        removeTag.onclick = () => {
+            webviewApi.postMessage({
+                name: 'removeTag',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                tag: currentTag,
+            });
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(removeTag);
+    }
+
+    if (commands.includes('removeAll')) {
+        // Create the "Remove all" command
+        const removeAll = document.createElement('span');
+        removeAll.textContent = `Remove all`;
+        removeAll.onclick = () => {
+            webviewApi.postMessage({
+                name: 'removeAll',
+                tag: currentTag,
+            });
+            contextMenu.remove();
+        }
+        contextMenu.appendChild(removeAll);
+    }
 
     // Append the contextMenu to the body or a specific container within your application
     document.body.appendChild(contextMenu);
@@ -1166,6 +1185,10 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
             menu.remove();
         }
     });
+    // Handle right-click on tags in list
+    if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('range')) {
+        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+    }
 });
 
 addEventListenerWithTracking(document, 'keydown', (event) => {
