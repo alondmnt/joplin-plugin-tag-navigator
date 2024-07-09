@@ -116,35 +116,34 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
 }
 
 export function parseDateTag(tag: string, tagSettings: TagSettings): string {
-  // Replace the today tag with the current date, including basic arithmetics support
+  // Replace the today tag with the current date, including basic arithmetic support
   if (!tag) { return tag; }
-  if (!tag.startsWith(tagSettings.todayTag)) { return tag; }
 
-  // Get the increment
-  let increment = tag.slice(tagSettings.todayTag.length);
-  let suffix = increment.split('/').slice(1).join('/');
-  if (suffix) {
-    suffix = '/' + suffix;
-  }
-  increment = increment.split('/')[0];
-  // Parse the increment
-  let days = 0;
-  if (increment) {
-    days = parseInt(increment);
-    if (isNaN(days)) {
-      console.error(`Error while parsing date tag: ${tag}, ${increment}.`);
-      days = 0;
+  const escapedTodayTag = tagSettings.todayTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const todayTagPattern = new RegExp(`(${escapedTodayTag})([+-]?\\d*)`, 'g');
+
+  return tag.replace(todayTagPattern, (match, todayTag, increment) => {
+    // Default increment is 0 if not provided
+    let days = 0;
+    if (increment) {
+      days = parseInt(increment, 10);
+      if (isNaN(days)) {
+        console.error(`Error while parsing date tag: ${tag}, ${increment}.`);
+        return match; // Return the matched portion on error
+      }
     }
-  }
-  // Calculate the date
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  try {
-    return format(date, tagSettings.dateFormat) + suffix;
-  } catch (error) {
-    console.error(`Error while parsing date tag: ${tag}, ${days}. Error: ${error}`);
-    return tag;
-  }
+
+    // Calculate the date
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+
+    try {
+      return format(date, tagSettings.dateFormat);
+    } catch (error) {
+      console.error(`Error while formatting date: ${tag}, ${days}. Error: ${error}`);
+      return match; // Return the matched portion on error
+    }
+  });
 }
 
 export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<LinkExtract[]> {
