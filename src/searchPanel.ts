@@ -100,7 +100,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeTag') {
-    const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`);
+    const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`, 'ig');  // Case insensitive
     await replaceTagInText(
       message.externalId, [message.line], [message.text],
       tagRegex, '',
@@ -115,9 +115,10 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
 
   } else if (message.name === 'replaceTag') {
+    const tagRegex = new RegExp(`${escapeRegex(message.oldTag)}`, 'ig');  // Case insensitive
     await replaceTagInText(
       message.externalId, [message.line], [message.text],
-      message.oldTag, message.newTag,
+      tagRegex, message.newTag,
       db, tagSettings);
 
     // update the search panel
@@ -369,11 +370,12 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
     // update all notes with the old tag
     const notes = db.searchBy('tag', message.oldTag, false);
     for (const externalId in notes) {
+      const tagRegex = new RegExp(`${escapeRegex(message.oldTag)}`, 'ig');  // Case insensitive
       const lineNumbers = Array.from(notes[externalId]);
       const texts = lineNumbers.map(() => '');  // skip text validation
       await replaceTagInText(
         externalId, lineNumbers, texts,
-        message.oldTag, message.newTag,
+        tagRegex, message.newTag,
         db, tagSettings);
     }
     // update the current query
@@ -402,11 +404,12 @@ async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSett
   // update all notes with the old tag
   const notes = db.searchBy('tag', message.tag, false);
   for (const externalId in notes) {
+    const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`, 'ig');  // Case insensitive
     const lineNumbers = Array.from(notes[externalId]);
     const texts = lineNumbers.map(() => '');  // skip text validation
     await replaceTagInText(
       externalId, lineNumbers, texts,
-      new RegExp(`\\s*${escapeRegex(message.tag)}`), '',
+      tagRegex, '',
       db, tagSettings);
   }
   // update the search panel
@@ -420,7 +423,7 @@ function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): 
   for (const group of query.query) {
     for (const condition of group) {
       if (condition.tag === oldTag) {
-        condition.tag = newTag;
+        condition.tag = newTag.toLowerCase();
         changed = true;
       }
     }
