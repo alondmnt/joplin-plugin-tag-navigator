@@ -203,7 +203,7 @@ export class NoteDatabase {
       let resPos: Set<number> = new Set();
       switch (by) {
         case 'tag':
-          resPos = this.notes[noteId].tags[query];
+          resPos = this.notes[noteId].tags[query.toLowerCase()];  // Tags are case-insensitive
           break;
         case 'noteLinkId':
           resPos = this.notes[noteId].noteLinksById[query];

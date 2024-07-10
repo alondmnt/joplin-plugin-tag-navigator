@@ -419,10 +419,11 @@ async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSett
 }
 
 function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): boolean {
+  const oldTagLower = oldTag.toLowerCase();
   let changed = false;
   for (const group of query.query) {
     for (const condition of group) {
-      if (condition.tag === oldTag) {
+      if (condition.tag === oldTagLower) {
         condition.tag = newTag.toLowerCase();
         changed = true;
       }
