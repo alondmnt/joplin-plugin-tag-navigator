@@ -18,10 +18,13 @@ Type inline #tags in the note editor. View your tagged paragraphs and list items
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
-    - Save favourite search queries in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
-    - Tag-by-notes: Search for links or [[wikilinks]] to notes (including backlinks to the current note).
-    - Add, replace and remove inline tags via the panel context menu (right-click on a tag).
-    - Toggle checkboxes / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes.
+    - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
+    - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
+    - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
+    - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes.
+    - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child.
+    - Search for a **range of tags**, according to their lexicographic order. Example: #2024/07 -> #2024/08
+    - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated).
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
 3. It adds a panel for quickly navigating between inline tags that appear in the current note.
