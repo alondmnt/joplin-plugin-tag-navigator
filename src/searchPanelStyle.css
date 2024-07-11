@@ -405,7 +405,7 @@ hr {
 /* Custom checkmark style, same for all colors */
 .itags-search-checkbox[data-checked="true"]::before {
     font-family: Arial, sans-serif;
-    content: '✔';
+    content: '✓';
     position: absolute;
     top: -1px;
     left: 0;
