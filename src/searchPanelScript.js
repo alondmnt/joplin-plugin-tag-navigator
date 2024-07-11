@@ -210,6 +210,7 @@ function hideElements(settings) {
         tagRangeAdd.classList.add('hidden');
         hiddenCount++;
     }
+    resultsArea.classList.remove('extended1X', 'extended2X', 'extended3X');
     if (hiddenCount) {
         resultsArea.classList.add('extended' + hiddenCount + 'X');
     }
@@ -730,6 +731,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     contextMenu.style.position = 'absolute';
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.style.top = `${event.clientY}px`;
+    let cmdCount = 0;
 
     if (commands.includes('searchTag')) {
         // Create the "Search tag" command
@@ -750,6 +752,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(searchTag);
+        cmdCount++;
     }
 
     if (commands.includes('extendQuery')) {
@@ -762,8 +765,13 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(extendQuery);
+        cmdCount++;
     }
 
+    if (cmdCount > 0) {
+        const separator = document.createElement('hr');
+        contextMenu.appendChild(separator);
+    }
     if (commands.includes('addTag')) {
         // Create the "Add tag" command
         const addTag = document.createElement('span');
@@ -785,6 +793,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(addTag);
+        cmdCount++;
     }
 
     if (commands.includes('replaceTag')) {
@@ -809,6 +818,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(replaceTag);
+        cmdCount++;
     }
 
     if (commands.includes('replaceAll')) {
@@ -830,6 +840,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(replaceAll);
+        cmdCount++;
     }
 
     if (commands.includes('removeTag')) {
@@ -847,6 +858,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(removeTag);
+        cmdCount++;
     }
 
     if (commands.includes('removeAll')) {
@@ -861,7 +873,64 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         }
         contextMenu.appendChild(removeAll);
+        cmdCount++;
     }
+
+    // Default commands: show / hide sections
+    if (cmdCount > 0) {
+        const separator = document.createElement('hr');
+        contextMenu.appendChild(separator);
+    }
+    const sectionState = {
+        showNotes: !noteArea.classList.contains('hidden'),
+        showResultFilter: !resultFilterArea.classList.contains('hidden'),
+        showTagRange: !tagRangeArea.classList.contains('hidden')
+    };
+
+    // showTagRange
+    const showTagRange = document.createElement('span');
+    if (sectionState.showTagRange) {
+        showTagRange.textContent = '✓ Tag range';
+    } else {
+        showTagRange.textContent = 'Tag range';
+    }
+    showTagRange.onclick = () => {
+        sectionState.showTagRange = !sectionState.showTagRange;
+        sendSetting('showTagRange', sectionState.showTagRange);
+        hideElements(sectionState);
+        contextMenu.remove();
+    }
+    contextMenu.appendChild(showTagRange);
+
+    // showNotes
+    const showNotes = document.createElement('span');
+    if (sectionState.showNotes) {
+        showNotes.textContent = '✓ Note mentions';
+    } else {
+        showNotes.textContent = 'Notes mentions';
+    }
+    showNotes.onclick = () => {
+        sectionState.showNotes = !sectionState.showNotes;
+        sendSetting('showNotes', sectionState.showNotes);
+        hideElements(sectionState);
+        contextMenu.remove();
+    };
+    contextMenu.appendChild(showNotes);
+
+    // showResultsFilter
+    const showResultFilter = document.createElement('span');
+    if (sectionState.showResultFilter) {
+        showResultFilter.textContent = '✓ Result filter';
+    } else {
+        showResultFilter.textContent = 'Result filter';
+    }
+    showResultFilter.onclick = () => {
+        sectionState.showResultFilter = !sectionState.showResultFilter;
+        sendSetting('showResultFilter', sectionState.showResultFilter);
+        hideElements(sectionState);
+        contextMenu.remove();
+    }
+    contextMenu.appendChild(showResultFilter);
 
     // Append the contextMenu to the body or a specific container within your application
     document.body.appendChild(contextMenu);
@@ -950,7 +1019,6 @@ addEventListenerWithTracking(saveQuery, 'click', () => {
     });
 });
 
-// Post the search query as JSON
 addEventListenerWithTracking(tagSearch, 'click', sendSearchMessage);
 
 addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
@@ -1188,6 +1256,8 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
     // Handle right-click on tags in list
     if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('range')) {
         createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+    } else if (event.target.type !== 'text') {
+        createContextMenu(event, null, null, []);
     }
 });
 

@@ -138,8 +138,10 @@ export async function processMessage(message: any, searchPanel: string, db: Note
 
   } else if (message.name === 'updateSetting') {
 
-    if (message.field !== 'filter') {
+    if (message.field.startsWith('result')) {
       panelSettings[message.field] = message.value;
+    } else if (message.field.startsWith('show')) {
+      await joplin.settings.setValue(`itags.${message.field}`, message.value);
     } else {
       searchParams.filter = message.value;
     }
