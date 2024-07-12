@@ -749,6 +749,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             handleTagClick(currentTag.toLowerCase());
             updateTagList();
             sendSearchMessage();
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(searchTag);
@@ -762,6 +763,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         extendQuery.onclick = () => {
             handleTagClick(currentTag.toLowerCase());
             sendSearchMessage();
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(extendQuery);
@@ -790,6 +792,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(addTag);
@@ -815,6 +818,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(replaceTag);
@@ -837,6 +841,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(replaceAll);
@@ -855,6 +860,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 text: result.text[index].split('\n')[line].trim(),
                 tag: currentTag,
             });
+            clearNode(contextMenu);
             contextMenu.remove();
         };
         contextMenu.appendChild(removeTag);
@@ -870,6 +876,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 name: 'removeAll',
                 tag: currentTag,
             });
+            clearNode(contextMenu);
             contextMenu.remove();
         }
         contextMenu.appendChild(removeAll);
@@ -898,6 +905,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         sectionState.showTagRange = !sectionState.showTagRange;
         sendSetting('showTagRange', sectionState.showTagRange);
         hideElements(sectionState);
+        clearNode(contextMenu);
         contextMenu.remove();
     }
     contextMenu.appendChild(showTagRange);
@@ -913,6 +921,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         sectionState.showNotes = !sectionState.showNotes;
         sendSetting('showNotes', sectionState.showNotes);
         hideElements(sectionState);
+        clearNode(contextMenu);
         contextMenu.remove();
     };
     contextMenu.appendChild(showNotes);
@@ -928,6 +937,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         sectionState.showResultFilter = !sectionState.showResultFilter;
         sendSetting('showResultFilter', sectionState.showResultFilter);
         hideElements(sectionState);
+        clearNode(contextMenu);
         contextMenu.remove();
     }
     contextMenu.appendChild(showResultFilter);
