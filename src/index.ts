@@ -10,7 +10,6 @@ import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeRes
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
-let panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean } = {};
 
 joplin.plugins.register({
   onStart: async function() {
@@ -55,7 +54,7 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, panelSettings, tagSettings);
+      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings);
     });
     await registerSearchPanel(searchPanel);
 

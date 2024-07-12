@@ -293,14 +293,14 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    // Save the current stae of expandd / collapsed notes by their externalId
+    // Save the current stae of expanded / collapsed notes by their externalId
     const noteState = {};
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
             noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
         } else {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expandd';
+            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
         }
     }
 
@@ -338,7 +338,7 @@ function updateResultsArea() {
         contentContainer.setAttribute('data-externalId', result.externalId);
         if (noteState[result.externalId] === 'collapsed') {
             contentContainer.style.display = 'block';
-        } else if (noteState[result.externalId] === 'expandd') {
+        } else if (noteState[result.externalId] === 'expanded') {
             contentContainer.style.display = 'none';
         } else {
             contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
@@ -907,7 +907,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (sectionState.showNotes) {
         showNotes.textContent = '✓ Note mentions';
     } else {
-        showNotes.textContent = 'Notes mentions';
+        showNotes.textContent = 'Note mentions';
     }
     showNotes.onclick = () => {
         sectionState.showNotes = !sectionState.showNotes;

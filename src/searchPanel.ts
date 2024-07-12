@@ -52,14 +52,13 @@ export async function registerSearchPanel(panel: string) {
 
 export async function processMessage(message: any, searchPanel: string, db: NoteDatabase,
     searchParams: QueryRecord,
-    panelSettings: { resultSort?: string, resultOrder?: string, resultToggle?: boolean },
     tagSettings: TagSettings) {
 
   if (message.name === 'initPanel') {
     await updatePanelTagData(searchPanel, db);
     await updatePanelNoteData(searchPanel, db);
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-    await updatePanelSettings(searchPanel, panelSettings);
+    await updatePanelSettings(searchPanel);
     const results = await runSearch(db, searchParams.query);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
@@ -139,11 +138,13 @@ export async function processMessage(message: any, searchPanel: string, db: Note
   } else if (message.name === 'updateSetting') {
 
     if (message.field.startsWith('result')) {
-      panelSettings[message.field] = message.value;
+      await joplin.settings.setValue(`itags.${message.field}`, message.value);
     } else if (message.field.startsWith('show')) {
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
-    } else {
+    } else if (message.field === 'filter') {
       searchParams.filter = message.value;
+    } else {
+      console.error('Error in updateSetting: Invalid setting field.');
     }
   }
 }
@@ -198,11 +199,11 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   );
 }
 
-export async function updatePanelSettings(panel: string, override: { resultSort?: string, resultOrder?: string, resultToggle?: boolean }={}) {
+export async function updatePanelSettings(panel: string) {
   const settings = {
-    resultSort: override.resultSort === undefined ? await joplin.settings.value('itags.resultSort') : override.resultSort,
-    resultOrder: override.resultOrder === undefined ? await joplin.settings.value('itags.resultOrder') : override.resultOrder,
-    resultToggle: override.resultToggle === undefined ? await joplin.settings.value('itags.resultToggle') : override.resultToggle,
+    resultSort: await joplin.settings.value('itags.resultSort'),
+    resultOrder: await joplin.settings.value('itags.resultOrder'),
+    resultToggle: await joplin.settings.value('itags.resultToggle'),
     resultMarker: await joplin.settings.value('itags.resultMarker'),
     showTagRange: await joplin.settings.value('itags.showTagRange'),
     showNotes: await joplin.settings.value('itags.showNotes'),
