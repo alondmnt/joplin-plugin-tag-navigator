@@ -250,6 +250,7 @@ async function filterAndSortResults(results: GroupedResult[], filter: string): P
   if (sortOrder === 'desc') {
       sortedResults = sortedResults.reverse();
   }
+  sortedResults = sortedResults.filter(note => note.text.length > 0);
 
   if (!filter) { return sortedResults; }
 
@@ -264,7 +265,7 @@ async function filterAndSortResults(results: GroupedResult[], filter: string): P
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
   }
-  return sortedResults.filter(note => note.text.length > 0);
+  return sortedResults
 }
 
 // Check that all words are in the target, like the search panel
