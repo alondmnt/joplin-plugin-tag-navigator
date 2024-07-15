@@ -179,8 +179,8 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.toggleNoteView',
-      label: 'Toggle search results display in note',
-      iconName: 'fas fa-tags',
+      label: 'Toggle tag search view in note',
+      iconName: 'fas fa-dharmachakra',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
@@ -315,6 +315,7 @@ joplin.plugins.register({
         commandName: 'itags.convertAllNotesToInlineTags',
       },
     ], MenuItemLocation.Tools);
+    await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
 
     await joplin.settings.onChange(async (event) => {
       if (event.keys.includes('itags.resultSort') || 
