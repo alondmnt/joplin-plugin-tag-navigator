@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { ContentScriptType, MenuItemLocation } from 'api/types';
+import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
@@ -315,7 +315,6 @@ joplin.plugins.register({
         commandName: 'itags.convertAllNotesToInlineTags',
       },
     ], MenuItemLocation.Tools);
-    await joplin.views.menuItems.create('itags.convertNoteToJoplinTags', 'itags.convertNoteToJoplinTags', MenuItemLocation.Note);
 
     await joplin.settings.onChange(async (event) => {
       if (event.keys.includes('itags.resultSort') || 
