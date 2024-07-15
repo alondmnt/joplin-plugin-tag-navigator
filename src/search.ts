@@ -43,7 +43,8 @@ async function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: 
       if (queryPart.tag) {
         partResults = db.searchBy('tag', queryPart.tag, queryPart.negated);
 
-      } else if (queryPart.externalId) {
+      }
+      if (queryPart.externalId) {
         if ((queryPart.externalId === 'current') && (currentNote.id)) {
           partResults = db.searchBy('noteLinkId', currentNote.id, queryPart.negated);
 
@@ -51,10 +52,12 @@ async function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: 
           partResults = db.searchBy('noteLinkId', queryPart.externalId, queryPart.negated);
         }
 
-      } else if (queryPart.title) {
+      }
+      if (queryPart.title) {
         partResults = db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated);
 
-      } else if (queryPart.minValue || queryPart.maxValue) {
+      }
+      if (queryPart.minValue || queryPart.maxValue) {
         const tagSettings = await getTagSettings();
         const minValue = parseDateTag(queryPart.minValue.toLowerCase(), tagSettings);
         const maxValue = parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings);
