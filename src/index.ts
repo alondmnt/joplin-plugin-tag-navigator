@@ -163,7 +163,7 @@ joplin.plugins.register({
     await joplin.commands.register({
       name: 'itags.loadQuery',
       label: 'Load inline tags search query',
-      iconName: 'fas fa-tags',
+      iconName: 'fas fa-dharmachakra',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
@@ -316,6 +316,7 @@ joplin.plugins.register({
       },
     ], MenuItemLocation.Tools);
     await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
+    await joplin.views.toolbarButtons.create('itags.loadQuery', 'itags.loadQuery', ToolbarButtonLocation.NoteToolbar);
 
     await joplin.settings.onChange(async (event) => {
       if (event.keys.includes('itags.resultSort') || 
