@@ -204,7 +204,7 @@ export async function registerSettings() {
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Search: Colorize todos in results',
+      label: 'Search: Colorise todos in results',
       description: 'Supporting [x]it! style todos.'
     },
     'itags.searchPanelStyle' : {
