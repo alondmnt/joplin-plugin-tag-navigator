@@ -391,14 +391,12 @@ function updateResultsArea() {
                     });
                 } else if (event.target.matches('a')) {
                     event.preventDefault();
-                    const externalId = event.target.href.match(noteIdRegex)[0];
-                    if (externalId) {
-                        webviewApi.postMessage({
-                            name: 'openNote',
-                            externalId: externalId,
-                            line: 0,
-                        });
-                    }
+                    const externalId = event.target.href.match(noteIdRegex)?.[0];
+                    webviewApi.postMessage({
+                        name: 'openNote',
+                        externalId: externalId ? externalId : event.target.textContent,
+                        line: 0,
+                    });
                 } else {
                     webviewApi.postMessage({
                         name: 'openNote',

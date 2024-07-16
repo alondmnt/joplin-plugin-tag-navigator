@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 
 export const defTagRegex = /(?<=^|\s)#([^\s#'"]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
-const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
+export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
 
 type LinkExtract = { title: string; noteId?: string; line: number };

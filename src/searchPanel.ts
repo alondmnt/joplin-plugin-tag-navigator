@@ -3,6 +3,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
 import { GroupedResult, Query, clearNoteReferences, runSearch } from './search';
+import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
@@ -80,7 +81,14 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     let note = await joplin.workspace.selectedNote();
 
     if ((!note) || (note.id !== message.externalId)) {
-      await joplin.commands.execute('openNote', message.externalId);
+      if (noteIdRegex.test(message.externalId)) {
+        await joplin.commands.execute('openNote', message.externalId);
+      } else {
+        const dbNote = db.getNoteId(message.externalId);
+        if (dbNote) {
+          await joplin.commands.execute('openNote', dbNote);
+        }
+      }
       // Wait for the note to be opened for 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
