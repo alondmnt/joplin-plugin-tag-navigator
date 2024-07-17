@@ -58,11 +58,17 @@ class Note {
   }
 
   addLink(title: string, noteId: string, lineNumber: number) {
-    if (!this.noteLinksById[noteId]) {
-      this.noteLinksById[noteId] = new Set();
-    }
-    this.noteLinksById[noteId].add(lineNumber);
+    if (noteId) {
+      if (!this.noteLinksById[noteId]) {
+        this.noteLinksById[noteId] = new Set();
+      }
+      this.noteLinksById[noteId].add(lineNumber);
 
+      // Add only the noteId
+      return;
+    }
+
+    // Fall back to title when noteId is not available
     if (!this.noteLinksByTitle[title]) {
       this.noteLinksByTitle[title] = new Set();
     }
