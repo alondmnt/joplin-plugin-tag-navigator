@@ -21,7 +21,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
-    - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes.
+    - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states).
     - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child.
     - Search for a **range of tags**, according to their lexicographic order. Example: #2024/07 -> #2024/08
     - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
