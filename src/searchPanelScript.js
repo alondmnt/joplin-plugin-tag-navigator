@@ -761,6 +761,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('checkboxState')) {
         // Create one command for every checkbox state ([x]it! style)
         const xitOpen = document.createElement('span');
+        xitOpen.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitOpen')) {
             xitOpen.textContent = `✓ Open`;
         } else {
@@ -782,6 +783,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
 
         const xitInQuestion = document.createElement('span');
+        xitInQuestion.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitInQuestion')) {
             xitInQuestion.textContent = `✓ In question`;
         } else {
@@ -803,6 +805,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
 
         const xitOngoing = document.createElement('span');
+        xitOngoing.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitOngoing')) {
             xitOngoing.textContent = `✓ Ongoing`;
         } else {
@@ -824,6 +827,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
 
         const xitBlocked = document.createElement('span');
+        xitBlocked.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitBlocked')) {
             xitBlocked.textContent = `✓ Blocked`;
         } else {
@@ -845,6 +849,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
 
         const xitDone = document.createElement('span');
+        xitDone.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitDone')) {
             xitDone.textContent = `✓ Done`;
         } else {
@@ -866,6 +871,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
 
         const xitObsolete = document.createElement('span');
+        xitObsolete.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitObsolete')) {
             xitObsolete.textContent = `✓ Obsolete`;
         } else {
@@ -891,10 +897,12 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         if (cmdCount > 0) {
             // Add a separator between the checkbox states and the other commands
             const separator = document.createElement('hr');
+            separator.classList.add('itags-search-contextSeparator');
             contextMenu.appendChild(separator);
         }
         // Create the "Search tag" command
         const searchTag = document.createElement('span');
+        searchTag.classList.add('itags-search-contextCommand');
         searchTag.textContent = `Search tag`;
         searchTag.onclick = () => {
             clearQueryArea();
@@ -918,6 +926,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('extendQuery')) {
         // Create the "Extend query" command
         const extendQuery = document.createElement('span');
+        extendQuery.classList.add('itags-search-contextCommand');
         extendQuery.textContent = `Extend query`;
         extendQuery.onclick = () => {
             handleTagClick(currentTag.toLowerCase());
@@ -931,11 +940,13 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
 
     if ((cmdCount > 0) && commands.includes('replaceAll')) {
         const separator = document.createElement('hr');
+        separator.classList.add('itags-search-contextSeparator');
         contextMenu.appendChild(separator);
     }
     if (commands.includes('addTag')) {
         // Create the "Add tag" command
         const addTag = document.createElement('span');
+        addTag.classList.add('itags-search-contextCommand');
         addTag.textContent = `Add tag`;
         addTag.onclick = () => {
             // Create an input field to add a new tag
@@ -961,6 +972,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('replaceTag')) {
         // Create the "Replace tag" command
         const replaceTag = document.createElement('span');
+        replaceTag.classList.add('itags-search-contextCommand');
         replaceTag.textContent = `Replace tag`;
         replaceTag.onclick = () => {
             // Create an input field with the tag text
@@ -987,6 +999,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('replaceAll')) {
         // Create the "Replace all" command
         const replaceAll = document.createElement('span');
+        replaceAll.classList.add('itags-search-contextCommand');
         replaceAll.textContent = `Replace all`;
         replaceAll.onclick = () => {
             // Create an input field with the tag text
@@ -1010,6 +1023,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('removeTag')) {
         // Create the "Remove tag" command
         const removeTag = document.createElement('span');
+        removeTag.classList.add('itags-search-contextCommand');
         removeTag.textContent = `Remove tag`;
         removeTag.onclick = () => {
             webviewApi.postMessage({
@@ -1029,6 +1043,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (commands.includes('removeAll')) {
         // Create the "Remove all" command
         const removeAll = document.createElement('span');
+        removeAll.classList.add('itags-search-contextCommand');
         removeAll.textContent = `Remove all`;
         removeAll.onclick = () => {
             webviewApi.postMessage({
@@ -1045,6 +1060,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     // Default commands: show / hide sections
     if (cmdCount > 0) {
         const separator = document.createElement('hr');
+        separator.classList.add('itags-search-contextSeparator');
         contextMenu.appendChild(separator);
     }
     const sectionState = {
@@ -1055,6 +1071,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
 
     // showTagRange
     const showTagRange = document.createElement('span');
+    showTagRange.classList.add('itags-search-contextCommand');
     if (sectionState.showTagRange) {
         showTagRange.textContent = '✓ Tag range';
     } else {
@@ -1071,6 +1088,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
 
     // showNotes
     const showNotes = document.createElement('span');
+    showNotes.classList.add('itags-search-contextCommand');
     if (sectionState.showNotes) {
         showNotes.textContent = '✓ Note mentions';
     } else {
@@ -1087,6 +1105,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
 
     // showResultsFilter
     const showResultFilter = document.createElement('span');
+    showResultFilter.classList.add('itags-search-contextCommand');
     if (sectionState.showResultFilter) {
         showResultFilter.textContent = '✓ Result filter';
     } else {
@@ -1413,10 +1432,12 @@ addEventListenerWithTracking(document, 'click', (event) => {
 });
 
 addEventListenerWithTracking(document, 'contextmenu', (event) => {
-    if (event.target.matches('.itags-search-renderedTag')) {
-        return;
-    }
-    if (event.target.matches('.itags-search-checkbox')) {
+    if (event.target.matches('.itags-search-renderedTag')) { return; }
+    if (event.target.matches('.itags-search-checkbox')) { return; }
+    if (event.target.matches('.itags-search-contextMenu')) { return; }
+    if (event.target.matches('.itags-search-contextSeparator')) { return; }
+    if (event.target.matches('.itags-search-contextCommand')) {
+        event.target.click();
         return;
     }
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
