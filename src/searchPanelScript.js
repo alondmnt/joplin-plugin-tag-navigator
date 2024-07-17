@@ -589,7 +589,7 @@ function handleNoteClick(note) {
         return;
     }
     let lastGroup = queryGroups[queryGroups.length - 1];
-    let noteExistsInLastGroup = lastGroup && lastGroup.some(n => n.title === note.title);
+    let noteExistsInLastGroup = lastGroup && lastGroup.some(n => n.title === note.title && n.externalId === note.externalId);
 
     if (!lastGroup) {
         // Create a new group if there's no last group
