@@ -360,14 +360,9 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
     lines[message.line] = line;
   }
 
-  if (message.checked) {
-    // If checked is true, ensure the checkbox is marked as checked (- [x])
-    // \s* accounts for any leading whitespace
-    lines[message.line] = line.replace(/^(\s*- \[)[\s|@|\?!](\])/g, '$1x$2');
-  } else {
-    // If checked is false, ensure the checkbox is marked as unchecked (- [ ])
-    lines[message.line] = line.replace(/^(\s*- \[)x(\])/g, '$1 $2');
-  }
+  // Edit the line
+  const current = new RegExp(`^(\\s*- \\[)${message.source}(\\])`, 'g')
+  lines[message.line] = line.replace(current, `$1${message.target}$2`);
 
   const newBody = lines.join('\n');
   updateNote(message, newBody, db, tagSettings);

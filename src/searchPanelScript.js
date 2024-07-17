@@ -387,7 +387,9 @@ function updateResultsArea() {
                         externalId: result.externalId,
                         line: result.lineNumbers[index] + line,
                         text: result.text[index].split('\n')[line].trim(),
-                        checked: event.target.getAttribute('data-checked') === 'true' ? false : true,
+                        source: getCheckboxState(event.target),
+                        target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
+
                     });
                 } else if (event.target.matches('a')) {
                     event.preventDefault();
@@ -417,6 +419,9 @@ function updateResultsArea() {
                 });
                 if (event.target.matches('.itags-search-renderedTag')) {
                     createContextMenu(event, result, index);
+                }
+                if (event.target.matches('.itags-search-checkbox')) {
+                    createContextMenu(event, result, index, ['checkboxState']);
                 }
             });
 
@@ -691,6 +696,28 @@ function addLineNumberToCheckboxes(entryEl, text) {
     });
 }
 
+function getCheckboxState(checkbox) {
+    try {
+        if (checkbox.classList.contains('xitOpen')) {
+            return ' ';
+        } else if (checkbox.classList.contains('xitInQuestion')) {
+            return '\\?';
+        } else if (checkbox.classList.contains('xitOngoing')) {
+            return '@';
+        } else if (checkbox.classList.contains('xitBlocked')) {
+            return '!';
+        } else if (checkbox.classList.contains('xitDone')) {
+            return 'x';
+        } else if (checkbox.classList.contains('xitObsolete')) {
+            return '~';
+        } else {
+            return null;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function addLineNumberToTags(entryEl, text) {
     const textContent = text.split('\n');
     let lineNumber = 0;
@@ -713,15 +740,15 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     event.preventDefault();
 
     // Get the tag element and its text content
-    const tagElement = event.target;
-    let currentTag = tagElement.textContent;
-    if (tagElement.classList.contains('selected')) {
+    const target = event.target;
+    let currentTag = target.textContent;
+    if (target.classList.contains('selected')) {
         currentTag = currentTag.slice(0, -1);
     }
-    if (tagElement.classList.contains('negated')) {
+    if (target.classList.contains('negated')) {
         currentTag = currentTag.slice(2, -1);
     }
-    const line = parseInt(tagElement.getAttribute('data-line-number'));
+    const line = parseInt(target.getAttribute('data-line-number'));
 
     // Create the custom context menu container
     const contextMenu = document.createElement('div');
@@ -731,7 +758,141 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     contextMenu.style.top = `${event.clientY}px`;
     let cmdCount = 0;
 
+    if (commands.includes('checkboxState')) {
+        // Create one command for every checkbox state ([x]it! style)
+        const xitOpen = document.createElement('span');
+        if (target.classList.contains('xitOpen')) {
+            xitOpen.textContent = `✓ Open`;
+        } else {
+            xitOpen.textContent = `Open`;
+        }
+        xitOpen.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: ' ',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitOpen);
+        cmdCount++;
+
+        const xitInQuestion = document.createElement('span');
+        if (target.classList.contains('xitInQuestion')) {
+            xitInQuestion.textContent = `✓ In question`;
+        } else {
+            xitInQuestion.textContent = `In question`;
+        }
+        xitInQuestion.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: '?',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitInQuestion);
+        cmdCount++;
+
+        const xitOngoing = document.createElement('span');
+        if (target.classList.contains('xitOngoing')) {
+            xitOngoing.textContent = `✓ Ongoing`;
+        } else {
+            xitOngoing.textContent = `Ongoing`;
+        }
+        xitOngoing.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: '@',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitOngoing);
+        cmdCount++;
+
+        const xitBlocked = document.createElement('span');
+        if (target.classList.contains('xitBlocked')) {
+            xitBlocked.textContent = `✓ Blocked`;
+        } else {
+            xitBlocked.textContent = `Blocked`;
+        }
+        xitBlocked.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: '!',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitBlocked);
+        cmdCount++;
+
+        const xitDone = document.createElement('span');
+        if (target.classList.contains('xitDone')) {
+            xitDone.textContent = `✓ Done`;
+        } else {
+            xitDone.textContent = `Done`;
+        }
+        xitDone.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: 'x',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitDone);
+        cmdCount++;
+
+        const xitObsolete = document.createElement('span');
+        if (target.classList.contains('xitObsolete')) {
+            xitObsolete.textContent = `✓ Obsolete`;
+        } else {
+            xitObsolete.textContent = `Obsolete`;
+        }
+        xitObsolete.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: '~',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitObsolete);
+        cmdCount++;
+    }
+
     if (commands.includes('searchTag')) {
+        if (cmdCount > 0) {
+            // Add a separator between the checkbox states and the other commands
+            const separator = document.createElement('hr');
+            contextMenu.appendChild(separator);
+        }
         // Create the "Search tag" command
         const searchTag = document.createElement('span');
         searchTag.textContent = `Search tag`;
@@ -768,7 +929,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
     }
 
-    if (cmdCount > 0) {
+    if ((cmdCount > 0) && commands.includes('replaceAll')) {
         const separator = document.createElement('hr');
         contextMenu.appendChild(separator);
     }
@@ -778,7 +939,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         addTag.textContent = `Add tag`;
         addTag.onclick = () => {
             // Create an input field to add a new tag
-            const input = createInputField('#new-tag', tagElement, (input) => {
+            const input = createInputField('#new-tag', target, (input) => {
                 const newTag = input.value;
                 if (newTag && newTag !== '#new-tag') {
                     webviewApi.postMessage({
@@ -803,7 +964,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         replaceTag.textContent = `Replace tag`;
         replaceTag.onclick = () => {
             // Create an input field with the tag text
-            const input = createInputField(currentTag, tagElement, (input) => {
+            const input = createInputField(currentTag, target, (input) => {
                 const newTag = input.value;
                 if (newTag && newTag !== currentTag) {
                     webviewApi.postMessage({
@@ -829,7 +990,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         replaceAll.textContent = `Replace all`;
         replaceAll.onclick = () => {
             // Create an input field with the tag text
-            const input = createInputField(currentTag, tagElement, (input) => {
+            const input = createInputField(currentTag, target, (input) => {
                 const newTag = input.value;
                 if (newTag && newTag !== currentTag) {
                     webviewApi.postMessage({
@@ -1253,6 +1414,9 @@ addEventListenerWithTracking(document, 'click', (event) => {
 
 addEventListenerWithTracking(document, 'contextmenu', (event) => {
     if (event.target.matches('.itags-search-renderedTag')) {
+        return;
+    }
+    if (event.target.matches('.itags-search-checkbox')) {
         return;
     }
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
