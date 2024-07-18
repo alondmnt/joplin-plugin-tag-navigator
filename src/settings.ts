@@ -112,7 +112,7 @@ export async function registerSettings() {
       section: 'itags',
       public: true,
       label: 'Search: When multiple tags are matched, select',
-      description: 'Add the first / all / none from the list of tags to the search query',
+      description: 'Add the first / all / none from the list of tags to the search query when Enter is pressed',
       options: {
         first: 'First',
         all: 'All',
