@@ -377,8 +377,10 @@ function updateResultsArea() {
                         externalId: result.externalId,
                         line: result.lineNumbers[index] + line,
                         text: result.text[index].split('\n')[line].trim(),
-                        checked: event.target.checked,
+                        source: event.target.checked ? ' ' : 'x',
+                        target: event.target.checked ? 'x' : ' ',
                     });
+
                 } else if (event.target.matches('.itags-search-checkbox')) {
                     // get the line number of the clicked coloured checkbox
                     const line = parseInt(event.target.getAttribute('data-line-number'));
@@ -389,8 +391,8 @@ function updateResultsArea() {
                         text: result.text[index].split('\n')[line].trim(),
                         source: getCheckboxState(event.target),
                         target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
-
                     });
+
                 } else if (event.target.matches('a')) {
                     event.preventDefault();
                     const externalId = event.target.href.match(noteIdRegex)?.[0];
@@ -399,6 +401,7 @@ function updateResultsArea() {
                         externalId: externalId ? externalId : event.target.textContent,
                         line: 0,
                     });
+
                 } else {
                     webviewApi.postMessage({
                         name: 'openNote',
