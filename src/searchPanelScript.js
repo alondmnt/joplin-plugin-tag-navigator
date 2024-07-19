@@ -851,28 +851,6 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         contextMenu.appendChild(xitBlocked);
         cmdCount++;
 
-        const xitDone = document.createElement('span');
-        xitDone.classList.add('itags-search-contextCommand');
-        if (target.classList.contains('xitDone')) {
-            xitDone.textContent = `✓ Done`;
-        } else {
-            xitDone.textContent = `Done`;
-        }
-        xitDone.onclick = () => {
-            webviewApi.postMessage({
-                name: 'setCheckBox',
-                externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
-                text: result.text[index].split('\n')[line].trim(),
-                source: getCheckboxState(target),
-                target: 'x',
-            });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitDone);
-        cmdCount++;
-
         const xitObsolete = document.createElement('span');
         xitObsolete.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitObsolete')) {
@@ -893,6 +871,28 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             contextMenu.remove();
         };
         contextMenu.appendChild(xitObsolete);
+        cmdCount++;
+
+        const xitDone = document.createElement('span');
+        xitDone.classList.add('itags-search-contextCommand');
+        if (target.classList.contains('xitDone')) {
+            xitDone.textContent = `✓ Done`;
+        } else {
+            xitDone.textContent = `Done`;
+        }
+        xitDone.onclick = () => {
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(target),
+                target: 'x',
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(xitDone);
         cmdCount++;
     }
 
