@@ -47,10 +47,12 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - If any of the actions on note results does not work (toggling checkboxes, editing tags), this is usually resolved by a database update (Ctrl+Shift+D).
 - The definition of a "tag" can be adjusted with user-defined regular expressions.
-    - For example, every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
+    - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - Inline TODOs:
     - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
     - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'\"]*\w)`.
+    - Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)([#]|\-\s\[[x\s@\?!~]\])([^\s'\"]*\w)?`.
+        - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
 - Supported additional checkbox styles
 
 ![custom checkboxes](img/checkboxes.png)
