@@ -353,7 +353,7 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  const text = message.text.replace(/^\s*- \[[x|\s|@|\?!|~]\]\s*/, '');
+  const text = message.text.replace(/^\s*- \[[x\s@\?!~]\]\s*/, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.error('Error in setCheckboxState: The line does not contain the expected text.');
