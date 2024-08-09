@@ -48,6 +48,8 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - If any of the actions on note results does not work (toggling checkboxes, editing tags), this is usually resolved by a database update (Ctrl+Shift+D).
 - The definition of a "tag" can be adjusted with user-defined regular expressions.
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
+- You may also define an exclusion rule to ignore certain tags.
+    - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
 - Inline TODOs:
     - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
     - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'\"]*\w)`.
