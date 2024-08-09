@@ -3,7 +3,7 @@ import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/
 import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
-import { updateNotePanel } from './notePanel';
+import { updateNavPanel } from './navPanel';
 import { parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
 import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
@@ -80,9 +80,9 @@ joplin.plugins.register({
     }
 
     // Note navigation panel
-    const notePanel = await joplin.views.panels.create('itags.notePanel');
-    await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
-    await joplin.views.panels.addScript(notePanel, 'notePanelScript.js');
+    const navPanel = await joplin.views.panels.create('itags.navPanel');
+    await joplin.views.panels.addScript(navPanel, 'navPanelStyle.css');
+    await joplin.views.panels.addScript(navPanel, 'navPanelScript.js');
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
@@ -101,11 +101,11 @@ joplin.plugins.register({
       }
 
       // Note panel update
-      if (await joplin.views.panels.visible(notePanel)) {
+      if (await joplin.views.panels.visible(navPanel)) {
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines);
       }
 
       note = clearNoteReferences(note);
@@ -127,20 +127,20 @@ joplin.plugins.register({
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines);
         note = clearNoteReferences(note);
       },
     });
 
     await joplin.commands.register({
-      name: 'itags.togglePanel',
+      name: 'itags.toggleNav',
       label: 'Toggle inline tags navigation panel',
       iconName: 'fas fa-tags',
       execute: async () => {
-        if (await joplin.views.panels.visible(notePanel)) {
-          joplin.views.panels.hide(notePanel)
+        if (await joplin.views.panels.visible(navPanel)) {
+          joplin.views.panels.hide(navPanel)
         } else {
-          await joplin.views.panels.show(notePanel);
+          await joplin.views.panels.show(navPanel);
           await joplin.commands.execute('itags.refreshPanel');
         }
       },
@@ -353,7 +353,7 @@ joplin.plugins.register({
       }
     });
 
-    await joplin.views.panels.onMessage(notePanel, async (message) => {
+    await joplin.views.panels.onMessage(navPanel, async (message) => {
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
@@ -370,7 +370,7 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines);
       }
     });
   },

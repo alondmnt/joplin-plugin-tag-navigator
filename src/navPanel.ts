@@ -1,6 +1,6 @@
 import joplin from 'api';
 
-export async function updateNotePanel(panel: string, tagsLines: { tag: string, lines: number[], count: number, index: number }[]) {
+export async function updateNavPanel(panel: string, tagsLines: { tag: string, lines: number[], count: number, index: number }[]) {
   const html = tagsLines.map((tag) => {
     let indexText = '';
     if (tag.count > 1) {
