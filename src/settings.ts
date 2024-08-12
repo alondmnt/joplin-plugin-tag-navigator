@@ -84,12 +84,24 @@ export async function registerSettings() {
       type: SettingItemType.String,
       section: 'itags',
       public: true,
-      label: 'Navigation panel scope',
+      label: 'Navigation: Panel scope',
       description: 'Navigation: Show all tags, or tags in the current note. Default: All tags.',
       isEnum: true,
       options: {
         global: 'All tags',
         note: 'Note tags',
+      }
+    },
+    'itags.navPanelSort': {
+      value: 'name',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Tag sort by',
+      isEnum: true,
+      options: {
+        name: 'Name',
+        count: 'Count',
       }
     },
     'itags.navPanelStyle': {

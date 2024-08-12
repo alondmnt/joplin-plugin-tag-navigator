@@ -21,7 +21,14 @@ interface TagLine {
 export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCount: TagCount) {
   const selectedTab = await joplin.settings.value('itags.navPanelScope') as 'global' | 'note';
   const userStyle = await joplin.settings.value('itags.navPanelStyle') as string;
+  const tagSort = await joplin.settings.value('itags.navPanelSort') as 'name' | 'count';
 
+  // Sort tagsLines by tag name
+  if (tagSort === 'count') {
+    tagsLines = tagsLines.sort((a, b) => b.count - a.count);
+  } else {
+    tagsLines = tagsLines.sort((a, b) => a.tag.localeCompare(b.tag));
+  }
   // Build the list of current note tags
   const noteTagsHTML = tagsLines.map((tag) => {
     let indexText = '';
@@ -37,7 +44,7 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
 
   // Build the tree of all tags
   const tagTree = buildTagTree(tagCount);
-  const tagTreeHTML = buildTreeHTML(tagTree.children, '', 'count');
+  const tagTreeHTML = buildTreeHTML(tagTree.children, '', tagSort);
 
   let strGlobalDisplay = 'block';
   let strNoteDisplay = 'none';
