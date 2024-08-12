@@ -9,8 +9,8 @@ export interface Query {
   title?: string;
   externalId?: string;
   negated: boolean;
-  minValue: string;
-  maxValue: string;
+  minValue?: string;
+  maxValue?: string;
 }
 
 export interface GroupedResult {

@@ -2,10 +2,16 @@ document.addEventListener('click', event => {
   const element = event.target;
 
   if (element.classList.contains('itags-nav-noteTag')) {
-    // Post the message and slug info back to the plugin:
     webviewApi.postMessage({
       name: 'jumpToLine',
       line: element.dataset.line,
+      tag: element.dataset.tag,
+    });
+  }
+
+  if (element.classList.contains('itags-nav-globalTag')) {
+    webviewApi.postMessage({
+      name: 'searchTag',
       tag: element.dataset.tag,
     });
   }

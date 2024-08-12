@@ -387,6 +387,12 @@ joplin.plugins.register({
       if (message.name === 'updateSetting') {
         await joplin.settings.setValue(message.field, message.value);
       }
+      if (message.name === 'searchTag') {
+        searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: false };
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+        await updatePanelResults(searchPanel, results, searchParams.query);
+      }
     });
   },
 });
