@@ -128,7 +128,7 @@ function buildTreeHTML(
     const indentStyle = `style="padding-left: ${(level +1) * 5}px;"`;
 
     if (Object.keys(children).length > 0) {
-      html += `<details ${indentStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}">${fullTag} (${count})</a></summary>${buildTreeHTML(children, fullTag, sortBy, level + 1)}</details>`;
+      html += `<details ${indentStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" style="padding-left: 0px;">${fullTag} (${count})</a></summary>${buildTreeHTML(children, fullTag, sortBy, level + 1)}</details>`;
     } else {
       html += `<a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" ${indentStyle}>${fullTag} (${count})</a><br/>`;
     }
