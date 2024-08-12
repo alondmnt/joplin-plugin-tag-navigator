@@ -79,6 +79,28 @@ export async function registerSettings() {
       label: 'Nested tag hierarchy',
       description: 'Support nested tags in the form of #parent/child (up to infinite nesting levels).',
     },
+    'itags.navPanelScope': {
+      value: 'global',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Navigation panel scope',
+      description: 'Navigation: Show all tags, or tags in the current note. Default: All tags.',
+      isEnum: true,
+      options: {
+        global: 'All tags',
+        note: 'Note tags',
+      }
+    },
+    'itags.navPanelStyle': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Navigation panel style',
+      description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
+    },
     'itags.periodicDBUpdate': {
       value: 5,
       type: SettingItemType.Int,

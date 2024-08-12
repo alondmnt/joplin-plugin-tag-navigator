@@ -174,6 +174,11 @@ export class NoteDatabase {
     return Object.keys(this.tags).sort();
   }
 
+  getAllTagCounts(): { [tag: string]: number } {
+    // Return a dictionary of all tags and their counts
+    return this.tags;
+  }
+
   getTagCount(tag: string): number {
     // Return the count of a tag
     return this.tags[tag] || 0;

@@ -76,13 +76,22 @@ joplin.plugins.register({
         if (await joplin.settings.value('itags.periodicNoteUpdate')) {
           displayInAllNotes(DatabaseManager.getDatabase());  
         }
+
+        // Update navigation panel
+        if (await joplin.views.panels.visible(navPanel)) {
+          const tagSettings = await getTagSettings();
+          const note = await joplin.workspace.selectedNote();
+          if (note.body) {
+            tagSettings.inheritTags = false;
+            tagLines = await parseTagsLines(note.body, tagSettings);
+            await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+          }
+        }
       }, periodicDBUpdate * 60 * 1000);
     }
 
     // Note navigation panel
     const navPanel = await joplin.views.panels.create('itags.navPanel');
-    await joplin.views.panels.addScript(navPanel, 'navPanelStyle.css');
-    await joplin.views.panels.addScript(navPanel, 'navPanelScript.js');
     let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
@@ -100,12 +109,12 @@ joplin.plugins.register({
         await displayResultsInNote(DatabaseManager.getDatabase(), note);
       }
 
-      // Note panel update
+      // Navigation panel update
       if (await joplin.views.panels.visible(navPanel)) {
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
       }
 
       note = clearNoteReferences(note);
@@ -127,7 +136,7 @@ joplin.plugins.register({
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
         note = clearNoteReferences(note);
       },
     });
@@ -300,7 +309,7 @@ joplin.plugins.register({
         accelerator: 'Ctrl+Shift+I',
       },
       {
-        commandName: 'itags.togglePanel',
+        commandName: 'itags.toggleNav',
       },
       {
         commandName: 'itags.convertNoteToJoplinTags',
@@ -328,6 +337,9 @@ joplin.plugins.register({
           event.keys.includes('itags.showResultFilter') ||
           event.keys.includes('itags.searchWithRegex')) {
         await updatePanelSettings(searchPanel);
+      }
+      if (event.keys.includes('itags.navPanelScope')) {
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
       }
     });
 
@@ -370,7 +382,10 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updateNavPanel(navPanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+      }
+      if (message.name === 'updateSetting') {
+        await joplin.settings.setValue(message.field, message.value);
       }
     });
   },

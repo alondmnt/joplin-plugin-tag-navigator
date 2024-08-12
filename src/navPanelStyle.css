@@ -5,18 +5,52 @@ html {
 	color: var(--joplin-color);
 	font-size: var(--joplin-font-size);
 	font-family: var(--joplin-font-family);
-  margin: 5px;
+  padding: 5px 10px;
 }
 
-.itags-panel-tag {
+.container {
+  overflow: overlay; /* doesn't really work, but perhaps one day will be supported */
+}
+
+#itags-nav-tabArea, #itags-nav-globalArea, #itags-nav-noteArea {
+  min-height: 16px;
+  border-color: rgb(118, 118, 118);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 3px;
+  padding: 5px;
+  margin-bottom: 5px;
+  font-size: calc(var(--joplin-font-size) * 1.1);
+}
+
+#itags-nav-tabArea {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#itags-nav-globalButton, #itags-nav-noteButton {
+  width: 100%;
+  vertical-align: middle;
+}
+
+.selectedTab {
+  background-color: var(--joplin-background-color-hover3);
+  color: var(--joplin-color);
+}
+
+.itags-nav-noteTag, .itags-nav-globalTag  {
   color: var(--joplin-color);
   font-size: calc(var(--joplin-font-size) * 1.1);
   font-weight: normal;
   text-decoration: none;
   margin: 5px;
+  padding-left: 5px;
 }
 
-.itags-panel-tag a:active, a:hover {
+.itags-nav-tag a:active, a:hover {
   font-weight: bold;
 }
 
