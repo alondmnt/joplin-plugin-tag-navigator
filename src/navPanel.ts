@@ -20,6 +20,7 @@ interface TagLine {
 
 export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCount: TagCount) {
   const selectedTab = await joplin.settings.value('itags.navPanelScope') as 'global' | 'note';
+  const userStyle = await joplin.settings.value('itags.navPanelStyle') as string;
 
   // Build the list of current note tags
   const noteTagsHTML = tagsLines.map((tag) => {
@@ -49,6 +50,7 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
     strNoteSelected = 'selectedTab';
   }
   const html = `
+    <style>${userStyle}</style>
     <div id="itags-nav-tabArea">
       <span class="${strGlobalSelected}" id="itags-nav-globalButton">All Tags</span>
       <span class="${strNoteSelected}" id="itags-nav-noteButton">Note Tags</span>

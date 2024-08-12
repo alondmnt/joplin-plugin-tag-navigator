@@ -98,7 +98,7 @@ export async function registerSettings() {
       section: 'itags',
       public: true,
       advanced: true,
-      label: 'Navigation panel style',
+      label: 'Navigation: Panel style',
       description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
     },
     'itags.periodicDBUpdate': {

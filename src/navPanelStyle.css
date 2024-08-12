@@ -1,15 +1,13 @@
-html {
-	overflow: auto;
-	text-overflow: clip;
+html * {
 	background-color: var(--joplin-background-color);
 	color: var(--joplin-color);
-	font-size: var(--joplin-font-size);
+	font-size: calc(var(--joplin-font-size) * 1.1);
 	font-family: var(--joplin-font-family);
-  padding: 5px 10px;
 }
 
-.container {
-  overflow: overlay; /* doesn't really work, but perhaps one day will be supported */
+html {
+  overflow: auto;
+  padding: 5px 10px;
 }
 
 #itags-nav-tabArea, #itags-nav-globalArea, #itags-nav-noteArea {
@@ -20,7 +18,6 @@ html {
   border-radius: 3px;
   padding: 5px;
   margin-bottom: 5px;
-  font-size: calc(var(--joplin-font-size) * 1.1);
 }
 
 #itags-nav-tabArea {
@@ -43,7 +40,6 @@ html {
 
 .itags-nav-noteTag, .itags-nav-globalTag  {
   color: var(--joplin-color);
-  font-size: calc(var(--joplin-font-size) * 1.1);
   font-weight: normal;
   text-decoration: none;
   margin: 5px;

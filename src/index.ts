@@ -338,7 +338,8 @@ joplin.plugins.register({
           event.keys.includes('itags.searchWithRegex')) {
         await updatePanelSettings(searchPanel);
       }
-      if (event.keys.includes('itags.navPanelScope')) {
+      if (event.keys.includes('itags.navPanelScope') ||
+          event.keys.includes('itags.navPanelStyle')) {
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
       }
     });
