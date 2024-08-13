@@ -171,7 +171,12 @@ export class NoteDatabase {
 
   getTags(): string[] {
     // Return a list of tags sorted alphabetically
-    return Object.keys(this.tags).sort();
+    return Object.keys(this.tags).sort((a, b) => a.localeCompare(b));
+  }
+
+  getAllTagCounts(): { [tag: string]: number } {
+    // Return a dictionary of all tags and their counts
+    return this.tags;
   }
 
   getTagCount(tag: string): number {

@@ -1,0 +1,77 @@
+html * {
+	background-color: var(--joplin-background-color);
+	color: var(--joplin-color);
+	font-size: calc(var(--joplin-font-size) * 1.1);
+	font-family: var(--joplin-font-family);
+}
+
+html {
+  overflow: auto;
+  padding: 5px 10px;
+}
+
+#itags-nav-tabArea, #itags-nav-globalArea, #itags-nav-noteArea {
+  min-height: 16px;
+  border-color: rgb(118, 118, 118);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 3px;
+  padding: 5px;
+  margin-bottom: 5px;
+}
+
+#itags-nav-tabArea {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#itags-nav-globalButton, #itags-nav-noteButton {
+  width: 100%;
+  vertical-align: middle;
+}
+
+.selectedTab {
+  background-color: var(--joplin-background-color-hover3);
+  color: var(--joplin-color);
+}
+
+.itags-nav-noteTag, .itags-nav-globalTag  {
+  color: var(--joplin-color);
+  font-weight: normal;
+  text-decoration: none;
+  margin: 5px;
+  padding-left: 5px;
+}
+
+.itags-nav-tag a:active, a:hover {
+  font-weight: bold;
+}
+
+::-webkit-scrollbar {
+	width: 7px;
+	height: 7px;
+}
+
+::-webkit-scrollbar-corner {
+	background: none;
+}
+
+::-webkit-scrollbar-track {
+	border: none;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(100, 100, 100, 0.3);
+	border-radius: 5px;
+}
+
+::-webkit-scrollbar-track:hover {
+	background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(100, 100, 100, 0.7);
+}

@@ -87,7 +87,7 @@ export async function registerSettings() {
       step: 5,
       section: 'itags',
       public: true,
-      label: 'Search: Periodic inline tags DB update (minutes)',
+      label: 'Database: Periodic inline tags DB update (minutes)',
       description: 'Periodically update the inline tags database (requires restart). Set to 0 to disable periodic updates.',
     },
     'itags.updateAfterSync': {
@@ -95,15 +95,49 @@ export async function registerSettings() {
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Search: Update inline tags DB after sync',
+      label: 'Database: Update inline tags DB after sync',
     },
     'itags.periodicNoteUpdate': {
       value: true,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Search: Periodic update of tag search view in notes',
+      label: 'Database: Periodic update of tag search view in notes',
       description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
+    },
+    'itags.navPanelScope': {
+      value: 'global',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Panel scope',
+      description: 'Navigation: Show all tags, or tags in the current note. Default: All tags.',
+      isEnum: true,
+      options: {
+        global: 'All tags',
+        note: 'Note tags',
+      }
+    },
+    'itags.navPanelSort': {
+      value: 'name',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Tag sort by',
+      isEnum: true,
+      options: {
+        name: 'Name',
+        count: 'Count',
+      }
+    },
+    'itags.navPanelStyle': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Navigation: Panel style',
+      description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
     },
     'itags.selectMultiTags': {
       value: 'first',
@@ -271,6 +305,7 @@ export async function registerSettings() {
       step: 1,
       section: 'itags',
       public: true,
+      advanced: true,
       label: 'Minimum tag count',
       description: 'Minimum number of occurrences for a tag to be included.',
     },

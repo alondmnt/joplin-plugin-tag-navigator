@@ -3,7 +3,7 @@ import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/
 import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
-import { updateNotePanel } from './notePanel';
+import { updateNavPanel } from './navPanel';
 import { parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
 import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
@@ -58,32 +58,44 @@ joplin.plugins.register({
     });
     await registerSearchPanel(searchPanel);
 
+    // Note navigation panel
+    const navPanel = await joplin.views.panels.create('itags.navPanel');
+    let tagLines = [];
+
     // Periodic database update
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
-    if (periodicDBUpdate > 0) {
-      setInterval(async () => {
-        await processAllNotes(); // update DB
+    const updateDB = async () => {
+      await processAllNotes(); // update DB
 
-        // Update tags & notes
-        await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
-        await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
+      // Update tags & notes
+      await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
+      await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
-        // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-        await updatePanelResults(searchPanel, results, searchParams.query);
+      // Update search results
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+      await updatePanelResults(searchPanel, results, searchParams.query);
 
-        // Update note view
-        if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-          displayInAllNotes(DatabaseManager.getDatabase());  
+      // Update note view
+      if (await joplin.settings.value('itags.periodicNoteUpdate')) {
+        displayInAllNotes(DatabaseManager.getDatabase());  
+      }
+
+      // Update navigation panel
+      if (await joplin.views.panels.visible(navPanel)) {
+        const tagSettings = await getTagSettings();
+        let note = await joplin.workspace.selectedNote();
+        if (note.body) {
+          tagSettings.inheritTags = false;
+          tagLines = await parseTagsLines(note.body, tagSettings);
         }
-      }, periodicDBUpdate * 60 * 1000);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        note = clearNoteReferences(note);
+      }
+    }
+    if (periodicDBUpdate > 0) {
+      setInterval(updateDB, periodicDBUpdate * 60 * 1000);
     }
 
-    // Note navigation panel
-    const notePanel = await joplin.views.panels.create('itags.notePanel');
-    await joplin.views.panels.addScript(notePanel, 'notePanelStyle.css');
-    await joplin.views.panels.addScript(notePanel, 'notePanelScript.js');
-    let tagLines = [];
     joplin.workspace.onNoteSelectionChange(async () => {
       // Search panel update
       let note = await joplin.workspace.selectedNote();
@@ -100,12 +112,12 @@ joplin.plugins.register({
         await displayResultsInNote(DatabaseManager.getDatabase(), note);
       }
 
-      // Note panel update
-      if (await joplin.views.panels.visible(notePanel)) {
+      // Navigation panel update
+      if (await joplin.views.panels.visible(navPanel)) {
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
       }
 
       note = clearNoteReferences(note);
@@ -127,20 +139,20 @@ joplin.plugins.register({
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
         note = clearNoteReferences(note);
       },
     });
 
     await joplin.commands.register({
-      name: 'itags.togglePanel',
+      name: 'itags.toggleNav',
       label: 'Toggle inline tags navigation panel',
       iconName: 'fas fa-tags',
       execute: async () => {
-        if (await joplin.views.panels.visible(notePanel)) {
-          joplin.views.panels.hide(notePanel)
+        if (await joplin.views.panels.visible(navPanel)) {
+          joplin.views.panels.hide(navPanel)
         } else {
-          await joplin.views.panels.show(notePanel);
+          await joplin.views.panels.show(navPanel);
           await joplin.commands.execute('itags.refreshPanel');
         }
       },
@@ -202,22 +214,7 @@ joplin.plugins.register({
       name: 'itags.updateDB',
       label: 'Update inline tags database',
       iconName: 'fas fa-database',
-      execute: async () => {
-        await processAllNotes(); // update DB
-
-        // Update tags & notes
-        await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
-        await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
-
-        // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-        await updatePanelResults(searchPanel, results, searchParams.query);
-
-        // Update note view
-        if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-          displayInAllNotes(DatabaseManager.getDatabase());
-        }
-      },
+      execute: updateDB,
     });
 
     await joplin.commands.register({
@@ -300,7 +297,7 @@ joplin.plugins.register({
         accelerator: 'Ctrl+Shift+I',
       },
       {
-        commandName: 'itags.togglePanel',
+        commandName: 'itags.toggleNav',
       },
       {
         commandName: 'itags.convertNoteToJoplinTags',
@@ -329,6 +326,13 @@ joplin.plugins.register({
           event.keys.includes('itags.searchWithRegex')) {
         await updatePanelSettings(searchPanel);
       }
+      if (event.keys.includes('itags.navPanelScope') ||
+          event.keys.includes('itags.navPanelStyle') ||
+          event.keys.includes('itags.navPanelSort')) {
+        if (await joplin.views.panels.visible(navPanel)) {
+          await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        }
+      }
     });
 
     await joplin.workspace.onNoteChange(async () => {
@@ -337,23 +341,10 @@ joplin.plugins.register({
 
     await joplin.workspace.onSyncComplete(async () => {
       if (!await joplin.settings.value('itags.updateAfterSync')) { return; }
-      await processAllNotes(); // update DB
-
-      // Update tags & notes
-      await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
-      await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
-
-      // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
-      await updatePanelResults(searchPanel, results, searchParams.query);
-
-      // Update note view
-      if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-        displayInAllNotes(DatabaseManager.getDatabase());
-      }
+      await updateDB();
     });
 
-    await joplin.views.panels.onMessage(notePanel, async (message) => {
+    await joplin.views.panels.onMessage(navPanel, async (message) => {
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
@@ -370,7 +361,16 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updateNotePanel(notePanel, tagLines);
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+      }
+      if (message.name === 'updateSetting') {
+        await joplin.settings.setValue(message.field, message.value);
+      }
+      if (message.name === 'searchTag') {
+        searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: false };
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+        await updatePanelResults(searchPanel, results, searchParams.query);
       }
     });
   },
