@@ -62,8 +62,8 @@ async function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: 
         const maxValue = parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings);
 
         for (const tag of db.getTags()) {
-          if (minValue && tag < minValue) { continue; }
-          if (maxValue && tag > maxValue) { break; }
+          if (minValue && tag.localeCompare(minValue) < 0) { continue; }
+          if (maxValue && tag.localeCompare(maxValue) > 0) { break; }
           partResults = unionResults(partResults, db.searchBy('tag', tag, false));
         }
       }
