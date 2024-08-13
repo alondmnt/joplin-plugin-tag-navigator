@@ -234,6 +234,7 @@ function updateQueryArea() {
             if (item.title) {
                 newEl.classList.add('itags-search-note', item.negated ? 'negated' : 'selected');
                 newEl.textContent = item.title.slice(0, 20)
+                newEl.title = item.title;
                 if (item.title.length >= 20) {
                     newEl.textContent += '...';
                 }
