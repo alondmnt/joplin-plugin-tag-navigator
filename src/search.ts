@@ -58,8 +58,8 @@ async function getQueryResults(db: NoteDatabase, query: Query[][], currentNote: 
 
       } else if (queryPart.minValue || queryPart.maxValue) {
         const tagSettings = await getTagSettings();
-        const minValue = parseDateTag(queryPart.minValue.toLowerCase(), tagSettings);
-        const maxValue = parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings);
+        const minValue = queryPart.minValue ? parseDateTag(queryPart.minValue.toLowerCase(), tagSettings) : null;
+        const maxValue = queryPart.maxValue ? parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings) : null;
 
         for (const tag of db.getTags()) {
           if (minValue && tag.localeCompare(minValue) < 0) { continue; }
