@@ -569,12 +569,13 @@ export async function upgradeQuery(db: any, note: any): Promise<string> {
   if (!record) { return note.body; }
 
   const queryParts = record[1].split('\n');
-  let savedQuery = {
-    query: JSON.parse(queryParts[0]),
-    filter: queryParts[1],
-    displayInNote: parseInt(queryParts[2]) ? true : false,
-  };
+  let savedQuery = {query: null, filter: null, displayInNote: null};
   try {
+    savedQuery = {
+      query: JSON.parse(queryParts[0]),
+      filter: queryParts[1],
+      displayInNote: parseInt(queryParts[2]) ? true : false,
+    };
     savedQuery = await testQuery(db, savedQuery);
   } catch {
     return note.body;
