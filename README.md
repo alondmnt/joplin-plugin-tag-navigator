@@ -27,7 +27,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated).
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
-3. It adds a panel for quickly navigating between inline tags that appear in the current note.
+3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin).
 
@@ -41,7 +41,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - Watch the navigation panel demo:
 
-<img src="img/tag-navigator.gif" width="80%" title="navigation panel demo">
+<a href="https://www.youtube.com/watch?v=h-HdX7npbIw"><img src="https://img.youtube.com/vi/h-HdX7npbIw/hqdefault.jpg" width="80%" title="navidation panel demo"></a>
 
 ## Tips
 
