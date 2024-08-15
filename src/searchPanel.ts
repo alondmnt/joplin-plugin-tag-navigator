@@ -68,6 +68,10 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     const results = await runSearch(db, searchParams.query);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
+  } else if (message.name === 'insertTag') {
+    await joplin.commands.execute('insertText', ' ' + message.tag);
+    await joplin.commands.execute('editor.focus');
+
   } else if (message.name === 'saveQuery') {
     // Save the query into the current note
     let currentNote = await joplin.workspace.selectedNote();

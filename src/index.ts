@@ -323,7 +323,8 @@ joplin.plugins.register({
           event.keys.includes('itags.showTagRange') ||
           event.keys.includes('itags.showNotes') ||
           event.keys.includes('itags.showResultFilter') ||
-          event.keys.includes('itags.searchWithRegex')) {
+          event.keys.includes('itags.searchWithRegex') ||
+          event.keys.includes('itags.selectMultiTags')) {
         await updatePanelSettings(searchPanel);
       }
       if (event.keys.includes('itags.navPanelScope') ||

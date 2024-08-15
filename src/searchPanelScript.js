@@ -656,6 +656,13 @@ function sendSearchMessage() {
     });
 }
 
+function sendInsertMessage(tag) {
+    webviewApi.postMessage({
+        name: 'insertTag',
+        tag: tag,
+    });
+}
+
 function sendSetting(field, value) {
     webviewApi.postMessage({
         name: 'updateSetting',
@@ -1215,17 +1222,18 @@ addEventListenerWithTracking(tagSearch, 'click', sendSearchMessage);
 
 addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
-        // Check if there's exactly one tag in the filtered list
         if (tagFilter.value === '') {
             sendSearchMessage();
-        } else if (selectMultiTags === 'first' || tagList.childElementCount === 1) {
-            // Get the tag name from the only child element of tagList
+
+        } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
+            // Get the tag name from the only / fist child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);
             // Clear the input
             tagFilter.value = '';
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
+
         } else if (selectMultiTags === 'all') {
             // Create multiple groups, one for each tag
             const tags = Array.from(tagList.children).map(tag => tag.textContent);
@@ -1241,7 +1249,17 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
             tagFilter.value = '';
             // Update the tag list to reflect the current filter or clear it
             updateTagList();
+
+        } else if (selectMultiTags === 'insert') {
+            // Get the tag name from the only child element of tagList
+            const tag = tagList.firstChild.textContent;
+            sendInsertMessage(tag);
+            // Clear the input
+            tagFilter.value = '';
+            // Update the tag list to reflect the current filter or clear it
+            updateTagList();
         }
+
     } else if (event.key === 'Delete') {
         // Remove last tag from the last group
         let lastGroup = queryGroups[queryGroups.length - 1];

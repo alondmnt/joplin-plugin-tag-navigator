@@ -145,12 +145,13 @@ export async function registerSettings() {
       isEnum: true,
       section: 'itags',
       public: true,
-      label: 'Search: When multiple tags are matched, select',
+      label: 'Search: When multiple tags are matched:',
       description: 'Add the first / all / none from the list of tags to the search query when Enter is pressed',
       options: {
-        first: 'First',
-        all: 'All',
-        none: 'None',
+        first: 'Add first to query',
+        all: 'Add all to query',
+        none: 'Add none to query',
+        insert: 'Insert first in editor',
       }
     },
     'itags.searchWithRegex': {
