@@ -173,6 +173,15 @@ joplin.plugins.register({
     });
 
     await joplin.commands.register({
+      name: 'itags.focusSearch',
+      label: 'Focus inline tags search panel',
+      iconName: 'fas fa-tags',
+      execute: async () => {
+        await focusSearchPanel(searchPanel);
+      },
+    });
+
+    await joplin.commands.register({
       name: 'itags.loadQuery',
       label: 'Load inline tags search query',
       iconName: 'fas fa-dharmachakra',
@@ -282,6 +291,10 @@ joplin.plugins.register({
         accelerator: 'Ctrl+Shift+T',
       },
       {
+        commandName: 'itags.focusSearch',
+        accelerator: 'Ctrl+Shift+I',
+      },
+      {
         commandName: 'itags.updateDB',
         accelerator: 'Ctrl+Shift+D',
       },
@@ -294,7 +307,6 @@ joplin.plugins.register({
       },
       {
         commandName: 'itags.refreshPanel',
-        accelerator: 'Ctrl+Shift+I',
       },
       {
         commandName: 'itags.toggleNav',
