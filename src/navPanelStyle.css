@@ -35,11 +35,9 @@ html {
 
 .selectedTab {
   background-color: var(--joplin-background-color-hover3);
-  color: var(--joplin-color);
 }
 
 .itags-nav-noteTag, .itags-nav-globalTag  {
-  color: var(--joplin-color);
   font-weight: normal;
   text-decoration: none;
   margin: 5px;
