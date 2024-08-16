@@ -663,6 +663,12 @@ function sendInsertMessage(tag) {
     });
 }
 
+function sendFocusEditorMessage() {
+    webviewApi.postMessage({
+        name: 'focusEditor',
+    });
+}
+
 function sendSetting(field, value) {
     webviewApi.postMessage({
         name: 'updateSetting',
@@ -1272,9 +1278,13 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
             updateQueryArea();
         }
     } else if (event.key === 'Escape') {
-        // Clear the input and update the tag list
-        tagFilter.value = '';
-        updateTagList();
+        if (tagFilter.value === '') {
+            sendFocusEditorMessage();
+        } else {
+            // Clear the input and update the tag list
+            tagFilter.value = '';
+            updateTagList();
+        }
     } else if (event.key === 'ArrowUp') {
         // Change the last operator
         toggleLastOperator();
