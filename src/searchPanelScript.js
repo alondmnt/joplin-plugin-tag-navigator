@@ -1304,9 +1304,13 @@ addEventListenerWithTracking(tagRangeMin, 'keydown', (event) => {
         // Toggle last tag negation
         toggleLastTagOrNote();
     } else if (event.key === 'Escape') {
-        // Clear the input
-        tagRangeMin.value = '';
-        tagRangeMax.value = '';
+        if (tagRangeMin.value === '' && tagRangeMax.value === '') {
+            tagFilter.focus();
+        } else {
+            // Clear the input
+            tagRangeMin.value = '';
+            tagRangeMax.value = '';
+        }
     }
 });
 
@@ -1374,10 +1378,14 @@ addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
             updateQueryArea();
         }
     } else if (event.key === 'Escape') {
-        // Clear the input and update the tag list
-        noteFilter.value = '';
-        noteList.value = 'default';
-        updateNoteList();
+        if (noteFilter.value === '') {
+            tagFilter.focus();
+        } else {
+            // Clear the input and update the tag list
+            noteFilter.value = '';
+            noteList.value = 'default';
+            updateNoteList();
+        }
     } else if (event.key === 'ArrowUp') {
         // Change the last operator
         toggleLastOperator();
@@ -1413,10 +1421,14 @@ addEventListenerWithTracking(resultFilter, 'input', () => {
 
 addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
     if (event.key === 'Escape') {
-        // Clear the input and update the results area
-        resultFilter.value = '';
-        updateResultsArea();
-        sendSetting('filter', '');
+        if (resultFilter.value === '') {
+            tagFilter.focus();
+        } else {
+            // Clear the input and update the results area
+            resultFilter.value = '';
+            updateResultsArea();
+            sendSetting('filter', '');
+        }
     }
 });
 
