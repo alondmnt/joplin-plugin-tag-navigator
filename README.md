@@ -41,7 +41,11 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - Watch the navigation panel demo:
 
-<a href="https://www.youtube.com/watch?v=h-HdX7npbIw"><img src="https://img.youtube.com/vi/h-HdX7npbIw/hqdefault.jpg" width="80%" title="navidation panel demo"></a>
+<img src="img/tag-navigator-panel.gif" width="80%" title="navigation panel demo">
+
+- Watch the tag insertion demo:
+
+<img src="img/tag-navigator-insert.gif" width="80%" title="insert tag demo">
 
 ## Tips
 
@@ -64,10 +68,11 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 | Key | Action |
 | --- | ------ |
-| Enter | Add tag(s) / note to query |
+| Enter | Add tag(s) / note to query / note |
 | 2nd Enter | Search notes based on current query |
 | Delete | Remove last added tag / note from query |
 | Esc | Clear the filter (display all tags / notes) |
+| 2nd Esc | Return to note editor |
 | Arrow-Down | Toggle negation of last tag / note in query |
 | Arrow-Up | Toggle last operator AND <--> OR |
 
