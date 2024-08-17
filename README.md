@@ -35,9 +35,9 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Demos
 
-- Watch the tag search demo on YouTube:
+- Watch the tag search demo:
 
-<a href="https://www.youtube.com/watch?v=im0zjQFoXb0"><img src="https://img.youtube.com/vi/im0zjQFoXb0/hqdefault.jpg" width="80%" title="search panel demo"></a>
+<img src="img/tag-navigator-search.gif" width="80%" title="search panel demo"></a>
 
 - Watch the navigation panel demo:
 
