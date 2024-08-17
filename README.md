@@ -72,9 +72,20 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 ![custom checkboxes](img/checkboxes.png)
 
 - You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
-- Tag / note filter keyboard shortcuts:
 
 ### Keyboard shortcuts
+
+- Default command shortcuts
+    - These can be set up in Joplin's keyboard shortcut settings
+
+| Key | Action |
+| --- | ------ |
+| Ctrl + Shift + T | Toggle search panel |
+| Ctrl + Shift + I | Focus on search panel (search tag / insert tag) |
+| Ctrl + Shift + D | Update tag database |
+| Ctrl + Shift + L | Load search query from current note |
+
+- Tag / note filter (search panel) shortcuts
 
 | Key | Action |
 | --- | ------ |
