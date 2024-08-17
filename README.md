@@ -68,6 +68,8 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)([#]|\-\s\[[x\s@\?!~]\])([^\s#'\"]*\w)?`.
     - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
 - Supported additional checkbox styles
+    - Set as done by clicking on a checkbox in the search panel.
+    - Toggle between all states by right-clicking on a checkbox.
 
 ![custom checkboxes](img/checkboxes.png)
 
@@ -76,7 +78,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 ### Keyboard shortcuts
 
 - Default command shortcuts
-    - These can be set up in Joplin's keyboard shortcut settings
+    - These can be set up in Joplin's keyboard shortcut settings.
 
 | Key | Action |
 | --- | ------ |
