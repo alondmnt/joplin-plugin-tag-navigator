@@ -71,11 +71,14 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'\"]*\w)`.
 - Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)([#]|\-\s\[[x\s@\?!~]\])([^\s#'\"]*\w)?`.
     - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
-- Supported additional checkbox styles
-    - Set as done by clicking on a checkbox in the search panel.
-    - Toggle between all states by right-clicking on a checkbox.
+- Supported additional checkbox styles (inspired by `[x]it!`).
+    - Set any of them to done by clicking the checkbox in the search panel.
 
 ![custom checkboxes](img/checkboxes.png)
+
+- Toggle between all states by right-clicking on a checkbox.
+
+![checkbox commands](img/checkboxes-commands.png)
 
 - You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
 
