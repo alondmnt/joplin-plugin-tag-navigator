@@ -18,7 +18,7 @@ Type inline #tags in the note editor. View your tagged paragraphs and tasks / TO
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
-    - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=xIBZl2Ala9A)).
+    - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states).
@@ -35,15 +35,24 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Demos
 
-- Watch the tag search demo:
+- [Inline tag search](#inline-tag-search)
+- [Saved search queries](#saved-search-queries)
+- [Navigation panel](#navigation-panel)
+- [Tag insertion](#tag-insertion)
 
-<img src="img/tag-navigator-search.gif" width="80%" title="search panel demo"></a>
+### Inline tag search
 
-- Watch the navigation panel demo:
+<img src="img/tag-navigator-search.gif" width="80%" title="search panel demo">
+
+### Saved search queries
+
+<img src="img/tag-navigator-queries.gif" width="80%" title="saved search queries demo">
+
+### Navigation panel
 
 <img src="img/tag-navigator-panel.gif" width="80%" title="navigation panel demo">
 
-- Watch the tag insertion demo:
+### Tag insertion
 
 <img src="img/tag-navigator-insert.gif" width="80%" title="insert tag demo">
 
