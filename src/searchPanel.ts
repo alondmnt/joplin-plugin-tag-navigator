@@ -69,7 +69,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'insertTag') {
-    await joplin.commands.execute('insertText', ' ' + message.tag);
+    await joplin.commands.execute('insertText', message.tag);
     await joplin.commands.execute('editor.focus');
 
   } else if (message.name === 'focusEditor') {
