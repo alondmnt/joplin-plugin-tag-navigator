@@ -24,28 +24,28 @@ export async function registerSearchPanel(panel: string) {
       <button id="itags-search-tagSearch" title="Search for text blocks">Search</button>
     </div>
     <div id="itags-search-tagList"></div>
-    <div id="itags-search-tagRangeArea">
-      <input type="text" id="itags-search-tagRangeMin" placeholder="Range min" />
-      <input type="text" id="itags-search-tagRangeMax" placeholder="Range max" />
-      <button id="itags-search-tagRangeAdd" title="Add tag range to query">Add</button>
+    <div id="itags-search-tagRangeArea" class="hidden">
+      <input type="text" id="itags-search-tagRangeMin" class="hidden" placeholder="Range min" />
+      <input type="text" id="itags-search-tagRangeMax" class="hidden" placeholder="Range max" />
+      <button id="itags-search-tagRangeAdd" class="hidden" title="Add tag range to query">Add</button>
     </div>
-    <div id="itags-search-inputNoteArea">
-      <input type="text" id="itags-search-noteFilter" placeholder="Filter notes..." />
-      <select id="itags-search-noteList" title="Note mentions"></select>
+    <div id="itags-search-inputNoteArea" class="hidden">
+      <input type="text" id="itags-search-noteFilter" class="hidden" placeholder="Filter notes..." />
+      <select id="itags-search-noteList" class="hidden" title="Note mentions"></select>
     </div>
     <div id="itags-search-queryArea"></div>
-    <div id="itags-search-inputResultArea">
-      <input type="text" id="itags-search-resultFilter" placeholder="Filter results..." />
-      <select id="itags-search-resultSort" title="Sort by">
+    <div id="itags-search-inputResultArea" class="hidden">
+      <input type="text" id="itags-search-resultFilter" class="hidden" placeholder="Filter results..." />
+      <select id="itags-search-resultSort" class="hidden" title="Sort by">
         <option value="modified">Modified</option>
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="notebook">Notebook</option>
-        </select>
-        <button id="itags-search-resultOrder" title="Ascend / descend"><b>↑</b></button>
-      <button id="itags-search-resultToggle" title="Collapse / expand">v</button>
+      </select>
+      <button id="itags-search-resultOrder" class="hidden" title="Ascend / descend"><b>↑</b></button>
+      <button id="itags-search-resultToggle" class="hidden" title="Collapse / expand">v</button>
     </div>
-    <div id='itags-search-resultsArea'></div>
+    <div id='itags-search-resultsArea' class="extended3X"></div>
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
