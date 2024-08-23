@@ -236,7 +236,9 @@ joplin.plugins.register({
         if (!note) { return; }
 
         const tagSettings = await getTagSettings();
-        await convertNoteToJoplinTags(note, tagSettings);
+        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
+        await convertNoteToJoplinTags(note, tagPrefix, spaceReplace, tagSettings);
         note = clearNoteReferences(note);
       },
     });
@@ -260,8 +262,9 @@ joplin.plugins.register({
         if (!note) { return; }
         const listPrefix = await joplin.settings.value('itags.listPrefix');
         const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
         const location = await joplin.settings.value('itags.location');
-        await convertNoteToInlineTags(note, listPrefix, tagPrefix, location);
+        await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
         note = clearNoteReferences(note);
         note = await joplin.workspace.selectedNote();
         await joplin.commands.execute('editor.setText', note.body);
@@ -276,8 +279,9 @@ joplin.plugins.register({
       execute: async () => {
         const listPrefix = await joplin.settings.value('itags.listPrefix');
         const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
         const location = await joplin.settings.value('itags.location');
-        await convertAllNotesToInlineTags(listPrefix, tagPrefix, location);
+        await convertAllNotesToInlineTags(listPrefix, tagPrefix, spaceReplace, location);
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
         await joplin.commands.execute('editor.setText', note.body);

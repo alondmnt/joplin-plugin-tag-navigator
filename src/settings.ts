@@ -308,7 +308,7 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'Minimum tag count',
-      description: 'Minimum number of occurrences for a tag to be included.',
+      description: 'Minimum number of occurrences for a tag to be included. Default: 1.',
     },
     'itags.tagPrefix': {
       value: '#',
@@ -317,7 +317,16 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'Tag prefix',
-      description: 'Prefix for converted Joplin tags.',
+      description: 'Prefix for converted Joplin tags. Default: "#".',
+    },
+    'itags.spaceReplace': {
+      value: '_',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Space replacement',
+      description: 'Character to replace spaces in converted Joplin tags. Default: "_".',
     },
     'itags.listPrefix': {
       value: 'tags: ',
@@ -326,7 +335,7 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'List prefix',
-      description: 'How the line with converted Joplin tags should begin (at least 3 chars long).',
+      description: 'How the line with converted Joplin tags should begin (at least 3 chars long). Default: "tags: ".',
     },
     'itags.location': {
       value: 'top',
@@ -335,7 +344,7 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'Location',
-      description: 'Location for converted Joplin tags.',
+      description: 'Location for converted Joplin tags. Default: top.',
       isEnum: true,
       options: {
         top: 'Top',
