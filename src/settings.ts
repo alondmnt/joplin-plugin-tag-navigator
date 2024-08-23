@@ -317,7 +317,7 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'Tag prefix',
-      description: 'Prefix for converted Joplin tags. Default: "#".',
+      description: 'Prefix for converted Joplin tags. Default: #.',
     },
     'itags.spaceReplace': {
       value: '_',
@@ -326,7 +326,7 @@ export async function registerSettings() {
       public: true,
       advanced: true,
       label: 'Space replacement',
-      description: 'Character to replace spaces in converted Joplin tags. Default: "_".',
+      description: 'Character to replace spaces in converted Joplin tags. Default: _.',
     },
     'itags.listPrefix': {
       value: 'tags: ',
