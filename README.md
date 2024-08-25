@@ -23,7 +23,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - **Insert tags** from the panel into the note editor ([video](#tag-insertion)).
     - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). See also [tips](#inline-todos).
-    - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child.
+    - **Nested tags** hierarchy: Search parent tags to find the locations of their children ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)). Example: #parent/child.
     - Search for a **range of tags**, according to their lexicographic order. Example: #2024/07 -> #2024/08
     - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated) ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
@@ -129,7 +129,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     - Converted inline tags will appear at the top / bottom depending on the `Location` advanced setting.
     - Converted inline tags will have the prefix # depending on the `Tag prefix` advanced setting.
     - The list of converted inline tags will begin with the text 'tags: ' depending on the `List prefix` advanced setting.
-    - Spaces in Joplin tags will be converted to inline tags depending on the `Space replacement` advanced setting. When converting inline tags back to Joplin spaces will be introduced back to tags. For example: [Joplin: `tag with space`] --> [inline: `#tag_with_space`] --> [Joplin: `tag with space`]
+    - Spaces in Joplin tags will be converted to inline tags depending on the `Space replacement` advanced setting. When converting inline tags back to Joplin spaces will be introduced back to tags. For example: [Joplin: `tag with space`] -> [inline: `#tag_with_space`] -> [Joplin: `tag with space`]
 4. After the conversion all Joplin tags remain assigned to their notes. They are not deleted, and only a single line of text is added to each note.
 
 ## Companion plugins
