@@ -203,7 +203,7 @@ export class NoteDatabase {
 
   getResultNotes(): string[] {
     // Return a list of note ids that should display results
-    return Object.values(this.notes).filter(note => note.displayResults).map(note => note.id);
+    return Object.values(this.notes).filter(note => (note.displayResults !== 'false')).map(note => note.id);
   }
 
   searchBy(by: string, query: string, negated: boolean): ResultSet {
