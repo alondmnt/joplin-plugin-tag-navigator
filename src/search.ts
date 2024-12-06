@@ -214,7 +214,7 @@ export async function displayResultsInNote(db: any, note: any) {
     const columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]).slice(0, 10);
     // Create the results string as a table
     resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
-    resultsString += `|------|----------|------|${columns.map(() => '---').join('|')}|\n`;
+    resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
     for (const result of taggedResults) {
       let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers[0] + 1} |`;
       for (const column of columns) {
