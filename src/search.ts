@@ -1,8 +1,8 @@
 import joplin from 'api';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
-import { getTagSettings, resultsEnd, resultsStart } from './settings';
+import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
-import { parseDateTag } from './parser';
+import { parseDateTag, parseTagsLines } from './parser';
 
 export interface Query {
   tag?: string;
@@ -22,6 +22,10 @@ export interface GroupedResult {
   notebook?: string;
   updatedTime?: number;
   createdTime?: number;
+}
+
+export interface TaggedResult extends GroupedResult {
+  tags: { [key: string]: string };
 }
 
 export async function runSearch(db: NoteDatabase, query: Query[][]): Promise<GroupedResult[]> {
@@ -188,17 +192,46 @@ export async function displayInAllNotes(db: any) {
 export async function displayResultsInNote(db: any, note: any) {
   const savedQuery = await loadQuery(db, note);
   const results = await runSearch(db, savedQuery.query);
-  const filteredResults = await filterAndSortResults(results, savedQuery.filter);
+  const filteredResults = await filterAndSortResults(results, (savedQuery.displayInNote === 'list') ? savedQuery.filter : '');
 
-  // Create the results string
+  if (filteredResults.length === 0) { return; }
+
   let resultsString = resultsStart;
-  for (const result of filteredResults) {
-    resultsString += `\n## ${result.title} [>](:/${result.externalId})\n\n`;
-    for (let i = 0; i < result.text.length; i++) {
-      resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
+  if (savedQuery.displayInNote === 'list') {
+    // Create the results string
+    for (const result of filteredResults) {
+      resultsString += `\n## ${result.title} [>](:/${result.externalId})\n\n`;
+      for (let i = 0; i < result.text.length; i++) {
+        resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
+      }
     }
+    resultsString += resultsEnd;
+
+  } else if (savedQuery.displayInNote === 'table') {
+    // Parse tags from results and accumulate counts
+    const [taggedResults, allTags] = await processTagsForResults(filteredResults);
+    // Select the top 10 tags
+    const columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]).slice(0, 10);
+    // Create the results string as a table
+    resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
+    resultsString += `|------|----------|------|${columns.map(() => '---').join('|')}|\n`;
+    for (const result of taggedResults) {
+      let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers[0] + 1} |`;
+      for (const column of columns) {
+        const tagValue = result.tags[column] || '';
+        if (!tagValue) {
+          row += ' |';
+        } else if (tagValue === column) {
+          row += ' + |';
+        } else {
+          row += ` ${tagValue.substring(column.length + 1)} |`;
+        }
+      }
+      resultsString += row + '\n';
+    }
+    resultsString += resultsEnd;
+
   }
-  resultsString += resultsEnd;
 
   // Update the note
   const resultsRegExp = new RegExp(`${resultsStart}.*${resultsEnd}`, 's');
@@ -306,4 +339,44 @@ export function clearNoteReferences(note: any): null {
   note = null;
 
   return null;
+}
+
+async function processTagsForResults(filteredResults: GroupedResult[]): Promise<[TaggedResult[], { [key: string]: number }]> {
+  const allTags: { [key: string]: number } = {};
+  const tagSettings = await getTagSettings();
+
+  // Process tags for each result
+  const taggedResults = await Promise.all(filteredResults.map(async result => {
+    const taggedResult = await processTagsForResult(result, tagSettings);
+
+    // Update global tag counts
+    const tagInfo = await parseTagsLines(result.text.join('\n'), tagSettings);
+    tagInfo.forEach(info => {
+      if (info.parent) {
+        allTags[info.tag] = (allTags[info.tag] || 0) + info.count;
+      }
+    });
+
+    return taggedResult;
+  }));
+
+  return [taggedResults, allTags];
+}
+
+async function processTagsForResult(result: GroupedResult, tagSettings: TagSettings): Promise<TaggedResult> {
+  const taggedResult = result as TaggedResult;
+  const fullText = result.text.join('\n');
+  tagSettings.nestedTags = true;
+  const tagInfo = await parseTagsLines(fullText, tagSettings);
+
+  // Create a mapping from column (parent tag) to value (child tag)
+  taggedResult.tags = tagInfo
+    .filter(info => info.child)
+    .reduce((acc, info) => {
+      const parent = info.tag.split('/')[0];
+      acc[parent] = info.tag;
+      return acc;
+    }, {} as {[key: string]: string});
+
+  return taggedResult;
 }

@@ -8,18 +8,20 @@ const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
 
 type LinkExtract = { title: string; noteId?: string; line: number };
 
-interface TagLineInfo {
+export interface TagLineInfo {
   tag: string;
   lines: number[];
   count: number;
   index: number;
+  parent: boolean;  // first parent
+  child: boolean;  // last child
 }
 
 export async function parseTagsLines(text: string, tagSettings: TagSettings): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
   let isResultBlock = false;
   let isQueryBlock = false;
-  let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
+  let tagsMap = new Map<string, { lines: Set<number>; count: number; parent: boolean, child: boolean }>();
   let tagsLevel = new Map<string, number>();
   const lines = text.toLocaleLowerCase().split('\n');
 
@@ -83,7 +85,12 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
           uniqueSet.add(child);
 
           if (!tagsMap.has(child)) {
-            tagsMap.set(child, { lines: new Set<number>(), count: 0 });
+            tagsMap.set(child, {
+              lines: new Set<number>(),
+              count: 0,
+              parent: i === 1,  // first parent
+              child: i === tagFamily.length,  // last child
+            });
           }
           // Set tag level
           if (!tagsLevel.has(child)) {
@@ -94,6 +101,10 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
 
           const tagInfo = tagsMap.get(child);
           tagInfo.lines.add(lineIndex);
+          if (i === tagFamily.length && !tagInfo.child) {
+            // Ensure that the last child is marked as such
+            tagInfo.child = true;
+          }
           tagInfo.count++;
           tagsMap.set(child, tagInfo);
         }
@@ -107,6 +118,8 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
     lines: Array.from(tagsMap.get(tag).lines),
     count: tagsMap.get(tag).count,
     index: 0,
+    parent: tagsMap.get(tag).parent,
+    child: tagsMap.get(tag).child,
   }));
 
   // Sort the result as needed

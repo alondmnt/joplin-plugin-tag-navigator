@@ -9,7 +9,7 @@ import { DatabaseManager, processAllNotes, processNote } from './db';
 import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
-let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: false };
+let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 
 joplin.plugins.register({
   onStart: async function() {
@@ -108,7 +108,7 @@ joplin.plugins.register({
       }
 
       // Update results in note
-      if (savedQuery.displayInNote) {
+      if (savedQuery.displayInNote !== 'false') {
         await displayResultsInNote(DatabaseManager.getDatabase(), note);
       }
 
@@ -207,10 +207,16 @@ joplin.plugins.register({
         if (!note) { return; }
         const query = await loadQuery(DatabaseManager.getDatabase(), note);
         // toggle display
-        query.displayInNote = !query.displayInNote;
+        if (query.displayInNote === 'false') {
+          query.displayInNote = 'list';
+        } else if (query.displayInNote === 'list') {
+          query.displayInNote = 'table';
+        } else {
+          query.displayInNote = 'false';
+        }
 
         note.body = await saveQuery(query);
-        if (query.displayInNote) {
+        if (query.displayInNote !== 'false') {
           await displayResultsInNote(DatabaseManager.getDatabase(), note);
         } else {
           await removeResults(note);
@@ -384,7 +390,7 @@ joplin.plugins.register({
         await joplin.settings.setValue(message.field, message.value);
       }
       if (message.name === 'searchTag') {
-        searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: false };
+        searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: 'false' };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
         await updatePanelResults(searchPanel, results, searchParams.query);

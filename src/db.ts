@@ -30,7 +30,7 @@ class Note {
   noteLinksById: { [noteId: string]: Set<number> };
   noteLinksByTitle: { [title: string]: Set<number> };
   savedQuery: boolean;
-  displayResults: boolean;
+  displayResults: string;
 
   constructor(id: string, title: string) {
     this.id = id;
@@ -39,7 +39,7 @@ class Note {
     this.noteLinksById = {};
     this.noteLinksByTitle = {};
     this.savedQuery = false;
-    this.displayResults = false;
+    this.displayResults = 'false';
   }
 
   addTag(tag: string, lineNumber: number) {
@@ -53,7 +53,7 @@ class Note {
     this.savedQuery = saved;
   }
 
-  setDisplay(display: boolean) {
+  setDisplay(display: string) {
     this.displayResults = display;
   }
 

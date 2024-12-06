@@ -11,7 +11,7 @@ const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 export interface QueryRecord {
   query: Query[][];
   filter: string;
-  displayInNote: boolean;
+  displayInNote: string;
 }
 
 export async function registerSearchPanel(panel: string) {
@@ -554,9 +554,8 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
 }
 
 export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
-  const upgradedText = await upgradeQuery(db, note);  // from ver1 to ver2
-  const record = upgradedText.match(findQuery);
-  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: false };
+  const record = note.body.match(findQuery);
+  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
     try {
       const savedQuery = await testQuery(db, JSON.parse(record[1]));
@@ -570,32 +569,6 @@ export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
   return loadedQuery;
 }
 
-export async function upgradeQuery(db: any, note: any): Promise<string> {
-  // try to upgrade the saved query format
-  const record = note.body.match(findQuery);
-  if (!record) { return note.body; }
-
-  const queryParts = record[1].split('\n');
-  let savedQuery = {query: null, filter: null, displayInNote: null};
-  try {
-    savedQuery = {
-      query: JSON.parse(queryParts[0]),
-      filter: queryParts[1],
-      displayInNote: parseInt(queryParts[2]) ? true : false,
-    };
-    savedQuery = await testQuery(db, savedQuery);
-  } catch {
-    return note.body;
-  }
-
-  if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
-    // save the upgraded query and return the updated note body
-    return saveQuery(savedQuery, note.id);
-  } else {
-    return note.body;
-  }
-}
-
 async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRecord> {
   // Test if the query is valid
   if (!query.query) {
@@ -604,8 +577,8 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
   if (typeof query.filter !== 'string') {
     query.filter = null;
   }
-  if (typeof query.displayInNote !== 'boolean') {
-    query.displayInNote = null;
+  if (typeof query.displayInNote !== 'string') {
+    query.displayInNote = query.displayInNote ? 'list' : 'false';
   }
 
   let queryGroups = query.query;
