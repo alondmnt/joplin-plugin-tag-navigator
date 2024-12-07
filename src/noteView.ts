@@ -58,7 +58,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
         } else if (tagValue === column) {
           row += ' + |';
         } else {
-          row += ` ${tagValue.substring(column.length + 1)} |`;
+          row += ` ${tagValue.replace(RegExp(column + '/', 'g'), '')} |`;
         }
       }
       resultsString += row + '\n';
@@ -184,18 +184,30 @@ async function processResultForTable(result: GroupedResult, tagSettings: TagSett
   const fullText = result.text.join('\n');
   tagSettings.nestedTags = true;
   const tagInfo = (await parseTagsLines(fullText, tagSettings))
-    .map(info => ({...info, tag: info.tag.replace(tagSettings.tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')}));
+    .map(info => (
+      {...info,
+        tag: info.tag.replace(tagSettings.tagPrefix, '')
+        .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
+      }
+    ));
 
   // Create a mapping from column (parent tag) to value (child tag)
   tableResult.tags = tagInfo
     .filter(info => info.child)
     .reduce((acc, info) => {
-      const parent = tagInfo.find(
+      let parent = tagInfo.find(
         parentInfo =>
           parentInfo.parent &&
           info.tag.startsWith(parentInfo.tag)
       );
-      acc[parent.tag] = info.tag;
+      if (!parent) {
+        parent = info;
+      }
+      if (acc[parent.tag]) {
+        acc[parent.tag] += `, ${info.tag}`;
+      } else {
+        acc[parent.tag] = info.tag;
+      }
       return acc;
     }, {} as {[key: string]: string});
 
