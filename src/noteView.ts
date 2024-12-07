@@ -2,8 +2,12 @@ import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearNoteReferences } from './utils';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
-import { GroupedResult, TaggedResult as TableResult, runSearch } from './search';
+import { GroupedResult, runSearch } from './search';
 import { parseTagsLines, TagLineInfo } from './parser';
+
+interface TableResult extends GroupedResult {
+  tags: { [key: string]: string };
+}
 
 export async function displayInAllNotes(db: any) {
   // Display results in notes

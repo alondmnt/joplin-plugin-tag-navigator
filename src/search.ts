@@ -24,10 +24,6 @@ export interface GroupedResult {
   createdTime?: number;
 }
 
-export interface TaggedResult extends GroupedResult {
-  tags: { [key: string]: string };
-}
-
 export async function runSearch(db: NoteDatabase, query: Query[][]): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
   const queryResults = await getQueryResults(db, query, currentNote);
