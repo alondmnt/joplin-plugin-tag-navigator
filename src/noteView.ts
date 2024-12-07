@@ -2,7 +2,7 @@ import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearNoteReferences } from './utils';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
-import { GroupedResult, TaggedResult, runSearch } from './search';
+import { GroupedResult, TaggedResult as TableResult, runSearch } from './search';
 import { parseTagsLines, TagLineInfo } from './parser';
 
 export async function displayInAllNotes(db: any) {
@@ -30,7 +30,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   let resultsString = resultsStart;
   if (savedQuery.displayInNote === 'list') {
-    // Create the results string
+    // Create the results string as a list
     for (const result of filteredResults) {
       resultsString += `\n## ${result.title} [>](:/${result.externalId})\n\n`;
       for (let i = 0; i < result.text.length; i++) {
@@ -40,7 +40,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [taggedResults, allTags] = await processTagsForResults(filteredResults, tagSettings);
+    const [tableResults, allTags] = await processResultsForTable(filteredResults, tagSettings);
     // Select the top N tags
     let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]);
     if (nColumns > 0) {
@@ -49,7 +49,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     // Create the results string as a table
     resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
     resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
-    for (const result of taggedResults) {
+    for (const result of tableResults) {
       let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
       for (const column of columns) {
         const tagValue = result.tags[column] || '';
@@ -159,12 +159,12 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processTagsForResults(filteredResults: GroupedResult[], tagSettings: TagSettings): Promise<[TaggedResult[], { [key: string]: number }]> {
+async function processResultsForTable(filteredResults: GroupedResult[], tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }]> {
   const allTags: { [key: string]: number } = {};
 
   // Process tags for each result
-  const taggedResults = await Promise.all(filteredResults.map(async result => {
-    const [taggedResult, tagInfo] = await processTagsForResult(result, tagSettings);
+  const tableResults = await Promise.all(filteredResults.map(async result => {
+    const [tableResult, tagInfo] = await processResultForTable(result, tagSettings);
 
     // Update global tag counts
     tagInfo.forEach(info => {
@@ -173,21 +173,21 @@ async function processTagsForResults(filteredResults: GroupedResult[], tagSettin
       }
     });
 
-    return taggedResult;
+    return tableResult;
   }));
 
-  return [taggedResults, allTags];
+  return [tableResults, allTags];
 }
 
-async function processTagsForResult(result: GroupedResult, tagSettings: TagSettings): Promise<[TaggedResult, TagLineInfo[]]> {
-  const taggedResult = result as TaggedResult;
+async function processResultForTable(result: GroupedResult, tagSettings: TagSettings): Promise<[TableResult, TagLineInfo[]]> {
+  const tableResult = result as TableResult;
   const fullText = result.text.join('\n');
   tagSettings.nestedTags = true;
   const tagInfo = (await parseTagsLines(fullText, tagSettings))
     .map(info => ({...info, tag: info.tag.replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')}));
 
   // Create a mapping from column (parent tag) to value (child tag)
-  taggedResult.tags = tagInfo
+  tableResult.tags = tagInfo
     .filter(info => info.child)
     .reduce((acc, info) => {
       const parent = tagInfo.find(
@@ -199,5 +199,5 @@ async function processTagsForResult(result: GroupedResult, tagSettings: TagSetti
       return acc;
     }, {} as {[key: string]: string});
 
-  return [taggedResult, tagInfo];
+  return [tableResult, tagInfo];
 }
