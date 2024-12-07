@@ -24,7 +24,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return; }
 
   const results = await runSearch(db, savedQuery.query);
-  const filteredResults = await filterAndSortResults(results, (savedQuery.displayInNote === 'list') ? savedQuery.filter : '');
+  const filteredResults = await filterAndSortResults(results, savedQuery.filter);
 
   if (filteredResults.length === 0) { return; }
 
@@ -50,6 +50,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
     resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
     for (const result of tableResults) {
+      if (Object.keys(result.tags).length === 0) { continue; }
       let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
       for (const column of columns) {
         const tagValue = result.tags[column] || '';
