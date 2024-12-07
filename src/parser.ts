@@ -76,6 +76,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
           tagFamily = [tag];
         }
         const uniqueSet = new Set<string>();
+        let isParent = true;
         for (let i = 1; i <= tagFamily.length; i++) {
           let child = tagFamily.slice(0, i).join('/');
           // Trim all separators from the end of the child
@@ -88,10 +89,11 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
             tagsMap.set(child, {
               lines: new Set<number>(),
               count: 0,
-              parent: i === 1,  // first parent
+              parent: isParent,  // first parent
               child: i === tagFamily.length,  // last child
             });
           }
+          isParent = false;
           // Set tag level
           if (!tagsLevel.has(child)) {
             tagsLevel.set(child, indentLevel);

@@ -16,7 +16,7 @@ export async function displayInAllNotes(db: any) {
     note = clearNoteReferences(note);
   }
 }
-  
+
 export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10) {
   if (!note.body) { return; }
   const savedQuery = await loadQuery(db, note);
@@ -189,8 +189,12 @@ async function processTagsForResult(result: GroupedResult, tagSettings: TagSetti
   taggedResult.tags = tagInfo
     .filter(info => info.child)
     .reduce((acc, info) => {
-      const parent = info.tag.split('/')[0];
-      acc[parent] = info.tag;
+      const parent = tagInfo.find(
+        parentInfo =>
+          parentInfo.parent &&
+          info.tag.startsWith(parentInfo.tag)
+      );
+      acc[parent.tag] = info.tag;
       return acc;
     }, {} as {[key: string]: string});
 
