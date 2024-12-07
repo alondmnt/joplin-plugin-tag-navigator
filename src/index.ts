@@ -247,8 +247,7 @@ joplin.plugins.register({
 
         const tagSettings = await getTagSettings();
         const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
-        await convertNoteToJoplinTags(note, tagPrefix, spaceReplace, tagSettings);
+        await convertNoteToJoplinTags(note, tagPrefix, tagSettings);
         note = clearNoteReferences(note);
       },
     });

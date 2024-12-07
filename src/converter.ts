@@ -6,7 +6,6 @@ import { TagSettings, getTagSettings } from './settings';
 export async function convertAllNotesToJoplinTags() {
   const tagSettings = await getTagSettings();
   const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-  const spaceReplace = await joplin.settings.value('itags.spaceReplace');
 
   // Get all notes
   let hasMore = true;
@@ -26,7 +25,7 @@ export async function convertAllNotesToJoplinTags() {
         continue;
       }
       try {
-        await convertNoteToJoplinTags(note, tagPrefix, spaceReplace, tagSettings);
+        await convertNoteToJoplinTags(note, tagPrefix, tagSettings);
       } catch (error) {
         console.error(`Error converting note ${note.id} to tags: ${error}`);
       }
@@ -64,11 +63,11 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
   }
 }
 
-export async function convertNoteToJoplinTags(note: any, tagPrefix: string, spaceReplace: string, tagSettings: TagSettings) {
+export async function convertNoteToJoplinTags(note: any, tagPrefix: string, tagSettings: TagSettings) {
 
   // Parse all inline tags from the note
   const tags = (await parseTagsLines(note.body, tagSettings))
-    .map(tag => tag.tag.replace(tagPrefix, '').replace(RegExp(spaceReplace, 'g'), ' '));
+    .map(tag => tag.tag.replace(tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
 
   if (tags.length === 0) {
     return;

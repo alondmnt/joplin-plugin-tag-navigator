@@ -16,6 +16,7 @@ export interface TagSettings {
   ignoreCodeBlocks: boolean;
   inheritTags: boolean;
   nestedTags: boolean;
+  spaceReplace: string;
 }
 
 export async function getTagRegex(): Promise<RegExp> {
@@ -37,8 +38,9 @@ export async function getTagSettings(): Promise<TagSettings> {
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
   const nestedTags = await joplin.settings.value('itags.nestedTags');
+  const spaceReplace = await joplin.settings.value('itags.spaceReplace');
 
-  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags, nestedTags};
+  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags, nestedTags, spaceReplace};
 }
 
 export async function registerSettings() {
