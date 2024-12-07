@@ -250,8 +250,7 @@ joplin.plugins.register({
         if (!note) { return; }
 
         const tagSettings = await getTagSettings();
-        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-        await convertNoteToJoplinTags(note, tagPrefix, tagSettings);
+        await convertNoteToJoplinTags(note, tagSettings);
         note = clearNoteReferences(note);
       },
     });
