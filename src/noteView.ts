@@ -18,7 +18,11 @@ export async function displayInAllNotes(db: any) {
 }
   
 export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10) {
+  if (!note.body) { return; }
   const savedQuery = await loadQuery(db, note);
+  if (!savedQuery) { return; }
+  if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return; }
+
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, (savedQuery.displayInNote === 'list') ? savedQuery.filter : '');
 
@@ -33,7 +37,6 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
         resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
       }
     }
-    resultsString += resultsEnd;
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
@@ -60,9 +63,8 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
       }
       resultsString += row + '\n';
     }
-    resultsString += resultsEnd;
-
   }
+  resultsString += resultsEnd;
 
   // Update the note
   const resultsRegExp = new RegExp(`${resultsStart}.*${resultsEnd}`, 's');
