@@ -183,7 +183,8 @@ async function processTagsForResult(result: GroupedResult, tagSettings: TagSetti
   const taggedResult = result as TaggedResult;
   const fullText = result.text.join('\n');
   tagSettings.nestedTags = true;
-  const tagInfo = await parseTagsLines(fullText, tagSettings);
+  const tagInfo = (await parseTagsLines(fullText, tagSettings))
+    .map(info => ({...info, tag: info.tag.replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')}));
 
   // Create a mapping from column (parent tag) to value (child tag)
   taggedResult.tags = tagInfo
