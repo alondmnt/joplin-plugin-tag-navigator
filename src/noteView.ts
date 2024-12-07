@@ -3,7 +3,7 @@ import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './setting
 import { clearNoteReferences } from './utils';
 import { loadQuery, normalizeTextIndentation } from './searchPanel';
 import { GroupedResult, TaggedResult, runSearch } from './search';
-import { parseTagsLines } from './parser';
+import { parseTagsLines, TagLineInfo } from './parser';
 
 export async function displayInAllNotes(db: any) {
   // Display results in notes
@@ -164,10 +164,9 @@ async function processTagsForResults(filteredResults: GroupedResult[], tagSettin
 
   // Process tags for each result
   const taggedResults = await Promise.all(filteredResults.map(async result => {
-    const taggedResult = await processTagsForResult(result, tagSettings);
+    const [taggedResult, tagInfo] = await processTagsForResult(result, tagSettings);
 
     // Update global tag counts
-    const tagInfo = await parseTagsLines(result.text.join('\n'), tagSettings);
     tagInfo.forEach(info => {
       if (info.parent) {
         allTags[info.tag] = (allTags[info.tag] || 0) + info.count;
@@ -180,7 +179,7 @@ async function processTagsForResults(filteredResults: GroupedResult[], tagSettin
   return [taggedResults, allTags];
 }
 
-async function processTagsForResult(result: GroupedResult, tagSettings: TagSettings): Promise<TaggedResult> {
+async function processTagsForResult(result: GroupedResult, tagSettings: TagSettings): Promise<[TaggedResult, TagLineInfo[]]> {
   const taggedResult = result as TaggedResult;
   const fullText = result.text.join('\n');
   tagSettings.nestedTags = true;
@@ -195,5 +194,5 @@ async function processTagsForResult(result: GroupedResult, tagSettings: TagSetti
       return acc;
     }, {} as {[key: string]: string});
 
-  return taggedResult;
+  return [taggedResult, tagInfo];
 }
