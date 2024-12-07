@@ -181,16 +181,17 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
 
 export async function displayInAllNotes(db: any) {
   // Display results in notes
+  const tagSettings = await getTagSettings();
   const nColumns = await joplin.settings.value('itags.tableColumns');
   const noteIds = db.getResultNotes();
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    await displayResultsInNote(db, note, nColumns);
+    await displayResultsInNote(db, note, tagSettings, nColumns);
     note = clearNoteReferences(note);
   }
 }
 
-export async function displayResultsInNote(db: any, note: any, nColumns: number=10) {
+export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10) {
   const savedQuery = await loadQuery(db, note);
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, (savedQuery.displayInNote === 'list') ? savedQuery.filter : '');
@@ -210,7 +211,7 @@ export async function displayResultsInNote(db: any, note: any, nColumns: number=
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [taggedResults, allTags] = await processTagsForResults(filteredResults);
+    const [taggedResults, allTags] = await processTagsForResults(filteredResults, tagSettings);
     // Select the top N tags
     let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]);
     if (nColumns > 0) {
@@ -345,9 +346,8 @@ export function clearNoteReferences(note: any): null {
   return null;
 }
 
-async function processTagsForResults(filteredResults: GroupedResult[]): Promise<[TaggedResult[], { [key: string]: number }]> {
+async function processTagsForResults(filteredResults: GroupedResult[], tagSettings: TagSettings): Promise<[TaggedResult[], { [key: string]: number }]> {
   const allTags: { [key: string]: number } = {};
-  const tagSettings = await getTagSettings();
 
   // Process tags for each result
   const taggedResults = await Promise.all(filteredResults.map(async result => {
