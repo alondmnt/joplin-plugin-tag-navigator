@@ -216,7 +216,7 @@ export async function displayResultsInNote(db: any, note: any) {
     resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
     resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
     for (const result of taggedResults) {
-      let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers[0] + 1} |`;
+      let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
       for (const column of columns) {
         const tagValue = result.tags[column] || '';
         if (!tagValue) {
