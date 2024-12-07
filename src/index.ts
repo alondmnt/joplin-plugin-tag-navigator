@@ -109,7 +109,8 @@ joplin.plugins.register({
 
       // Update results in note
       if (savedQuery.displayInNote !== 'false') {
-        await displayResultsInNote(DatabaseManager.getDatabase(), note);
+        const nColumns = await joplin.settings.value('itags.tableColumns');
+        await displayResultsInNote(DatabaseManager.getDatabase(), note, nColumns);
       }
 
       // Navigation panel update
@@ -217,7 +218,8 @@ joplin.plugins.register({
 
         note.body = await saveQuery(query);
         if (query.displayInNote !== 'false') {
-          await displayResultsInNote(DatabaseManager.getDatabase(), note);
+          const nColumns = await joplin.settings.value('itags.tableColumns');
+          await displayResultsInNote(DatabaseManager.getDatabase(), note, nColumns);
         } else {
           await removeResults(note);
         }

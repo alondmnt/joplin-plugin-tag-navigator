@@ -181,15 +181,16 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
 
 export async function displayInAllNotes(db: any) {
   // Display results in notes
+  const nColumns = await joplin.settings.value('itags.tableColumns');
   const noteIds = db.getResultNotes();
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    await displayResultsInNote(db, note);
+    await displayResultsInNote(db, note, nColumns);
     note = clearNoteReferences(note);
   }
 }
 
-export async function displayResultsInNote(db: any, note: any) {
+export async function displayResultsInNote(db: any, note: any, nColumns: number=10) {
   const savedQuery = await loadQuery(db, note);
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, (savedQuery.displayInNote === 'list') ? savedQuery.filter : '');
@@ -210,8 +211,11 @@ export async function displayResultsInNote(db: any, note: any) {
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
     const [taggedResults, allTags] = await processTagsForResults(filteredResults);
-    // Select the top 10 tags
-    const columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]).slice(0, 10);
+    // Select the top N tags
+    let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]);
+    if (nColumns > 0) {
+      columns = columns.slice(0, nColumns);
+    }
     // Create the results string as a table
     resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
     resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;

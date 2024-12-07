@@ -242,6 +242,17 @@ export async function registerSettings() {
       label: 'Search: Colorise todos in results',
       description: 'Supporting [x]it! style todos.'
     },
+    'itags.tableColumns': {
+      value: 10,
+      type: SettingItemType.Int,
+      minimum: 0,
+      maximum: 20,
+      step: 1,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Table columns',
+      description: 'Number of columns to show in the table view. Set to 0 to show all.',
+    },
     'itags.searchPanelStyle' : {
       value: '',
       type: SettingItemType.String,
