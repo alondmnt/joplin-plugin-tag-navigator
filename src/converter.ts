@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { parseTagsLines } from './parser';
-import { clearNoteReferences } from './search';
+import { clearNoteReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
 export async function convertAllNotesToJoplinTags() {

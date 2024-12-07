@@ -2,7 +2,8 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
-import { GroupedResult, Query, clearNoteReferences, runSearch } from './search';
+import { clearNoteReferences } from './utils';
+import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 

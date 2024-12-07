@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { parseLinkLines, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
-import { clearNoteReferences } from './search';
+import { clearNoteReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
 export class DatabaseManager {

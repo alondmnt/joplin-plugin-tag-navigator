@@ -2,11 +2,13 @@ import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
+import { clearNoteReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNavPanel } from './navPanel';
 import { parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
-import { clearNoteReferences, displayInAllNotes, displayResultsInNote, removeResults, runSearch } from './search';
+import { displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
+import { runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
