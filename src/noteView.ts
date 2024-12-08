@@ -46,7 +46,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     // Parse tags from results and accumulate counts
     const [tableResults, allTags] = await processResultsForTable(filteredResults, tagSettings);
     // Select the top N tags
-    let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a]);
+    let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a] || a.localeCompare(b));
     if (nColumns > 0) {
       columns = columns.slice(0, nColumns);
     }
