@@ -19,6 +19,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
     - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
+    - **Display results in a table** or a list ([video](https://www.youtube.com/watch?v=J7h8c6iW4rU)).
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - **Insert tags** from the panel into the note editor ([video](#tag-insertion)).
@@ -38,6 +39,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Inline tag search](#inline-tag-search)
 - [Saved search queries](#saved-search-queries)
+- [Table view](#table-view)
 - [Navigation panel](#navigation-panel)
 - [Tag insertion](#tag-insertion)
 
@@ -48,6 +50,10 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 ### Saved search queries
 
 <img src="img/tag-navigator-queries.gif" width="80%" title="saved search queries demo">
+
+### Table view
+
+<img src="img/tag-navigator-table.gif" width="80%" title="table view demo">
 
 ### Navigation panel
 
