@@ -39,7 +39,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Inline tag search](#inline-tag-search)
 - [Saved search queries](#saved-search-queries)
-- [Table view](#table-view)
+- [Table view / database](#table-view--database)
 - [Navigation panel](#navigation-panel)
 - [Tag insertion](#tag-insertion)
 
@@ -51,7 +51,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 <img src="img/tag-navigator-queries.gif" width="80%" title="saved search queries demo">
 
-### Table view
+### Table view / database
 
 <img src="img/tag-navigator-table.gif" width="80%" title="table view demo">
 
