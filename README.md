@@ -68,6 +68,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
+- [Front matter tags](#front-matter-tags)
 - [Inline TODOs](#inline-todos)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
