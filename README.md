@@ -21,6 +21,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
     - **Display results in a table** or a list ([video](https://www.youtube.com/watch?v=J7h8c6iW4rU)).
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
+    - **Tag in front matter:** All Markdown front matter fields can be treated as tags.
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
     - **Insert tags** from the panel into the note editor ([video](#tag-insertion)).
     - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). See also [tips](#inline-todos).
@@ -81,6 +82,33 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - You may also define an exclusion rule to ignore certain tags.
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+### Front matter tags
+
+For example, the following YAML front matter, when inserted at the top of the note:
+
+```yaml
+---
+nested: tag with spaces
+arrayed: [v1, v2, v3]
+tags:
+  - tag1
+  - tag2
+---
+```
+
+will be converted to the following inline tags:
+
+```text
+#nested/tag_with_spaces
+#arrayed/v1
+#arrayed/v2
+#arrayed/v3
+#tag1
+#tag2
+```
+
+These tags will be accessible in the search panel / notes / tables like standard inline tags.
 
 ### Inline TODOs
 
