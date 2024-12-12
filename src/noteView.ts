@@ -1,9 +1,9 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearNoteReferences } from './utils';
-import { loadQuery, normalizeTextIndentation } from './searchPanel';
+import { formatFrontMatter, loadQuery, normalizeTextIndentation } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
-import { parseTagsLines, TagLineInfo } from './parser';
+import { parseTagsFromFrontMatter, parseTagsLines, TagLineInfo } from './parser';
 
 interface TableResult extends GroupedResult {
   tags: { [key: string]: string };
@@ -38,7 +38,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     for (const result of filteredResults) {
       resultsString += `\n## ${result.title} [>](:/${result.externalId})\n\n`;
       for (let i = 0; i < result.text.length; i++) {
-        resultsString += `${normalizeTextIndentation(result.text[i])}\n\n---\n`;
+        resultsString += `${formatFrontMatter(normalizeTextIndentation(result.text[i]))}\n\n---\n`;
       }
     }
 
@@ -188,6 +188,13 @@ async function processResultForTable(result: GroupedResult, tagSettings: TagSett
   const tableResult = result as TableResult;
   const fullText = result.text.join('\n');
   tagSettings.nestedTags = true;
+  const frontMatterTags = parseTagsFromFrontMatter(fullText, tagSettings)
+    .map(tag => (
+      {...tag,
+        tag: tag.tag.replace(tagSettings.tagPrefix, '')
+        .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
+      }
+    ));
   const tagInfo = (await parseTagsLines(fullText, tagSettings))
     .map(info => (
       {...info,
@@ -195,6 +202,21 @@ async function processResultForTable(result: GroupedResult, tagSettings: TagSett
         .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
       }
     ));
+
+  // Combine front matter and inline tags
+  frontMatterTags.forEach(frontMatterTag => {
+    const existingTag = tagInfo.find(t => t.tag === frontMatterTag.tag);
+    if (existingTag) {
+      // Merge lines and update count
+      existingTag.lines.push(...frontMatterTag.lines);
+      existingTag.count += frontMatterTag.count;
+      // Remove duplicates from lines array
+      existingTag.lines = [...new Set(existingTag.lines)];
+    } else {
+      // Add new tag if it doesn't exist
+      tagInfo.push(frontMatterTag);
+    }
+  });
 
   // Create a mapping from column (parent tag) to value (child tag)
   tableResult.tags = tagInfo
