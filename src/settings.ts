@@ -14,6 +14,7 @@ export interface TagSettings {
   dateFormat: string;
   ignoreHtmlNotes: boolean;
   ignoreCodeBlocks: boolean;
+  ignoreFrontMatter: boolean;
   inheritTags: boolean;
   nestedTags: boolean;
   spaceReplace: string;
@@ -37,12 +38,13 @@ export async function getTagSettings(): Promise<TagSettings> {
   const dateFormat = await joplin.settings.value('itags.dateFormat');
   const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
   const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
+  const ignoreFrontMatter = await joplin.settings.value('itags.ignoreFrontMatter');
   const inheritTags = await joplin.settings.value('itags.inheritTags');
   const nestedTags = await joplin.settings.value('itags.nestedTags');
   const spaceReplace = await joplin.settings.value('itags.spaceReplace');
   const tagPrefix = await joplin.settings.value('itags.tagPrefix');
 
-  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, inheritTags, nestedTags, spaceReplace, tagPrefix};
+  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, ignoreFrontMatter, inheritTags, nestedTags, spaceReplace, tagPrefix};
 }
 
 export async function registerSettings() {
@@ -66,6 +68,14 @@ export async function registerSettings() {
       public: true,
       label: 'Ignore code blocks',
       description: 'Ignore inline tags in code blocks.',
+    },
+    'itags.ignoreFrontMatter': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Ignore front matter',
+      description: 'Front matter fields are treated as tags by default.',
     },
     'itags.inheritTags': {
       value: true,

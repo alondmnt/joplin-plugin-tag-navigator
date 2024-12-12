@@ -343,7 +343,7 @@ export function parseTagsFromFrontMatter(
   tagSettings: TagSettings
 ): TagLineInfo[] {
   const frontMatter = parseFrontMatter(text);
-  if (!frontMatter.data) return [];
+  if (!frontMatter.data || tagSettings.ignoreFrontMatter) return [];
 
   const tags: string[] = [];
 
