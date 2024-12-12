@@ -250,3 +250,145 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
 
   return results;
 }
+
+interface FrontMatter {
+  [key: string]: string | string[] | number | boolean | null;
+}
+
+// Add new interface for the return type
+interface FrontMatterResult {
+  data: FrontMatter | null;
+  lineCount: number;
+}
+
+export function parseFrontMatter(text: string): FrontMatterResult {
+  // Extract front matter between --- markers
+  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return { data: null, lineCount: 0 };
+
+  const result: FrontMatter = {};
+  const lines = match[1].split('\n');
+  let currentKey: string | null = null;
+  let currentArray: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Skip comments and empty lines
+    if (line.trim().startsWith('#') || !line.trim()) continue;
+
+    // Check if line starts with a dash (list item)
+    if (line.trim().startsWith('- ')) {
+      if (currentKey) {
+        currentArray.push(line.trim().slice(2));
+      }
+      continue;
+    }
+
+    // If we were collecting array items, save them before moving to new key
+    if (currentKey && currentArray.length > 0) {
+      result[currentKey] = currentArray;
+      currentArray = [];
+    }
+
+    // Split on first colon
+    const [key, ...valueParts] = line.split(':');
+    if (!key) continue;
+
+    currentKey = key.trim();
+    const value = valueParts.join(':').trim();
+
+    // Handle different value types
+    if (value.startsWith('[') && value.endsWith(']')) {
+      // JSON-style array
+      try {
+        result[currentKey] = JSON.parse(value.replace(/'/g, '"'));
+      } catch {
+        // Fallback to simple splitting if JSON parse fails
+        result[currentKey] = value.slice(1, -1).split(',').map(item => 
+          item.trim().replace(/^["']|["']$/g, '')
+        );
+      }
+      currentKey = null;
+    } else if (value === 'true') {
+      result[currentKey] = true;
+      currentKey = null;
+    } else if (value === 'false') {
+      result[currentKey] = false;
+      currentKey = null;
+    } else if (!isNaN(Number(value)) && value.trim() !== '') {
+      result[currentKey] = Number(value);
+      currentKey = null;
+    } else if (value.trim() !== '') {
+      result[currentKey] = value;
+      currentKey = null;
+    }
+    // If value is empty, keep currentKey for potential following list items
+  }
+
+  // Handle any remaining array items
+  if (currentKey && currentArray.length > 0) {
+    result[currentKey] = currentArray;
+  }
+
+  return { 
+    data: result,
+    lineCount: lines.length + 2,
+  };
+}
+
+export function parseTagsFromFrontMatter(
+  text: string, 
+  tagSettings: TagSettings
+): TagLineInfo[] {
+  const frontMatter = parseFrontMatter(text);
+  if (!frontMatter.data) return [];
+
+  const tags: string[] = [];
+
+  for (const [key, value] of Object.entries(frontMatter.data)) {
+    // Skip null/undefined values 
+    if (value == null) continue;
+
+    // Convert to array if not already
+    const valueArray = Array.isArray(value) ? value : [value];
+
+    // Process based on key
+    if (key.toLowerCase() === 'tags') {
+      // For "tags" key, simply prefix each item and replace spaces
+      tags.push(...valueArray.map(tag =>
+        `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace)}`
+      ));
+    } else {
+      // For other keys, create nested tags and replace spaces in both key and value
+      const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace);
+      tags.push(...valueArray.map(val =>
+        `${tagSettings.tagPrefix}${safeKey}/${String(val).replace(/\s+/g, tagSettings.spaceReplace)}`
+      ));
+    }
+  }
+
+  // For each tag, split nested tags, and build all intermediate tags
+  const nestedTags: string[] = [];
+  if (tagSettings.nestedTags) {
+    for (const tag of tags) {
+      const parts = tag.split('/');
+      for (let i = 1; i < parts.length; i++) {
+        nestedTags.push(parts.slice(0, i).join('/'));
+      }
+    }
+  }
+
+  // Keep unique front matter tags, as they all point to the same lines
+  const allTags = [...new Set([...tags, ...nestedTags])];
+  const lines = Array.from({ length: frontMatter.lineCount }, (_, i) => i);
+
+  // Convert to TagLineInfo[]
+  return allTags.map((tag, index) => ({
+    tag,
+    lines,
+    count: 1,
+    index: 0,
+    parent: !tag.includes('/'),
+    child: tags.includes(tag)
+  }));
+}

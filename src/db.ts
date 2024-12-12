@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { parseLinkLines, parseTagsLines } from './parser';
+import { parseLinkLines, parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
 import { clearNoteReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
@@ -291,9 +291,17 @@ export async function processAllNotes() {
 export async function processNote(db: NoteDatabase, note: any, tagSettings: TagSettings): Promise<void> {
   try {
     const noteRecord = new Note(note.id, note.title);
-    const tagLines = await parseTagsLines(note.body, tagSettings);
 
-    // Process each tagLine within the transaction
+    // Process front matter tags
+    const frontMatterTags = parseTagsFromFrontMatter(note.body, tagSettings);
+    for (const tag of frontMatterTags) {
+      for (const line of tag.lines) {
+        noteRecord.addTag(tag.tag, line);
+      }
+    }
+
+    // Process standard inline tags
+    const tagLines = await parseTagsLines(note.body, tagSettings);
     for (const tagLine of tagLines) {
       for (const lineNumber of tagLine.lines) {
         noteRecord.addTag(tagLine.tag, lineNumber);
