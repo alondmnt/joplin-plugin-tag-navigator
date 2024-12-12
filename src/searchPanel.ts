@@ -256,6 +256,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     for (const section of group.text) {
       let processedSection = normalizeTextIndentation(section);
       processedSection = normalizeHeadingLevel(processedSection);
+      processedSection = formatFrontMatter(processedSection);
       if (resultMarker) {
         // Process each section by lines to track line numbers accurately
         const lines = processedSection.split('\n');
@@ -347,6 +348,28 @@ function normalizeHeadingLevel(text: string): string {
   });
 
   return processedLines.join('\n');
+}
+
+export function formatFrontMatter(text: string): string {
+  // Replace YAML frontmatter delimiters (--- or ...) with code block backticks
+  const lines = text.split('\n');
+  
+  // Find frontmatter boundaries
+  const firstLine = lines[0].trim();
+  if (firstLine === '---' || firstLine === '...') {
+    lines[0] = '```yaml';
+    
+    // Find the closing delimiter
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line === '---' || line === '...') {
+        lines[i] = '```';
+        break;
+      }
+    }
+  }
+
+  return lines.join('\n');
 }
 
 /// Note editing functions ///
