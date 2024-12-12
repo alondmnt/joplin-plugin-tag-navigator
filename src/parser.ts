@@ -297,7 +297,9 @@ export function parseFrontMatter(text: string): FrontMatterResult {
     currentKey = key.trim();
     const value = valueParts.join(':').trim();
 
-    // Handle different value types
+    // Remove surrounding quotes if present
+    const unquotedValue = value.replace(/^["']|["']$/g, '');
+
     if (value.startsWith('[') && value.endsWith(']')) {
       // JSON-style array
       try {
@@ -309,17 +311,17 @@ export function parseFrontMatter(text: string): FrontMatterResult {
         );
       }
       currentKey = null;
-    } else if (value === 'true') {
+    } else if (unquotedValue === 'true') {
       result[currentKey] = true;
       currentKey = null;
-    } else if (value === 'false') {
+    } else if (unquotedValue === 'false') {
       result[currentKey] = false;
       currentKey = null;
-    } else if (!isNaN(Number(value)) && value.trim() !== '') {
-      result[currentKey] = Number(value);
+    } else if (!isNaN(Number(unquotedValue)) && unquotedValue.trim() !== '') {
+      result[currentKey] = Number(unquotedValue);
       currentKey = null;
-    } else if (value.trim() !== '') {
-      result[currentKey] = value;
+    } else if (unquotedValue.trim() !== '') {
+      result[currentKey] = unquotedValue;
       currentKey = null;
     }
     // If value is empty, keep currentKey for potential following list items
