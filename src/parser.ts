@@ -368,7 +368,7 @@ export function parseTagsFromFrontMatter(
       ));
     }
   }
-  tags.push('#frontmatter');
+  tags.push(tagSettings.tagPrefix + 'frontmatter');
 
   // For each tag, split nested tags, and build all intermediate tags
   const nestedTags: string[] = [];
