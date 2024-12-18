@@ -1,14 +1,11 @@
-export function clearNoteReferences(note: any): null {
-  if (!note) { return null; }
+export function clearObjectReferences(obj: any): null {
+	if (!obj) { return null; }
 
-  // Remove references to the note
-  note.body = null;
-  note.title = null;
-  note.id = null;
-  note.parent_id = null;
-  note.updated_time = null;
-  note.created_time = null;
-  note = null;
+	// Remove references to object properties
+	for (const prop in obj) {
+		obj[prop] = null;
+	}
+	obj = null;
 
-  return null;
+	return null;
 }

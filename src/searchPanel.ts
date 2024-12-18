@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
@@ -81,7 +81,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
     let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
     const currentQuery = await loadQuery(db, currentNote);
-    clearNoteReferences(currentNote);
+    clearObjectReferences(currentNote);
 
     await saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
@@ -100,7 +100,7 @@ export async function processMessage(message: any, searchPanel: string, db: Note
       // Wait for the note to be opened for 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-    note = clearNoteReferences(note);
+    note = clearObjectReferences(note);
 
     await joplin.commands.execute('editor.execCommand', {
       name: 'scrollToTagLine',
@@ -397,7 +397,7 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
 
   const newBody = lines.join('\n');
   updateNote(message, newBody, db, tagSettings);
-  note = clearNoteReferences(note);
+  note = clearObjectReferences(note);
 }
 
 async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
@@ -425,7 +425,7 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
       if (replaceTagInQuery(savedQuery, message.oldTag, message.newTag)) {
         await saveQuery(savedQuery, externalId);
       };
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
     }
     // update the search panel
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
@@ -491,7 +491,7 @@ export async function replaceTagInText(externalId: string, lineNumbers: number[]
 
   const newBody = lines.join('\n');
   await updateNote({externalId: externalId, line: lineNumbers[0]}, newBody, db, tagSettings);
-  note = clearNoteReferences(note);
+  note = clearObjectReferences(note);
 }
 
 export async function addTagToText(message: any, db: NoteDatabase, tagSettings: TagSettings) {
@@ -509,7 +509,7 @@ export async function addTagToText(message: any, db: NoteDatabase, tagSettings: 
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
   await updateNote(message, newBody, db, tagSettings);
-  note = clearNoteReferences(note);
+  note = clearObjectReferences(note);
 }
 
 export function escapeRegex(string: string): string {
@@ -538,8 +538,8 @@ async function updateNote(message: any, newBody: string, db: NoteDatabase, tagSe
     await processNote(db, targetNote, tagSettings);
   }
   // Clear the reference to the note to avoid memory leaks
-  targetNote = clearNoteReferences(targetNote);
-  selectedNote = clearNoteReferences(selectedNote);
+  targetNote = clearObjectReferences(targetNote);
+  selectedNote = clearObjectReferences(selectedNote);
 }
 
 export async function saveQuery(query: QueryRecord, noteId: string=null): Promise<string> {
@@ -572,8 +572,8 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
     await joplin.commands.execute('editor.setText', newBody);
   }
 
-  note = clearNoteReferences(note);
-  currentNote = clearNoteReferences(currentNote);
+  note = clearObjectReferences(note);
+  currentNote = clearObjectReferences(currentNote);
   return newBody;
 }
 

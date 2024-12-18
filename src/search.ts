@@ -2,7 +2,7 @@ import joplin from 'api';
 import { getTagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 
 export interface Query {
   tag?: string;
@@ -28,7 +28,7 @@ export async function runSearch(db: NoteDatabase, query: Query[][]): Promise<Gro
   let currentNote = (await joplin.workspace.selectedNote());
   const queryResults = await getQueryResults(db, query, currentNote);
   const groupedResults = await processQueryResults(queryResults);
-  currentNote = clearNoteReferences(currentNote);
+  currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
 
@@ -170,7 +170,7 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
 
-  note = clearNoteReferences(note);
+  note = clearObjectReferences(note);
 
   return result
 }

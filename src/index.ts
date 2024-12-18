@@ -2,7 +2,7 @@ import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { updateNavPanel } from './navPanel';
 import { parseTagsLines } from './parser';
@@ -22,7 +22,7 @@ joplin.plugins.register({
       if (!note) { return; }
       const tagSettings = await getTagSettings();
       await processNote(DatabaseManager.getDatabase(), note, tagSettings);
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
 
       // Update tags
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
@@ -91,7 +91,7 @@ joplin.plugins.register({
           tagLines = await parseTagsLines(note.body, tagSettings);
         }
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       }
     }
     if (periodicDBUpdate > 0) {
@@ -126,7 +126,7 @@ joplin.plugins.register({
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
       }
 
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
@@ -146,7 +146,7 @@ joplin.plugins.register({
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 
@@ -200,7 +200,7 @@ joplin.plugins.register({
           searchParams = savedQuery;
           await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         }
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 
@@ -229,7 +229,7 @@ joplin.plugins.register({
         } else {
           await removeResults(note);
         }
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 
@@ -251,7 +251,7 @@ joplin.plugins.register({
 
         const tagSettings = await getTagSettings();
         await convertNoteToJoplinTags(note, tagSettings);
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 
@@ -277,10 +277,10 @@ joplin.plugins.register({
         const spaceReplace = await joplin.settings.value('itags.spaceReplace');
         const location = await joplin.settings.value('itags.location');
         await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
         await joplin.commands.execute('editor.setText', note.body);
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 
@@ -297,7 +297,7 @@ joplin.plugins.register({
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
         await joplin.commands.execute('editor.setText', note.body);
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
       },
     });
 

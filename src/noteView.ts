@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 import { formatFrontMatter, loadQuery, normalizeTextIndentation } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
 import { parseTagsFromFrontMatter, parseTagsLines, TagLineInfo } from './parser';
@@ -17,7 +17,7 @@ export async function displayInAllNotes(db: any) {
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
     await displayResultsInNote(db, note, tagSettings, nColumns);
-    note = clearNoteReferences(note);
+    note = clearObjectReferences(note);
   }
 }
 
@@ -86,7 +86,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
-    currentNote = clearNoteReferences(currentNote);
+    currentNote = clearObjectReferences(currentNote);
   }
 }
 
@@ -100,7 +100,7 @@ export async function removeResults(note: any) {
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
-    currentNote = clearNoteReferences(currentNote);
+    currentNote = clearObjectReferences(currentNote);
   }
 }
 

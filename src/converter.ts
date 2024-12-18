@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { parseTagsLines } from './parser';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
 export async function convertAllNotesToJoplinTags() {
@@ -20,7 +20,7 @@ export async function convertAllNotesToJoplinTags() {
     // Process the notes synchronously to avoid issues
     for (let note of notes.items) {
       if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
         continue;
       }
       try {
@@ -28,7 +28,7 @@ export async function convertAllNotesToJoplinTags() {
       } catch (error) {
         console.error(`Error converting note ${note.id} to tags: ${error}`);
       }
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
     notes.items = null;
@@ -51,11 +51,11 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
     // Process the notes synchronously to avoid issues
     for (let note of notes.items) {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
         continue;
       }
       await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
     notes.items = null;
@@ -104,8 +104,8 @@ export async function convertNoteToJoplinTags(note: any, tagSettings: TagSetting
     });
   }
 
-  noteTags = clearNoteReferences(noteTags);
-  allTags = clearNoteReferences(allTags);
+  noteTags = clearObjectReferences(noteTags);
+  allTags = clearObjectReferences(allTags);
 }
 
 export async function convertNoteToInlineTags(note: any, listPrefix: string, tagPrefix: string, spaceReplace: string, location: string) {
@@ -128,5 +128,5 @@ export async function convertNoteToInlineTags(note: any, listPrefix: string, tag
   }
 
   await joplin.data.put(['notes', note.id], null, { body: note.body });
-  noteTags = clearNoteReferences(noteTags);
+  noteTags = clearObjectReferences(noteTags);
 }

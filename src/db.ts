@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { parseLinkLines, parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
-import { clearNoteReferences } from './utils';
+import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
 export class DatabaseManager {
@@ -270,15 +270,15 @@ export async function processAllNotes() {
 
     for (let note of notes.items) {
       if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
         continue;
       }
       if (note.is_conflict == 1) {
-        note = clearNoteReferences(note);
+        note = clearObjectReferences(note);
         continue;
       }
       await processNote(db, note, tagSettings);
-      note = clearNoteReferences(note);
+      note = clearObjectReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
     notes.items = null;
