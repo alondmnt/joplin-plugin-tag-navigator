@@ -305,6 +305,14 @@ export async function processNote(db: NoteDatabase, note: any, tagSettings: TagS
     for (const tagLine of tagLines) {
       for (const lineNumber of tagLine.lines) {
         noteRecord.addTag(tagLine.tag, lineNumber);
+        if (tagSettings.inheritTags) {
+          // Inherit tags from frontMatterTags
+          for (const frontMatterTag of frontMatterTags) {
+            if (frontMatterTag.tag !== tagLine.tag && !frontMatterTag.tag.endsWith('frontmatter')) {
+              noteRecord.addTag(frontMatterTag.tag, lineNumber);
+            }
+          }
+        }
       }
     }
 
