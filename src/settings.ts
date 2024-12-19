@@ -83,7 +83,7 @@ export async function registerSettings() {
       section: 'itags',
       public: true,
       label: 'Tag inheritance',
-      description: 'Inherit tags from parent items.',
+      description: 'Inherit tags from parent items, from headings, and from YAML front matter.',
     },
     'itags.nestedTags': {
       value: true,
