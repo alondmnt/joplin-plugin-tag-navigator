@@ -112,6 +112,20 @@ class Note {
     }
     return allPos;
   }
+
+  getTagsAtLine(line: number): Set<string> {
+    // Return all tags that contain this line
+    // If line is null/undefined, return all tags
+    const result = new Set<string>();
+    for (const tag in this.tags) {
+      if (line != null && this.tags[tag].has(line)) {
+        result.add(tag);
+      } else if (line == null) {
+        result.add(tag);
+      }
+    }
+    return result;
+  }
 }
 
 export class NoteDatabase {
@@ -305,14 +319,23 @@ export async function processNote(db: NoteDatabase, note: any, tagSettings: TagS
     for (const tagLine of tagLines) {
       for (const lineNumber of tagLine.lines) {
         noteRecord.addTag(tagLine.tag, lineNumber);
-        if (tagSettings.inheritTags) {
-          // Inherit tags from frontMatterTags
-          for (const frontMatterTag of frontMatterTags) {
-            if (frontMatterTag.tag !== tagLine.tag && !frontMatterTag.tag.endsWith('frontmatter')) {
-              noteRecord.addTag(frontMatterTag.tag, lineNumber);
-            }
-          }
+      }
+    }
+
+    if (tagSettings.inheritTags) {
+      // Get all tags from lines 0-1
+      const topNoteTags = new Set([
+        ...noteRecord.getTagsAtLine(0),
+        ...noteRecord.getTagsAtLine(1)
+      ]);
+      // Get all lines in the note
+      const allLines = noteRecord.getNoteLines();
+      // Add all tags from line 0 to all lines in the note
+      for (const tag of topNoteTags) {
+        if (tag.endsWith('frontmatter')) {
+          continue;
         }
+        noteRecord.addTagLines(tag, allLines);
       }
     }
 
