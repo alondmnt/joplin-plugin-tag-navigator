@@ -23,6 +23,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
   let isQueryBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number; parent: boolean, child: boolean }>();
   let tagsLevel = new Map<string, number>();
+  let tagsHeading = new Map<string, number>();
   const lines = text.toLocaleLowerCase().split('\n');
 
   lines.forEach((line, lineIndex) => {
@@ -59,6 +60,17 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
         tagsMap.get(tag).lines.add(lineIndex);
       }
     });
+
+    const headingLevel = line.match(/^#+/)?.[0].length || 0;
+    if (headingLevel > 0) {
+      // Reset all tags that have a heading level higher than the current heading level
+      // e.g., when going from ### (level 3) to ## (level 2), clear level 3 tags
+      tagsHeading.forEach((level, tag) => {
+        if (level >= headingLevel) {
+          tagsHeading.set(tag, -1);  // -1 indicates tag is no longer active
+        }
+      });
+    }
 
     const tagMatches = line.match(tagSettings.tagRegex);
     if (tagMatches) {
@@ -101,6 +113,19 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
             tagsLevel.set(child, indentLevel);
           }
 
+          // Set tags found in current heading
+          if (headingLevel > 0) {
+            if (!tagsHeading.has(child)) {
+              tagsHeading.set(child, headingLevel);
+            } else if (tagsHeading.get(child) === -1) {
+              // Reactivate tag at current heading level
+              tagsHeading.set(child, headingLevel);
+            } else if (tagsHeading.get(child) > headingLevel) {
+              // Keep the smallest heading level since h1 (level 1) is higher in hierarchy than h2 (level 2)
+              tagsHeading.set(child, headingLevel);
+            }
+          }
+
           const tagInfo = tagsMap.get(child);
           tagInfo.lines.add(lineIndex);
           if (i === tagFamily.length && !tagInfo.child) {
@@ -111,6 +136,16 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
           tagsMap.set(child, tagInfo);
         }
       });
+
+      // Add tags from all active heading levels to the current line
+      for (const [tag, level] of tagsHeading.entries()) {
+        if (level > -1) {
+          const tagInfo = tagsMap.get(tag);
+          if (tagInfo) {
+            tagInfo.lines.add(lineIndex);
+          }
+        }
+      }
     }
   });
 
