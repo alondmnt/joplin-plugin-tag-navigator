@@ -62,7 +62,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
     });
 
     const headingLevel = line.match(/^#+/)?.[0].length || 0;
-    if (headingLevel > 0) {
+    if (tagSettings.inheritTags && headingLevel > 0) {
       // Reset all tags that have a heading level higher than the current heading level
       // e.g., when going from ### (level 3) to ## (level 2), clear level 3 tags
       tagsHeading.forEach((level, tag) => {
@@ -114,7 +114,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
           }
 
           // Set tags found in current heading
-          if (headingLevel > 0) {
+          if (tagSettings.inheritTags && headingLevel > 0) {
             if (!tagsHeading.has(child)) {
               tagsHeading.set(child, headingLevel);
             } else if (tagsHeading.get(child) === -1) {
