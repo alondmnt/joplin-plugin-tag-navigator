@@ -49,18 +49,23 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
       return;
     }
 
+    // Keep tab on whether the tag contains any tags (inherited or explicit)
+    let lineIsTagged = false;
+
+    // Inherit tags from smaller indentation levels
     const indentLevel = line.match(/^\s*/)[0].length;
-    // Go over all tagsLevel
     tagsLevel.forEach((level, tag) => {
       if (indentLevel <= level) {
         // We're above the level where the tag was found, reset it
         tagsLevel.set(tag, -1);
       } else if (tagSettings.inheritTags && level >= 0) {
-        // Add the line to the tag
+        // Add the current line to the tag
         tagsMap.get(tag).lines.add(lineIndex);
+        lineIsTagged = true;
       }
     });
 
+    // Inherit tags from headings
     const headingLevel = line.match(/^#+/)?.[0].length || 0;
     if (tagSettings.inheritTags && headingLevel > 0) {
       // Reset all tags that have a heading level higher than the current heading level
@@ -134,9 +139,12 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
           }
           tagInfo.count++;
           tagsMap.set(child, tagInfo);
+          lineIsTagged = true;
         }
       });
+    }
 
+    if (lineIsTagged) {
       // Add tags from all active heading levels to the current line
       for (const [tag, level] of tagsHeading.entries()) {
         if (level > -1) {
