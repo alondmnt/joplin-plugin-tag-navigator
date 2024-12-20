@@ -19,7 +19,6 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
     - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
-    - **Display results in a table** or a list ([video](https://www.youtube.com/watch?v=L3zHletRk54)).
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags ([video](https://www.youtube.com/watch?v=L3zHletRk54)).
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
@@ -30,6 +29,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated) ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
+    - Display results in a table / database ([video](https://www.youtube.com/watch?v=L3zHletRk54))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). See also [tips](#converting-joplin-tags).
