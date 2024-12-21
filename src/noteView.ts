@@ -4,6 +4,7 @@ import { clearObjectReferences } from './utils';
 import { formatFrontMatter, loadQuery, normalizeTextIndentation } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
 import { parseTagsFromFrontMatter, parseTagsLines, TagLineInfo } from './parser';
+import { NoteDatabase } from './db';
 
 interface TableResult extends GroupedResult {
   tags: { [key: string]: string };
@@ -44,7 +45,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, allTags] = await processResultsForTable(filteredResults, tagSettings);
+    const [tableResults, allTags] = await processResultsForTable(filteredResults, db);
     // Select the top N tags
     let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a] || a.localeCompare(b));
     if (nColumns > 0) {
@@ -164,12 +165,12 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processResultsForTable(filteredResults: GroupedResult[], tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }]> {
+async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase): Promise<[TableResult[], { [key: string]: number }]> {
   const allTags: { [key: string]: number } = {};
 
   // Process tags for each result
   const tableResults = await Promise.all(filteredResults.map(async result => {
-    const [tableResult, tagInfo] = await processResultForTable(result, tagSettings);
+    const [tableResult, tagInfo] = await processResultForTable(result, db);
 
     // Update global tag counts
     tagInfo.forEach(info => {
@@ -184,39 +185,43 @@ async function processResultsForTable(filteredResults: GroupedResult[], tagSetti
   return [tableResults, allTags];
 }
 
-async function processResultForTable(result: GroupedResult, tagSettings: TagSettings): Promise<[TableResult, TagLineInfo[]]> {
+async function processResultForTable(result: GroupedResult, db: NoteDatabase): Promise<[TableResult, TagLineInfo[]]> {
   const tableResult = result as TableResult;
-  const fullText = result.text.join('\n');
-  tagSettings.nestedTags = true;
-  const frontMatterTags = parseTagsFromFrontMatter(fullText, tagSettings)
-    .map(tag => (
-      {...tag,
-        tag: tag.tag.replace(tagSettings.tagPrefix, '')
-        .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
-      }
-    ));
-  const tagInfo = (await parseTagsLines(fullText, tagSettings))
-    .map(info => (
-      {...info,
-        tag: info.tag.replace(tagSettings.tagPrefix, '')
-        .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
-      }
-    ));
+  const note = db.notes[result.externalId];
 
-  // Combine front matter and inline tags
-  frontMatterTags.forEach(frontMatterTag => {
-    const existingTag = tagInfo.find(t => t.tag === frontMatterTag.tag);
-    if (existingTag) {
-      // Merge lines and update count
-      existingTag.lines.push(...frontMatterTag.lines);
-      existingTag.count += frontMatterTag.count;
-      // Remove duplicates from lines array
-      existingTag.lines = [...new Set(existingTag.lines)];
-    } else {
-      // Add new tag if it doesn't exist
-      tagInfo.push(frontMatterTag);
+  // Get the tags for each line in the results from the database
+  const tagInfo: TagLineInfo[] = [];
+  result.lineNumbers.forEach((startLine, i) => {
+    // All lines in each result section are consecutive
+    const endLine = startLine + result.text[i].split('\n').length - 1;
+    for (let line = startLine; line <= endLine; line++) {
+      const lineTags = note.getTagsAtLine(line);
+      for (const tag of lineTags) {
+        const existingTag = tagInfo.find(t => t.tag === tag);
+        if (existingTag) {
+          existingTag.count += 1;
+          existingTag.lines.push(line);
+          existingTag.lines = [...new Set(existingTag.lines)];
+        } else {
+          tagInfo.push({
+            tag: tag,
+            count: 1,
+            lines: [line],
+            index: 0,
+            parent: !tag.includes('/'),
+            child: null
+          });
+        }
+      }
     }
   });
+
+  for (const info of tagInfo) {
+    // A child tag is a tag that isn't a prefix of any other tag
+    info.child = !tagInfo.some(other => 
+      other.tag !== info.tag && other.tag.startsWith(info.tag)
+    );
+  }
 
   // Create a mapping from column (parent tag) to value (child tag)
   tableResult.tags = tagInfo
