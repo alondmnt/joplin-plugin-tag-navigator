@@ -48,7 +48,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, allTags] = await processResultsForTable(filteredResults, db);
+    const [tableResults, allTags] = await processResultsForTable(filteredResults, db, tagSettings);
     // Select the top N tags
     let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a] || a.localeCompare(b));
     if (nColumns > 0) {
@@ -168,12 +168,12 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase): Promise<[TableResult[], { [key: string]: number }]> {
+async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }]> {
   const allTags: { [key: string]: number } = {};
 
   // Process tags for each result
   const tableResults = await Promise.all(filteredResults.map(async result => {
-    const [tableResult, tagInfo] = await processResultForTable(result, db);
+    const [tableResult, tagInfo] = await processResultForTable(result, db, tagSettings);
 
     // Update global tag counts
     tagInfo.forEach(info => {
@@ -189,7 +189,7 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
   return [tableResults, allTags];
 }
 
-async function processResultForTable(result: GroupedResult, db: NoteDatabase): Promise<[TableResult, TagLineInfo[]]> {
+async function processResultForTable(result: GroupedResult, db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult, TagLineInfo[]]> {
   const tableResult = result as TableResult;
   const note = db.notes[result.externalId];
 
@@ -201,14 +201,17 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase): P
     for (let line = startLine; line <= endLine; line++) {
       const lineTags = note.getTagsAtLine(line);
       for (const tag of lineTags) {
-        const existingTag = tagInfo.find(t => t.tag === tag);
+        const formattedTag = tag.replace(tagSettings.tagPrefix, '')
+          .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
+          .toLowerCase();
+        const existingTag = tagInfo.find(t => t.tag === formattedTag);
         if (existingTag) {
           existingTag.count += 1;
           existingTag.lines.push(line);
           existingTag.lines = [...new Set(existingTag.lines)];
         } else {
           tagInfo.push({
-            tag: tag,
+            tag: formattedTag,
             count: 1,
             lines: [line],
             index: 0,
