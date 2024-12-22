@@ -3,7 +3,7 @@ import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './setting
 import { clearObjectReferences } from './utils';
 import { formatFrontMatter, loadQuery, normalizeTextIndentation } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
-import { parseTagsFromFrontMatter, parseTagsLines, TagLineInfo } from './parser';
+import { TagLineInfo } from './parser';
 import { NoteDatabase } from './db';
 
 interface TableResult extends GroupedResult {
