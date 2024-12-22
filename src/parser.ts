@@ -402,14 +402,14 @@ export function parseTagsFromFrontMatter(
       // For "tags" key, simply prefix each item and replace spaces
       tags.push(...valueArray.map(tag =>
         tagSettings.tagRegex.test(String(tag)) 
-          ? String(tag) 
-          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace)}`
+          ? String(tag).toLowerCase() 
+          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
       ));
     } else {
       // For other keys, create nested tags and replace spaces in both key and value
-      const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace);
+      const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace).toLowerCase();
       tags.push(...valueArray.map(val =>
-        `${tagSettings.tagPrefix}${safeKey}/${String(val).replace(/\s+/g, tagSettings.spaceReplace)}`
+        `${tagSettings.tagPrefix}${safeKey}/${String(val).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
       ));
     }
   }
