@@ -19,6 +19,7 @@ export interface TagSettings {
   nestedTags: boolean;
   spaceReplace: string;
   tagPrefix: string;
+  tableCase: string;
 }
 
 export async function getTagRegex(): Promise<RegExp> {
@@ -43,8 +44,9 @@ export async function getTagSettings(): Promise<TagSettings> {
   const nestedTags = await joplin.settings.value('itags.nestedTags');
   const spaceReplace = await joplin.settings.value('itags.spaceReplace');
   const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+  const tableCase = await joplin.settings.value('itags.tableCase');
 
-  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, ignoreFrontMatter, inheritTags, nestedTags, spaceReplace, tagPrefix};
+  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, ignoreFrontMatter, inheritTags, nestedTags, spaceReplace, tagPrefix, tableCase};
 }
 
 export async function registerSettings() {
@@ -266,6 +268,18 @@ export async function registerSettings() {
       public: true,
       label: 'Note view: Table columns',
       description: 'Number of columns to show in the table view. Set to 0 to show all.',
+    },
+    'itags.tableCase': {
+      value: 'title',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Tag case in table view',
+      isEnum: true,
+      options: {
+        title: 'Title case',
+        lower: 'Lowercase',
+      }
     },
     'itags.searchPanelStyle' : {
       value: '',

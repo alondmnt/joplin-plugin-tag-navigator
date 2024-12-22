@@ -55,7 +55,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
       columns = columns.slice(0, nColumns);
     }
     // Create the results string as a table
-    resultsString += `\n| Note | Notebook | Line | ${columns.join(' | ')} |\n`;
+    resultsString += `\n| Note | Notebook | Line | ${columns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
     resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
     for (const result of tableResults) {
       if (Object.keys(result.tags).length === 0) { continue; }
@@ -67,7 +67,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
         } else if (tagValue === column) {
           row += ' + |';
         } else {
-          row += ` ${tagValue.replace(RegExp(column + '/', 'g'), '')} |`;
+          row += ` ${formatTag(tagValue.replace(RegExp(column + '/', 'g'), ''), tagSettings)} |`;
         }
       }
       resultsString += row + '\n';
@@ -201,7 +201,7 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
     for (let line = startLine; line <= endLine; line++) {
       const lineTags = note.getTagsAtLine(line);
       for (const tag of lineTags) {
-        const formattedTag = tag.replace(tagSettings.tagPrefix, '')
+        let formattedTag = tag.replace(tagSettings.tagPrefix, '')
           .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
           .toLowerCase();
         const existingTag = tagInfo.find(t => t.tag === formattedTag);
@@ -251,4 +251,13 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
     }, {} as {[key: string]: string});
 
   return [tableResult, tagInfo];
+}
+
+function formatTag(tag: string, tagSettings: TagSettings) {
+  if (tagSettings.tableCase === 'title') {
+    return tag.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+  return tag.toLowerCase();
 }
