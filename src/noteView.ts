@@ -175,7 +175,8 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
     // Update global tag counts
     tagInfo.forEach(info => {
       if (info.parent) {
-        allTags[info.tag] = (allTags[info.tag] || 0) + info.count;
+        // Count the number of notes each tag appears in
+        allTags[info.tag] = (allTags[info.tag] || 0) + 1;
       }
     });
 
