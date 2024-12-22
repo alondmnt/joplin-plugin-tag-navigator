@@ -401,7 +401,9 @@ export function parseTagsFromFrontMatter(
     if (key.toLowerCase() === 'tags') {
       // For "tags" key, simply prefix each item and replace spaces
       tags.push(...valueArray.map(tag =>
-        `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace)}`
+        tagSettings.tagRegex.test(String(tag)) 
+          ? String(tag) 
+          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace)}`
       ));
     } else {
       // For other keys, create nested tags and replace spaces in both key and value
