@@ -31,7 +31,10 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, savedQuery.filter);
 
-  if (filteredResults.length === 0) { return; }
+  if (filteredResults.length === 0) {
+    await removeResults(note);
+    return;
+  }
 
   let resultsString = resultsStart;
   if (savedQuery.displayInNote === 'list') {
