@@ -252,18 +252,28 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
   const xitBlocked = /(^[\s]*)- \[!\] (.*)$/gm;  // not officially a [x]it! checkbox
 
   for (const group of groupedResults) {
-    group.html = []; // Ensure group.html is initialized as an empty array if not already done
+    group.html = [];
     for (const section of group.text) {
       let processedSection = normalizeTextIndentation(section);
       processedSection = normalizeHeadingLevel(processedSection);
       processedSection = formatFrontMatter(processedSection);
+
       if (resultMarker) {
-        // Process each section by lines to track line numbers accurately
-        const lines = processedSection.split('\n');
-        processedSection = lines.map((line, lineNumber) => 
-          replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
-        ).join('\n');
+        // Split into blocks first to handle code blocks
+        const blocks = splitCodeBlocks(processedSection);
+        processedSection = blocks.map((block, index) => {
+          if (index % 2 === 1) {
+            // Odd indices are code blocks - return unchanged
+            return block;
+          }
+          // Process non-code-block content by lines
+          const lines = block.split('\n');
+          return lines.map((line, lineNumber) => 
+            replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
+          ).join('\n');
+        }).join('');
       }
+
       processedSection = processedSection
         .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
       if (colorTodos) {
@@ -279,6 +289,11 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     }
   }
   return groupedResults;
+}
+
+function splitCodeBlocks(text: string): string[] {
+  // Split by triple backticks, preserving the delimiters
+  return text.split(/(```[^`]*```)/g);
 }
 
 // Function to replace or process hashtags outside backticks without altering the original structure
