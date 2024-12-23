@@ -142,6 +142,8 @@ async function filterAndSortResults(results: GroupedResult[], filter: string): P
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
   }
+  sortedResults = sortedResults.filter(note => note.text.length > 0);
+
   return sortedResults
 }
 
