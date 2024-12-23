@@ -135,7 +135,10 @@ async function filterAndSortResults(results: GroupedResult[], filter: string): P
   const parsedFilter = parseFilter(filter);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
   for (const note of sortedResults) {
-    note.text = note.text.filter(text => containsFilter(text, filter, 2, note.title));
+    // Filter out lines that don't contain the filter
+    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, note.title));
+    note.text = note.text.filter((_, i) => filteredIndices.includes(i));
+    note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
     if ((parsedFilter.length > 0 && highlight)) {
       // TODO: use settings to determine whether to highlight
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
