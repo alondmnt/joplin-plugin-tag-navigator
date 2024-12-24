@@ -770,9 +770,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     // Create the custom context menu container
     const contextMenu = document.createElement('div');
     contextMenu.classList.add('itags-search-contextMenu');
+    
+    // First position the menu at the click coordinates
     contextMenu.style.position = 'absolute';
-    contextMenu.style.left = `${event.clientX}px`;
-    contextMenu.style.top = `${event.clientY}px`;
     let cmdCount = 0;
 
     if (commands.includes('checkboxState')) {
@@ -1137,8 +1137,27 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     }
     contextMenu.appendChild(showResultFilter);
 
-    // Append the contextMenu to the body or a specific container within your application
+    // Initially position off-screen to get accurate measurements
+    contextMenu.style.left = '-9999px';
+    contextMenu.style.top = '-9999px';
     document.body.appendChild(contextMenu);
+
+    // Get measurements
+    const menuHeight = contextMenu.offsetHeight;
+    const menuWidth = contextMenu.offsetWidth;
+    const panelHeight = document.body.offsetHeight;
+    const panelWidth = document.body.offsetWidth;
+
+    // Calculate final position
+    let xPos = Math.min(event.clientX, panelWidth - menuWidth);
+    let yPos = event.clientY;
+    if (yPos + menuHeight > panelHeight) {
+        yPos = Math.max(0, panelHeight - menuHeight);
+    }
+
+    // Apply final position
+    contextMenu.style.left = `${xPos}px`;
+    contextMenu.style.top = `${yPos}px`;
 }
 
 function createInputField(defaultTag, tagElement, finalizeFunction) {
