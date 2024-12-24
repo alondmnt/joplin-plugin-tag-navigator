@@ -111,6 +111,7 @@ function unionResults(noteDictA: ResultSet, noteDictB: ResultSet): ResultSet {
 async function processQueryResults(queryResults: ResultSet): Promise<GroupedResult[]> {
   // group the results by externalId and get the note content
   // (currently, ResultSet is already grouped)
+  const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
   if (!queryResults) return groupedResults;
 
@@ -124,16 +125,23 @@ async function processQueryResults(queryResults: ResultSet): Promise<GroupedResu
     });
 
     const ind = groupedResults.length - 1;
-    groupedResults[ind] = await getTextAndTitle(groupedResults[ind]);
+    groupedResults[ind] = await getTextAndTitle(groupedResults[ind], fullPath);
   }
 
   return groupedResults;
 }
 
-async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
+async function getTextAndTitle(result: GroupedResult, fullPath: boolean): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
-  let notebook = await joplin.data.get(['folders', note.parent_id], ['title']);
+  let folder = await joplin.data.get(['folders', note.parent_id], { fields: ['title', 'parent_id'] });
+  let notebook = folder.title;
+  if (fullPath) {
+    while (folder.parent_id) {
+      folder = await joplin.data.get(['folders', folder.parent_id], { fields: ['title', 'parent_id'] });
+      notebook = folder.title + '/' + notebook;
+    }
+  }
   const lines: string[] = note.body.split('\n');
 
   // Group consecutive line numbers
@@ -166,7 +174,7 @@ async function getTextAndTitle(result: GroupedResult): Promise<GroupedResult> {
   result.lineNumbers = groupedLines.map(group => group[0]);
 
   result.title = note.title;
-  result.notebook = notebook.title;
+  result.notebook = notebook;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
 

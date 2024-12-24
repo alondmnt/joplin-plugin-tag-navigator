@@ -266,8 +266,15 @@ export async function registerSettings() {
       step: 1,
       section: 'itags',
       public: true,
-      label: 'Note view: Table columns',
+      label: 'Note view: Table view columns',
       description: 'Number of columns to show in the table view. Set to 0 to show all.',
+    },
+    'itags.tableNotebookPath': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Show notebook path in table view',
     },
     'itags.tableCase': {
       value: 'title',
