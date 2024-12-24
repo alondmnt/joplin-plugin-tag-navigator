@@ -206,6 +206,9 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
     for (let line = startLine; line <= endLine; line++) {
       const lineTags = note.getTagsAtLine(line);
       for (const tag of lineTags) {
+        if (tag === tagSettings.tagPrefix + 'frontmatter') {
+          continue;
+        }
         let formattedTag = tag.replace(tagSettings.tagPrefix, '')
           .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
           .toLowerCase();
