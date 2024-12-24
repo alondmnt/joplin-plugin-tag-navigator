@@ -36,7 +36,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     return;
   }
 
-  let resultsString = resultsStart;
+  let resultsString = resultsStart + '\nDisplaying ' + filteredResults.length + ' notes\n';
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
