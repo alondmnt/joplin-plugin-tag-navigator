@@ -482,3 +482,13 @@ hr {
     background-color: var(--joplin-background-color);
     border-width: 0px;
 }
+
+.itags-search-resultCount {
+    position: absolute;
+    background-color: var(--joplin-background-color);
+    font-size: var(--joplin-font-size);
+    color: var(--joplin-color);
+    border-radius: 5px;
+    padding: 2px 5px;
+    border: 1px solid rgb(118, 118, 118);
+}

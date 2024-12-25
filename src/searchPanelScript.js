@@ -22,6 +22,10 @@ const noteFilter = document.getElementById('itags-search-noteFilter');
 const queryArea = document.getElementById('itags-search-queryArea');
 const resultFilterArea = document.getElementById('itags-search-inputResultArea');
 const resultFilter = document.getElementById('itags-search-resultFilter');
+const resultCount = document.createElement('div');
+resultCount.classList.add('itags-search-resultCount');
+resultCount.style.display = 'none';
+resultFilterArea.appendChild(resultCount);
 let resultToggleState = 'expand';
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
@@ -322,6 +326,7 @@ function updateResultsArea() {
     }
 
     clearNode(resultsArea);
+    let displayedNoteCount = 0;  // Initialize counter
     for (let index = 0; index < results.length; index++) {
         const result = results[index];
         const resultEl = document.createElement('div');
@@ -444,6 +449,8 @@ function updateResultsArea() {
             continue; // Skip empty results
         }
         resultEl.appendChild(contentContainer);
+        resultsArea.appendChild(resultEl);
+        displayedNoteCount++;  // Increment counter for each displayed note
         
         // Toggle visibility of the contentContainer on title click
         addEventListenerWithTracking(titleEl, 'click', () => {
@@ -451,12 +458,27 @@ function updateResultsArea() {
             contentContainer.style.display = isHidden ? 'block' : 'none';
         });
         
-        resultsArea.appendChild(resultEl);
-
         // Add a dividing space between notes
         const resultSpace = document.createElement('div');
         resultSpace.classList.add('itags-search-resultSpace');
         resultsArea.appendChild(resultSpace);
+    }
+
+    // Update result count display
+    if (resultFilter.value) {
+        resultCount.textContent = displayedNoteCount;
+        resultCount.style.display = 'block';
+        // Position the count relative to the input
+        const inputRect = resultFilter.getBoundingClientRect();
+        resultCount.style.top = `${inputRect.top + (inputRect.height - resultCount.offsetHeight) / 2}px`;
+        resultCount.style.left = `${inputRect.right - resultCount.offsetWidth - 5}px`;
+    } else {
+        resultCount.style.display = 'none';
+    }
+
+    // Update resultFilter placeholder (only when no text entered)
+    if (!resultFilter.value) {
+        resultFilter.placeholder = `Filter ${displayedNoteCount} results...`;
     }
 
     // Remove the last dividing space
@@ -640,6 +662,7 @@ function clearQueryArea() {
     queryGroups = []; // Reset the query groups
     lastGroup = queryGroups[0];
     clearNode(queryArea);
+    resultFilter.placeholder = "Filter results..."; // Reset placeholder to default
 }
 
 function clearResultsArea() {
@@ -1445,6 +1468,7 @@ addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
         } else {
             // Clear the input and update the results area
             resultFilter.value = '';
+            resultCount.style.display = 'none';  // Hide count
             updateResultsArea();
             sendSetting('filter', '');
         }
