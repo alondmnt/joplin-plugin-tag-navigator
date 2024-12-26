@@ -22,21 +22,24 @@ export async function displayInAllNotes(db: any) {
   }
 }
 
-export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10) {
-  if (!note.body) { return; }
+export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } }> {
+  if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
-  if (!savedQuery) { return; }
-  if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return; }
+  if (!savedQuery) { return null; }
+  if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return null; }
 
   const results = await runSearch(db, savedQuery.query);
   const filteredResults = await filterAndSortResults(results, savedQuery.filter);
 
   if (filteredResults.length === 0) {
     await removeResults(note);
-    return;
+    return null;
   }
 
   let resultsString = resultsStart + '\nDisplaying ' + filteredResults.length + ' notes\n';
+  let tableColumns: string[] = [];
+  let tableDefaultValues: { [key: string]: string } = {};
+
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
@@ -48,19 +51,20 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, allTags] = await processResultsForTable(filteredResults, db, tagSettings);
+    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings);
+    tableDefaultValues = mostCommonValue;
     // Select the top N tags
-    let columns = Object.keys(allTags).sort((a, b) => allTags[b] - allTags[a] || a.localeCompare(b));
+    tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
     if (nColumns > 0) {
-      columns = columns.slice(0, nColumns);
+      tableColumns = tableColumns.slice(0, nColumns);
     }
     // Create the results string as a table
-    resultsString += `\n| Note | Notebook | Line | ${columns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
-    resultsString += `|------|----------|------|${columns.map(() => ':---:').join('|')}|\n`;
+    resultsString += `\n| Note | Notebook | Line | ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
+    resultsString += `|------|----------|------|${tableColumns.map(() => ':---:').join('|')}|\n`;
     for (const result of tableResults) {
       if (Object.keys(result.tags).length === 0) { continue; }
       let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
-      for (const column of columns) {
+      for (const column of tableColumns) {
         const tagValue = result.tags[column] || '';
         if (!tagValue) {
           row += ' |';
@@ -92,6 +96,8 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     }
     currentNote = clearObjectReferences(currentNote);
   }
+
+  return { tableColumns, tableDefaultValues };
 }
 
 export async function removeResults(note: any) {
@@ -173,25 +179,52 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }]> {
-  const allTags: { [key: string]: number } = {};
+async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }, { [key: string]: string }]> {
+  const columnCount: { [key: string]: number } = {};
+  const valueCount: { [key: string]: { [key: string]: number } } = {};
+  const mostCommonValue: { [key: string]: string } = {};
 
   // Process tags for each result
   const tableResults = await Promise.all(filteredResults.map(async result => {
     const [tableResult, tagInfo] = await processResultForTable(result, db, tagSettings);
 
-    // Update global tag counts
+    // Update tag counts
     tagInfo.forEach(info => {
       if (info.parent) {
-        // Count the number of notes each tag appears in
-        allTags[info.tag] = (allTags[info.tag] || 0) + 1;
+        // Count the number of notes each parent tag appears in
+        columnCount[info.tag] = (columnCount[info.tag] || 0) + 1;
+      }
+      if (info.child) {
+        // Count the number of notes each child tag appears in
+        let parent = tagInfo.find(
+          parentInfo =>
+            parentInfo.parent &&
+            info.tag.startsWith(parentInfo.tag)
+        );
+        if (!parent) {
+          parent = info;
+        }
+        if (!valueCount[parent.tag]) {
+          valueCount[parent.tag] = {};
+        }
+        const value = info.tag.replace(parent.tag + '/', '');
+        valueCount[parent.tag][value] = (valueCount[parent.tag][value] || 0) + 1;
       }
     });
 
     return tableResult;
   }));
 
-  return [tableResults, allTags];
+  // Find the most common value for each column
+  for (const key in valueCount) {
+    mostCommonValue[key] = Object.keys(valueCount[key]).reduce((a, b) => 
+      valueCount[key][a] > valueCount[key][b] ? a :
+      valueCount[key][a] < valueCount[key][b] ? b :
+      a < b ? a : b  // If counts are equal, take alphabetically first
+    );
+  }
+
+  return [tableResults, columnCount, mostCommonValue];
 }
 
 async function processResultForTable(result: GroupedResult, db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult, TagLineInfo[]]> {
@@ -268,4 +301,37 @@ function formatTag(tag: string, tagSettings: TagSettings) {
       .join(' ');
   }
   return tag.toLowerCase();
+}
+
+export async function createTableEntryNote(currentTableColumns: string[], currentTableDefaultValues: { [key: string]: string }) {
+  if (currentTableColumns.length === 0) {
+    await joplin.views.dialogs.showMessageBox('No table columns available. Please ensure you have a table view active in your note.');
+    return;
+  }
+
+  // Create frontmatter content
+  const frontmatter = ['---'];
+  let tagList = [];
+  currentTableColumns.forEach(column => {
+    if (currentTableDefaultValues[column] === column) {
+      tagList.push('  - ' + column);
+    } else {
+      frontmatter.push(`${column}: ${currentTableDefaultValues[column]}`);
+    }
+  });
+  if (tagList.length > 0) {
+    frontmatter.push('tags: \n' + tagList.join('\n'));
+  }
+  frontmatter.push('---\n');
+
+  // Create new note with frontmatter
+  let note = await joplin.data.post(['notes'], null, {
+    parent_id: (await joplin.workspace.selectedNote()).parent_id,
+    title: 'New table entry',
+    body: frontmatter.join('\n'),
+  });
+
+  // Open the new note
+  await joplin.commands.execute('openNote', note.id);
+  note = clearObjectReferences(note);
 }

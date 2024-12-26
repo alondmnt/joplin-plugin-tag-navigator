@@ -7,12 +7,13 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { updateNavPanel } from './navPanel';
 import { parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
-import { displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
+import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
 import { runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
-
+let currentTableColumns: string[] = [];
+let currentTableDefaultValues: { [key: string]: string } = {};
 joplin.plugins.register({
   onStart: async function() {
     await registerSettings()
@@ -113,9 +114,15 @@ joplin.plugins.register({
       if (savedQuery.displayInNote === 'list' || savedQuery.displayInNote === 'table') {
         const tagSettings = await getTagSettings();
         const nColumns = await joplin.settings.value('itags.tableColumns');
-        await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+        if (result) {
+          currentTableColumns = result.tableColumns;
+          currentTableDefaultValues = result.tableDefaultValues;
+        }
       } else {
         await removeResults(note);
+        currentTableColumns = [];
+        currentTableDefaultValues = {};
       }
 
       // Navigation panel update
@@ -225,9 +232,15 @@ joplin.plugins.register({
         if (query.displayInNote === 'list' || query.displayInNote === 'table') {
           const tagSettings = await getTagSettings();
           const nColumns = await joplin.settings.value('itags.tableColumns');
-          await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+          if (result) {
+            currentTableColumns = result.tableColumns;
+            currentTableDefaultValues = result.tableDefaultValues;
+          }
         } else {
           await removeResults(note);
+          currentTableColumns = [];
+          currentTableDefaultValues = {};
         }
         note = clearObjectReferences(note);
       },
@@ -301,6 +314,28 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'itags.createTableEntryNote',
+      label: 'New table entry note',
+      iconName: 'fas fa-table',
+      execute: async () => {
+        await createTableEntryNote(currentTableColumns, currentTableDefaultValues);
+      },
+    });
+
+    await joplin.workspace.filterEditorContextMenu(async (object: any) => {
+      if (currentTableColumns.length > 0) {
+        object.items.push({
+          type: 'separator',
+        })
+        object.items.push({
+          label: 'New table entry note',
+          commandName: 'itags.createTableEntryNote',
+        });
+      }
+      return object;
+    });
+
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.toggleSearch',
@@ -320,6 +355,9 @@ joplin.plugins.register({
       },
       {
         commandName: 'itags.toggleNoteView',
+      },
+      {
+        commandName: 'itags.createTableEntryNote',
       },
       {
         commandName: 'itags.refreshPanel',

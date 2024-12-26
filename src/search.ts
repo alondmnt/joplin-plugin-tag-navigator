@@ -134,7 +134,12 @@ async function processQueryResults(queryResults: ResultSet): Promise<GroupedResu
 async function getTextAndTitle(result: GroupedResult, fullPath: boolean): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
-  let folder = await joplin.data.get(['folders', note.parent_id], { fields: ['title', 'parent_id'] });
+  let folder: any;
+  try {
+    folder = await joplin.data.get(['folders', note.parent_id], { fields: ['title', 'parent_id'] });
+  } catch (e) {
+    folder = { title: 'Unknown notebook' };
+  }
   let notebook = folder.title;
   if (fullPath) {
     while (folder.parent_id) {
