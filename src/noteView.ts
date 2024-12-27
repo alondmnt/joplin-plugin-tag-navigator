@@ -1,8 +1,8 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences } from './utils';
-import { formatFrontMatter, loadQuery, normalizeTextIndentation } from './searchPanel';
-import { GroupedResult, runSearch } from './search';
+import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord } from './searchPanel';
+import { GroupedResult, Query, runSearch } from './search';
 import { TagLineInfo } from './parser';
 import { NoteDatabase } from './db';
 
@@ -53,29 +53,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     // Parse tags from results and accumulate counts
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings);
     tableDefaultValues = mostCommonValue;
-    // Select the top N tags
-    tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
-    if (nColumns > 0) {
-      tableColumns = tableColumns.slice(0, nColumns);
-    }
-    // Create the results string as a table
-    resultsString += `\n| Note | Notebook | Line | ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
-    resultsString += `|------|----------|------|${tableColumns.map(() => ':---:').join('|')}|\n`;
-    for (const result of tableResults) {
-      if (Object.keys(result.tags).length === 0) { continue; }
-      let row = `| [${result.title}](:/${result.externalId}) | ${result.notebook} | ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
-      for (const column of tableColumns) {
-        const tagValue = result.tags[column] || '';
-        if (!tagValue) {
-          row += ' |';
-        } else if (tagValue === column) {
-          row += ' + |';
-        } else {
-          row += ` ${formatTag(tagValue.replace(RegExp(column + '/', 'g'), ''), tagSettings)} |`;
-        }
-      }
-      resultsString += row + '\n';
-    }
+    resultsString += buildTable(tableResults, columnCount, savedQuery, tagSettings,nColumns);
   }
   resultsString += resultsEnd;
 
@@ -292,6 +270,67 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
     }, {} as {[key: string]: string});
 
   return [tableResult, tagInfo];
+}
+
+function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): string {
+  // Select the top N tags
+  let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
+  const tableOptions = savedQuery?.tableOptions;
+  if (tableOptions?.includeCols?.length > 0) {
+    // Include columns (ignore missing), respect given order
+    tableColumns = tableOptions.includeCols.filter(col => 
+      tableColumns.includes(col) ||
+      ['line', 'updated time', 'created time', 'notebook'].includes(col)
+    );
+  } else {
+    // When includeCols is not specified, add default columns
+    if (nColumns > 0) {
+      // Select the top N tags
+      tableColumns = tableColumns.slice(0, nColumns);
+    }
+    if (!tableOptions?.excludeCols?.includes('line')) {
+      tableColumns.unshift('line');
+    }
+    if (!tableOptions?.excludeCols?.includes('notebook')) {
+      tableColumns.unshift('notebook');
+    }
+  }
+  tableColumns.unshift('note');
+  if (tableOptions?.excludeCols?.length > 0) {
+    // Exclude columns (ignore missing)
+    tableColumns = tableColumns.filter(col => !savedQuery.tableOptions.excludeCols.includes(col));
+  }
+
+  let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
+  resultsString += `${tableColumns.map(() => ':---:').join('|')}|\n`;
+  for (const result of tableResults) {
+    if (Object.keys(result.tags).length === 0) { continue; }
+    let row = '|';
+    for (const column of tableColumns) {
+      if (column === 'note') {
+        row += ` [${result.title}](:/${result.externalId}) |`;
+      } else if (column === 'notebook') {
+        row += ` ${result.notebook} |`;
+      } else if (column === 'line') {
+        row += ` ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
+      } else if (column === 'updated time') {
+        row += ` ${new Date(result.updatedTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
+      } else if (column === 'created time') {
+        row += ` ${new Date(result.createdTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
+      } else {
+        const tagValue = result.tags[column] || '';
+        if (!tagValue) {
+          row += ' |';
+        } else if (tagValue === column) {
+          row += ' + |';
+        } else {
+          row += ` ${formatTag(tagValue.replace(RegExp(column + '/', 'g'), ''), tagSettings)} |`;
+        }
+      }
+    }
+    resultsString += row + '\n';
+  }
+  return resultsString;
 }
 
 function formatTag(tag: string, tagSettings: TagSettings) {

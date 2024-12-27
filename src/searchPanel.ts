@@ -13,6 +13,12 @@ export interface QueryRecord {
   query: Query[][];
   filter: string;
   displayInNote: string;
+  tableOptions?: {
+    includeCols?: string[];
+    excludeCols?: string[];
+    sortBy?: string;
+    sortOrder?: string;
+  };
 }
 
 export async function registerSearchPanel(panel: string) {
