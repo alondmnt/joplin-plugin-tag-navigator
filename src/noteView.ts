@@ -51,7 +51,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings);
+    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
     resultsString += buildTable(tableResults, columnCount, savedQuery, tagSettings,nColumns);
   }
@@ -157,13 +157,13 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult[], { [key: string]: number }, { [key: string]: string }]> {
+async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings, savedQuery: QueryRecord): Promise<[TableResult[], { [key: string]: number }, { [key: string]: string }]> {
   const columnCount: { [key: string]: number } = {};
   const valueCount: { [key: string]: { [key: string]: number } } = {};
   const mostCommonValue: { [key: string]: string } = {};
 
   // Process tags for each result
-  const tableResults = await Promise.all(filteredResults.map(async result => {
+  let tableResults = await Promise.all(filteredResults.map(async result => {
     const [tableResult, tagInfo] = await processResultForTable(result, db, tagSettings);
 
     // Update tag counts
@@ -192,6 +192,33 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
 
     return tableResult;
   }));
+
+  // Sort table results based on tableOptions
+  const sortBy = savedQuery?.tableOptions?.sortBy?.toLowerCase();
+  tableResults = tableResults.sort((a, b) => {
+    if (sortBy === 'created time') {
+        return a.createdTime - b.createdTime;
+    } else if (sortBy === 'updated time') {
+        return a.updatedTime - b.updatedTime;
+    } else if (sortBy === 'notebook') {
+        return a.notebook.localeCompare(b.notebook);
+    } else if (sortBy === 'note') {
+      return a.title.localeCompare(b.title);
+    } else if (sortBy) {
+      const aValue = a.tags[sortBy]?.replace(sortBy + '/', '') || '';
+      const bValue = b.tags[sortBy]?.replace(sortBy + '/', '') || '';
+      // Handle numeric strings by converting to numbers if possible
+      const aNum = Number(aValue);
+      const bNum = Number(bValue);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      return aValue.localeCompare(bValue);
+    }
+  });
+  if (savedQuery?.tableOptions?.sortOrder?.toLowerCase().startsWith('desc')) {
+    tableResults = tableResults.reverse();
+  }
 
   // Find the most common value for each column
   for (const key in valueCount) {
@@ -306,7 +333,8 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
   for (const result of tableResults) {
     if (Object.keys(result.tags).length === 0) { continue; }
     let row = '|';
-    for (const column of tableColumns) {
+    for (let column of tableColumns) {
+      column = column.toLowerCase();
       if (column === 'note') {
         row += ` [${result.title}](:/${result.externalId}) |`;
       } else if (column === 'notebook') {
