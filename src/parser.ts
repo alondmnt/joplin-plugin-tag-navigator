@@ -298,16 +298,30 @@ interface FrontMatter {
   [key: string]: string | string[] | number | boolean | null;
 }
 
-// Add new interface for the return type
+interface ParseError {
+  message: string;
+  line?: number;
+  value?: string;
+}
+
 interface FrontMatterResult {
   data: FrontMatter | null;
   lineCount: number;
+  errors?: ParseError[];
 }
 
 export function parseFrontMatter(text: string): FrontMatterResult {
-  // Extract front matter between --- markers
+  const errors: ParseError[] = [];
+  
+  // Validate front matter format
   const match = text.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return { data: null, lineCount: 0 };
+  if (!match) {
+    return {
+      data: null,
+      lineCount: 0,
+      errors: undefined
+    };
+  }
 
   const result: FrontMatter = {};
   const lines = match[1].split('\n');
@@ -316,68 +330,100 @@ export function parseFrontMatter(text: string): FrontMatterResult {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // Skip comments and empty lines
-    if (line.trim().startsWith('#') || !line.trim()) continue;
+    try {
+      // Skip comments and empty lines
+      if (line.trim().startsWith('#') || !line.trim()) continue;
 
-    // Check if line starts with a dash (list item)
-    if (line.trim().startsWith('- ')) {
-      if (currentKey) {
-        currentArray.push(line.trim().slice(2));
+      // Check for invalid indentation
+      const indent = line.match(/^\s*/)[0];
+      if (indent.includes('\t')) {
+        errors.push({
+          message: 'Tabs are not allowed for indentation',
+          line: i + 1
+        });
       }
-      continue;
-    }
 
-    // If we were collecting array items, save them before moving to new key
-    if (currentKey && currentArray.length > 0) {
-      result[currentKey] = currentArray;
-      currentArray = [];
-    }
-
-    // Split on first colon
-    const [key, ...valueParts] = line.split(':');
-    if (!key) continue;
-
-    currentKey = key.trim();
-    const value = valueParts.join(':').trim();
-
-    // Remove surrounding quotes if present
-    const unquotedValue = value.replace(/^["']|["']$/g, '');
-
-    if (value.startsWith('[') && value.endsWith(']')) {
-      // JSON-style array
-      try {
-        result[currentKey] = JSON.parse(value.replace(/'/g, '"'));
-      } catch {
-        // Fallback to simple splitting if JSON parse fails
-        result[currentKey] = value.slice(1, -1).split(',').map(item => 
-          item.trim().replace(/^["']|["']$/g, '')
-        );
+      // Check if line starts with a dash (list item)
+      if (line.trim().startsWith('- ')) {
+        if (currentKey) {
+          currentArray.push(line.trim().slice(2));
+        }
+        continue;
       }
-      currentKey = null;
-    } else if (unquotedValue === 'true') {
-      result[currentKey] = true;
-      currentKey = null;
-    } else if (unquotedValue === 'false') {
-      result[currentKey] = false;
-      currentKey = null;
-    } else if (!isNaN(Number(unquotedValue)) && unquotedValue.trim() !== '') {
-      result[currentKey] = Number(unquotedValue);
-      currentKey = null;
-    } else if (unquotedValue.trim() !== '') {
-      result[currentKey] = unquotedValue;
-      currentKey = null;
+
+      // If we were collecting array items, save them before moving to new key
+      if (currentKey && currentArray.length > 0) {
+        result[currentKey] = currentArray;
+        currentArray = [];
+      }
+
+      // Split on first colon
+      const [key, ...valueParts] = line.split(':');
+      if (!key) continue;
+
+      currentKey = key.trim();
+      const value = valueParts.join(':').trim();
+
+      // Remove surrounding quotes if present
+      const unquotedValue = value.replace(/^["']|["']$/g, '');
+
+      if (value.startsWith('[') && value.endsWith(']')) {
+        // JSON-style array
+        try {
+          result[currentKey] = JSON.parse(value.replace(/'/g, '"'));
+        } catch (e) {
+          // Fallback to simple splitting if JSON parse fails
+          result[currentKey] = value.slice(1, -1).split(',').map(item => 
+            item.trim().replace(/^["']|["']$/g, '')
+          );
+        }
+      } else if (unquotedValue === 'true') {
+        result[currentKey] = true;
+        currentKey = null;
+      } else if (unquotedValue === 'false') {
+        result[currentKey] = false;
+        currentKey = null;
+      } else if (!isNaN(Number(unquotedValue)) && unquotedValue.trim() !== '') {
+        const num = Number(unquotedValue);
+        if (!Number.isSafeInteger(num) && !Number.isFinite(num)) {
+          errors.push({
+            message: 'Number value is outside safe range',
+            line: i + 1,
+            value: unquotedValue
+          });
+        }
+        result[currentKey] = num;
+        currentKey = null;
+      } else if (unquotedValue.trim() !== '') {
+        result[currentKey] = unquotedValue;
+        currentKey = null;
+      }
+      // If value is empty, keep currentKey for potential following list items
+    } catch (e) {
+      errors.push({
+        message: `Parsing error: ${e.message}`,
+        line: i + 1,
+        value: line
+      });
     }
-    // If value is empty, keep currentKey for potential following list items
   }
 
-  // Handle any remaining array items
+  // Validate the final structure
   if (currentKey && currentArray.length > 0) {
-    result[currentKey] = currentArray;
+    try {
+      result[currentKey] = currentArray;
+    } catch (e) {
+      errors.push({
+        message: `Error finalizing array for key "${currentKey}": ${e.message}`,
+        value: currentArray.join(', ')
+      });
+    }
   }
 
   return { 
-    data: result,
+    data: Object.keys(result).length > 0 ? result : null,
     lineCount: lines.length + 2,
+    errors: errors.length > 0 ? errors : undefined
   };
 }
 
@@ -386,6 +432,9 @@ export function parseTagsFromFrontMatter(
   tagSettings: TagSettings
 ): TagLineInfo[] {
   const frontMatter = parseFrontMatter(text);
+  if (frontMatter.errors) {
+    console.warn('Front matter parsed with warnings:', frontMatter.errors);
+  }
   if (!frontMatter.data || tagSettings.ignoreFrontMatter) return [];
 
   const tags: string[] = [];
