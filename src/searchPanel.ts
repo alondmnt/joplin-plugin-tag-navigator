@@ -580,10 +580,10 @@ export async function saveQuery(query: QueryRecord, noteId: string=null): Promis
     if (query.query.length === 0) {
       newBody = note.body.replace(findQuery, '');
     } else {
-      newBody = note.body.replace(findQuery, `\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`);
+      newBody = note.body.replace(findQuery, `\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`);
     }
   } else {
-    newBody = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n${JSON.stringify(query)}\n${queryEnd}`;
+    newBody = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`;
     // trimming trailing spaces in note body before insertion
   }
 
@@ -603,7 +603,9 @@ export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
   let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
     try {
-      const savedQuery = await testQuery(db, JSON.parse(record[1]));
+      // Strip the code block delimiters
+      const queryString = record[1].replace(/^```json\n/, '').replace(/\n```$/, '');
+      const savedQuery = await testQuery(db, JSON.parse(queryString));
       if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
         loadedQuery = savedQuery;
       }
