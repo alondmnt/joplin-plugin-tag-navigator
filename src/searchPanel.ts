@@ -13,7 +13,7 @@ export interface QueryRecord {
   query: Query[][];
   filter: string;
   displayInNote: string;
-  tableOptions?: {
+  options?: {
     includeCols?: string[];
     excludeCols?: string[];
     sortBy?: string;

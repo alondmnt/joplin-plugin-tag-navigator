@@ -29,7 +29,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return null; }
 
   const results = await runSearch(db, savedQuery.query);
-  const filteredResults = await filterAndSortResults(results, savedQuery.filter);
+  const filteredResults = await filterAndSortResults(results, savedQuery.filter, savedQuery.options);
 
   if (filteredResults.length === 0) {
     await removeResults(note);
@@ -53,7 +53,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     // Parse tags from results and accumulate counts
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
-    resultsString += buildTable(tableResults, columnCount, savedQuery, tagSettings,nColumns);
+    resultsString += buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
   }
   resultsString += resultsEnd;
 
@@ -93,22 +93,23 @@ export async function removeResults(note: any) {
 }
 
 // Filter and sort results, like the search panel
-async function filterAndSortResults(results: GroupedResult[], filter: string): Promise<GroupedResult[]> {
+async function filterAndSortResults(results: GroupedResult[], filter: string, options?: { sortBy?: string, sortOrder?: string }): Promise<GroupedResult[]> {
   // Sort results
-  const sortBy = await joplin.settings.value('itags.resultSort');
-  const sortOrder = await joplin.settings.value('itags.resultOrder');
+  const sortBy = options?.sortBy || await joplin.settings.value('itags.resultSort');
+  const sortOrder = options?.sortOrder || await joplin.settings.value('itags.resultOrder');
   let sortedResults = results.sort((a, b) => {
     if (sortBy === 'title') {
         return a.title.localeCompare(b.title);
-    } else if (sortBy === 'modified') {
-        return a.updatedTime - b.updatedTime;
     } else if (sortBy === 'created') {
         return a.createdTime - b.createdTime;
     } else if (sortBy === 'notebook') {
         return a.notebook.localeCompare(b.notebook);
+    } else {
+      // Default: modified time
+      return a.updatedTime - b.updatedTime;
     }
   });
-  if (sortOrder === 'desc') {
+  if (sortOrder.startsWith('desc')) {
       sortedResults = sortedResults.reverse();
   }
   sortedResults = sortedResults.filter(note => note.text.length > 0);
@@ -193,16 +194,16 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
     return tableResult;
   }));
 
-  // Sort table results based on tableOptions
-  const sortBy = savedQuery?.tableOptions?.sortBy?.toLowerCase();
+  // Sort table results based on options
+  const sortBy = savedQuery?.options?.sortBy?.toLowerCase();
   tableResults = tableResults.sort((a, b) => {
-    if (sortBy === 'created time') {
+    if (sortBy === 'created') {
         return a.createdTime - b.createdTime;
-    } else if (sortBy === 'updated time') {
+    } else if (sortBy === 'modified') {
         return a.updatedTime - b.updatedTime;
     } else if (sortBy === 'notebook') {
         return a.notebook.localeCompare(b.notebook);
-    } else if (sortBy === 'note') {
+    } else if (sortBy === 'title') {
       return a.title.localeCompare(b.title);
     } else if (sortBy) {
       const aValue = a.tags[sortBy]?.replace(sortBy + '/', '') || '';
@@ -216,7 +217,7 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
       return aValue.localeCompare(bValue);
     }
   });
-  if (savedQuery?.tableOptions?.sortOrder?.toLowerCase().startsWith('desc')) {
+  if (savedQuery?.options?.sortOrder?.toLowerCase().startsWith('desc')) {
     tableResults = tableResults.reverse();
   }
 
@@ -302,10 +303,10 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
 function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): string {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
-  const tableOptions = savedQuery?.tableOptions;
-  if (tableOptions?.includeCols?.length > 0) {
+  const options = savedQuery?.options;
+  if (options?.includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
-    tableColumns = tableOptions.includeCols.filter(col => 
+    tableColumns = options.includeCols.filter(col => 
       tableColumns.includes(col) ||
       ['line', 'updated time', 'created time', 'notebook'].includes(col)
     );
@@ -315,17 +316,17 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
       // Select the top N tags
       tableColumns = tableColumns.slice(0, nColumns);
     }
-    if (!tableOptions?.excludeCols?.includes('line')) {
+    if (!options?.excludeCols?.includes('line')) {
       tableColumns.unshift('line');
     }
-    if (!tableOptions?.excludeCols?.includes('notebook')) {
+    if (!options?.excludeCols?.includes('notebook')) {
       tableColumns.unshift('notebook');
     }
   }
-  tableColumns.unshift('note');
-  if (tableOptions?.excludeCols?.length > 0) {
+  tableColumns.unshift('title');
+  if (options?.excludeCols?.length > 0) {
     // Exclude columns (ignore missing)
-    tableColumns = tableColumns.filter(col => !savedQuery.tableOptions.excludeCols.includes(col));
+    tableColumns = tableColumns.filter(col => !savedQuery.options.excludeCols.includes(col));
   }
 
   let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
@@ -335,15 +336,15 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
     let row = '|';
     for (let column of tableColumns) {
       column = column.toLowerCase();
-      if (column === 'note') {
+      if (column === 'title') {
         row += ` [${result.title}](:/${result.externalId}) |`;
       } else if (column === 'notebook') {
         row += ` ${result.notebook} |`;
       } else if (column === 'line') {
         row += ` ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
-      } else if (column === 'updated time') {
+      } else if (column === 'modified') {
         row += ` ${new Date(result.updatedTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
-      } else if (column === 'created time') {
+      } else if (column === 'created') {
         row += ` ${new Date(result.createdTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
       } else {
         const tagValue = result.tags[column] || '';
