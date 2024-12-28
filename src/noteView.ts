@@ -330,7 +330,7 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
   }
 
   let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
-  resultsString += `${tableColumns.map(() => ':---:').join('|')}|\n`;
+  resultsString += `|${tableColumns.map((col) => col === 'title' ? '---' : ':---:').join('|')}|\n`;
   for (const result of tableResults) {
     if (Object.keys(result.tags).length === 0) { continue; }
     let row = '|';
