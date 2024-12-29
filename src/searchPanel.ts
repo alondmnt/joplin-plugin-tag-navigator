@@ -30,6 +30,48 @@ export interface QueryRecord {
 }
 
 /**
+ * Interface for messages received from the search panel UI
+ */
+interface PanelMessage {
+  name: string;
+  query?: string;
+  filter?: string;
+  tag?: string;
+  line?: number;
+  externalId?: string;
+  text?: string;
+  field?: string;
+  value?: any;
+  oldTag?: string;
+  newTag?: string;
+  source?: string;
+  target?: string;
+}
+
+/**
+ * Interface for note update messages
+ */
+interface NoteUpdateMessage {
+  externalId: string;
+  line: number;
+}
+
+/**
+ * Interface for panel settings
+ */
+interface PanelSettings {
+  resultSort: string;
+  resultOrder: string;
+  resultToggle: boolean;
+  resultMarker: boolean;
+  showTagRange: boolean;
+  showNotes: boolean;
+  showResultFilter: boolean;
+  selectMultiTags: boolean;
+  searchWithRegex: boolean;
+}
+
+/**
  * Registers and initializes the search panel view
  * @param panel - Panel ID to register
  */
@@ -72,28 +114,14 @@ export async function registerSearchPanel(panel: string): Promise<void> {
 
 /**
  * Processes messages received from the search panel UI
- * @param message - Message object from the panel
- * @param searchPanel - Panel ID
+ * @param message - Message object containing panel interaction details
+ * @param searchPanel - Panel ID to update
  * @param db - Note database instance
  * @param searchParams - Current search parameters
  * @param tagSettings - Tag configuration settings
  */
 export async function processMessage(
-  message: {
-    name: string;
-    query?: string;
-    filter?: string;
-    tag?: string;
-    line?: number;
-    externalId?: string;
-    text?: string;
-    field?: string;
-    value?: any;
-    oldTag?: string;
-    newTag?: string;
-    source?: string;
-    target?: string;
-  },
+  message: PanelMessage,
   searchPanel: string,
   db: NoteDatabase,
   searchParams: QueryRecord,
@@ -222,7 +250,7 @@ export async function focusSearchPanel(panel: string): Promise<void> {
 }
 
 /**
- * Updates the tag data displayed in the panel
+ * Updates the tag data displayed in the search panel
  * @param panel - Panel ID to update
  * @param db - Note database instance
  */
@@ -240,7 +268,12 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase): Promi
   });
 }
 
-export async function updatePanelNoteData(panel: string, db: NoteDatabase) {
+/**
+ * Updates the note data displayed in the search panel
+ * @param panel - Panel ID to update
+ * @param db - Note database instance
+ */
+export async function updatePanelNoteData(panel: string, db: NoteDatabase): Promise<void> {
   const visible = joplin.views.panels.visible(panel);
   if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
@@ -249,7 +282,17 @@ export async function updatePanelNoteData(panel: string, db: NoteDatabase) {
   });
 }
 
-export async function updatePanelResults(panel: string, results: GroupedResult[], query: Query[][]) {
+/**
+ * Updates the search results displayed in the panel
+ * @param panel - Panel ID to update
+ * @param results - Search results to display
+ * @param query - Current search query
+ */
+export async function updatePanelResults(
+  panel: string, 
+  results: GroupedResult[], 
+  query: Query[][]
+): Promise<void> {
   const resultMarker = await joplin.settings.value('itags.resultMarker');
   const colorTodos = await joplin.settings.value('itags.colorTodos');
   const tagRegex = await getTagRegex();
@@ -268,8 +311,12 @@ export async function updatePanelResults(panel: string, results: GroupedResult[]
   );
 }
 
-export async function updatePanelSettings(panel: string) {
-  const settings = {
+/**
+ * Updates the panel settings display
+ * @param panel - Panel ID to update
+ */
+export async function updatePanelSettings(panel: string): Promise<void> {
+  const settings: PanelSettings = {
     resultSort: await joplin.settings.value('itags.resultSort'),
     resultOrder: await joplin.settings.value('itags.resultOrder'),
     resultToggle: await joplin.settings.value('itags.resultToggle'),
@@ -369,7 +416,11 @@ function splitCodeBlocks(text: string): string[] {
  * @param replaceString - String to replace matches with
  * @returns Processed text with replacements
  */
-function replaceOutsideBackticks(text: string, tagRegex: RegExp, replaceString: string) {
+function replaceOutsideBackticks(
+  text: string, 
+  tagRegex: RegExp, 
+  replaceString: string
+): string {
   // Split the input by capturing backticks and content within them
   const segments = text.split(/(`[^`]*`)/);
   let processedString = '';
@@ -389,6 +440,11 @@ function replaceOutsideBackticks(text: string, tagRegex: RegExp, replaceString: 
   return processedString;
 }
 
+/**
+ * Normalizes text indentation by removing common leading whitespace
+ * @param text - Text to normalize
+ * @returns Text with normalized indentation
+ */
 export function normalizeTextIndentation(text: string): string {
   const lines = text.split('\n');
 
@@ -413,6 +469,11 @@ export function normalizeTextIndentation(text: string): string {
   return normalizedLines.join('\n');
 }
 
+/**
+ * Normalizes heading levels to be within specified bounds
+ * @param text - Text containing markdown headings
+ * @returns Text with normalized heading levels
+ */
 function normalizeHeadingLevel(text: string): string {
   const minHeadingLevel = 3;
   const maxHeadingLevel = 3;
@@ -437,6 +498,11 @@ function normalizeHeadingLevel(text: string): string {
   return processedLines.join('\n');
 }
 
+/**
+ * Formats YAML frontmatter by converting delimiters to code blocks
+ * @param text - Text containing frontmatter
+ * @returns Text with formatted frontmatter
+ */
 export function formatFrontMatter(text: string): string {
   // Replace YAML frontmatter delimiters (--- or ...) with code block backticks
   const lines = text.split('\n');
@@ -461,7 +527,17 @@ export function formatFrontMatter(text: string): string {
 
 /// Note editing functions ///
 
-export async function setCheckboxState(message: any, db: NoteDatabase, tagSettings: TagSettings) {
+/**
+ * Updates checkbox state in a markdown task list item
+ * @param message - Message containing checkbox update details
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ */
+export async function setCheckboxState(
+  message: PanelMessage, 
+  db: NoteDatabase, 
+  tagSettings: TagSettings
+): Promise<void> {
   // This function modifies the checkbox state in a markdown task list item
   // line: The markdown string containing the task list item, possibly indented
   // text: The text of the task list item, in order to ensure that the line matches
@@ -483,11 +559,25 @@ export async function setCheckboxState(message: any, db: NoteDatabase, tagSettin
   lines[message.line] = line.replace(current, `$1${message.target}$2`);
 
   const newBody = lines.join('\n');
-  updateNote(message, newBody, db, tagSettings);
+  updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
   note = clearObjectReferences(note);
 }
 
-async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+/**
+ * Replaces a tag with a new tag across all notes
+ * @param message - Message containing tag replacement details
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ * @param searchPanel - Panel ID to update
+ * @param searchParams - Current search parameters
+ */
+async function replaceTagAll(
+  message: PanelMessage,
+  db: NoteDatabase,
+  tagSettings: TagSettings,
+  searchPanel: string,
+  searchParams: QueryRecord
+): Promise<void> {
     const cancel = await joplin.views.dialogs.showMessageBox(
       `Are you sure you want to replace the tag ${message.oldTag} with ${message.newTag} in ALL of your notes?`);
     if (cancel) { return; }
@@ -521,7 +611,21 @@ async function replaceTagAll(message: any, db: NoteDatabase, tagSettings: TagSet
     await updatePanelResults(searchPanel, results, searchParams.query);
 }
 
-async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSettings, searchPanel: string, searchParams: QueryRecord) {
+/**
+ * Removes a tag from all notes
+ * @param message - Message containing tag removal details
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ * @param searchPanel - Panel ID to update
+ * @param searchParams - Current search parameters
+ */
+async function removeTagAll(
+  message: PanelMessage,
+  db: NoteDatabase,
+  tagSettings: TagSettings,
+  searchPanel: string,
+  searchParams: QueryRecord
+): Promise<void> {
   const cancel = await joplin.views.dialogs.showMessageBox(
     `Are you sure you want to remove the tag ${message.tag} from ALL of your notes?`);
   if (cancel) { return; }
@@ -542,7 +646,18 @@ async function removeTagAll(message: any, db: NoteDatabase, tagSettings: TagSett
   await updatePanelResults(searchPanel, results, searchParams.query);
 }
 
-function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): boolean {
+/**
+ * Replaces a tag in a query configuration
+ * @param query - Query configuration to update
+ * @param oldTag - Tag to replace
+ * @param newTag - Replacement tag
+ * @returns True if query was modified, false otherwise
+ */
+function replaceTagInQuery(
+  query: QueryRecord, 
+  oldTag: string, 
+  newTag: string
+): boolean {
   const oldTagLower = oldTag.toLowerCase();
   let changed = false;
   for (const group of query.query) {
@@ -556,7 +671,25 @@ function replaceTagInQuery(query: QueryRecord, oldTag: string, newTag: string): 
   return changed;
 }
 
-export async function replaceTagInText(externalId: string, lineNumbers: number[], texts: string[], oldTag: string|RegExp, newTag: string, db: NoteDatabase, tagSettings: TagSettings) {
+/**
+ * Replaces a tag in specified lines of text
+ * @param externalId - Note ID
+ * @param lineNumbers - Line numbers to modify
+ * @param texts - Text content of lines
+ * @param oldTag - Tag or regex to replace
+ * @param newTag - Replacement tag
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ */
+export async function replaceTagInText(
+  externalId: string,
+  lineNumbers: number[],
+  texts: string[],
+  oldTag: string | RegExp,
+  newTag: string,
+  db: NoteDatabase,
+  tagSettings: TagSettings
+): Promise<void> {
   // batch replace oldTag with newTag in the given line numbers
   if (lineNumbers.length !== texts.length) {
     console.error('Error in renameTagInText: The number of line numbers does not match the number of text strings.');
@@ -581,7 +714,17 @@ export async function replaceTagInText(externalId: string, lineNumbers: number[]
   note = clearObjectReferences(note);
 }
 
-export async function addTagToText(message: any, db: NoteDatabase, tagSettings: TagSettings) {
+/**
+ * Adds a tag to specified text
+ * @param message - Message containing tag addition details
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ */
+export async function addTagToText(
+  message: PanelMessage,
+  db: NoteDatabase,
+  tagSettings: TagSettings
+): Promise<void> {
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
   const line = lines[message.line];
@@ -589,16 +732,21 @@ export async function addTagToText(message: any, db: NoteDatabase, tagSettings: 
   // Check the line to see if it contains the text
   if (!line.includes(message.text)) {
     console.error('Error in addTagToText: The line does not contain the expected text.', '\nLine:', line, '\nText:', message.text);
-    return line;
+    return;
   }
 
   // Add the tag to the line
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
-  await updateNote(message, newBody, db, tagSettings);
+  await updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
   note = clearObjectReferences(note);
 }
 
+/**
+ * Escapes special characters in a string for use in regular expressions
+ * @param string - String to escape
+ * @returns Escaped string safe for regex use
+ */
 export function escapeRegex(string: string): string {
   return string
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -613,10 +761,7 @@ export function escapeRegex(string: string): string {
  * @param tagSettings - Tag configuration settings
  */
 async function updateNote(
-  message: {
-    externalId: string;
-    line: number;
-  },
+  message: NoteUpdateMessage,
   newBody: string,
   db: NoteDatabase,
   tagSettings: TagSettings
@@ -688,7 +833,16 @@ export async function saveQuery(
   return newBody;
 }
 
-export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
+/**
+ * Loads a query configuration from a note
+ * @param db - Note database instance
+ * @param note - Note containing query
+ * @returns Loaded query configuration
+ */
+export async function loadQuery(
+  db: NoteDatabase, 
+  note: any
+): Promise<QueryRecord> {
   const record = note.body.match(findQuery);
   let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
@@ -706,7 +860,16 @@ export async function loadQuery(db: any, note: any): Promise<QueryRecord> {
   return loadedQuery;
 }
 
-async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRecord> {
+/**
+ * Tests if a query configuration is valid
+ * @param db - Note database instance
+ * @param query - Query configuration to test
+ * @returns Validated query configuration
+ */
+async function testQuery(
+  db: NoteDatabase, 
+  query: QueryRecord
+): Promise<QueryRecord> {
   // Test if the query is valid
   if (!query.query) {
     return query;
@@ -755,7 +918,17 @@ async function testQuery(db: NoteDatabase, query: QueryRecord): Promise<QueryRec
   return query;
 }
 
-export async function updatePanelQuery(panel: string, query: Query[][], filter: string) {
+/**
+ * Updates the query display in the search panel
+ * @param panel - Panel ID to update
+ * @param query - Query configuration
+ * @param filter - Query filter string
+ */
+export async function updatePanelQuery(
+  panel: string,
+  query: Query[][],
+  filter: string
+): Promise<void> {
   // Send the query to the search panel
   if (!query || query.length ===0 || query[0].length === 0) {
     return;
