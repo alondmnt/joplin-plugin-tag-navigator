@@ -1,5 +1,6 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 import { format } from 'date-fns';
+import { load as yamlLoad } from 'js-yaml';
 
 /**
  * Regular expressions for parsing different elements
@@ -357,6 +358,38 @@ interface FrontMatterResult {
  * @returns Parsed front matter data, line count, and any parsing errors
  */
 export function parseFrontMatter(text: string): FrontMatterResult {
+  // Validate front matter format
+  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) {
+    return {
+      data: null,
+      lineCount: 0,
+      errors: undefined
+    };
+  }
+
+  const yamlContent = match[1];
+
+  try {
+    // Try parsing with js-yaml first
+    const data = yamlLoad(yamlContent) as FrontMatter;
+    return {
+      data: data || null,
+      lineCount: yamlContent.split('\n').length + 2,
+      errors: undefined
+    };
+  } catch (e) {
+    // Use the in-house parser as fallback
+    return parseFrontMatterFallback(text);
+  }
+}
+
+/**
+ * Fallback in-house parser for front matter
+ * @param text The text content to parse
+ * @returns Parsed front matter data, line count, and any parsing errors
+ */
+function parseFrontMatterFallback(text: string): FrontMatterResult {
   const errors: ParseError[] = [];
   
   // Validate front matter format
