@@ -38,6 +38,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
 
   let resultsString = resultsStart + '\nDisplaying ' + filteredResults.length + ' notes\n';
   let tableColumns: string[] = [];
+  let tableString = '';
   let tableDefaultValues: { [key: string]: string } = {};
 
   if (savedQuery.displayInNote === 'list') {
@@ -53,7 +54,8 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
     // Parse tags from results and accumulate counts
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
-    resultsString += buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
+    [tableString, tableColumns] = buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
+    resultsString += tableString;
   }
   resultsString += resultsEnd;
 
@@ -300,15 +302,16 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
   return [tableResult, tagInfo];
 }
 
-function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): string {
+function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): [string, string[]] {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const options = savedQuery?.options;
+  const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
   if (options?.includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
     tableColumns = options.includeCols.filter(col => 
       tableColumns.includes(col) ||
-      ['line', 'updated time', 'created time', 'notebook'].includes(col)
+      metaCols.includes(col)
     );
   } else {
     // When includeCols is not specified, add default columns
@@ -323,7 +326,10 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
       tableColumns.unshift('notebook');
     }
   }
-  tableColumns.unshift('title');
+  if (!tableColumns.includes('title')) {
+    // Always include title column
+    tableColumns.unshift('title');
+  }
   if (options?.excludeCols?.length > 0) {
     // Exclude columns (ignore missing)
     tableColumns = tableColumns.filter(col => !savedQuery.options.excludeCols.includes(col));
@@ -359,7 +365,8 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
     }
     resultsString += row + '\n';
   }
-  return resultsString;
+  tableColumns = tableColumns.filter(col => !metaCols.includes(col));
+  return [resultsString, tableColumns];
 }
 
 function formatTag(tag: string, tagSettings: TagSettings) {
