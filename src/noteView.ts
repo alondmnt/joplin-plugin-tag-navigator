@@ -459,9 +459,9 @@ function buildTable(
 ): [string, string[]] {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
-  const options = savedQuery?.options;
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
-  const includeCols = options?.includeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+  const includeCols = savedQuery?.options?.includeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+  const excludeCols = savedQuery?.options?.excludeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
   if (includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
     tableColumns = includeCols.filter(col => 
@@ -474,10 +474,10 @@ function buildTable(
       // Select the top N tags
       tableColumns = tableColumns.slice(0, nColumns);
     }
-    if (!options?.excludeCols?.includes('line')) {
+    if (!excludeCols?.includes('line')) {
       tableColumns.unshift('line');
     }
-    if (!options?.excludeCols?.includes('notebook')) {
+    if (!excludeCols?.includes('notebook')) {
       tableColumns.unshift('notebook');
     }
   }
@@ -485,9 +485,9 @@ function buildTable(
     // Always include title column
     tableColumns.unshift('title');
   }
-  if (options?.excludeCols?.length > 0) {
+  if (excludeCols?.length > 0) {
     // Exclude columns (ignore missing)
-    tableColumns = tableColumns.filter(col => !savedQuery.options.excludeCols.includes(col));
+    tableColumns = tableColumns.filter(col => !excludeCols.includes(col));
   }
 
   let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
