@@ -7,12 +7,20 @@ import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 
+/** Regex to find query blocks in notes */
 const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
 
+/**
+ * Represents a search query configuration
+ */
 export interface QueryRecord {
+  /** Array of query conditions grouped by AND/OR logic */
   query: Query[][];
+  /** Text filter to apply to results */
   filter: string;
+  /** How to display results in the note: 'false', 'list', or 'table' */
   displayInNote: string;
+  /** Optional display settings */
   options?: {
     includeCols?: string;
     excludeCols?: string;
@@ -21,7 +29,11 @@ export interface QueryRecord {
   };
 }
 
-export async function registerSearchPanel(panel: string) {
+/**
+ * Registers and initializes the search panel view
+ * @param panel - Panel ID to register
+ */
+export async function registerSearchPanel(panel: string): Promise<void> {
   await joplin.views.panels.setHtml(panel, `
     <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
     <div id="itags-search-inputTagArea">
@@ -58,9 +70,35 @@ export async function registerSearchPanel(panel: string) {
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
 }
 
-export async function processMessage(message: any, searchPanel: string, db: NoteDatabase,
-    searchParams: QueryRecord,
-    tagSettings: TagSettings) {
+/**
+ * Processes messages received from the search panel UI
+ * @param message - Message object from the panel
+ * @param searchPanel - Panel ID
+ * @param db - Note database instance
+ * @param searchParams - Current search parameters
+ * @param tagSettings - Tag configuration settings
+ */
+export async function processMessage(
+  message: {
+    name: string;
+    query?: string;
+    filter?: string;
+    tag?: string;
+    line?: number;
+    externalId?: string;
+    text?: string;
+    field?: string;
+    value?: any;
+    oldTag?: string;
+    newTag?: string;
+    source?: string;
+    target?: string;
+  },
+  searchPanel: string,
+  db: NoteDatabase,
+  searchParams: QueryRecord,
+  tagSettings: TagSettings
+): Promise<void> {
 
   if (message.name === 'initPanel') {
     await updatePanelTagData(searchPanel, db);
@@ -171,7 +209,11 @@ export async function processMessage(message: any, searchPanel: string, db: Note
   }
 }
 
-export async function focusSearchPanel(panel: string) {
+/**
+ * Focuses the search panel if it's visible
+ * @param panel - Panel ID to focus
+ */
+export async function focusSearchPanel(panel: string): Promise<void> {
   const visible = joplin.views.panels.visible(panel);
   if (!visible) { return; }
   joplin.views.panels.postMessage(panel, {
@@ -179,7 +221,12 @@ export async function focusSearchPanel(panel: string) {
   });
 }
 
-export async function updatePanelTagData(panel: string, db: NoteDatabase) {
+/**
+ * Updates the tag data displayed in the panel
+ * @param panel - Panel ID to update
+ * @param db - Note database instance
+ */
+export async function updatePanelTagData(panel: string, db: NoteDatabase): Promise<void> {
   const visible = joplin.views.panels.visible(panel);
   if (!visible) { return; }
   const tagSort = await joplin.settings.value('itags.tagSort');
@@ -247,6 +294,14 @@ export async function updatePanelSettings(panel: string) {
   );
 }
 
+/**
+ * Renders markdown content to HTML with special handling for tags and checkboxes
+ * @param groupedResults - Search results grouped by note
+ * @param tagRegex - Regular expression for matching tags
+ * @param resultMarker - Whether to highlight tags in results
+ * @param colorTodos - Whether to apply colors to todo items
+ * @returns Processed results with HTML content
+ */
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean): GroupedResult[] {
   const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
   const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
@@ -297,12 +352,23 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
   return groupedResults;
 }
 
+/**
+ * Splits text into code and non-code blocks
+ * @param text - Text to split
+ * @returns Array of text segments alternating between non-code and code blocks
+ */
 function splitCodeBlocks(text: string): string[] {
   // Split by triple backticks, preserving the delimiters
   return text.split(/(```[^`]*```)/g);
 }
 
-// Function to replace or process hashtags outside backticks without altering the original structure
+/**
+ * Replaces or processes hashtags outside of backtick code blocks
+ * @param text - Text to process
+ * @param tagRegex - Regular expression for matching tags
+ * @param replaceString - String to replace matches with
+ * @returns Processed text with replacements
+ */
 function replaceOutsideBackticks(text: string, tagRegex: RegExp, replaceString: string) {
   // Split the input by capturing backticks and content within them
   const segments = text.split(/(`[^`]*`)/);
@@ -539,7 +605,22 @@ export function escapeRegex(string: string): string {
     .trim();
 }
 
-async function updateNote(message: any, newBody: string, db: NoteDatabase, tagSettings: TagSettings) {
+/**
+ * Updates a note's content and processes the changes
+ * @param message - Message containing note update details
+ * @param newBody - New content for the note
+ * @param db - Note database instance
+ * @param tagSettings - Tag configuration settings
+ */
+async function updateNote(
+  message: {
+    externalId: string;
+    line: number;
+  },
+  newBody: string,
+  db: NoteDatabase,
+  tagSettings: TagSettings
+): Promise<void> {
   let selectedNote = await joplin.workspace.selectedNote();
   let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body'] });
 
@@ -563,7 +644,16 @@ async function updateNote(message: any, newBody: string, db: NoteDatabase, tagSe
   selectedNote = clearObjectReferences(selectedNote);
 }
 
-export async function saveQuery(query: QueryRecord, noteId: string=null): Promise<string> {
+/**
+ * Saves a query configuration to a note
+ * @param query - Query configuration to save
+ * @param noteId - Optional note ID to save to (uses current note if not specified)
+ * @returns The updated note body content
+ */
+export async function saveQuery(
+  query: QueryRecord,
+  noteId: string | null = null
+): Promise<string> {
   // Save the query into the current note, or to given noteId
   let note:any = null;
   if (noteId) {
