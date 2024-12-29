@@ -14,10 +14,18 @@ import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults,
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
+
+/**
+ * Main plugin registration and initialization
+ */
 joplin.plugins.register({
   onStart: async function() {
-    await registerSettings()
+    await registerSettings();
 
+    /**
+     * Processes tags for the currently selected note with debouncing
+     * Updates the search panel with new tag data and search results
+     */
     const processNoteTags = debounce(async () => {
       let note = await joplin.workspace.selectedNote();
       if (!note) { return; }
@@ -65,7 +73,13 @@ joplin.plugins.register({
     const navPanel = await joplin.views.panels.create('itags.navPanel');
     let tagLines = [];
 
-    // Periodic database update
+    /**
+     * Updates the database and all UI components:
+     * - Updates tag and note data in search panel
+     * - Updates search results
+     * - Updates note view if enabled
+     * - Updates navigation panel if visible
+     */
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
     const updateDB = async () => {
       await processAllNotes(); // update DB
