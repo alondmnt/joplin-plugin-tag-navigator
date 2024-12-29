@@ -10,16 +10,24 @@ interface TableResult extends GroupedResult {
   tags: { [key: string]: string };
 }
 
-export async function displayInAllNotes(db: any) {
+export async function displayInAllNotes(db: any): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } }> {
   // Display results in notes
   const tagSettings = await getTagSettings();
   const nColumns = await joplin.settings.value('itags.tableColumns');
   const noteIds = db.getResultNotes();
+  let tableColumns: string[] = [];  
+  let tableDefaultValues: { [key: string]: string } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    await displayResultsInNote(db, note, tagSettings, nColumns);
+    const result = await displayResultsInNote(db, note, tagSettings, nColumns);
+    console.log(id, result);
+    if (result) {
+      tableColumns = result.tableColumns;
+      tableDefaultValues = result.tableDefaultValues;
+    }
     note = clearObjectReferences(note);
   }
+  return { tableColumns, tableDefaultValues };
 }
 
 export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } }> {
@@ -67,17 +75,22 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   } else {
     newBody += '\n' + resultsString;
   }
+  let currentNote = await joplin.workspace.selectedNote();
   if (newBody !== note.body) {
     await joplin.data.put(['notes', note.id], null, { body: newBody });
-    let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
     if (currentNote.id === note.id) {
       await joplin.commands.execute('editor.setText', newBody);
     }
-    currentNote = clearObjectReferences(currentNote);
   }
+  const updatedCurrentNote = currentNote.id === note.id;
+  currentNote = clearObjectReferences(currentNote);
 
-  return { tableColumns, tableDefaultValues };
+  if (updatedCurrentNote) {
+    return { tableColumns, tableDefaultValues };
+  } else {
+    return null;
+  }
 }
 
 export async function removeResults(note: any) {

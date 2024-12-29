@@ -80,7 +80,12 @@ joplin.plugins.register({
 
       // Update note view
       if (await joplin.settings.value('itags.periodicNoteUpdate')) {
-        displayInAllNotes(DatabaseManager.getDatabase());  
+        const result = await displayInAllNotes(DatabaseManager.getDatabase());
+        console.log(result);
+        if (result) {
+          currentTableColumns = result.tableColumns;
+          currentTableDefaultValues = result.tableDefaultValues;
+        }
       }
 
       // Update navigation panel
