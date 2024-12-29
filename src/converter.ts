@@ -3,7 +3,11 @@ import { parseTagsLines } from './parser';
 import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
-export async function convertAllNotesToJoplinTags() {
+/**
+ * Converts all inline tags in notes to Joplin tags
+ * Processes notes in batches to avoid memory issues
+ */
+export async function convertAllNotesToJoplinTags(): Promise<void> {
   const tagSettings = await getTagSettings();
 
   // Get all notes
@@ -35,7 +39,19 @@ export async function convertAllNotesToJoplinTags() {
   }
 }
 
-export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix: string, spaceReplace: string, location: string) {
+/**
+ * Converts all Joplin tags to inline tags in notes
+ * @param listPrefix - The prefix to use for the tag list (e.g. "Tags: ")
+ * @param tagPrefix - The prefix for each tag (e.g. "#")
+ * @param spaceReplace - The character to replace spaces in tags
+ * @param location - Where to place the tag list ('top' or 'bottom')
+ */
+export async function convertAllNotesToInlineTags(
+  listPrefix: string, 
+  tagPrefix: string, 
+  spaceReplace: string, 
+  location: 'top' | 'bottom'
+): Promise<void> {
   const ignoreHtmlNotes = true;
   // Get all notes
   let hasMore = true;
@@ -62,7 +78,15 @@ export async function convertAllNotesToInlineTags(listPrefix: string, tagPrefix:
   }
 }
 
-export async function convertNoteToJoplinTags(note: any, tagSettings: TagSettings) {
+/**
+ * Converts inline tags in a single note to Joplin tags
+ * @param note - The note to process
+ * @param tagSettings - Settings for tag processing
+ */
+export async function convertNoteToJoplinTags(
+  note: { id: string; body: string; markup_language: number }, 
+  tagSettings: TagSettings
+): Promise<void> {
 
   // Parse all inline tags from the note
   const tags = (await parseTagsLines(note.body, tagSettings))
@@ -108,7 +132,21 @@ export async function convertNoteToJoplinTags(note: any, tagSettings: TagSetting
   allTags = clearObjectReferences(allTags);
 }
 
-export async function convertNoteToInlineTags(note: any, listPrefix: string, tagPrefix: string, spaceReplace: string, location: string) {
+/**
+ * Converts Joplin tags to inline tags for a single note
+ * @param note - The note to process
+ * @param listPrefix - The prefix to use for the tag list
+ * @param tagPrefix - The prefix for each tag
+ * @param spaceReplace - The character to replace spaces in tags
+ * @param location - Where to place the tag list
+ */
+export async function convertNoteToInlineTags(
+  note: { id: string; body: string; markup_language: number },
+  listPrefix: string,
+  tagPrefix: string,
+  spaceReplace: string,
+  location: 'top' | 'bottom'
+): Promise<void> {
   let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const tagList = listPrefix + noteTags.items
     .sort((a, b) => a.title.localeCompare(b.title))
