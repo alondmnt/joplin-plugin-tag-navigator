@@ -4,10 +4,16 @@ import { loadQuery } from './searchPanel';
 import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
+/**
+ * Manages the singleton instance of the NoteDatabase
+ */
 export class DatabaseManager {
   static db: NoteDatabase = null;
 
-  static getDatabase() {
+  /**
+   * Returns the singleton instance of NoteDatabase, creating it if necessary
+   */
+  static getDatabase(): NoteDatabase {
     if (!DatabaseManager.db) {
       DatabaseManager.db = new NoteDatabase();
     }
@@ -21,8 +27,12 @@ export class DatabaseManager {
   }
 }
 
+/** Mapping of note IDs to line numbers where matches were found */
 export type ResultSet = { [id: string]: Set<number> };
 
+/**
+ * Represents a single note with its metadata, tags, and links
+ */
 class Note {
   id: string;
   title: string;
@@ -32,6 +42,11 @@ class Note {
   savedQuery: boolean;
   displayResults: string;
 
+  /**
+   * Creates a new Note instance
+   * @param id - The unique identifier of the note
+   * @param title - The title of the note
+   */
   constructor(id: string, title: string) {
     this.id = id;
     this.title = title;
@@ -42,7 +57,12 @@ class Note {
     this.displayResults = 'false';
   }
 
-  addTag(tag: string, lineNumber: number) {
+  /**
+   * Adds a tag at a specific line number
+   * @param tag - The tag to add
+   * @param lineNumber - The line number where the tag appears
+   */
+  addTag(tag: string, lineNumber: number): void {
     if (!this.tags[tag]) {
       this.tags[tag] = new Set();
     }
@@ -128,8 +148,12 @@ class Note {
   }
 }
 
+/**
+ * In-memory database for storing and querying notes, tags, and their relationships
+ */
 export class NoteDatabase {
   notes: { [id: string]: Note }
+  /** Maps tag names to their occurrence count across all notes */
   tags: { [tag: string]: number }  // Used to filter tags
 
   constructor() {
@@ -220,7 +244,14 @@ export class NoteDatabase {
     return Object.values(this.notes).filter(note => (note.displayResults !== 'false')).map(note => note.id);
   }
 
-  searchBy(by: string, query: string, negated: boolean): ResultSet {
+  /**
+   * Searches notes based on specified criteria
+   * @param by - The type of search ('tag', 'noteLinkId', or 'noteLinkTitle')
+   * @param query - The search term
+   * @param negated - If true, returns positions without the search term
+   * @returns Mapping of note IDs to matching line numbers
+   */
+  searchBy(by: 'tag' | 'noteLinkId' | 'noteLinkTitle', query: string, negated: boolean): ResultSet {
     // Return a dictionary of note ids and positions of the given tag
     // If negated is true, all positions without the tag are returned
     const result: ResultSet = {};
@@ -249,6 +280,11 @@ export class NoteDatabase {
   }
 }
 
+/**
+ * Returns the intersection of two number sets
+ * @param setA - First set
+ * @param setB - Second set
+ */
 export function intersectSets(setA: Set<number>, setB: Set<number>): Set<number> {
   // Return the intersection of two sets
   return new Set([...setA].filter(x => setB.has(x)));
@@ -302,7 +338,23 @@ export async function processAllNotes() {
   db.filterTags(minCount);
 }
 
-export async function processNote(db: NoteDatabase, note: any, tagSettings: TagSettings): Promise<void> {
+/**
+ * Processes a single note and adds it to the database
+ * @param db - The database instance
+ * @param note - The note data from Joplin
+ * @param tagSettings - Configuration for tag processing
+ */
+export async function processNote(
+  db: NoteDatabase, 
+  note: {
+    id: string;
+    title: string;
+    body: string;
+    markup_language: number;
+    is_conflict: number;
+  }, 
+  tagSettings: TagSettings
+): Promise<void> {
   try {
     const noteRecord = new Note(note.id, note.title);
 
