@@ -20,7 +20,6 @@ export async function displayInAllNotes(db: any): Promise<{ tableColumns: string
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
     const result = await displayResultsInNote(db, note, tagSettings, nColumns);
-    console.log(id, result);
     if (result) {
       tableColumns = result.tableColumns;
       tableDefaultValues = result.tableDefaultValues;
@@ -37,7 +36,7 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return null; }
 
   const results = await runSearch(db, savedQuery.query);
-  const filteredResults = await filterAndSortResults(results, savedQuery.filter, savedQuery.options);
+  const filteredResults = await filterAndSortResults(results, savedQuery.filter, tagSettings, savedQuery.options);
 
   if (filteredResults.length === 0) {
     await removeResults(note);
@@ -108,25 +107,11 @@ export async function removeResults(note: any) {
 }
 
 // Filter and sort results, like the search panel
-async function filterAndSortResults(results: GroupedResult[], filter: string, options?: { sortBy?: string, sortOrder?: string }): Promise<GroupedResult[]> {
+async function filterAndSortResults(results: GroupedResult[], filter: string, tagSettings: TagSettings, options?: { sortBy?: string, sortOrder?: string }): Promise<GroupedResult[]> {
   // Sort results
   const sortBy = options?.sortBy || await joplin.settings.value('itags.resultSort');
-  const sortOrder = options?.sortOrder || await joplin.settings.value('itags.resultOrder');
-  let sortedResults = results.sort((a, b) => {
-    if (sortBy === 'title') {
-        return a.title.localeCompare(b.title);
-    } else if (sortBy === 'created') {
-        return a.createdTime - b.createdTime;
-    } else if (sortBy === 'notebook') {
-        return a.notebook.localeCompare(b.notebook);
-    } else {
-      // Default: modified time
-      return a.updatedTime - b.updatedTime;
-    }
-  });
-  if (sortOrder.startsWith('desc')) {
-      sortedResults = sortedResults.reverse();
-  }
+  const sortOrder = sortBy ? options?.sortOrder : await joplin.settings.value('itags.resultOrder');
+  let sortedResults = sortResults(results, { sortBy, sortOrder }, tagSettings);
   sortedResults = sortedResults.filter(note => note.text.length > 0);
 
   if (!filter) { return sortedResults; }
@@ -210,31 +195,7 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
   }));
 
   // Sort table results based on options
-  const sortBy = savedQuery?.options?.sortBy?.toLowerCase();
-  tableResults = tableResults.sort((a, b) => {
-    if (sortBy === 'created') {
-        return a.createdTime - b.createdTime;
-    } else if (sortBy === 'modified') {
-        return a.updatedTime - b.updatedTime;
-    } else if (sortBy === 'notebook') {
-        return a.notebook.localeCompare(b.notebook);
-    } else if (sortBy === 'title') {
-      return a.title.localeCompare(b.title);
-    } else if (sortBy) {
-      const aValue = a.tags[sortBy]?.replace(sortBy + '/', '') || '';
-      const bValue = b.tags[sortBy]?.replace(sortBy + '/', '') || '';
-      // Handle numeric strings by converting to numbers if possible
-      const aNum = Number(aValue);
-      const bNum = Number(bValue);
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return aNum - bNum;
-      }
-      return aValue.localeCompare(bValue);
-    }
-  });
-  if (savedQuery?.options?.sortOrder?.toLowerCase().startsWith('desc')) {
-    tableResults = tableResults.reverse();
-  }
+  tableResults = sortResults(tableResults, savedQuery?.options, tagSettings);
 
   // Find the most common value for each column
   for (const key in valueCount) {
@@ -315,6 +276,64 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
   return [tableResult, tagInfo];
 }
 
+function isTableResult(result: TableResult | GroupedResult): result is TableResult {
+  return 'tags' in result;
+}
+
+function sortResults<T extends TableResult | GroupedResult>(
+  results: T[], 
+  options: { sortBy?: string, sortOrder?: string },
+  tagSettings: TagSettings
+): T[] {
+  const sortByArray = options?.sortBy?.toLowerCase()
+    .split(',')
+    .map(s => s.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
+    .filter(s => s);
+
+  const sortOrderArray = options?.sortOrder?.toLowerCase()
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s);
+
+  if (!sortByArray?.length) return results;
+
+  return results.sort((a, b) => {
+    for (let i = 0; i < sortByArray.length; i++) {
+      const sortBy = sortByArray[i];
+      // Get corresponding sort order or default to 'asc'
+      const sortOrder = sortOrderArray?.[i]?.startsWith('desc') ? -1 : 1;
+
+      let comparison = 0;
+
+      if (sortBy === 'created') {
+        comparison = (a.createdTime - b.createdTime) * sortOrder;
+      } else if (sortBy === 'modified') {
+        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+      } else if (sortBy === 'notebook') {
+        comparison = a.notebook.localeCompare(b.notebook) * sortOrder;
+      } else if (sortBy === 'title') {
+        comparison = a.title.localeCompare(b.title) * sortOrder;
+      } else if (isTableResult(a) && isTableResult(b)) {
+        const aValue = a.tags[sortBy]?.replace(sortBy + '/', '') || '';
+        const bValue = b.tags[sortBy]?.replace(sortBy + '/', '') || '';
+        const aNum = Number(aValue);
+        const bNum = Number(bValue);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          comparison = (aNum - bNum) * sortOrder;
+        } else {
+          comparison = aValue.localeCompare(bValue) * sortOrder;
+        }
+      } else {
+        // Default to modified time for GroupedResults
+        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+      }
+
+      if (comparison !== 0) return comparison;
+    }
+    return 0;
+  });
+}
+
 function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): [string, string[]] {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
@@ -322,6 +341,7 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
   if (options?.includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
+    options.includeCols = options.includeCols.map(col => col.replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
     tableColumns = options.includeCols.filter(col => 
       tableColumns.includes(col) ||
       metaCols.includes(col)
