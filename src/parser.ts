@@ -1,22 +1,41 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 import { format } from 'date-fns';
 
+/**
+ * Regular expressions for parsing different elements
+ */
 export const defTagRegex = /(?<=^|\s)#([^\s#'"]*\w)/g; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
 
-type LinkExtract = { title: string; noteId?: string; line: number };
+/**
+ * Represents extracted link information
+ */
+type LinkExtract = { 
+  title: string; 
+  noteId?: string; 
+  line: number 
+};
 
+/**
+ * Information about a tag's occurrence and relationships
+ */
 export interface TagLineInfo {
   tag: string;
   lines: number[];
   count: number;
   index: number;
   parent: boolean;  // first parent
-  child: boolean;  // last child
+  child: boolean;   // last child
 }
 
+/**
+ * Parses tags and their line numbers from text content
+ * @param text The text content to parse
+ * @param tagSettings Configuration for tag parsing
+ * @returns Array of tag information including line numbers and relationships
+ */
 export async function parseTagsLines(text: string, tagSettings: TagSettings): Promise<TagLineInfo[]> {
   let inCodeBlock = false;
   let isResultBlock = false;
@@ -173,6 +192,12 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
   return tagsLines;
 }
 
+/**
+ * Processes a date tag according to settings
+ * @param tag The tag to process
+ * @param tagSettings Configuration for tag processing
+ * @returns Processed tag string with date calculations applied
+ */
 export function parseDateTag(tag: string, tagSettings: TagSettings): string {
   // Replace the today tag with the current date, including basic arithmetic support
   if (!tag) { return tag; }
@@ -204,6 +229,13 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
   });
 }
 
+/**
+ * Parses links and their line numbers from text content
+ * @param text The text content to parse
+ * @param ignoreCodeBlocks Whether to ignore links in code blocks
+ * @param inheritTags Whether to inherit links from parent levels
+ * @returns Array of extracted link information
+ */
 export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, inheritTags: boolean): Promise<LinkExtract[]> {
   const lines = text.split('\n');
   const results: LinkExtract[] = [];
@@ -294,22 +326,36 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
   return results;
 }
 
+/**
+ * Front matter key-value pairs
+ */
 interface FrontMatter {
   [key: string]: string | string[] | number | boolean | null;
 }
 
+/**
+ * Error information for front matter parsing
+ */
 interface ParseError {
   message: string;
   line?: number;
   value?: string;
 }
 
+/**
+ * Result of front matter parsing
+ */
 interface FrontMatterResult {
   data: FrontMatter | null;
   lineCount: number;
   errors?: ParseError[];
 }
 
+/**
+ * Parses front matter from text content
+ * @param text The text content to parse
+ * @returns Parsed front matter data, line count, and any parsing errors
+ */
 export function parseFrontMatter(text: string): FrontMatterResult {
   const errors: ParseError[] = [];
   
@@ -427,6 +473,12 @@ export function parseFrontMatter(text: string): FrontMatterResult {
   };
 }
 
+/**
+ * Extracts tags from front matter content
+ * @param text The text content containing front matter
+ * @param tagSettings Configuration for tag processing
+ * @returns Array of tag information from front matter
+ */
 export function parseTagsFromFrontMatter(
   text: string, 
   tagSettings: TagSettings
