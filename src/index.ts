@@ -384,6 +384,7 @@ joplin.plugins.register({
     ], MenuItemLocation.Tools);
     await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
     await joplin.views.toolbarButtons.create('itags.loadQuery', 'itags.loadQuery', ToolbarButtonLocation.NoteToolbar);
+    await joplin.views.toolbarButtons.create('itags.createTableEntryNote', 'itags.createTableEntryNote', ToolbarButtonLocation.EditorToolbar);
 
     await joplin.settings.onChange(async (event) => {
       if (event.keys.includes('itags.resultSort') || 
