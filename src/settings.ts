@@ -2,58 +2,81 @@ import joplin from 'api';
 import { SettingItemType } from 'api/types';
 import { defTagRegex } from './parser';
 
+/**
+ * HTML comment markers for query sections
+ */
 export const queryStart = '<!-- itags-query-start -->';
 export const queryEnd = '<!-- itags-query-end -->';
 export const resultsStart = '<!-- itags-results-start -->';
 export const resultsEnd = '<!-- itags-results-end -->';
 
+/**
+ * Configuration interface for tag processing and display
+ */
 export interface TagSettings {
-  tagRegex: RegExp;
-  excludeRegex: RegExp;
-  todayTag: string;
-  dateFormat: string;
-  ignoreHtmlNotes: boolean;
-  ignoreCodeBlocks: boolean;
-  ignoreFrontMatter: boolean;
-  inheritTags: boolean;
-  nestedTags: boolean;
-  spaceReplace: string;
-  tagPrefix: string;
-  tableCase: string;
+  tagRegex: RegExp;        // Regular expression for matching tags
+  excludeRegex: RegExp;    // Regular expression for excluding tags
+  todayTag: string;        // Tag used for today's date
+  dateFormat: string;      // Format string for date tags
+  ignoreHtmlNotes: boolean;    // Whether to ignore tags in HTML notes
+  ignoreCodeBlocks: boolean;   // Whether to ignore tags in code blocks
+  ignoreFrontMatter: boolean;  // Whether to ignore front matter fields as tags
+  inheritTags: boolean;        // Whether to inherit tags from parent items
+  nestedTags: boolean;         // Whether to support nested tag hierarchy
+  spaceReplace: string;        // Character to replace spaces in tags
+  tagPrefix: string;           // Prefix for converted Joplin tags
+  tableCase: string;           // Case formatting for table view
 }
 
+/**
+ * Retrieves the configured tag regex pattern
+ * @returns RegExp pattern for matching tags
+ */
 export async function getTagRegex(): Promise<RegExp> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
   return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
 }
 
+/**
+ * Retrieves all tag-related settings
+ * @returns TagSettings object containing all configuration
+ */
 export async function getTagSettings(): Promise<TagSettings> {
   const tagRegex = await getTagRegex();
   const excludeRegexString = await joplin.settings.value('itags.excludeRegex');
   const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'g') : null;
+  
   let todayTag = (await joplin.settings.value('itags.todayTag')).toLowerCase();
   if (todayTag.length == 0) {
-    // Ensure it's not empty
-    todayTag = '#today';
+    todayTag = '#today';  // Ensure default value
   }
-  const dateFormat = await joplin.settings.value('itags.dateFormat');
-  const ignoreHtmlNotes = await joplin.settings.value('itags.ignoreHtmlNotes');
-  const ignoreCodeBlocks = await joplin.settings.value('itags.ignoreCodeBlocks');
-  const ignoreFrontMatter = await joplin.settings.value('itags.ignoreFrontMatter');
-  const inheritTags = await joplin.settings.value('itags.inheritTags');
-  const nestedTags = await joplin.settings.value('itags.nestedTags');
-  const spaceReplace = await joplin.settings.value('itags.spaceReplace');
-  const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-  const tableCase = await joplin.settings.value('itags.tableCase');
 
-  return {tagRegex, excludeRegex, todayTag, dateFormat, ignoreHtmlNotes, ignoreCodeBlocks, ignoreFrontMatter, inheritTags, nestedTags, spaceReplace, tagPrefix, tableCase};
+  return {
+    tagRegex,
+    excludeRegex,
+    todayTag,
+    dateFormat: await joplin.settings.value('itags.dateFormat'),
+    ignoreHtmlNotes: await joplin.settings.value('itags.ignoreHtmlNotes'),
+    ignoreCodeBlocks: await joplin.settings.value('itags.ignoreCodeBlocks'),
+    ignoreFrontMatter: await joplin.settings.value('itags.ignoreFrontMatter'),
+    inheritTags: await joplin.settings.value('itags.inheritTags'),
+    nestedTags: await joplin.settings.value('itags.nestedTags'),
+    spaceReplace: await joplin.settings.value('itags.spaceReplace'),
+    tagPrefix: await joplin.settings.value('itags.tagPrefix'),
+    tableCase: await joplin.settings.value('itags.tableCase')
+  };
 }
 
-export async function registerSettings() {
+/**
+ * Registers all plugin settings with Joplin
+ * Configures settings section and individual setting items
+ */
+export async function registerSettings(): Promise<void> {
   await joplin.settings.registerSection('itags', {
     label: 'Tag Navigator',
     iconName: 'fas fa-dharmachakra',
   });
+
   await joplin.settings.registerSettings({
     'itags.ignoreHtmlNotes': {
       value: true,
