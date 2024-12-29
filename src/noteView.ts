@@ -6,11 +6,22 @@ import { GroupedResult, Query, runSearch } from './search';
 import { TagLineInfo } from './parser';
 import { NoteDatabase } from './db';
 
+/**
+ * Represents a table result with associated tags
+ */
 interface TableResult extends GroupedResult {
   tags: { [key: string]: string };
 }
 
-export async function displayInAllNotes(db: any): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } }> {
+/**
+ * Displays search results in all matching notes
+ * @param db The inline tags database
+ * @returns Configuration for table columns and default values
+ */
+export async function displayInAllNotes(db: NoteDatabase): Promise<{ 
+  tableColumns: string[], 
+  tableDefaultValues: { [key: string]: string } 
+}> {
   // Display results in notes
   const tagSettings = await getTagSettings();
   const nColumns = await joplin.settings.value('itags.tableColumns');
@@ -29,7 +40,20 @@ export async function displayInAllNotes(db: any): Promise<{ tableColumns: string
   return { tableColumns, tableDefaultValues };
 }
 
-export async function displayResultsInNote(db: any, note: any, tagSettings: TagSettings, nColumns: number=10): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } }> {
+/**
+ * Displays search results within a single note
+ * @param db The note database
+ * @param note The note to display results in
+ * @param tagSettings Configuration for tag formatting
+ * @param nColumns Maximum number of columns to display in table view
+ * @returns Configuration for table columns and default values, or null if no results
+ */
+export async function displayResultsInNote(
+  db: NoteDatabase, 
+  note: { id: string, body: string }, 
+  tagSettings: TagSettings, 
+  nColumns: number = 10
+): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } } | null> {
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
   if (!savedQuery) { return null; }
@@ -92,7 +116,11 @@ export async function displayResultsInNote(db: any, note: any, tagSettings: TagS
   }
 }
 
-export async function removeResults(note: any) {
+/**
+ * Removes search results section from a note
+ * @param note The note to remove results from
+ */
+export async function removeResults(note: { id: string, body: string }): Promise<void> {
   const resultsRegExp = new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's')
   if (resultsRegExp.test(note.body)) {
     const newBody = note.body.replace(resultsRegExp, '');
@@ -106,8 +134,23 @@ export async function removeResults(note: any) {
   }
 }
 
-// Filter and sort results, like the search panel
-async function filterAndSortResults(results: GroupedResult[], filter: string, tagSettings: TagSettings, options?: { sortBy?: string, sortOrder?: string }): Promise<GroupedResult[]> {
+/**
+ * Filters and sorts search results based on specified criteria
+ * @param results Array of search results to process
+ * @param filter Text string to filter results by
+ * @param tagSettings Configuration for tag formatting
+ * @param options Optional sorting configuration
+ * @returns Filtered and sorted results array
+ */
+async function filterAndSortResults(
+  results: GroupedResult[], 
+  filter: string, 
+  tagSettings: TagSettings, 
+  options?: { 
+    sortBy?: string, 
+    sortOrder?: string 
+  }
+): Promise<GroupedResult[]> {
   // Sort results
   const sortBy = options?.sortBy || await joplin.settings.value('itags.resultSort');
   const sortOrder = options?.sortBy ? options?.sortOrder : await joplin.settings.value('itags.resultOrder');
@@ -135,16 +178,35 @@ async function filterAndSortResults(results: GroupedResult[], filter: string, ta
   return sortedResults
 }
 
-// Check that all words are in the target, like the search panel
-function containsFilter(target: string, filter: string, min_chars: number=1, otherTarget: string=''): boolean {
+/**
+ * Checks if a target string contains all words from a filter
+ * @param target Primary text to search in
+ * @param filter Filter string to check for
+ * @param min_chars Minimum character length for filter words
+ * @param otherTarget Optional additional text to search in
+ * @returns True if all filter words are found
+ */
+function containsFilter(
+  target: string, 
+  filter: string, 
+  min_chars: number = 1, 
+  otherTarget: string = ''
+): boolean {
   const lowerTarget = (target + otherTarget).toLowerCase();
   const words = parseFilter(filter, min_chars);
 
   return words.every((word: string) => lowerTarget.includes(word.toLowerCase()));
 }
 
-// Split filter into words and quoted phrases, like the search panel
-function parseFilter(filter, min_chars=1) {
+/**
+ * Splits a filter string into words and quoted phrases, like the search panel
+ * @param filter The filter string to parse
+ * @param min_chars Minimum character length for a word to be included
+ * @returns Array of words and quoted phrases
+ * @example
+ * parseFilter('"hello world" test') // ['hello world', 'test']
+ */
+function parseFilter(filter: string, min_chars: number = 1): string[] {
   const regex = /"([^"]+)"/g;
   let match: RegExpExecArray;
   const quotes = [];
@@ -158,7 +220,27 @@ function parseFilter(filter, min_chars=1) {
   return words;
 }
 
-async function processResultsForTable(filteredResults: GroupedResult[], db: NoteDatabase, tagSettings: TagSettings, savedQuery: QueryRecord): Promise<[TableResult[], { [key: string]: number }, { [key: string]: string }]> {
+/**
+ * Processes search results for table display
+ * @param filteredResults Array of filtered search results
+ * @param db The note database
+ * @param tagSettings Configuration for tag formatting
+ * @param savedQuery Saved query configuration
+ * @returns Tuple containing:
+ *   - Processed table results
+ *   - Column count mapping
+ *   - Most common values for each column
+ */
+async function processResultsForTable(
+  filteredResults: GroupedResult[], 
+  db: NoteDatabase, 
+  tagSettings: TagSettings, 
+  savedQuery: QueryRecord
+): Promise<[
+  TableResult[], 
+  { [key: string]: number }, 
+  { [key: string]: string }
+]> {
   const columnCount: { [key: string]: number } = {};
   const valueCount: { [key: string]: { [key: string]: number } } = {};
   const mostCommonValue: { [key: string]: string } = {};
@@ -209,7 +291,18 @@ async function processResultsForTable(filteredResults: GroupedResult[], db: Note
   return [tableResults, columnCount, mostCommonValue];
 }
 
-async function processResultForTable(result: GroupedResult, db: NoteDatabase, tagSettings: TagSettings): Promise<[TableResult, TagLineInfo[]]> {
+/**
+ * Processes a single result for table display
+ * @param result The search result to process
+ * @param db The note database
+ * @param tagSettings Settings for tag formatting
+ * @returns Tuple of [processed result, tag information]
+ */
+async function processResultForTable(
+  result: GroupedResult, 
+  db: NoteDatabase, 
+  tagSettings: TagSettings
+): Promise<[TableResult, TagLineInfo[]]> {
   const tableResult = result as TableResult;
   const note = db.notes[result.externalId];
 
@@ -276,13 +369,27 @@ async function processResultForTable(result: GroupedResult, db: NoteDatabase, ta
   return [tableResult, tagInfo];
 }
 
+/**
+ * Type guard to check if a result is a TableResult
+ */
 function isTableResult(result: TableResult | GroupedResult): result is TableResult {
   return 'tags' in result;
 }
 
+/**
+ * Sorts results based on specified criteria
+ * @param results Array of results to sort
+ * @param options Sorting configuration
+ * @param tagSettings Configuration for tag formatting
+ * @returns Sorted array of results
+ * @template T Type of results (TableResult or GroupedResult)
+ */
 function sortResults<T extends TableResult | GroupedResult>(
   results: T[], 
-  options: { sortBy?: string, sortOrder?: string },
+  options: { 
+    sortBy?: string, 
+    sortOrder?: string 
+  },
   tagSettings: TagSettings
 ): T[] {
   const sortByArray = options?.sortBy?.toLowerCase()
@@ -334,7 +441,22 @@ function sortResults<T extends TableResult | GroupedResult>(
   });
 }
 
-function buildTable(tableResults: TableResult[], columnCount: { [key: string]: number }, savedQuery: QueryRecord, tagSettings: TagSettings, nColumns: number=0): [string, string[]] {
+/**
+ * Builds a markdown table from the results
+ * @param tableResults Results to display in the table
+ * @param columnCount Count of occurrences for each column
+ * @param savedQuery Saved query configuration
+ * @param tagSettings Configuration for tag formatting
+ * @param nColumns Maximum number of columns to display
+ * @returns Tuple of [table string, column names]
+ */
+function buildTable(
+  tableResults: TableResult[], 
+  columnCount: { [key: string]: number }, 
+  savedQuery: QueryRecord, 
+  tagSettings: TagSettings, 
+  nColumns: number = 0
+): [string, string[]] {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const options = savedQuery?.options;
@@ -402,7 +524,13 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
   return [resultsString, tableColumns];
 }
 
-function formatTag(tag: string, tagSettings: TagSettings) {
+/**
+ * Formats a tag according to the specified settings
+ * @param tag Tag string to format
+ * @param tagSettings Configuration for tag formatting
+ * @returns Formatted tag string
+ */
+function formatTag(tag: string, tagSettings: TagSettings): string {
   if (tagSettings.tableCase === 'title') {
     return tag.split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -411,7 +539,16 @@ function formatTag(tag: string, tagSettings: TagSettings) {
   return tag.toLowerCase();
 }
 
-export async function createTableEntryNote(currentTableColumns: string[], currentTableDefaultValues: { [key: string]: string }) {
+/**
+ * Creates a new note with table entry template
+ * @param currentTableColumns Array of current table columns
+ * @param currentTableDefaultValues Default values for each column
+ * @throws Will show a dialog if no table columns are available
+ */
+export async function createTableEntryNote(
+  currentTableColumns: string[], 
+  currentTableDefaultValues: Record<string, string>
+): Promise<void> {
   if (currentTableColumns.length === 0) {
     await joplin.views.dialogs.showMessageBox('No table columns available. Please ensure you have a table view active in your note.');
     return;
