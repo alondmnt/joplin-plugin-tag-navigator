@@ -110,7 +110,7 @@ export async function removeResults(note: any) {
 async function filterAndSortResults(results: GroupedResult[], filter: string, tagSettings: TagSettings, options?: { sortBy?: string, sortOrder?: string }): Promise<GroupedResult[]> {
   // Sort results
   const sortBy = options?.sortBy || await joplin.settings.value('itags.resultSort');
-  const sortOrder = sortBy ? options?.sortOrder : await joplin.settings.value('itags.resultOrder');
+  const sortOrder = options?.sortBy ? options?.sortOrder : await joplin.settings.value('itags.resultOrder');
   let sortedResults = sortResults(results, { sortBy, sortOrder }, tagSettings);
   sortedResults = sortedResults.filter(note => note.text.length > 0);
 
@@ -339,10 +339,10 @@ function buildTable(tableResults: TableResult[], columnCount: { [key: string]: n
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const options = savedQuery?.options;
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
-  if (options?.includeCols?.length > 0) {
+  const includeCols = options?.includeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+  if (includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
-    options.includeCols = options.includeCols.map(col => col.replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
-    tableColumns = options.includeCols.filter(col => 
+    tableColumns = includeCols.filter(col => 
       tableColumns.includes(col) ||
       metaCols.includes(col)
     );

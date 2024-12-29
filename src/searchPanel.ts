@@ -14,8 +14,8 @@ export interface QueryRecord {
   filter: string;
   displayInNote: string;
   options?: {
-    includeCols?: string[];
-    excludeCols?: string[];
+    includeCols?: string;
+    excludeCols?: string;
     sortBy?: string;
     sortOrder?: string;
   };
