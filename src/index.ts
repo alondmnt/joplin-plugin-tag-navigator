@@ -129,18 +129,21 @@ joplin.plugins.register({
       }
 
       // Update results in note
-      if (savedQuery.displayInNote === 'list' || savedQuery.displayInNote === 'table') {
-        const tagSettings = await getTagSettings();
-        const nColumns = await joplin.settings.value('itags.tableColumns');
-        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
-        if (result) {
-          currentTableColumns = result.tableColumns;
-          currentTableDefaultValues = result.tableDefaultValues;
+      const updateViewOnOpen = await joplin.settings.value('itags.updateViewOnOpen');
+      if (updateViewOnOpen) {
+        if (savedQuery.displayInNote === 'list' || savedQuery.displayInNote === 'table') {
+          const tagSettings = await getTagSettings();
+          const nColumns = await joplin.settings.value('itags.tableColumns');
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+          if (result) {
+            currentTableColumns = result.tableColumns;
+            currentTableDefaultValues = result.tableDefaultValues;
+          }
+        } else {
+          await removeResults(note);
+          currentTableColumns = [];
+          currentTableDefaultValues = {};
         }
-      } else {
-        await removeResults(note);
-        currentTableColumns = [];
-        currentTableDefaultValues = {};
       }
 
       // Navigation panel update

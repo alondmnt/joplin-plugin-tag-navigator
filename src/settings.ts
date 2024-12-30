@@ -281,6 +281,13 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: Colorise todos in results',
       description: 'Supporting [x]it! style todos.'
     },
+    'itags.updateViewOnOpen': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Update view when opening note',
+    },
     'itags.tableColumns': {
       value: 10,
       type: SettingItemType.Int,
