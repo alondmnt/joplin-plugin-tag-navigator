@@ -314,8 +314,8 @@ export async function registerSettings(): Promise<void> {
       label: 'Note view: Tag case in table view',
       isEnum: true,
       options: {
-        title: 'Title case',
-        lower: 'Lowercase',
+        title: 'Title Case',
+        lower: 'lowercase',
       }
     },
     'itags.searchPanelStyle' : {
