@@ -29,7 +29,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated) ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
-    - Display results in a table / database ([video](https://www.youtube.com/watch?v=L3zHletRk54))
+    - Display results in a table / database ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). See also [tips](#converting-joplin-tags).
@@ -69,6 +69,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
 - [Front matter tags](#front-matter-tags)
+- [Table views](#table-views)
 - [Inline TODOs](#inline-todos)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
@@ -111,6 +112,47 @@ will be converted to the following inline tags:
 ```
 
 These tags will be accessible in the search panel / notes / tables like standard inline tags. The last tag is `#frontmatter` and is used to indicate that the tags were extracted from the front matter section of the note.
+
+### Table views
+
+- Quickly add new entries to the table by clicking on `New table entre note` in the context menu, toolbar, or Tag Navigator menu.
+    - The new note will contain a front matter template with properties for each column.
+- Tables can be customised using the following settings:
+    - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
+    - `Note view: Table view notebook path`: Set to true to display the notebook path in the table view.
+    - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
+- Tables can be customised per note using the saved query, by adding an `options` field with the following properties:
+    - `includeCols`
+        - a comma-separated list of columns (tags / properties) to display in the table view
+        - can be used to slice the table columns, sort them, or add "modified" / "created" timestamps
+    - `excludeCols`
+        - a comma-separated list of columns to remove from the table view (even though these properties exist in the listed notes)
+    - `sortBy`
+        - a comma-separated list of columns to sort the table by
+    - `sortOrder`
+        - a comma-separated list of the words "ascending" / "descending" (or "desc", "descend", etc.) corresponding to the columns in the `sortBy` field
+    - example:
+
+```json
+{
+  "query": [
+    [
+      {
+        "tag": "#artist",
+        "negated": false
+      }
+    ]
+  ],
+  "filter": "",
+  "displayInNote": "table",
+  "options": {
+    "includeCols": "title, artist, country, year, modified",
+    "excludeCols": "notebook, line",
+    "sortBy": "year",
+    "sortOrder": "asc"
+  }
+}
+```
 
 ### Inline TODOs
 
