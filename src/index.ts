@@ -276,7 +276,11 @@ joplin.plugins.register({
         if (!note) { return; }
         const tagSettings = await getTagSettings();
         const nColumns = await joplin.settings.value('itags.tableColumns');
-        await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+        if (result) {
+          currentTableColumns = result.tableColumns;
+          currentTableDefaultValues = result.tableDefaultValues;
+        }
         note = clearObjectReferences(note);
       },
     });
