@@ -118,6 +118,9 @@ joplin.plugins.register({
     }
 
     joplin.workspace.onNoteSelectionChange(async () => {
+      // Reset table columns and default values
+      currentTableColumns = [];
+      currentTableDefaultValues = {};
       // Search panel update
       let note = await joplin.workspace.selectedNote();
       if (!note) { return; }
@@ -141,8 +144,6 @@ joplin.plugins.register({
           }
         } else {
           await removeResults(note);
-          currentTableColumns = [];
-          currentTableDefaultValues = {};
         }
       }
 
