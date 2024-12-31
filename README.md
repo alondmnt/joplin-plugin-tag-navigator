@@ -121,7 +121,7 @@ These tags will be accessible in the search panel / notes / tables like standard
     - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
     - `Note view: Table view notebook path`: Set to true to display the notebook path in the table view.
     - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
-- Tables can be customised per note using the saved query, by adding an `options` field with the following properties:
+- Tables can be customised per note using the saved query, by adding an `options` field with any of the following properties:
     - `includeCols`
         - a comma-separated list of columns (tags / properties) to display in the table view
         - can be used to slice the table columns, sort them, or add "modified" / "created" timestamps
