@@ -115,7 +115,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 
 ### Table views
 
-- Quickly add new entries to the table by clicking on `New table entre note` in the context menu, toolbar, or Tag Navigator menu.
+- Quickly add new entries to the table by clicking on `New table entry note` in the context menu, toolbar, or Tag Navigator menu.
     - The new note will contain a front matter template with properties for each column.
 - Tables can be customised using the following settings:
     - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
