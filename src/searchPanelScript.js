@@ -978,6 +978,36 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
     }
 
+    // Add new "Edit query" command
+    if (commands.includes('editQuery')) {
+        // Create the "Edit query" command
+        const editQuery = document.createElement('span');
+        editQuery.classList.add('itags-search-contextCommand');
+        editQuery.textContent = `Edit query`;
+        editQuery.onclick = () => {
+            // Create an input field with the tag text
+            const input = createInputField(currentTag, target, (input) => {
+                const newTag = input.value;
+                if (newTag && newTag !== currentTag) {
+                    // Find and update the tag in queryGroups
+                    queryGroups.forEach(group => {
+                        group.forEach(item => {
+                            if (item.tag === currentTag) {
+                                item.tag = newTag.toLowerCase();
+                            }
+                        });
+                    });
+                    updateQueryArea();
+                    sendSearchMessage();
+                }
+            });
+            clearNode(contextMenu);
+            contextMenu.remove();
+        };
+        contextMenu.appendChild(editQuery);
+        cmdCount++;
+    }
+
     if ((cmdCount > 0) && commands.includes('replaceAll')) {
         const separator = document.createElement('hr');
         separator.classList.add('itags-search-contextSeparator');
@@ -1535,7 +1565,7 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
     });
     // Handle right-click on tags in list
     if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('range')) {
-        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
     } else if (event.target.type !== 'text') {
         createContextMenu(event, null, null, []);
     }
