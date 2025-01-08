@@ -27,8 +27,6 @@ export interface TagLineInfo {
   lines: number[];
   count: number;
   index: number;
-  parent: boolean;  // first parent
-  child: boolean;   // last child
 }
 
 /**
@@ -41,7 +39,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
   let inCodeBlock = false;
   let isResultBlock = false;
   let isQueryBlock = false;
-  let tagsMap = new Map<string, { lines: Set<number>; count: number; parent: boolean, child: boolean }>();
+  let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
   let tagsLevel = new Map<string, number>();
   let tagsHeading = new Map<string, number>();
   const lines = text.toLocaleLowerCase().split('\n');
@@ -107,15 +105,22 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
         tag = parseDateTag(tag, tagSettings);  // Should probably go here and not inside the loop
 
         let tagFamily: string[];
+        let nValues = 0;
         if (tagSettings.nestedTags) {
-          tagFamily = tag.split('/');  // Split #parent/child into nested parts
+          const value = tag.split(tagSettings.valueDelim, 1);  // Split #parent/child=value into key-value parts
+          tagFamily = value[0].split('/');  // Split #parent/child into nested parts
+          nValues = value.length - 1;
         } else {
           tagFamily = [tag];
         }
         const uniqueSet = new Set<string>();
-        let isParent = true;
-        for (let i = 1; i <= tagFamily.length; i++) {
-          let child = tagFamily.slice(0, i).join('/');
+        for (let i = 1; i <= tagFamily.length + nValues; i++) {
+          let child = '';
+          if (i <= tagFamily.length) {
+            child = tagFamily.slice(0, i).join('/');
+          } else {
+            child = tag;
+          }
           // Trim all separators from the end of the child
           child = child.replace(/\/+$/, '');
           if (child.length === 0) { continue; }
@@ -126,11 +131,8 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
             tagsMap.set(child, {
               lines: new Set<number>(),
               count: 0,
-              parent: isParent,  // first parent
-              child: i === tagFamily.length,  // last child
             });
           }
-          isParent = false;
           // Set tag level
           if (!tagsLevel.has(child)) {
             tagsLevel.set(child, indentLevel);
@@ -153,10 +155,6 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
 
           const tagInfo = tagsMap.get(child);
           tagInfo.lines.add(lineIndex);
-          if (i === tagFamily.length && !tagInfo.child) {
-            // Ensure that the last child is marked as such
-            tagInfo.child = true;
-          }
           tagInfo.count++;
           tagsMap.set(child, tagInfo);
           lineIsTagged = true;
@@ -183,8 +181,6 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
     lines: Array.from(tagsMap.get(tag).lines),
     count: tagsMap.get(tag).count,
     index: 0,
-    parent: tagsMap.get(tag).parent,
-    child: tagsMap.get(tag).child,
   }));
 
   // Sort the result as needed
@@ -543,7 +539,7 @@ export function parseTagsFromFrontMatter(
       // For other keys, create nested tags and replace spaces in both key and value
       const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace).toLowerCase();
       tags.push(...valueArray.map(val =>
-        `${tagSettings.tagPrefix}${safeKey}/${String(val).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
+        `${tagSettings.tagPrefix}${safeKey}${tagSettings.valueDelim}${String(val).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
       ));
     }
   }
@@ -553,9 +549,13 @@ export function parseTagsFromFrontMatter(
   const nestedTags: string[] = [];
   if (tagSettings.nestedTags) {
     for (const tag of tags) {
-      const parts = tag.split('/');
-      for (let i = 1; i < parts.length; i++) {
+      const value = tag.split(tagSettings.valueDelim, 1);
+      const parts = value[0].split('/');
+      for (let i = 1; i <= parts.length; i++) {
         nestedTags.push(parts.slice(0, i).join('/'));
+      }
+      if (value[1]) {
+        nestedTags.push(tag);
       }
     }
   }
@@ -570,7 +570,5 @@ export function parseTagsFromFrontMatter(
     lines,
     count: 1,
     index: 0,
-    parent: !tag.includes('/'),
-    child: tags.includes(tag)
   }));
 }

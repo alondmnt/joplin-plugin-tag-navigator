@@ -13,6 +13,15 @@ interface TableResult extends GroupedResult {
   tags: { [key: string]: string };
 }
 
+interface TagViewInfo {
+  tag: string;
+  lines: number[];
+  count: number;
+  index: number;
+  parent: boolean;  // first parent (column)
+  child: boolean;   // last child (value)
+}
+
 /**
  * Displays search results in all matching notes
  * @param db The inline tags database
@@ -302,12 +311,12 @@ async function processResultForTable(
   result: GroupedResult, 
   db: NoteDatabase, 
   tagSettings: TagSettings
-): Promise<[TableResult, TagLineInfo[]]> {
+): Promise<[TableResult, TagViewInfo[]]> {
   const tableResult = result as TableResult;
   const note = db.notes[result.externalId];
 
   // Get the tags for each line in the results from the database
-  const tagInfo: TagLineInfo[] = [];
+  const tagInfo: TagViewInfo[] = [];
   result.lineNumbers.forEach((startLine, i) => {
     // All lines in each result section are consecutive
     const endLine = startLine + result.text[i].split('\n').length - 1;
@@ -331,7 +340,7 @@ async function processResultForTable(
             count: 1,
             lines: [line],
             index: 0,
-            parent: !tag.includes('/'),
+            parent: !tag.includes('/') && !tag.includes(tagSettings.valueDelim),
             child: null
           });
         }
@@ -340,7 +349,7 @@ async function processResultForTable(
   });
 
   for (const info of tagInfo) {
-    // A child tag is a tag that isn't a prefix of any other tag
+    // A child tag is a tag that isn't a prefix of any other tag, or a value tag
     info.child = !tagInfo.some(other => 
       other.tag !== info.tag && other.tag.startsWith(info.tag)
     );
@@ -514,7 +523,7 @@ function buildTable(
         } else if (tagValue === column) {
           row += ' + |';
         } else {
-          row += ` ${formatTag(tagValue.replace(RegExp(column + '/', 'g'), ''), tagSettings)} |`;
+          row += ` ${formatTag(tagValue.replace(RegExp(column + '/|' + column + tagSettings.valueDelim, 'g'), ''), tagSettings)} |`;
         }
       }
     }

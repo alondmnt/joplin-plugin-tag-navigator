@@ -24,6 +24,7 @@ export interface TagSettings {
   inheritTags: boolean;        // Whether to inherit tags from parent items
   nestedTags: boolean;         // Whether to support nested tag hierarchy
   spaceReplace: string;        // Character to replace spaces in tags
+  valueDelim: string;           // Character to assign a value to a tag
   tagPrefix: string;           // Prefix for converted Joplin tags
   tableCase: string;           // Case formatting for table view
 }
@@ -50,6 +51,7 @@ export async function getTagSettings(): Promise<TagSettings> {
   if (todayTag.length == 0) {
     todayTag = '#today';  // Ensure default value
   }
+  const valueDelim = await joplin.settings.value('itags.valueDelim');
 
   return {
     tagRegex,
@@ -62,6 +64,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     inheritTags: await joplin.settings.value('itags.inheritTags'),
     nestedTags: await joplin.settings.value('itags.nestedTags'),
     spaceReplace: await joplin.settings.value('itags.spaceReplace'),
+    valueDelim: valueDelim ? valueDelim : '=',
     tagPrefix: await joplin.settings.value('itags.tagPrefix'),
     tableCase: await joplin.settings.value('itags.tableCase')
   };
@@ -385,6 +388,15 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Minimum tag count',
       description: 'Minimum number of occurrences for a tag to be included. Default: 1.',
+    },
+    'itags.valueDelim': {
+      value: '=',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Tag value delimiter',
+      description: 'Character to assign a value to a tag. Default: =. Example: #tag=value',
     },
     'itags.tagPrefix': {
       value: '#',

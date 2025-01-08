@@ -258,7 +258,9 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase): Promi
   const visible = joplin.views.panels.visible(panel);
   if (!visible) { return; }
   const tagSort = await joplin.settings.value('itags.tagSort');
-  let allTags = db.getTags();
+  let valueDelim = await joplin.settings.value('itags.valueDelim');
+  valueDelim = valueDelim ? valueDelim : '=';
+  let allTags = db.getTags().filter(tag => !tag.includes(valueDelim));
   if (tagSort === 'count') {
     allTags = allTags.sort((a, b) => db.getTagCount(b) - db.getTagCount(a));
   }
