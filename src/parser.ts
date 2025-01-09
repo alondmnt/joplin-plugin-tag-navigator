@@ -107,7 +107,7 @@ export async function parseTagsLines(text: string, tagSettings: TagSettings): Pr
         let tagFamily: string[];
         let nValues = 0;
         if (tagSettings.nestedTags) {
-          const value = tag.split(tagSettings.valueDelim, 1);  // Split #parent/child=value into key-value parts
+          const value = tag.split(tagSettings.valueDelim, 2);  // Split #parent/child=value into key-value parts
           tagFamily = value[0].split('/');  // Split #parent/child into nested parts
           nValues = value.length - 1;
         } else {
@@ -549,7 +549,7 @@ export function parseTagsFromFrontMatter(
   const nestedTags: string[] = [];
   if (tagSettings.nestedTags) {
     for (const tag of tags) {
-      const value = tag.split(tagSettings.valueDelim, 1);
+      const value = tag.split(tagSettings.valueDelim, 2);
       const parts = value[0].split('/');
       for (let i = 1; i <= parts.length; i++) {
         nestedTags.push(parts.slice(0, i).join('/'));
