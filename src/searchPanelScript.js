@@ -978,7 +978,6 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
     }
 
-    // Add new "Edit query" command
     if (commands.includes('editQuery')) {
         // Create the "Edit query" command
         const editQuery = document.createElement('span');
@@ -989,11 +988,28 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             const input = createInputField(currentTag, target, (input) => {
                 const newTag = input.value;
                 if (newTag && newTag !== currentTag) {
-                    // Find and update the tag in queryGroups
+                    // Parse current range if it is one
+                    const currentRange = currentTag.includes('->') ? parseRange(currentTag) : null;
+
                     queryGroups.forEach(group => {
                         group.forEach(item => {
-                            if (item.tag === currentTag) {
-                                item.tag = newTag.toLowerCase();
+                            // Match either exact tag or exact range
+                            const matchesTag = item.tag === currentTag;
+                            const matchesRange = currentRange && 
+                                item.minValue === currentRange.minValue && 
+                                item.maxValue === currentRange.maxValue;
+
+                            if (matchesTag || matchesRange) {
+                                if (newTag.includes('->')) {
+                                    // Convert to range
+                                    Object.assign(item, parseRange(newTag));
+                                    delete item.tag;
+                                } else {
+                                    // Convert to regular tag
+                                    delete item.minValue;
+                                    delete item.maxValue;
+                                    item.tag = newTag.toLowerCase();
+                                }
                             }
                         });
                     });
@@ -1267,6 +1283,11 @@ function expandResults() {
     for (let i = 0; i < resultNotes.length; i++) {
         resultNotes[i].style.display = 'block';
     }
+}
+
+function parseRange(rangeStr) {
+    const [min, max] = rangeStr.split('->').map(v => v.trim());
+    return { minValue: min || undefined, maxValue: max || undefined };
 }
 
 updateTagList(); // Initial update
@@ -1564,8 +1585,12 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
         }
     });
     // Handle right-click on tags in list
-    if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('range')) {
-        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
+    if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('selected')) {
+        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+    } else if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
+        createContextMenu(event, null, null, ['editQuery']);
+    } else if (event.target.matches('.itags-search-tag') && event.target.classList.contains('selected')) {
+        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'replaceAll', 'removeAll']);
     } else if (event.target.type !== 'text') {
         createContextMenu(event, null, null, []);
     }
