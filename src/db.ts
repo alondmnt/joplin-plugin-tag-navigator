@@ -217,14 +217,26 @@ export class NoteDatabase {
     this.tags = {};
   }
 
-  getTags(): string[] {
+  getTags(valueDelim?: string): string[] {
     // Return a list of tags sorted alphabetically
-    return Object.keys(this.tags).sort((a, b) => a.localeCompare(b));
+    if (valueDelim) {
+      return Object.keys(this.tags)
+        .filter(tag => !tag.includes(valueDelim))
+        .sort((a, b) => a.localeCompare(b));
+    } else {
+      return Object.keys(this.tags)
+        .sort((a, b) => a.localeCompare(b));
+    }
   }
 
-  getAllTagCounts(): { [tag: string]: number } {
+  getAllTagCounts(valueDelim?: string): { [tag: string]: number } {
     // Return a dictionary of all tags and their counts
-    return this.tags;
+    if (valueDelim) {
+      return Object.fromEntries(Object.entries(this.tags)
+        .filter(([tag]) => !tag.includes(valueDelim)));
+    } else {
+      return this.tags;
+    }
   }
 
   getTagCount(tag: string): number {

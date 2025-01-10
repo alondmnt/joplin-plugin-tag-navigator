@@ -109,7 +109,7 @@ joplin.plugins.register({
           tagSettings.inheritTags = false;
           tagLines = await parseTagsLines(note.body, tagSettings);
         }
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
         note = clearObjectReferences(note);
       }
     }
@@ -152,7 +152,7 @@ joplin.plugins.register({
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
       }
 
       note = clearObjectReferences(note);
@@ -174,7 +174,7 @@ joplin.plugins.register({
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
         tagLines = await parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
         note = clearObjectReferences(note);
       },
     });
@@ -443,7 +443,7 @@ joplin.plugins.register({
           event.keys.includes('itags.navPanelStyle') ||
           event.keys.includes('itags.navPanelSort')) {
         if (await joplin.views.panels.visible(navPanel)) {
-          await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+          await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
         }
       }
     });
@@ -474,7 +474,7 @@ joplin.plugins.register({
           });
         }
         // Update the panel
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts());
+        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
       }
       if (message.name === 'updateSetting') {
         await joplin.settings.setValue(message.field, message.value);
