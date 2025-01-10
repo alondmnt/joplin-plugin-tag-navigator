@@ -36,6 +36,7 @@ export type ResultSet = { [id: string]: Set<number> };
 class Note {
   id: string;
   title: string;
+  updatedTime: number | null;
   tags: { [tag: string]: Set<number> };
   noteLinksById: { [noteId: string]: Set<number> };
   noteLinksByTitle: { [title: string]: Set<number> };
@@ -47,9 +48,10 @@ class Note {
    * @param id - The unique identifier of the note
    * @param title - The title of the note
    */
-  constructor(id: string, title: string) {
+  constructor(id: string, title: string, updatedTime: number | null) {
     this.id = id;
     this.title = title;
+    this.updatedTime = updatedTime;
     this.tags = {};
     this.noteLinksById = {};
     this.noteLinksByTitle = {};
@@ -67,6 +69,10 @@ class Note {
       this.tags[tag] = new Set();
     }
     this.tags[tag].add(lineNumber);
+  }
+
+  setUpdatedTime(time: number) {
+    this.updatedTime = time;
   }
 
   setSavedQuery(saved: boolean) {
@@ -159,6 +165,10 @@ export class NoteDatabase {
   constructor() {
     this.notes = {};
     this.tags = {};
+  }
+
+  getNoteUpdatedTime(id: string): number | null {
+    return this.notes[id]?.updatedTime || null;
   }
 
   addNote(note: Note): void {
@@ -302,36 +312,53 @@ function diffSets(setA: Set<number>, setB: Set<number>): Set<number> {
 }
 
 export async function processAllNotes() {
-  // Create the in-memory database
-  DatabaseManager.clearDatabase();
   const db = DatabaseManager.getDatabase();
   const tagSettings = await getTagSettings();
 
-  // Get all notes
+  // Get current time but don't set it yet
+  const currentTime = Date.now();
+
+  // First loop: collect IDs of notes that need updating
+  const notesToUpdate = new Set<string>();
   let hasMore = true;
   let page = 1;
+
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict'],
+      fields: ['id', 'updated_time'],
+      order_by: 'updated_time',
+      order_dir: 'DESC',
       limit: 50,
       page: page++,
     });
     hasMore = notes.has_more;
 
-    for (let note of notes.items) {
-      if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
-        note = clearObjectReferences(note);
+    for (const note of notes.items) {
+      const noteUpdatedTime = db.getNoteUpdatedTime(note.id);
+      if (noteUpdatedTime && note.updated_time <= noteUpdatedTime) {
         continue;
       }
-      if (note.is_conflict == 1) {
-        note = clearObjectReferences(note);
-        continue;
-      }
-      await processNote(db, note, tagSettings);
-      note = clearObjectReferences(note);
+      notesToUpdate.add(note.id);
     }
-    // Remove the reference to the notes to avoid memory leaks
     notes.items = null;
+  }
+  console.log(notesToUpdate.size);
+
+  // Second loop: fetch full details only for notes that need updating
+  for (const noteId of notesToUpdate) {
+    let note = await joplin.data.get(['notes', noteId], {
+      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time'],
+    });
+
+    if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
+      continue;
+    }
+    if (note.is_conflict == 1) {
+      continue;
+    }
+
+    await processNote(db, note, tagSettings);
+    note = clearObjectReferences(note);
   }
 
   const minCount = await joplin.settings.value('itags.minCount');
@@ -352,11 +379,12 @@ export async function processNote(
     body: string;
     markup_language: number;
     is_conflict: number;
+    updated_time: number;
   }, 
   tagSettings: TagSettings
 ): Promise<void> {
   try {
-    const noteRecord = new Note(note.id, note.title);
+    const noteRecord = new Note(note.id, note.title, note.updated_time);
 
     // Process front matter tags
     const frontMatterTags = parseTagsFromFrontMatter(note.body, tagSettings);
