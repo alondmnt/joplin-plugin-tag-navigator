@@ -300,7 +300,7 @@ function updateQueryArea() {
 }
 
 function updateResultsArea() {
-    // Save the current stae of expanded / collapsed notes by their externalId
+    // Save the current state of expanded/collapsed notes
     const noteState = {};
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
@@ -311,6 +311,7 @@ function updateResultsArea() {
         }
     }
 
+    // Sort results
     const filter = resultFilter.value;
     results = results.sort((a, b) => {
         if (resultSort.value === 'title') {
@@ -327,8 +328,10 @@ function updateResultsArea() {
         results = results.reverse();
     }
 
+    // Clear existing results and event listeners
     clearNode(resultsArea);
-    let displayedNoteCount = 0;  // Initialize counter
+    
+    let displayedNoteCount = 0;
     for (let index = 0; index < results.length; index++) {
         const result = results[index];
         const resultEl = document.createElement('div');
@@ -336,14 +339,14 @@ function updateResultsArea() {
         
         const titleEl = document.createElement('h3');
         titleEl.textContent = result.title;
-        titleEl.style.cursor = 'pointer'; // Make the title look clickable
+        titleEl.style.cursor = 'pointer';
         resultEl.appendChild(titleEl);
         
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
-
-        // Preserve the state of the content container
         contentContainer.setAttribute('data-externalId', result.externalId);
+
+        // Preserve expansion state
         if (noteState[result.externalId] === 'collapsed') {
             contentContainer.style.display = 'block';
         } else if (noteState[result.externalId] === 'expanded') {
@@ -353,14 +356,17 @@ function updateResultsArea() {
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
-        const filterRegExp = new RegExp(`(?<!<[^>]*)(${parsedFilter.join('|')})(?![^<]*>)`, 'gi');  // ignore html tags
+        const filterRegExp = new RegExp(`(?<!<[^>]*)(${parsedFilter.join('|')})(?![^<]*>)`, 'gi');
+
+        let hasContent = false;
         for (let index = 0; index < result.html.length; index++) {
-            let entry = result.html[index];
             if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget=result.title)) {
-                continue; // Skip entries that don't match the filter
+                continue;
             }
+            hasContent = true;
+
+            let entry = result.html[index];
             if (resultMarker && (parsedFilter.length > 0)) {
-                // Mark any word containing at least 3 characters
                 entry = entry.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
                 titleEl.innerHTML = titleEl.textContent.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
             }
@@ -369,105 +375,117 @@ function updateResultsArea() {
             entryEl.classList.add('itags-search-resultSection');
             entryEl.innerHTML = entry;
             addLineNumberToCheckboxes(entryEl, result.text[index]);
-            entryEl.style.cursor = 'pointer'; // Make the content look clickable
+            entryEl.style.cursor = 'pointer';
+
+            // Adjust task list item positioning
             entryEl.querySelectorAll('.itags-search-resultSection > .contains-task-list > .task-list-item').forEach(item => {
-                item.style.position = 'relative'; // Ensure the element's position can be adjusted
-                item.style.left = '-15px'; // Move 15px to the left
+                item.style.position = 'relative';
+                item.style.left = '-15px';
             });
 
-            // Handle click on the content
-            addEventListenerWithTracking(entryEl, 'click', (event) => {
-                if (event.target.matches('.task-list-item-checkbox')) {
-                    // get the line number of the clicked checkbox
-                    const line = parseInt(event.target.getAttribute('data-line-number'));
-                    webviewApi.postMessage({
-                        name: 'setCheckBox',
-                        externalId: result.externalId,
-                        line: result.lineNumbers[index] + line,
-                        text: result.text[index].split('\n')[line].trim(),
-                        source: event.target.checked ? ' ' : 'x',
-                        target: event.target.checked ? 'x' : ' ',
-                    });
-
-                } else if (event.target.matches('.itags-search-checkbox')) {
-                    // get the line number of the clicked coloured checkbox
-                    const line = parseInt(event.target.getAttribute('data-line-number'));
-                    webviewApi.postMessage({
-                        name: 'setCheckBox',
-                        externalId: result.externalId,
-                        line: result.lineNumbers[index] + line,
-                        text: result.text[index].split('\n')[line].trim(),
-                        source: getCheckboxState(event.target),
-                        target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
-                    });
-
-                } else if (event.target.matches('a')) {
-                    event.preventDefault();
-                    const externalId = event.target.href.match(noteIdRegex)?.[0];
-                    webviewApi.postMessage({
-                        name: 'openNote',
-                        externalId: externalId ? externalId : event.target.textContent,
-                        line: 0,
-                    });
-
-                } else {
-                    webviewApi.postMessage({
-                        name: 'openNote',
-                        externalId: result.externalId,
-                        line: result.lineNumbers[index],
-                    });
-                }
-            });
-
-            // Handle right-click on rendered tags
-            addEventListenerWithTracking(entryEl, 'contextmenu', (event) => {
-                // Remove previous context menus
-                const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
-                contextMenu.forEach(menu => {
-                    if (!menu.contains(event.target)) {
-                        menu.remove();
-                    }
-                });
-                if (event.target.matches('.itags-search-renderedTag')) {
-                    createContextMenu(event, result, index);
-                }
-                if (event.target.matches('.itags-search-checkbox')) {
-                    createContextMenu(event, result, index, ['checkboxState']);
-                }
-            });
+            // Add click handlers
+            addEventListenerWithTracking(entryEl, 'click', createClickHandler(result, index));
+            addEventListenerWithTracking(entryEl, 'contextmenu', createContextMenuHandler(result, index));
 
             contentContainer.appendChild(entryEl);
-            
-            // Add a dividing line between sections
-            const divider = document.createElement('hr');
-            contentContainer.appendChild(divider);
+            contentContainer.appendChild(document.createElement('hr'));
         }
-        
-        // Remove the last divider
+
+        if (!hasContent) {
+            continue;
+        }
+
+        // Remove last divider
         if (contentContainer.lastElementChild) {
             contentContainer.removeChild(contentContainer.lastElementChild);
         }
-        if (contentContainer.childElementCount === 0) {
-            continue; // Skip empty results
-        }
+
         resultEl.appendChild(contentContainer);
         resultsArea.appendChild(resultEl);
-        displayedNoteCount++;  // Increment counter for each displayed note
-        
-        // Toggle visibility of the contentContainer on title click
+        displayedNoteCount++;
+
+        // Add title click handler
         addEventListenerWithTracking(titleEl, 'click', () => {
-            const isHidden = contentContainer.style.display === 'none';
-            contentContainer.style.display = isHidden ? 'block' : 'none';
+            contentContainer.style.display = contentContainer.style.display === 'none' ? 'block' : 'none';
         });
-        
-        // Add a dividing space between notes
+
+        // Add spacing between notes
         const resultSpace = document.createElement('div');
         resultSpace.classList.add('itags-search-resultSpace');
         resultsArea.appendChild(resultSpace);
     }
 
     // Update result count display
-    if (resultFilter.value) {
+    updateResultCount(displayedNoteCount, filter);
+
+    // Remove last spacing
+    if (resultsArea.lastElementChild) {
+        resultsArea.removeChild(resultsArea.lastElementChild);
+    }
+}
+
+// Helper function to create click handler
+function createClickHandler(result, index) {
+    return (event) => {
+        if (event.target.matches('.task-list-item-checkbox')) {
+            const line = parseInt(event.target.getAttribute('data-line-number'));
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: event.target.checked ? ' ' : 'x',
+                target: event.target.checked ? 'x' : ' ',
+            });
+        } else if (event.target.matches('.itags-search-checkbox')) {
+            const line = parseInt(event.target.getAttribute('data-line-number'));
+            webviewApi.postMessage({
+                name: 'setCheckBox',
+                externalId: result.externalId,
+                line: result.lineNumbers[index] + line,
+                text: result.text[index].split('\n')[line].trim(),
+                source: getCheckboxState(event.target),
+                target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
+            });
+        } else if (event.target.matches('a')) {
+            event.preventDefault();
+            const externalId = event.target.href.match(noteIdRegex)?.[0];
+            webviewApi.postMessage({
+                name: 'openNote',
+                externalId: externalId ? externalId : event.target.textContent,
+                line: 0,
+            });
+        } else {
+            webviewApi.postMessage({
+                name: 'openNote',
+                externalId: result.externalId,
+                line: result.lineNumbers[index],
+            });
+        }
+    };
+}
+
+// Helper function to create context menu handler
+function createContextMenuHandler(result, index) {
+    return (event) => {
+        const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+        contextMenu.forEach(menu => {
+            if (!menu.contains(event.target)) {
+                menu.remove();
+            }
+        });
+        if (event.target.matches('.itags-search-renderedTag')) {
+            createContextMenu(event, result, index);
+        }
+        if (event.target.matches('.itags-search-checkbox')) {
+            createContextMenu(event, result, index, ['checkboxState']);
+        }
+    };
+}
+
+// Helper function to update result count display
+function updateResultCount(displayedNoteCount, filter) {
+    if (filter) {
         resultCount.textContent = displayedNoteCount;
         resultCount.style.display = 'block';
         // Position the count relative to the input
@@ -481,11 +499,6 @@ function updateResultsArea() {
     // Update resultFilter placeholder (only when no text entered)
     if (!resultFilter.value) {
         resultFilter.placeholder = `Filter ${displayedNoteCount} results...`;
-    }
-
-    // Remove the last dividing space
-    if (resultsArea.lastElementChild) {
-        resultsArea.removeChild(resultsArea.lastElementChild);
     }
 }
 
