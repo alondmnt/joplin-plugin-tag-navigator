@@ -69,6 +69,7 @@ interface PanelSettings {
   showResultFilter: boolean;
   selectMultiTags: boolean;
   searchWithRegex: boolean;
+  spaceReplace: string;
 }
 
 /**
@@ -328,6 +329,7 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     showResultFilter: await joplin.settings.value('itags.showResultFilter'),
     selectMultiTags: await joplin.settings.value('itags.selectMultiTags'),
     searchWithRegex: await joplin.settings.value('itags.searchWithRegex'),
+    spaceReplace: await joplin.settings.value('itags.spaceReplace'),
   };
   const intervalID = setInterval(
     async () => {

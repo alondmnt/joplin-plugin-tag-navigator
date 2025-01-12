@@ -35,6 +35,7 @@ const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
 let selectMultiTags = 'first';
 let searchWithRegex = false;
+let spaceReplace = '_';
 let dropdownIsOpen = false;
 const eventListenersMap = new Map();  // Map to store event listeners and clear them later
 
@@ -156,6 +157,7 @@ function updatePanelSettings(message) {
     const settings = JSON.parse(message.message.settings);
     searchWithRegex = settings.searchWithRegex;
     selectMultiTags = settings.selectMultiTags;
+    spaceReplace = settings.spaceReplace;
     resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
     if ( resultToggleState === 'collapse' ) {
         collapseResults();
@@ -986,7 +988,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         editQuery.onclick = () => {
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
-                const newTag = input.value;
+                let newTag = input.value;
                 if (newTag && newTag !== currentTag) {
                     // Parse current range if it is one
                     const currentRange = currentTag.includes('->') ? parseRange(currentTag) : null;
@@ -1008,7 +1010,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                                     // Convert to regular tag
                                     delete item.minValue;
                                     delete item.maxValue;
-                                    item.tag = newTag.toLowerCase();
+                                    item.tag = newTag
+                                        .toLowerCase()
+                                        .replace(RegExp('\\s', 'g'), spaceReplace);
                                 }
                             }
                         });
@@ -1286,7 +1290,8 @@ function expandResults() {
 }
 
 function parseRange(rangeStr) {
-    const [min, max] = rangeStr.split('->').map(v => v.trim());
+    const [min, max] = rangeStr.split('->').map(v => v
+        .trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace));
     return { minValue: min || undefined, maxValue: max || undefined };
 }
 
