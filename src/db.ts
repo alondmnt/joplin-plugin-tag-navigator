@@ -327,9 +327,6 @@ export async function processAllNotes() {
   const db = DatabaseManager.getDatabase();
   const tagSettings = await getTagSettings();
 
-  // Get current time but don't set it yet
-  const currentTime = Date.now();
-
   // First loop: collect IDs of notes that need updating
   const notesToUpdate = new Set<string>();
   let hasMore = true;
@@ -348,13 +345,15 @@ export async function processAllNotes() {
     for (const note of notes.items) {
       const noteUpdatedTime = db.getNoteUpdatedTime(note.id);
       if (noteUpdatedTime && note.updated_time <= noteUpdatedTime) {
+        clearObjectReferences(note);
         continue;
       }
       notesToUpdate.add(note.id);
+      clearObjectReferences(note);
     }
-    notes.items = null;
+    // Clear the entire notes object
+    clearObjectReferences(notes);
   }
-  console.log(notesToUpdate.size);
 
   // Second loop: fetch full details only for notes that need updating
   for (const noteId of notesToUpdate) {
@@ -363,9 +362,11 @@ export async function processAllNotes() {
     });
 
     if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
+      note = clearObjectReferences(note);
       continue;
     }
     if (note.is_conflict == 1) {
+      note = clearObjectReferences(note);
       continue;
     }
 
