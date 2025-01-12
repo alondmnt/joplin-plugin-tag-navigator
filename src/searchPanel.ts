@@ -256,16 +256,19 @@ export async function focusSearchPanel(panel: string): Promise<void> {
  * @param db - Note database instance
  */
 export async function updatePanelTagData(panel: string, db: NoteDatabase): Promise<void> {
-  const visible = joplin.views.panels.visible(panel);
-  if (!visible) { return; }
+  if (!await joplin.views.panels.visible(panel)) { return; }
+  
   const tagSort = await joplin.settings.value('itags.tagSort');
-  let valueDelim = await joplin.settings.value('itags.valueDelim');
-  valueDelim = valueDelim ? valueDelim : '=';
-  let allTags = db.getTags(valueDelim);
+  const valueDelim = await joplin.settings.value('itags.valueDelim') || '=';
+  
+  // Get and sort tags in one pass
+  const allTags = db.getTags(valueDelim);
   if (tagSort === 'count') {
-    allTags = allTags.sort((a, b) => db.getTagCount(b) - db.getTagCount(a));
+    const tagCounts = new Map(allTags.map(tag => [tag, db.getTagCount(tag)]));
+    allTags.sort((a, b) => tagCounts.get(b) - tagCounts.get(a));
   }
-  joplin.views.panels.postMessage(panel, {
+  
+  await joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
     tags: JSON.stringify(allTags),
   });
@@ -277,9 +280,9 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase): Promi
  * @param db - Note database instance
  */
 export async function updatePanelNoteData(panel: string, db: NoteDatabase): Promise<void> {
-  const visible = joplin.views.panels.visible(panel);
-  if (!visible) { return; }
-  joplin.views.panels.postMessage(panel, {
+  if (!await joplin.views.panels.visible(panel)) { return; }
+  
+  await joplin.views.panels.postMessage(panel, {
     name: 'updateNoteData',
     notes: JSON.stringify(db.getNotes()),
   });

@@ -79,49 +79,67 @@ webviewApi.onMessage((message) => {
 // Update areas
 function updateTagList() {
     clearNode(tagList);
-    allTags.filter(tag => containsFilter(tag, tagFilter.value)).forEach(tag => {
+    
+    // Create document fragment to batch DOM updates
+    const fragment = document.createDocumentFragment();
+    
+    // Filter tags once
+    const filteredTags = allTags.filter(tag => containsFilter(tag, tagFilter.value));
+    
+    // Create all elements at once
+    filteredTags.forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.classList.add('itags-search-tag');
         tagEl.textContent = tag;
-        tagEl.onclick = () => handleTagClick(tag);
-
-        tagList.appendChild(tagEl);
+        addEventListenerWithTracking(tagEl, 'click', () => handleTagClick(tag));
+        fragment.appendChild(tagEl);
     });
+    
+    // Single DOM update
+    tagList.appendChild(fragment);
 }
 
 // Update note dropdown with the current list of notes
 function updateNoteList() {
     if (dropdownIsOpen) { return; }
 
-    // Preserve the previous selection, if possible
+    // Preserve selection
     const selectedNoteId = noteList.value;
     clearNode(noteList);
+    
+    const fragment = document.createDocumentFragment();
+    const filterValue = noteFilter.value;
 
-    if (noteFilter.value === '') {
+    // Create default options
+    if (filterValue === '') {
         const titleOpt = document.createElement('option');
         titleOpt.value = 'default';
         titleOpt.textContent = 'Search by note mentions';
-        noteList.appendChild(titleOpt);
+        fragment.appendChild(titleOpt);
+        fragment.appendChild(titleOpt.cloneNode(true)); // Duplicate first option
     }
-    if (containsFilter('Current note', noteFilter.value)) {
+
+    if (containsFilter('Current note', filterValue)) {
         const currentOpt = document.createElement('option');
         currentOpt.value = 'current';
         currentOpt.textContent = 'Current note';
-        noteList.appendChild(currentOpt);
+        fragment.appendChild(currentOpt);
     }
 
-    allNotes.filter(note => containsFilter(note.title, noteFilter.value)).forEach(note => {
-        const noteEl = document.createElement('option');
-        noteEl.value = note.externalId;
-        noteEl.textContent = note.title;
-        noteList.appendChild(noteEl);
-    });
+    // Filter and create note options in one pass
+    allNotes
+        .filter(note => containsFilter(note.title, filterValue))
+        .forEach(note => {
+            const noteEl = document.createElement('option');
+            noteEl.value = note.externalId;
+            noteEl.textContent = note.title;
+            fragment.appendChild(noteEl);
+        });
 
-    // Duplicate the first option to be the first
-    const firstOpt = noteList.firstChild.cloneNode(true);
-    noteList.insertBefore(firstOpt, noteList.firstChild);
+    // Single DOM update
+    noteList.appendChild(fragment);
 
-    // Restore the previous selection, if possible
+    // Restore selection if possible
     if (selectedNoteId) {
         noteList.value = selectedNoteId;
     }
@@ -224,79 +242,68 @@ function hideElements(settings) {
 
 function updateQueryArea() {
     clearNode(queryArea);
+    const fragment = document.createDocumentFragment();
+
     queryGroups.forEach((group, groupIndex) => {
         if (groupIndex > 0) {
-            // Use OR between groups
-            let orOperator = createOperatorElement('OR', groupIndex - 1, true);
-            queryArea.appendChild(orOperator);
+            fragment.appendChild(createOperatorElement('OR', groupIndex - 1, true));
         }
 
-        queryArea.appendChild(document.createTextNode('(')); // Start group
+        fragment.appendChild(document.createTextNode('(')); // Start group
 
         group.forEach((item, tagIndex) => {
-            // If the item has {tag, negated} format add a tag element
-            // If the item has {title, externalId, negated} format add a note element
-            const newEl = document.createElement('span');
-            if (item.title) {
-                newEl.classList.add('itags-search-note', item.negated ? 'negated' : 'selected');
-                newEl.textContent = item.title.slice(0, 20)
-                newEl.title = item.title;
-                if (item.title.length >= 20) {
-                    newEl.textContent += '...';
-                }
-                if (item.negated) {
-                    newEl.textContent = `! ${newEl.textContent}`;
-                }
+            const newEl = createQueryElement(item, groupIndex, tagIndex);
+            fragment.appendChild(newEl);
 
-                newEl.onclick = () => {
-                    toggleTagNegation(groupIndex, tagIndex);
-                    updateQueryArea(); // Refresh after toggling negation
-                };
-
-            } else if (item.tag) {
-                // Display each tag with its state
-                newEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
-                newEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
-
-                newEl.onclick = () => {
-                    toggleTagNegation(groupIndex, tagIndex);
-                    updateQueryArea(); // Refresh after toggling negation
-                };
-
-            } else if (item.minValue || item.maxValue) {
-                // Display range
-                newEl.classList.add('itags-search-tag', 'selected', 'range');
-                newEl.textContent = '';
-                if (item.minValue) {
-                    newEl.textContent += item.minValue;
-                }
-                newEl.textContent += ' -> ';
-                if (item.maxValue) {
-                    newEl.textContent += item.maxValue;
-                }
-            }
-
-            // Append a delete button for each tag
-            const deleteBtn = document.createElement('button');
-            deleteBtn.classList.add('itags-search-tagDelete');
-            deleteBtn.textContent = 'x';
-            deleteBtn.onclick = (e) => {
-                e.stopPropagation(); // Prevent tag toggle event
-                removeTagFromGroup(groupIndex, tagIndex);
-                updateQueryArea(); // Refresh display after deletion
-            };
-            newEl.appendChild(deleteBtn);
-            queryArea.appendChild(newEl);
-
-            // Add "AND" within a group, except after the last tag
             if (tagIndex < group.length - 1) {
-                let andOperator = createOperatorElement('AND', groupIndex, false, tagIndex);
-                queryArea.appendChild(andOperator);
+                fragment.appendChild(createOperatorElement('AND', groupIndex, false, tagIndex));
             }
         });
 
-        queryArea.appendChild(document.createTextNode(')')); // End group
+        fragment.appendChild(document.createTextNode(')')); // End group
     });
+
+    queryArea.appendChild(fragment);
+}
+
+function createQueryElement(item, groupIndex, tagIndex) {
+    const newEl = document.createElement('span');
+    
+    if (item.title) {
+        newEl.classList.add('itags-search-note', item.negated ? 'negated' : 'selected');
+        newEl.textContent = item.title.slice(0, 20) + (item.title.length >= 20 ? '...' : '');
+        newEl.title = item.title;
+        if (item.negated) {
+            newEl.textContent = `! ${newEl.textContent}`;
+        }
+    } else if (item.tag) {
+        newEl.classList.add('itags-search-tag', item.negated ? 'negated' : 'selected');
+        newEl.textContent = item.negated ? `! ${item.tag}` : item.tag;
+    } else if (item.minValue || item.maxValue) {
+        newEl.classList.add('itags-search-tag', 'selected', 'range');
+        newEl.textContent = `${item.minValue || ''} -> ${item.maxValue || ''}`;
+    }
+
+    // Add click handler for negation toggle
+    if (item.tag || item.title) {
+        addEventListenerWithTracking(newEl, 'click', () => {
+            toggleTagNegation(groupIndex, tagIndex);
+            updateQueryArea();
+        });
+    }
+
+    // Add delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.classList.add('itags-search-tagDelete');
+    deleteBtn.textContent = 'x';
+    addEventListenerWithTracking(deleteBtn, 'click', (e) => {
+        e.stopPropagation();
+        removeTagFromGroup(groupIndex, tagIndex);
+        updateQueryArea();
+    });
+    newEl.appendChild(deleteBtn);
+
+    return newEl;
 }
 
 function updateResultsArea() {
