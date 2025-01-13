@@ -279,7 +279,7 @@ async function processResultsForTable(
         if (!valueCount[parent.tag]) {
           valueCount[parent.tag] = {};
         }
-        const value = info.tag.replace(parent.tag + '/', '');
+        const value = info.tag.replace(RegExp(parent.tag + '/|' + parent.tag + tagSettings.valueDelim, 'g'), '');
         valueCount[parent.tag][value] = (valueCount[parent.tag][value] || 0) + 1;
       }
     });
