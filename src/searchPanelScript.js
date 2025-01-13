@@ -812,16 +812,19 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     }
     const line = parseInt(target.getAttribute('data-line-number'));
 
-    // Create the custom context menu container
+    // Create the custom context menu container and position off-screen immediately
     const contextMenu = document.createElement('div');
     contextMenu.classList.add('itags-search-contextMenu');
-    
-    // First position the menu at the click coordinates
     contextMenu.style.position = 'absolute';
+    contextMenu.style.left = '-9999px';
+    contextMenu.style.top = '-9999px';
+    document.body.appendChild(contextMenu);
+    
+    // Create fragment to batch DOM updates
+    const fragment = document.createDocumentFragment();
     let cmdCount = 0;
 
     if (commands.includes('checkboxState')) {
-        // Create one command for every checkbox state ([x]it! style)
         const xitOpen = document.createElement('span');
         xitOpen.classList.add('itags-search-contextCommand');
         if (target.classList.contains('xitOpen')) {
@@ -829,7 +832,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitOpen.textContent = `Open`;
         }
-        xitOpen.onclick = () => {
+        addEventListenerWithTracking(xitOpen, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -838,10 +841,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: ' ',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitOpen);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitOpen);
         cmdCount++;
 
         const xitInQuestion = document.createElement('span');
@@ -851,7 +853,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitInQuestion.textContent = `In question`;
         }
-        xitInQuestion.onclick = () => {
+        addEventListenerWithTracking(xitInQuestion, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -860,10 +862,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: '?',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitInQuestion);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitInQuestion);
         cmdCount++;
 
         const xitOngoing = document.createElement('span');
@@ -873,7 +874,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitOngoing.textContent = `Ongoing`;
         }
-        xitOngoing.onclick = () => {
+        addEventListenerWithTracking(xitOngoing, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -882,10 +883,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: '@',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitOngoing);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitOngoing);
         cmdCount++;
 
         const xitBlocked = document.createElement('span');
@@ -895,7 +895,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitBlocked.textContent = `Blocked`;
         }
-        xitBlocked.onclick = () => {
+        addEventListenerWithTracking(xitBlocked, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -904,10 +904,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: '!',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitBlocked);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitBlocked);
         cmdCount++;
 
         const xitObsolete = document.createElement('span');
@@ -917,7 +916,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitObsolete.textContent = `Obsolete`;
         }
-        xitObsolete.onclick = () => {
+        addEventListenerWithTracking(xitObsolete, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -926,10 +925,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: '~',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitObsolete);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitObsolete);
         cmdCount++;
 
         const xitDone = document.createElement('span');
@@ -939,7 +937,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         } else {
             xitDone.textContent = `Done`;
         }
-        xitDone.onclick = () => {
+        addEventListenerWithTracking(xitDone, 'click', () => {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
@@ -948,10 +946,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 source: getCheckboxState(target),
                 target: 'x',
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(xitDone);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(xitDone);
         cmdCount++;
     }
 
@@ -960,13 +957,13 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             // Add a separator between the checkbox states and the other commands
             const separator = document.createElement('hr');
             separator.classList.add('itags-search-contextSeparator');
-            contextMenu.appendChild(separator);
+            fragment.appendChild(separator);
         }
         // Create the "Search tag" command
         const searchTag = document.createElement('span');
         searchTag.classList.add('itags-search-contextCommand');
         searchTag.textContent = `Search tag`;
-        searchTag.onclick = () => {
+        addEventListenerWithTracking(searchTag, 'click', () => {
             clearQueryArea();
             clearResultsArea();
             tagFilter.value = '';
@@ -978,10 +975,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             handleTagClick(currentTag.toLowerCase());
             updateTagList();
             sendSearchMessage();
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(searchTag);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(searchTag);
         cmdCount++;
     }
 
@@ -990,13 +986,12 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const extendQuery = document.createElement('span');
         extendQuery.classList.add('itags-search-contextCommand');
         extendQuery.textContent = `Extend query`;
-        extendQuery.onclick = () => {
+        addEventListenerWithTracking(extendQuery, 'click', () => {
             handleTagClick(currentTag.toLowerCase());
             sendSearchMessage();
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(extendQuery);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(extendQuery);
         cmdCount++;
     }
 
@@ -1005,7 +1000,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const editQuery = document.createElement('span');
         editQuery.classList.add('itags-search-contextCommand');
         editQuery.textContent = `Edit query`;
-        editQuery.onclick = () => {
+        addEventListenerWithTracking(editQuery, 'click', () => {
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
                 let newTag = input.value;
@@ -1041,24 +1036,23 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     sendSearchMessage();
                 }
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(editQuery);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(editQuery);
         cmdCount++;
     }
 
     if ((cmdCount > 0) && commands.includes('replaceAll')) {
         const separator = document.createElement('hr');
         separator.classList.add('itags-search-contextSeparator');
-        contextMenu.appendChild(separator);
+        fragment.appendChild(separator);
     }
     if (commands.includes('addTag')) {
         // Create the "Add tag" command
         const addTag = document.createElement('span');
         addTag.classList.add('itags-search-contextCommand');
         addTag.textContent = `Add tag`;
-        addTag.onclick = () => {
+        addEventListenerWithTracking(addTag, 'click', () => {
             // Create an input field to add a new tag
             const input = createInputField('#new-tag', target, (input) => {
                 const newTag = input.value;
@@ -1072,10 +1066,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(addTag);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(addTag);
         cmdCount++;
     }
 
@@ -1084,7 +1077,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const replaceTag = document.createElement('span');
         replaceTag.classList.add('itags-search-contextCommand');
         replaceTag.textContent = `Replace tag`;
-        replaceTag.onclick = () => {
+        addEventListenerWithTracking(replaceTag, 'click', () => {
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
                 const newTag = input.value;
@@ -1099,10 +1092,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(replaceTag);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(replaceTag);
         cmdCount++;
     }
 
@@ -1111,7 +1103,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const replaceAll = document.createElement('span');
         replaceAll.classList.add('itags-search-contextCommand');
         replaceAll.textContent = `Replace all`;
-        replaceAll.onclick = () => {
+        addEventListenerWithTracking(replaceAll, 'click', () => {
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
                 const newTag = input.value;
@@ -1123,10 +1115,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                     });
                 }
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(replaceAll);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(replaceAll);
         cmdCount++;
     }
 
@@ -1135,7 +1126,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const removeTag = document.createElement('span');
         removeTag.classList.add('itags-search-contextCommand');
         removeTag.textContent = `Remove tag`;
-        removeTag.onclick = () => {
+        addEventListenerWithTracking(removeTag, 'click', () => {
             webviewApi.postMessage({
                 name: 'removeTag',
                 externalId: result.externalId,
@@ -1143,10 +1134,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                 text: result.text[index].split('\n')[line].trim(),
                 tag: currentTag,
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        };
-        contextMenu.appendChild(removeTag);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(removeTag);
         cmdCount++;
     }
 
@@ -1155,15 +1145,14 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         const removeAll = document.createElement('span');
         removeAll.classList.add('itags-search-contextCommand');
         removeAll.textContent = `Remove all`;
-        removeAll.onclick = () => {
+        addEventListenerWithTracking(removeAll, 'click', () => {
             webviewApi.postMessage({
                 name: 'removeAll',
                 tag: currentTag,
             });
-            clearNode(contextMenu);
-            contextMenu.remove();
-        }
-        contextMenu.appendChild(removeAll);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(removeAll);
         cmdCount++;
     }
 
@@ -1171,7 +1160,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     if (cmdCount > 0) {
         const separator = document.createElement('hr');
         separator.classList.add('itags-search-contextSeparator');
-        contextMenu.appendChild(separator);
+        fragment.appendChild(separator);
     }
     const sectionState = {
         showNotes: !noteArea.classList.contains('hidden'),
@@ -1187,14 +1176,13 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     } else {
         showTagRange.textContent = 'Tag range';
     }
-    showTagRange.onclick = () => {
+    addEventListenerWithTracking(showTagRange, 'click', () => {
         sectionState.showTagRange = !sectionState.showTagRange;
         sendSetting('showTagRange', sectionState.showTagRange);
         hideElements(sectionState);
-        clearNode(contextMenu);
-        contextMenu.remove();
-    }
-    contextMenu.appendChild(showTagRange);
+        removeContextMenu(contextMenu);
+    });
+    fragment.appendChild(showTagRange);
 
     // showNotes
     const showNotes = document.createElement('span');
@@ -1204,14 +1192,13 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     } else {
         showNotes.textContent = 'Note mentions';
     }
-    showNotes.onclick = () => {
+    addEventListenerWithTracking(showNotes, 'click', () => {
         sectionState.showNotes = !sectionState.showNotes;
         sendSetting('showNotes', sectionState.showNotes);
         hideElements(sectionState);
-        clearNode(contextMenu);
-        contextMenu.remove();
-    };
-    contextMenu.appendChild(showNotes);
+        removeContextMenu(contextMenu);
+    });
+    fragment.appendChild(showNotes);
 
     // showResultsFilter
     const showResultFilter = document.createElement('span');
@@ -1221,34 +1208,29 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     } else {
         showResultFilter.textContent = 'Result filter';
     }
-    showResultFilter.onclick = () => {
+    addEventListenerWithTracking(showResultFilter, 'click', () => {
         sectionState.showResultFilter = !sectionState.showResultFilter;
         sendSetting('showResultFilter', sectionState.showResultFilter);
         hideElements(sectionState);
-        clearNode(contextMenu);
-        contextMenu.remove();
-    }
-    contextMenu.appendChild(showResultFilter);
+        removeContextMenu(contextMenu);
+    });
+    fragment.appendChild(showResultFilter);
 
-    // Initially position off-screen to get accurate measurements
-    contextMenu.style.left = '-9999px';
-    contextMenu.style.top = '-9999px';
-    document.body.appendChild(contextMenu);
+    // Add all elements at once
+    contextMenu.appendChild(fragment);
 
-    // Get measurements
+    // Get measurements and calculate position
     const menuHeight = contextMenu.offsetHeight;
     const menuWidth = contextMenu.offsetWidth;
     const panelHeight = document.body.offsetHeight;
     const panelWidth = document.body.offsetWidth;
 
-    // Calculate final position
+    // Calculate and apply final position
     let xPos = Math.min(event.clientX, panelWidth - menuWidth);
     let yPos = event.clientY;
     if (yPos + menuHeight > panelHeight) {
         yPos = Math.max(0, panelHeight - menuHeight);
     }
-
-    // Apply final position
     contextMenu.style.left = `${xPos}px`;
     contextMenu.style.top = `${yPos}px`;
 }
@@ -1589,7 +1571,7 @@ addEventListenerWithTracking(document, 'click', (event) => {
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
     contextMenu.forEach(menu => {
         if (!menu.contains(event.target)) {
-            menu.remove();
+            removeContextMenu(menu);
         }
     });
 });
@@ -1606,7 +1588,7 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
     contextMenu.forEach(menu => {
         if (!menu.contains(event.target)) {
-            menu.remove();
+            removeContextMenu(menu);
         }
     });
     // Handle right-click on tags in list
@@ -1625,7 +1607,7 @@ addEventListenerWithTracking(document, 'keydown', (event) => {
     if (event.key === 'Escape') {
         const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
         contextMenu.forEach(menu => {
-            menu.remove();
+            removeContextMenu(menu);
         });
     }
 });
@@ -1633,3 +1615,10 @@ addEventListenerWithTracking(document, 'keydown', (event) => {
 webviewApi.postMessage({
     name: 'initPanel',
 });
+
+// Add this helper function
+function removeContextMenu(menu) {
+    if (!menu) return;
+    clearNode(menu);  // Clear event listeners
+    menu.remove();    // Remove from DOM
+}
