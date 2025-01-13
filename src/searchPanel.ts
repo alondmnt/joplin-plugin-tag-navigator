@@ -7,8 +7,26 @@ import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 
-/** Regex to find query blocks in notes */
-const findQuery = new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`);
+// Cached markdown-it instance
+const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
+
+/** Cached regex patterns */
+const REGEX = {
+  findQuery: new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`),
+  wikiLink: /\[\[([^\]]+)\]\]/g,
+  xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,
+  xitDone: /(^[\s]*)- \[x\] (.*)$/gm,
+  xitOngoing: /(^[\s]*)- \[@\] (.*)$/gm,
+  xitObsolete: /(^[\s]*)- \[~\] (.*)$/gm,
+  xitInQuestion: /(^[\s]*)- \[\?\] (.*)$/gm,
+  xitBlocked: /(^[\s]*)- \[!\] (.*)$/gm,
+  codeBlock: /(```[^`]*```)/g,
+  backtickContent: /(`[^`]*`)/,
+  heading: /^(#{1,6})\s+(.*)$/,
+  leadingWhitespace: /^\s*/,
+  checkboxPrefix: /^\s*- \[[x\s@\?!~]\]\s*/,
+  checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g
+};
 
 /**
  * Represents a search query configuration
@@ -357,15 +375,6 @@ export async function updatePanelSettings(panel: string): Promise<void> {
  * @returns Processed results with HTML content
  */
 function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean): GroupedResult[] {
-  const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
-  const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
-  const xitOpen = /(^[\s]*)- \[ \] (.*)$/gm;
-  const xitDone = /(^[\s]*)- \[x\] (.*)$/gm;
-  const xitOngoing = /(^[\s]*)- \[@\] (.*)$/gm;
-  const xitObsolete = /(^[\s]*)- \[~\] (.*)$/gm;
-  const xitInQuestion = /(^[\s]*)- \[\?\] (.*)$/gm;
-  const xitBlocked = /(^[\s]*)- \[!\] (.*)$/gm;  // not officially a [x]it! checkbox
-
   for (const group of groupedResults) {
     group.html = [];
     for (const section of group.text) {
@@ -374,14 +383,9 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
       processedSection = formatFrontMatter(processedSection);
 
       if (resultMarker) {
-        // Split into blocks first to handle code blocks
         const blocks = splitCodeBlocks(processedSection);
         processedSection = blocks.map((block, index) => {
-          if (index % 2 === 1) {
-            // Odd indices are code blocks - return unchanged
-            return block;
-          }
-          // Process non-code-block content by lines
+          if (index % 2 === 1) return block;
           const lines = block.split('\n');
           return lines.map((line, lineNumber) => 
             replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
@@ -390,15 +394,15 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
       }
 
       processedSection = processedSection
-        .replace(wikiLinkRegex, '<a href="#$1">$1</a>');
+        .replace(REGEX.wikiLink, '<a href="#$1">$1</a>');
       if (colorTodos) {
         processedSection = processedSection
-          .replace(xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
-          .replace(xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
-          .replace(xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
-          .replace(xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
-          .replace(xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
-          .replace(xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
+          .replace(REGEX.xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
+          .replace(REGEX.xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
+          .replace(REGEX.xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
+          .replace(REGEX.xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
+          .replace(REGEX.xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
+          .replace(REGEX.xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
       }
       group.html.push(md.render(processedSection));
     }
@@ -413,7 +417,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
  */
 function splitCodeBlocks(text: string): string[] {
   // Split by triple backticks, preserving the delimiters
-  return text.split(/(```[^`]*```)/g);
+  return text.split(REGEX.codeBlock);
 }
 
 /**
@@ -429,7 +433,7 @@ function replaceOutsideBackticks(
   replaceString: string
 ): string {
   // Split the input by capturing backticks and content within them
-  const segments = text.split(/(`[^`]*`)/);
+  const segments = text.split(REGEX.backtickContent);
   let processedString = '';
 
   segments.forEach((segment, index) => {
@@ -464,7 +468,7 @@ export function normalizeTextIndentation(text: string): string {
     }
 
     // Track the current indentation level
-    const lineIndentation = line.match(/^\s*/)[0].length;
+    const lineIndentation = line.match(REGEX.leadingWhitespace)[0].length;
     if (lineIndentation < currentIndentation) {
       currentIndentation = lineIndentation;
     }
@@ -487,7 +491,7 @@ function normalizeHeadingLevel(text: string): string {
 
   const lines = text.split('\n');
   const processedLines = lines.map(line => {
-      const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+      const headingMatch = line.match(REGEX.heading);
       
       if (headingMatch) {
           const currentHeadingLevel = headingMatch[1].length;
@@ -554,7 +558,7 @@ export async function setCheckboxState(
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
-  const text = message.text.replace(/^\s*- \[[x\s@\?!~]\]\s*/, '');
+  const text = message.text.replace(REGEX.checkboxPrefix, '');
   // Check the line to see if it contains the text
   if (!line.includes(text)) {
     console.error('Error in setCheckboxState: The line does not contain the expected text.');
@@ -818,11 +822,11 @@ export async function saveQuery(
   }
 
   let newBody = '';
-  if (findQuery.test(note.body)) {
+  if (REGEX.findQuery.test(note.body)) {
     if (query.query.length === 0) {
-      newBody = note.body.replace(findQuery, '');
+      newBody = note.body.replace(REGEX.findQuery, '');
     } else {
-      newBody = note.body.replace(findQuery, `\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`);
+      newBody = note.body.replace(REGEX.findQuery, `\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`);
     }
   } else {
     newBody = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`;
@@ -850,7 +854,7 @@ export async function loadQuery(
   db: NoteDatabase, 
   note: any
 ): Promise<QueryRecord> {
-  const record = note.body.match(findQuery);
+  const record = note.body.match(REGEX.findQuery);
   let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
     try {
