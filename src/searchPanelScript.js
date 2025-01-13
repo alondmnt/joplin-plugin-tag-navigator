@@ -37,7 +37,7 @@ let selectMultiTags = 'first';
 let searchWithRegex = false;
 let spaceReplace = '_';
 let dropdownIsOpen = false;
-const eventListenersMap = new Map();  // Map to store event listeners and clear them later
+const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
@@ -513,17 +513,17 @@ function updateResultCount(displayedNoteCount, filter) {
 function addEventListenerWithTracking(element, event, listener) {
     element.addEventListener(event, listener);
     if (!eventListenersMap.has(element)) {
-        eventListenersMap.set(element, []);
+        eventListenersMap.set(element, new Set());
     }
-    eventListenersMap.get(element).push({ event, listener });
+    eventListenersMap.get(element).add({ event, listener });
 }
 
 function removeEventListeners(element) {
     if (eventListenersMap.has(element)) {
         const listeners = eventListenersMap.get(element);
-        for (const { event, listener } of listeners) {
+        listeners.forEach(({ event, listener }) => {
             element.removeEventListener(event, listener);
-        }
+        });
         eventListenersMap.delete(element);
     }
 }
