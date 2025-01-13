@@ -1,6 +1,7 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
 import { defTagRegex } from './parser';
+import { escapeRegex } from './utils';
 
 /**
  * HTML comment markers for query sections
@@ -16,7 +17,7 @@ export const resultsEnd = '<!-- itags-results-end -->';
 export interface TagSettings {
   tagRegex: RegExp;        // Regular expression for matching tags
   excludeRegex: RegExp;    // Regular expression for excluding tags
-  todayTag: string;        // Tag used for today's date
+  todayTagRegex: RegExp; // Regex for today's date
   dateFormat: string;      // Format string for date tags
   ignoreHtmlNotes: boolean;    // Whether to ignore tags in HTML notes
   ignoreCodeBlocks: boolean;   // Whether to ignore tags in code blocks
@@ -51,12 +52,13 @@ export async function getTagSettings(): Promise<TagSettings> {
   if (todayTag.length == 0) {
     todayTag = '#today';  // Ensure default value
   }
+  const todayTagRegex = new RegExp(`(${escapeRegex(todayTag)})([+-]?\\d*)`, 'g');
   const valueDelim = await joplin.settings.value('itags.valueDelim');
 
   return {
     tagRegex,
     excludeRegex,
-    todayTag,
+    todayTagRegex,
     dateFormat: await joplin.settings.value('itags.dateFormat'),
     ignoreHtmlNotes: await joplin.settings.value('itags.ignoreHtmlNotes'),
     ignoreCodeBlocks: await joplin.settings.value('itags.ignoreCodeBlocks'),

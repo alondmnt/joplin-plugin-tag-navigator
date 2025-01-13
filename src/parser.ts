@@ -199,10 +199,7 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
   // Replace the today tag with the current date, including basic arithmetic support
   if (!tag) { return tag; }
 
-  const escapedTodayTag = tagSettings.todayTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const todayTagPattern = new RegExp(`(${escapedTodayTag})([+-]?\\d*)`, 'g');
-
-  return tag.replace(todayTagPattern, (match, todayTag, increment) => {
+  return tag.replace(tagSettings.todayTagRegex, (match, todayTag, increment) => {
     // Default increment is 0 if not provided
     let days = 0;
     if (increment) {
