@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
-import { clearObjectReferences } from './utils';
+import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
@@ -566,7 +566,7 @@ export async function setCheckboxState(
   }
 
   // Edit the line
-  const current = new RegExp(`^(\\s*- \\[)${message.source}(\\])`, 'g')
+  const current = new RegExp(`^(\\s*- \\[)${message.source}(\\])`, 'g');
   lines[message.line] = line.replace(current, `$1${message.target}$2`);
 
   const newBody = lines.join('\n');
@@ -751,17 +751,6 @@ export async function addTagToText(
   const newBody = lines.join('\n');
   await updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
   note = clearObjectReferences(note);
-}
-
-/**
- * Escapes special characters in a string for use in regular expressions
- * @param string - String to escape
- * @returns Escaped string safe for regex use
- */
-export function escapeRegex(string: string): string {
-  return string
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    .trim();
 }
 
 /**

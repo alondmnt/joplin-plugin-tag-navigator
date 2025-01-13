@@ -33,3 +33,14 @@ export function clearObjectReferences<T extends Record<string, any>>(obj: T | nu
 
 	return null;
 }
+
+/**
+ * Escapes special characters in a string for use in regular expressions
+ * @param string - String to escape
+ * @returns Escaped string safe for regex use
+ */
+export function escapeRegex(string: string): string {
+	return string
+	  .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+	  .trim();
+  }

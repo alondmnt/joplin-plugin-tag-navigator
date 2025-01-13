@@ -2,9 +2,14 @@ import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences } from './utils';
 import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord } from './searchPanel';
-import { GroupedResult, Query, runSearch } from './search';
-import { TagLineInfo } from './parser';
+import { GroupedResult, runSearch } from './search';
 import { NoteDatabase } from './db';
+
+const REGEX = {
+  results: new RegExp(`${resultsStart}.*${resultsEnd}`, 's'),
+  resultsWithWhitespace: new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's'),
+  quotedText: /"([^"]+)"/g
+};
 
 /**
  * Represents a table result with associated tags
@@ -100,10 +105,9 @@ export async function displayResultsInNote(
   resultsString += resultsEnd;
 
   // Update the note
-  const resultsRegExp = new RegExp(`${resultsStart}.*${resultsEnd}`, 's');
   let newBody = note.body;
-  if (resultsRegExp.test(note.body)) {
-    newBody = newBody.replace(resultsRegExp, resultsString);
+  if (REGEX.results.test(note.body)) {
+    newBody = newBody.replace(REGEX.results, resultsString);
   } else {
     newBody += '\n' + resultsString;
   }
@@ -130,9 +134,8 @@ export async function displayResultsInNote(
  * @param note The note to remove results from
  */
 export async function removeResults(note: { id: string, body: string }): Promise<void> {
-  const resultsRegExp = new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's')
-  if (resultsRegExp.test(note.body)) {
-    const newBody = note.body.replace(resultsRegExp, '');
+  if (REGEX.resultsWithWhitespace.test(note.body)) {
+    const newBody = note.body.replace(REGEX.resultsWithWhitespace, '');
     await joplin.data.put(['notes', note.id], null, { body: newBody });
     let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
@@ -216,12 +219,11 @@ function containsFilter(
  * parseFilter('"hello world" test') // ['hello world', 'test']
  */
 function parseFilter(filter: string, min_chars: number = 1): string[] {
-  const regex = /"([^"]+)"/g;
   let match: RegExpExecArray;
   const quotes = [];
-  while ((match = regex.exec(filter)) !== null) {
-      quotes.push(match[1]);
-      filter = filter.replace(match[0], '');
+  while ((match = REGEX.quotedText.exec(filter)) !== null) {
+    quotes.push(match[1]);
+    filter = filter.replace(match[0], '');
   }
   const words = filter.replace('"', '').toLowerCase()
       .split(' ').filter((word: string) => word.length >= min_chars)
