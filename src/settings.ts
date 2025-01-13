@@ -124,7 +124,7 @@ export async function registerSettings(): Promise<void> {
       description: 'Support nested tags in the form of #parent/child (up to infinite nesting levels).',
     },
     'itags.periodicDBUpdate': {
-      value: 5,
+      value: 0,
       type: SettingItemType.Int,
       minimum: 0,
       maximum: 120,
