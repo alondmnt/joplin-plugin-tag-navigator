@@ -91,7 +91,10 @@ function updateTagList() {
         const tagEl = document.createElement('span');
         tagEl.classList.add('itags-search-tag');
         tagEl.textContent = tag;
+        
+        // Add single event listener with tracking
         addEventListenerWithTracking(tagEl, 'click', () => handleTagClick(tag));
+        
         fragment.appendChild(tagEl);
     });
     
@@ -529,10 +532,18 @@ function removeEventListeners(element) {
 }
 
 function clearNode(node) {
-    // Remove all child nodes to avoid memory leaks
+    // First remove all event listeners from child nodes recursively
+    const walk = node => {
+        if (!node) return;
+        removeEventListeners(node);
+        for (let child of node.childNodes) {
+            walk(child);
+        }
+    };
+    walk(node);
+    
+    // Then remove all children
     while (node.firstChild) {
-        clearNode(node.firstChild);  // Recursively clear child nodes
-        removeEventListeners(node.firstChild);
         node.removeChild(node.firstChild);
     }
 }
