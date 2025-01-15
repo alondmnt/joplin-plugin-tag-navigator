@@ -65,7 +65,8 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings);
+      await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings);
+      clearObjectReferences(message);
     });
     await registerSearchPanel(searchPanel);
 
@@ -457,7 +458,7 @@ joplin.plugins.register({
       await updateDB();
     });
 
-    await joplin.views.panels.onMessage(navPanel, async (message) => {
+    await joplin.views.panels.onMessage(navPanel, async (message: any) => {
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
@@ -485,6 +486,7 @@ joplin.plugins.register({
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
         await updatePanelResults(searchPanel, results, searchParams.query);
       }
+      clearObjectReferences(message);
     });
   },
 });
