@@ -1037,6 +1037,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                                     delete item.minValue;
                                     delete item.maxValue;
                                     item.tag = newTag
+                                        .trim()
                                         .toLowerCase()
                                         .replace(RegExp('\\s', 'g'), spaceReplace);
                                 }
@@ -1452,10 +1453,10 @@ addEventListenerWithTracking(tagRangeAdd, 'click', () => {
         return;
     }
     if (tagRangeMin.value.length > 0) {
-        newRange['minValue'] = tagRangeMin.value.toLowerCase();
+        newRange['minValue'] = tagRangeMin.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
     }
     if (tagRangeMax.value.length > 0) {
-        newRange['maxValue'] = tagRangeMax.value.toLowerCase();
+        newRange['maxValue'] = tagRangeMax.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
     }
     handleRangeClick(newRange['minValue'], newRange['maxValue']);
     tagRangeMin.value = '';
