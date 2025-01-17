@@ -198,6 +198,8 @@ export class NoteDatabase {
         delete this.tags[tag];
       }
     }
+    // Clear the note object
+    clearObjectReferences(this.notes[id]);
     // Remove the note from the database
     delete this.notes[id];
   }
