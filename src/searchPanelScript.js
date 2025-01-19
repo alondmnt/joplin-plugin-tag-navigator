@@ -626,6 +626,9 @@ function handleTagClick(tag) {
         tagObject.negated = !tagObject.negated;
     }
     updateQueryArea();
+    tagFilter.value = '';
+    tagFilter.focus();
+    updateTagList();
 }
 
 function handleRangeClick(minValue, maxValue) {
@@ -1347,10 +1350,6 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
             // Get the tag name from the only / fist child element of tagList
             const tag = tagList.firstChild.textContent;
             handleTagClick(tag);
-            // Clear the input
-            tagFilter.value = '';
-            // Update the tag list to reflect the current filter or clear it
-            updateTagList();
 
         } else if (selectMultiTags === 'all') {
             // Create multiple groups, one for each tag
