@@ -95,14 +95,23 @@ async function getQueryResults(
 
         for (const tag of db.getTags()) {
           if (minValue) {
-            if (tag.localeCompare(minValue) < 0) { continue; }
+            if (minValue.startsWith('*')) {
+              // Simple suffix check
+              if (!tag.endsWith(minValue.slice(1))) { continue; }
+            } else if (minValue.endsWith('*')) {
+              // Combined prefix + range check
+              if (!tag.startsWith(minValue.slice(0, -1))) { continue; }
+            } else if (tag.localeCompare(minValue) < 0) {
+              continue;
+            }
           }
           if (maxValue) {
-            if (maxValue.endsWith('*')) {
-              // For wildcard, check if tag starts with the prefix (excluding the *)
-              if (!tag.startsWith(maxValue.slice(0, -1)) && tag.localeCompare(maxValue) > 0) { 
-                continue;
-              }
+            if (maxValue.startsWith('*')) {
+              // Simple suffix check
+              if (!tag.endsWith(maxValue.slice(1))) { continue; }
+            } else if (maxValue.endsWith('*')) {
+              // Combined prefix + range check
+              if (!tag.startsWith(maxValue.slice(0, -1))) { continue; }
             } else if (tag.localeCompare(maxValue) > 0) { 
               break; 
             }
