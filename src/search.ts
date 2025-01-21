@@ -94,8 +94,19 @@ async function getQueryResults(
           parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings) : null;
 
         for (const tag of db.getTags()) {
-          if (minValue && tag.localeCompare(minValue) < 0) { continue; }
-          if (maxValue && tag.localeCompare(maxValue) > 0) { break; }
+          if (minValue) {
+            if (tag.localeCompare(minValue) < 0) { continue; }
+          }
+          if (maxValue) {
+            if (maxValue.endsWith('*')) {
+              // For wildcard, check if tag starts with the prefix (excluding the *)
+              if (!tag.startsWith(maxValue.slice(0, -1)) && tag.localeCompare(maxValue) > 0) { 
+                continue;
+              }
+            } else if (tag.localeCompare(maxValue) > 0) { 
+              break; 
+            }
+          }
           partResults = unionResults(partResults, db.searchBy('tag', tag, false));
         }
       }
