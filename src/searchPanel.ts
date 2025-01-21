@@ -90,6 +90,19 @@ interface PanelSettings {
   spaceReplace: string;
 }
 
+// Get the version of Joplin
+let versionInfo = {
+  toggleEditorSupport: null,
+};
+
+async function initializeVersionInfo() {
+  const version = await joplin.versionInfo();
+  versionInfo.toggleEditorSupport = 
+    version.platform === 'mobile' && 
+    parseInt(version.version.split('.')[0]) >= 3 && 
+    parseInt(version.version.split('.')[1]) >= 2;
+}
+
 /**
  * Registers and initializes the search panel view
  * @param panel - Panel ID to register
@@ -146,6 +159,9 @@ export async function processMessage(
   searchParams: QueryRecord,
   tagSettings: TagSettings
 ): Promise<void> {
+  if (versionInfo.toggleEditorSupport === null) {
+    await initializeVersionInfo();
+  }
 
   if (message.name === 'initPanel') {
     await updatePanelTagData(searchPanel, db);
@@ -188,6 +204,15 @@ export async function processMessage(
           await joplin.commands.execute('openNote', dbNote);
         }
       }
+      if (versionInfo.toggleEditorSupport) {
+        // Wait for the note to be opened for 100 ms
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const toggleEditor = await joplin.settings.value('itags.toggleEditor');
+        if (toggleEditor) {
+          await joplin.commands.execute('toggleVisiblePanes');
+        }
+      }
+
       // Wait for the note to be opened for 1 second
       await new Promise(resolve => setTimeout(resolve, 1000));
     }

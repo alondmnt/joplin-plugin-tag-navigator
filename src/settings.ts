@@ -183,6 +183,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Navigation: Panel style',
       description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
     },
+    'itags.toggleEditor': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: (Mobile app) Open notes in edit mode',
+      description: 'Editor is required for scrolling to the correct line in the note.',
+    },
     'itags.selectMultiTags': {
       value: 'first',
       type: SettingItemType.String,
