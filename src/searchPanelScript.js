@@ -8,6 +8,10 @@ let results = [];
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 
 const tagFilter = document.getElementById('itags-search-tagFilter');
+const tagCount = document.createElement('div');
+tagCount.classList.add('itags-search-resultCount');
+tagCount.style.display = 'none';
+tagFilter.parentNode.appendChild(tagCount);
 const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
@@ -100,6 +104,9 @@ function updateTagList() {
     
     // Single DOM update
     tagList.appendChild(fragment);
+
+    // Update tag count
+    updateTagCount(filteredTags.length, tagFilter.value);
 }
 
 // Update note dropdown with the current list of notes
@@ -491,6 +498,25 @@ function createContextMenuHandler(result, index) {
             createContextMenu(event, result, index, ['checkboxState']);
         }
     };
+}
+
+// Helper function to update tag count display
+function updateTagCount(displayedTagCount, filter) {
+    if (filter) {
+        tagCount.textContent = displayedTagCount;
+        tagCount.style.display = 'block';
+        // Position the count relative to the input
+        const inputRect = tagFilter.getBoundingClientRect();
+        tagCount.style.top = `${inputRect.top + (inputRect.height - tagCount.offsetHeight) / 2}px`;
+        tagCount.style.left = `${inputRect.right - tagCount.offsetWidth - 5}px`;
+    } else {
+        tagCount.style.display = 'none';
+    }
+
+    // Update tagFilter placeholder (only when no text entered)
+    if (!tagFilter.value) {
+        tagFilter.placeholder = `Filter ${displayedTagCount} tags...`;
+    }
 }
 
 // Helper function to update result count display
