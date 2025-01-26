@@ -17,22 +17,23 @@ Type inline #tags or front matter in the note editor. View your tagged paragraph
 
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
 
-1. It adds a panel for searching and viewing tagged paragraphs across all your notes ([video](https://www.youtube.com/watch?v=im0zjQFoXb0)).
-    - **Save search queries** in notes and sync them across devices ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
+1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
+    - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
-    - **Tag in front matter:** All Markdown front matter fields can be treated as tags ([video](https://www.youtube.com/watch?v=L3zHletRk54)).
+    - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
-    - **Insert tags** from the panel into the note editor ([video](#tag-insertion)).
-    - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). See also [tips](#inline-todos).
-    - **Nested tags** hierarchy: Search parent tags to find the locations of their children ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)). Example: #parent/child.
-    - Search for a **range of tags**, according to their lexicographic order. Example: #2024/07 -> #2024/08
-    - Search tags by **today's date**. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago)
-2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated) ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0)).
-    - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` 
-    - Display results in a table / database ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
+    - **Insert tags** from the panel into the note editor. ([video](#tag-insertion))
+    - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). ([tips](#inline-todos))
+    - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child. ([video](https://www.youtube.com/watch?v=h-HdX7npbIw))
+    - **Tag values**: Assign values to tags. Example: #tag=value. ([tips](#tag-values))
+    - **Tag ranges**: Search for a range of tags, according to their lexicographic order. Example: #2024/07 -> #2024/08. ([tips](#tag-ranges))
+    - **Today's date**: Search tags by today's date. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago).
+2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
+    - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
+    - Display results in a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
-5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). See also [tips](#converting-joplin-tags).
+5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
@@ -69,6 +70,8 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
 - [Front matter tags](#front-matter-tags)
+- [Tag ranges](#tag-ranges)
+- [Tag values](#tag-values)
 - [Table views](#table-views)
 - [Inline TODOs](#inline-todos)
 - [Keyboard shortcuts](#keyboard-shortcuts)
@@ -85,6 +88,30 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - You may also define an exclusion rule to ignore certain tags.
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
 
+### Tag ranges
+
+- Tag ranges can be used to search for a range of tags, according to their lexicographic order.
+    - Example: `#2024/07 -> #2024/08` will search for all tags starting with `#2024/07` and up to `#2024/08` (inclusive, i.e., returning two months).
+- You may also use ranges with the `*` wildcard to search for tags starting with a certain prefix or ending with a suffix.
+    - Example: `#prefix* ->` will search for all tags starting with `#prefix`.
+    - Example: `*suffix ->` will search for all tags ending with `suffix`.
+- Tag ranges can be inserted using the "Tag range" input boxes, or by right-clicking on a tag in the query area, and selecting `Edit query`.
+    - Example: Edit a tag or tag range and type `#prefix* ->` to search for all tags starting with `#prefix`.
+    - If you type only `#prefix`, the query will be converted to a standard tag search (matching only the tag `#prefix`).
+
+### Tag values
+
+Tag values are a bit similar to nested tags as multiple parts of the tag are treated separately, but are distinct from them as explained below.
+
+- Nested tags like `#parent/child` are shown as two separate tags in panels: `#parent` and `#parent/child`.
+- Tag values like `#parent=value` are shown as a single tag in panels: `#parent`.
+    - This is useful when you wish to assign many different values to a single tag, and prefer to avoid displaying all of them.
+- As with nested tags, you may search for `#parent`, and may also search for `#parent=value`, or use tag ranges.
+    - In order to search for a tag value, right-click on a tag in the query area, and select `Edit query`.
+    - You may then add the `=` operator to the tag, and enter the value you would like to search for.
+- The value operator can be customised in the plugin settings.
+- It should also be noted that while nested tags are widely used in note apps, tag values are less common.
+
 ### Front matter tags
 
 For example, the following YAML front matter, when inserted at the top of the note:
@@ -99,13 +126,13 @@ tags:
 ---
 ```
 
-will be converted to the following inline tags:
+will be converted to the following inline tags and values:
 
 ```text
-#nested/tag_with_spaces
-#arrayed/v1
-#arrayed/v2
-#arrayed/v3
+#nested=tag_with_spaces
+#arrayed=v1
+#arrayed=v2
+#arrayed=v3
 #tag1
 #tag2
 #frontmatter
