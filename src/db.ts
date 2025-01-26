@@ -42,6 +42,7 @@ class Note {
   noteLinksByTitle: { [title: string]: Set<number> };
   savedQuery: boolean;
   displayResults: string;
+  exists: boolean;
 
   /**
    * Creates a new Note instance
@@ -57,6 +58,7 @@ class Note {
     this.noteLinksByTitle = {};
     this.savedQuery = false;
     this.displayResults = 'false';
+    this.exists = true;
   }
 
   /**
@@ -213,6 +215,36 @@ export class NoteDatabase {
     }
   }
 
+  /**
+   * Clears the exists flag for all notes
+   */
+  clearNoteExists() {
+    for (const noteId in this.notes) {
+      this.notes[noteId].exists = false;
+    }
+  }
+
+  /**
+   * Sets the exists flag for a note
+   * @param id - The ID of the note
+   */
+  setNoteExists(id: string) {
+    if (this.notes[id]) {
+      this.notes[id].exists = true;
+    }
+  }
+
+  /**
+   * Removes notes that have been deleted from Joplin
+   */
+  removeNonExistingNotes() {
+    for (const noteId in this.notes) {
+      if (!this.notes[noteId].exists) {
+        this.removeNote(noteId);
+      }
+    }
+  }
+
   // Clear all data
   clearData() {
     this.notes = {};
@@ -330,6 +362,7 @@ export async function processAllNotes() {
   const tagSettings = await getTagSettings();
 
   // First loop: collect IDs of notes that need updating
+  db.clearNoteExists();  // We will use the exist flag to remove deleted notes
   const notesToUpdate = new Set<string>();
   let hasMore = true;
   let page = 1;
@@ -345,6 +378,7 @@ export async function processAllNotes() {
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
+      db.setNoteExists(note.id);
       const noteUpdatedTime = db.getNoteUpdatedTime(note.id);
       if (noteUpdatedTime && note.updated_time <= noteUpdatedTime) {
         clearObjectReferences(note);
@@ -356,6 +390,8 @@ export async function processAllNotes() {
     // Clear the entire notes object
     clearObjectReferences(notes);
   }
+
+  db.removeNonExistingNotes();
 
   // Second loop: fetch full details only for notes that need updating
   for (const noteId of notesToUpdate) {
