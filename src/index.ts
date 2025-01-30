@@ -433,6 +433,7 @@ joplin.plugins.register({
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
           event.keys.includes('itags.resultMarker') ||
+          event.keys.includes('itags.showQuery') ||
           event.keys.includes('itags.showTagRange') ||
           event.keys.includes('itags.showNotes') ||
           event.keys.includes('itags.showResultFilter') ||

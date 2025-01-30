@@ -82,6 +82,7 @@ interface PanelSettings {
   resultOrder: string;
   resultToggle: boolean;
   resultMarker: boolean;
+  showQuery: boolean;
   showTagRange: boolean;
   showNotes: boolean;
   showResultFilter: boolean;
@@ -370,6 +371,7 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     resultOrder: await joplin.settings.value('itags.resultOrder'),
     resultToggle: await joplin.settings.value('itags.resultToggle'),
     resultMarker: await joplin.settings.value('itags.resultMarker'),
+    showQuery: await joplin.settings.value('itags.showQuery'),
     showTagRange: await joplin.settings.value('itags.showTagRange'),
     showNotes: await joplin.settings.value('itags.showNotes'),
     showResultFilter: await joplin.settings.value('itags.showResultFilter'),

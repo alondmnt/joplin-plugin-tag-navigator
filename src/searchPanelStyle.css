@@ -1,5 +1,5 @@
 body {
-    padding: 10px;
+    padding: 5px 10px 10px 10px;
 }
 
 #itags-search-inputTagArea {
@@ -40,7 +40,7 @@ body {
 }
 
 #itags-search-tagList {
-    max-height: 60px;
+    height: 53px;
     overflow-y: auto;
     border-color: rgb(118, 118, 118);
     border-width: 1px;
@@ -259,7 +259,7 @@ body {
 }
 
 #itags-search-resultsArea {
-    max-height: calc(100vh - 249px);
+    height: calc(100vh - 244px);
     margin-bottom: 0px;
     border-color: rgb(118, 118, 118);
     border-width: 1px;
@@ -273,15 +273,31 @@ body {
 }
 
 .extended1X {
-    max-height: calc(100vh - 249px + 31px) !important;
+    height: calc(100vh - 244px + 32px) !important;
 }
 
 .extended2X {
-    max-height: calc(100vh - 249px + 62px) !important;
+    height: calc(100vh - 244px + 64px) !important;
 }
 
 .extended3X {
-    max-height: calc(100vh - 249px + 94px) !important;
+    height: calc(100vh - 244px + 96px) !important;
+}
+
+.extended4X {
+    height: calc(100vh - 244px + 128px) !important;
+}
+
+.extended5X {
+    height: calc(100vh - 244px + 160px) !important;
+}
+
+.extended6X {
+    height: calc(100vh - 244px + 192px) !important;
+}
+
+.extended7X {
+    height: calc(100vh - 249px + 224px) !important;
 }
 
 #itags-search-resultsArea::-webkit-scrollbar {

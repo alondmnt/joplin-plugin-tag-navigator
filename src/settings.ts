@@ -213,6 +213,13 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Search: Use regex for tag / note / content filtering',
     },
+    'itags.showQuery': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Show tag list and search query section',
+    },
     'itags.showTagRange': {
       value: true,
       type: SettingItemType.Bool,

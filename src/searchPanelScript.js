@@ -244,7 +244,26 @@ function hideElements(settings) {
         tagRangeAdd.classList.add('hidden');
         hiddenCount++;
     }
-    resultsArea.classList.remove('extended1X', 'extended2X', 'extended3X');
+    if (settings.showQuery) {
+        queryArea.classList.remove('hidden');
+        tagFilter.classList.remove('hidden');
+        tagList.classList.remove('hidden');
+        tagCount.classList.remove('hidden');
+        saveQuery.classList.remove('hidden');
+        tagSearch.classList.remove('hidden');
+        tagClear.classList.remove('hidden');
+    } else {
+        queryArea.classList.add('hidden');
+        tagFilter.classList.add('hidden');
+        tagList.classList.add('hidden');
+        tagCount.classList.add('hidden');
+        saveQuery.classList.add('hidden');
+        tagSearch.classList.add('hidden');
+        tagClear.classList.add('hidden');
+        hiddenCount += 4;
+    }
+    resultsArea.classList.remove('extended1X', 'extended2X', 'extended3X',
+        'extended4X', 'extended5X', 'extended6X', 'extended7X');
     if (hiddenCount) {
         resultsArea.classList.add('extended' + hiddenCount + 'X');
     }
@@ -1204,10 +1223,27 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         fragment.appendChild(separator);
     }
     const sectionState = {
+        showQuery: !queryArea.classList.contains('hidden'),
         showNotes: !noteArea.classList.contains('hidden'),
         showResultFilter: !resultFilterArea.classList.contains('hidden'),
         showTagRange: !tagRangeArea.classList.contains('hidden')
     };
+
+    // showQuery
+    const showQuery = document.createElement('span');
+    showQuery.classList.add('itags-search-contextCommand');
+    if (sectionState.showQuery) {
+        showQuery.textContent = '✓ Search query';
+    } else {
+        showQuery.textContent = 'Search query';
+    }
+    addEventListenerWithTracking(showQuery, 'click', () => {
+        sectionState.showQuery = !sectionState.showQuery;
+        sendSetting('showQuery', sectionState.showQuery);
+        hideElements(sectionState);
+        removeContextMenu(contextMenu);
+    });
+    fragment.appendChild(showQuery);
 
     // showTagRange
     const showTagRange = document.createElement('span');
