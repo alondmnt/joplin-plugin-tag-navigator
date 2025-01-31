@@ -265,10 +265,10 @@ function hideElements(settings) {
         queryArea.classList.add('hidden');
         hiddenCount += 6;
     }
-    if (settings.extendedTagList) {
-        tagList.classList.add('extendedTagList');
+    if (settings.expandedTagList) {
+        tagList.classList.add('expandedTagList');
     } else {
-        tagList.classList.remove('extendedTagList');
+        tagList.classList.remove('expandedTagList');
         if (settings.showQuery) {
             hiddenCount += 2;
         }
@@ -1236,7 +1236,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     }
     const sectionState = {
         showQuery: !queryArea.classList.contains('hidden'),
-        extendedTagList: tagList.classList.contains('extendedTagList'),
+        expandedTagList: tagList.classList.contains('expandedTagList'),
         showNotes: !noteArea.classList.contains('hidden'),
         showResultFilter: !resultFilterArea.classList.contains('hidden'),
         showTagRange: !tagRangeArea.classList.contains('hidden')
@@ -1258,21 +1258,21 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     });
     fragment.appendChild(showQuery);
 
-    // extendTagList
-    const extendTagList = document.createElement('span');
-    extendTagList.classList.add('itags-search-contextCommand');
-    if (sectionState.extendedTagList) {
-        extendTagList.textContent = '✓ Extend tags';
+    // expandTagList
+    const expandTagList = document.createElement('span');
+    expandTagList.classList.add('itags-search-contextCommand');
+    if (sectionState.expandedTagList) {
+        expandTagList.textContent = '✓ Expand tags';
     } else {
-        extendTagList.textContent = 'Extend tags';
+        expandTagList.textContent = 'Expand tags';
     }
-    addEventListenerWithTracking(extendTagList, 'click', () => {
-        sectionState.extendedTagList = !sectionState.extendedTagList;
-        sendSetting('extendedTagList', sectionState.extendedTagList);
+    addEventListenerWithTracking(expandTagList, 'click', () => {
+        sectionState.expandedTagList = !sectionState.expandedTagList;
+        sendSetting('expandedTagList', sectionState.expandedTagList);
         hideElements(sectionState);
         removeContextMenu(contextMenu);
     });
-    fragment.appendChild(extendTagList);
+    fragment.appendChild(expandTagList);
 
     // showTagRange
     const showTagRange = document.createElement('span');

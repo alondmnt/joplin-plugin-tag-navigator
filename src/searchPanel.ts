@@ -83,7 +83,7 @@ interface PanelSettings {
   resultToggle: boolean;
   resultMarker: boolean;
   showQuery: boolean;
-  extendedTagList: boolean;
+  expandedTagList: boolean;
   showTagRange: boolean;
   showNotes: boolean;
   showResultFilter: boolean;
@@ -275,7 +275,7 @@ export async function processMessage(
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
     } else if (message.field.startsWith('show')) {
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
-    } else if (message.field === 'extendedTagList') {
+    } else if (message.field === 'expandedTagList') {
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
     } else if (message.field === 'filter') {
       searchParams.filter = message.value;
@@ -375,7 +375,7 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     resultToggle: await joplin.settings.value('itags.resultToggle'),
     resultMarker: await joplin.settings.value('itags.resultMarker'),
     showQuery: await joplin.settings.value('itags.showQuery'),
-    extendedTagList: await joplin.settings.value('itags.extendedTagList'),
+    expandedTagList: await joplin.settings.value('itags.expandedTagList'),
     showTagRange: await joplin.settings.value('itags.showTagRange'),
     showNotes: await joplin.settings.value('itags.showNotes'),
     showResultFilter: await joplin.settings.value('itags.showResultFilter'),
