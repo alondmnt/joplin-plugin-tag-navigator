@@ -12,6 +12,7 @@ const tagCount = document.createElement('div');
 tagCount.classList.add('itags-search-resultCount');
 tagCount.style.display = 'none';
 tagFilter.parentNode.appendChild(tagCount);
+const tagInputArea = document.getElementById('itags-search-inputTagArea');
 const tagClear = document.getElementById('itags-search-tagClear');
 const saveQuery = document.getElementById('itags-search-saveQuery');
 const tagSearch = document.getElementById('itags-search-tagSearch');
@@ -245,21 +246,23 @@ function hideElements(settings) {
         hiddenCount++;
     }
     if (settings.showQuery) {
-        queryArea.classList.remove('hidden');
+        tagInputArea.classList.remove('hidden');
         tagFilter.classList.remove('hidden');
-        tagList.classList.remove('hidden');
         tagCount.classList.remove('hidden');
+        tagClear.classList.remove('hidden');
         saveQuery.classList.remove('hidden');
         tagSearch.classList.remove('hidden');
-        tagClear.classList.remove('hidden');
+        tagList.classList.remove('hidden');
+        queryArea.classList.remove('hidden');
     } else {
-        queryArea.classList.add('hidden');
+        tagInputArea.classList.add('hidden');
         tagFilter.classList.add('hidden');
-        tagList.classList.add('hidden');
         tagCount.classList.add('hidden');
+        tagClear.classList.add('hidden');
         saveQuery.classList.add('hidden');
         tagSearch.classList.add('hidden');
-        tagClear.classList.add('hidden');
+        tagList.classList.add('hidden');
+        queryArea.classList.add('hidden');
         hiddenCount += 5;
     }
     if (settings.extendedTagList) {

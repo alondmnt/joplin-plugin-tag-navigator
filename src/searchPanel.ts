@@ -112,13 +112,13 @@ async function initializeVersionInfo() {
 export async function registerSearchPanel(panel: string): Promise<void> {
   await joplin.views.panels.setHtml(panel, `
     <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
-    <div id="itags-search-inputTagArea">
-      <input type="text" id="itags-search-tagFilter" placeholder="Filter tags..." />
-      <button id="itags-search-tagClear" title="Clear query and results">Clear</button>
-      <button id="itags-search-saveQuery" title="Save query to current note">Save</button>
-      <button id="itags-search-tagSearch" title="Search for text blocks">Search</button>
+    <div id="itags-search-inputTagArea" class="hidden">
+      <input type="text" id="itags-search-tagFilter" class="hidden" placeholder="Filter tags..." />
+      <button id="itags-search-tagClear" class="hidden" title="Clear query and results">Clear</button>
+      <button id="itags-search-saveQuery" class="hidden" title="Save query to current note">Save</button>
+      <button id="itags-search-tagSearch" class="hidden" title="Search for text blocks">Search</button>
     </div>
-    <div id="itags-search-tagList"></div>
+    <div id="itags-search-tagList" class="hidden"></div>
     <div id="itags-search-tagRangeArea" class="hidden">
       <input type="text" id="itags-search-tagRangeMin" class="hidden" placeholder="Range min" />
       <input type="text" id="itags-search-tagRangeMax" class="hidden" placeholder="Range max" />
@@ -128,7 +128,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
       <input type="text" id="itags-search-noteFilter" class="hidden" placeholder="Filter notes..." />
       <select id="itags-search-noteList" class="hidden" title="Note mentions"></select>
     </div>
-    <div id="itags-search-queryArea"></div>
+    <div id="itags-search-queryArea" class="hidden"></div>
     <div id="itags-search-inputResultArea" class="hidden">
       <input type="text" id="itags-search-resultFilter" class="hidden" placeholder="Filter results..." />
       <select id="itags-search-resultSort" class="hidden" title="Sort by">
@@ -140,7 +140,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
       <button id="itags-search-resultOrder" class="hidden" title="Ascend / descend"><b>↑</b></button>
       <button id="itags-search-resultToggle" class="hidden" title="Collapse / expand">v</button>
     </div>
-    <div id='itags-search-resultsArea' class="extended3X"></div>
+    <div id='itags-search-resultsArea' class="extended8X"></div>
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
