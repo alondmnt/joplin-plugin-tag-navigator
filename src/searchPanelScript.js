@@ -260,10 +260,18 @@ function hideElements(settings) {
         saveQuery.classList.add('hidden');
         tagSearch.classList.add('hidden');
         tagClear.classList.add('hidden');
-        hiddenCount += 4;
+        hiddenCount += 5;
+    }
+    if (settings.extendedTagList) {
+        tagList.classList.add('extendedTagList');
+    } else {
+        tagList.classList.remove('extendedTagList');
+        if (settings.showQuery) {
+            hiddenCount++;
+        }
     }
     resultsArea.classList.remove('extended1X', 'extended2X', 'extended3X',
-        'extended4X', 'extended5X', 'extended6X', 'extended7X');
+        'extended4X', 'extended5X', 'extended6X', 'extended7X', 'extended8X');
     if (hiddenCount) {
         resultsArea.classList.add('extended' + hiddenCount + 'X');
     }
@@ -1224,6 +1232,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     }
     const sectionState = {
         showQuery: !queryArea.classList.contains('hidden'),
+        extendedTagList: tagList.classList.contains('extendedTagList'),
         showNotes: !noteArea.classList.contains('hidden'),
         showResultFilter: !resultFilterArea.classList.contains('hidden'),
         showTagRange: !tagRangeArea.classList.contains('hidden')
@@ -1244,6 +1253,22 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         removeContextMenu(contextMenu);
     });
     fragment.appendChild(showQuery);
+
+    // extendTagList
+    const extendTagList = document.createElement('span');
+    extendTagList.classList.add('itags-search-contextCommand');
+    if (sectionState.extendedTagList) {
+        extendTagList.textContent = '✓ Extended tags';
+    } else {
+        extendTagList.textContent = 'Extended tags';
+    }
+    addEventListenerWithTracking(extendTagList, 'click', () => {
+        sectionState.extendedTagList = !sectionState.extendedTagList;
+        sendSetting('extendedTagList', sectionState.extendedTagList);
+        hideElements(sectionState);
+        removeContextMenu(contextMenu);
+    });
+    fragment.appendChild(extendTagList);
 
     // showTagRange
     const showTagRange = document.createElement('span');

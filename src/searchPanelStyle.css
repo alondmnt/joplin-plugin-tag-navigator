@@ -1,5 +1,5 @@
 body {
-    padding: 5px 10px 10px 10px;
+    padding: 5px 5px 10px 10px;
 }
 
 #itags-search-inputTagArea {
@@ -50,6 +50,10 @@ body {
     margin-bottom: 5px;
     font-size: var(--joplin-font-size);
     box-sizing: border-box;
+}
+
+.extendedTagList {
+    height: 85px !important;
 }
 
 #itags-search-tagRangeArea {
@@ -259,7 +263,7 @@ body {
 }
 
 #itags-search-resultsArea {
-    height: calc(100vh - 244px);
+    height: calc(100vh - 271px);
     margin-bottom: 0px;
     border-color: rgb(118, 118, 118);
     border-width: 1px;
@@ -273,31 +277,35 @@ body {
 }
 
 .extended1X {
-    height: calc(100vh - 244px + 32px) !important;
+    height: calc(100vh - 271px + 32px) !important;
 }
 
 .extended2X {
-    height: calc(100vh - 244px + 64px) !important;
+    height: calc(100vh - 271px + 64px) !important;
 }
 
 .extended3X {
-    height: calc(100vh - 244px + 96px) !important;
+    height: calc(100vh - 271px + 96px) !important;
 }
 
 .extended4X {
-    height: calc(100vh - 244px + 128px) !important;
+    height: calc(100vh - 271px + 128px) !important;
 }
 
 .extended5X {
-    height: calc(100vh - 244px + 160px) !important;
+    height: calc(100vh - 271px + 160px) !important;
 }
 
 .extended6X {
-    height: calc(100vh - 244px + 192px) !important;
+    height: calc(100vh - 271px + 192px) !important;
 }
 
 .extended7X {
-    height: calc(100vh - 249px + 224px) !important;
+    height: calc(100vh - 271px + 224px) !important;
+}
+
+.extended8X {
+    height: calc(100vh - 271px + 256px) !important;
 }
 
 #itags-search-resultsArea::-webkit-scrollbar {
