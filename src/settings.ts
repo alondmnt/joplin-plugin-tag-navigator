@@ -221,7 +221,7 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: Show tag list and search query section',
     },
     'itags.extendedTagList': {
-      value: false,
+      value: true,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
