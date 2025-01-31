@@ -1261,9 +1261,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
     const extendTagList = document.createElement('span');
     extendTagList.classList.add('itags-search-contextCommand');
     if (sectionState.extendedTagList) {
-        extendTagList.textContent = '✓ Extended tags';
+        extendTagList.textContent = '✓ Extend tags';
     } else {
-        extendTagList.textContent = 'Extended tags';
+        extendTagList.textContent = 'Extend tags';
     }
     addEventListenerWithTracking(extendTagList, 'click', () => {
         sectionState.extendedTagList = !sectionState.extendedTagList;
