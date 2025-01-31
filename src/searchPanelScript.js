@@ -263,18 +263,19 @@ function hideElements(settings) {
         tagSearch.classList.add('hidden');
         tagList.classList.add('hidden');
         queryArea.classList.add('hidden');
-        hiddenCount += 5;
+        hiddenCount += 6;
     }
     if (settings.extendedTagList) {
         tagList.classList.add('extendedTagList');
     } else {
         tagList.classList.remove('extendedTagList');
         if (settings.showQuery) {
-            hiddenCount++;
+            hiddenCount += 2;
         }
     }
     resultsArea.classList.remove('extended1X', 'extended2X', 'extended3X',
-        'extended4X', 'extended5X', 'extended6X', 'extended7X', 'extended8X');
+        'extended4X', 'extended5X', 'extended6X', 'extended7X', 'extended8X',
+        'extended9X');
     if (hiddenCount) {
         resultsArea.classList.add('extended' + hiddenCount + 'X');
     }
