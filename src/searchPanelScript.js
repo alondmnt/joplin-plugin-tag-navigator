@@ -1092,6 +1092,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                                     // Convert to range
                                     Object.assign(item, parseRange(newTag));
                                     delete item.tag;
+                                    delete item.negated;
                                 } else {
                                     // Convert to regular tag
                                     delete item.minValue;
@@ -1100,6 +1101,7 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                                         .trim()
                                         .toLowerCase()
                                         .replace(RegExp('\\s', 'g'), spaceReplace);
+                                    item.negated = false;
                                 }
                             }
                         });
