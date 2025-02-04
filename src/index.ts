@@ -442,6 +442,23 @@ joplin.plugins.register({
           event.keys.includes('itags.selectMultiTags')) {
         await updatePanelSettings(searchPanel);
       }
+      // Changes that require a database clear
+      if (event.keys.includes('itags.tagRegex') ||
+          event.keys.includes('itags.excludeRegex') ||
+          event.keys.includes('itags.todayTag') ||
+          event.keys.includes('itags.dateFormat') ||
+          event.keys.includes('itags.minCount') ||
+          event.keys.includes('itags.valueDelim') ||
+          event.keys.includes('itags.tagPrefix') ||
+          event.keys.includes('itags.spaceReplace') ||
+          event.keys.includes('itags.ignoreHtmlNotes') ||
+          event.keys.includes('itags.ignoreCodeBlocks') ||
+          event.keys.includes('itags.ignoreFrontMatter') ||
+          event.keys.includes('itags.inheritTags') ||
+          event.keys.includes('itags.nestedTags')) {
+        DatabaseManager.clearDatabase();
+        await updateDB();
+      }
       if (event.keys.includes('itags.navPanelScope') ||
           event.keys.includes('itags.navPanelStyle') ||
           event.keys.includes('itags.navPanelSort')) {

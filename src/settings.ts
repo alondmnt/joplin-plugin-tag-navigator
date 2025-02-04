@@ -89,7 +89,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Ignore HTML notes',
-      description: 'Ignore inline tags in HTML notes. (Requires restart)',
+      description: 'Ignore inline tags in HTML notes.',
     },
     'itags.ignoreCodeBlocks': {
       value: true,
@@ -97,7 +97,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Ignore code blocks',
-      description: 'Ignore inline tags in code blocks. (Requires restart)',
+      description: 'Ignore inline tags in code blocks.',
     },
     'itags.ignoreFrontMatter': {
       value: false,
@@ -105,7 +105,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Ignore front matter',
-      description: 'Front matter fields are treated as tags by default. (Requires restart)',
+      description: 'Front matter fields are treated as tags by default.',
     },
     'itags.inheritTags': {
       value: true,
@@ -113,7 +113,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Tag inheritance',
-      description: 'Inherit tags from parent items, from headings, and from YAML front matter. (Requires restart)',
+      description: 'Inherit tags from parent items, from headings, and from YAML front matter.',
     },
     'itags.nestedTags': {
       value: true,
@@ -121,7 +121,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Nested tag hierarchy',
-      description: 'Support nested tags in the form of #parent/child (up to infinite nesting levels). (Requires restart)',
+      description: 'Support nested tags in the form of #parent/child (up to infinite nesting levels).',
     },
     'itags.periodicDBUpdate': {
       value: 0,
@@ -372,7 +372,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag regex',
-      description: 'Custom regex to match tags. Leave empty to use the default regex. (Requires restart)',
+      description: 'Custom regex to match tags. Leave empty to use the default regex.',
     },
     'itags.excludeRegex': {
       value: '',
@@ -381,7 +381,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Exclude regex',
-      description: 'Custom regex to exclude tags. Leave empty to not exclude any. (Requires restart)',
+      description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
     },
     'itags.todayTag': {
       value: '#today',
@@ -390,7 +390,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Date tags: Today',
-      description: 'Use this tag to tag or find notes relative to today\'s date. Usage: #today, #today+1, #today-5 (Requires restart)',
+      description: 'Use this tag to tag or find notes relative to today\'s date. Usage: #today, #today+1, #today-5',
     },
     'itags.dateFormat': {
       value: '#yyyy-MM-dd',
@@ -399,7 +399,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Date tags: Date format',
-      description: 'Format for date tags. Default: #yyyy-MM-dd. See https://date-fns.org/docs/format for options. (Requires restart)',
+      description: 'Format for date tags. Default: #yyyy-MM-dd. See https://date-fns.org/docs/format for options.',
     },
     'itags.minCount': {
       value: 1,
@@ -411,7 +411,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Minimum tag count',
-      description: 'Minimum number of occurrences for a tag to be included. Default: 1. (Requires restart)',
+      description: 'Minimum number of occurrences for a tag to be included. Default: 1.',
     },
     'itags.valueDelim': {
       value: '=',
@@ -420,7 +420,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag value delimiter',
-      description: 'Character to assign a value to a tag. Default: =. Example: #tag=value (Requires restart)',
+      description: 'Character to assign a value to a tag. Default: =. Example: #tag=value',
     },
     'itags.tagPrefix': {
       value: '#',
@@ -429,7 +429,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag prefix',
-      description: 'Prefix for converted Joplin tags. Default: #. (Requires restart)',
+      description: 'Prefix for converted Joplin tags. Default: #.',
     },
     'itags.spaceReplace': {
       value: '_',
@@ -438,7 +438,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Space replacement',
-      description: 'Character to replace spaces in converted Joplin tags. Default: _. (Requires restart)',
+      description: 'Character to replace spaces in converted Joplin tags. Default: _.',
     },
     'itags.listPrefix': {
       value: 'tags: ',
