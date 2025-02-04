@@ -571,10 +571,21 @@ function updateResultCount(displayedNoteCount, filter) {
 
 // Helper functions for updating the query area
 function addEventListenerWithTracking(element, event, listener) {
-    element.addEventListener(event, listener);
-    if (!eventListenersMap.has(element)) {
+    // Remove any existing listeners for this event type
+    if (eventListenersMap.has(element)) {
+        const listeners = eventListenersMap.get(element);
+        for (const entry of listeners) {
+            if (entry.event === event) {
+                element.removeEventListener(event, entry.listener);
+                listeners.delete(entry);
+            }
+        }
+    } else {
         eventListenersMap.set(element, new Set());
     }
+    
+    // Add the new listener
+    element.addEventListener(event, listener);
     eventListenersMap.get(element).add({ event, listener });
 }
 
@@ -589,16 +600,18 @@ function removeEventListeners(element) {
 }
 
 function clearNode(node) {
-    // First remove all event listeners from child nodes recursively
-    const walk = node => {
-        if (!node) return;
-        removeEventListeners(node);
-        for (let child of node.childNodes) {
-            walk(child);
-        }
-    };
-    walk(node);
-    
+    // Only walk the children, not the root node
+    for (let child of node.childNodes) {
+        const walk = node => {
+            if (!node) return;
+            removeEventListeners(node);
+            for (let childNode of node.childNodes) {
+                walk(childNode);
+            }
+        };
+        walk(child);
+    }
+
     // Then remove all children
     while (node.firstChild) {
         node.removeChild(node.firstChild);
@@ -1601,10 +1614,14 @@ addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
 
 addEventListenerWithTracking(noteList, 'change', () => {
     if (noteList.value === 'current') {
-        handleNoteClick({ title: 'Current note', externalId: 'current', negated: false });
+        handleNoteClick({ title: 'Current note', externalId: 'current' });
+    } else if (noteList.value !== 'default') {
+        const selectedNote = allNotes.find(note => note.externalId === noteList.value);
+        if (selectedNote) {
+            handleNoteClick(selectedNote);
+        }
     }
-    handleNoteClick(allNotes.find(note => note.externalId === noteList.value));
-    noteList.value = 'default'; // Clear the input field
+    noteList.value = 'default';
 });
 
 addEventListenerWithTracking(noteList, 'focus', () => {
