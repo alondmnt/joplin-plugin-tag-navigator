@@ -127,25 +127,32 @@ function updateNoteList() {
         titleOpt.value = 'default';
         titleOpt.textContent = 'Search by note mentions';
         fragment.appendChild(titleOpt);
-        fragment.appendChild(titleOpt.cloneNode(true)); // Duplicate first option
     }
-
+    
     if (containsFilter('Current note', filterValue)) {
         const currentOpt = document.createElement('option');
         currentOpt.value = 'current';
         currentOpt.textContent = 'Current note';
+        // Add duplicate of first note at the beginning
+        if (fragment.childNodes.length === 0) {
+            fragment.appendChild(currentOpt.cloneNode(true));
+        }
         fragment.appendChild(currentOpt);
     }
-
+    
     // Filter and create note options in one pass
     allNotes
-        .filter(note => containsFilter(note.title, filterValue))
-        .forEach(note => {
-            const noteEl = document.createElement('option');
-            noteEl.value = note.externalId;
-            noteEl.textContent = note.title;
-            fragment.appendChild(noteEl);
-        });
+    .filter(note => containsFilter(note.title, filterValue))
+    .forEach(note => {
+        const noteEl = document.createElement('option');
+        noteEl.value = note.externalId;
+        noteEl.textContent = note.title;
+        // Add duplicate of first note at the beginning
+        if (fragment.childNodes.length === 0) {
+            fragment.appendChild(noteEl.cloneNode(true));
+        }
+        fragment.appendChild(noteEl);
+    });
 
     // Single DOM update
     noteList.appendChild(fragment);
@@ -1622,6 +1629,9 @@ addEventListenerWithTracking(noteList, 'change', () => {
         }
     }
     noteList.value = 'default';
+    noteFilter.value = '';
+    dropdownIsOpen = false;
+    updateNoteList();
 });
 
 addEventListenerWithTracking(noteList, 'focus', () => {
