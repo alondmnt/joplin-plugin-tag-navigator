@@ -316,7 +316,11 @@ function updateQueryArea() {
 
 function createQueryElement(item, groupIndex, tagIndex) {
     const newEl = document.createElement('span');
-    
+
+    // Add data attributes for indices
+    newEl.dataset.groupIndex = groupIndex;
+    newEl.dataset.tagIndex = tagIndex;
+
     if (item.title) {
         newEl.classList.add('itags-search-note', item.negated ? 'negated' : 'selected');
         newEl.textContent = item.title.slice(0, 20) + (item.title.length >= 20 ? '...' : '');
@@ -1094,48 +1098,40 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         addEventListenerWithTracking(editQuery, 'click', () => {
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
-                let newTag = input.value;
-                const negated = newTag.trim().startsWith('!');
-                const currentNegated = target.classList.contains('negated');
-                if (newTag && (newTag !== currentTag || negated !== currentNegated)) {
-                    // Parse current range if it is one
-                    const currentRange = currentTag.includes('->') ? parseRange(currentTag) : null;
+                const groupIndex = parseInt(target.dataset.groupIndex);
+                const tagIndex = parseInt(target.dataset.tagIndex);
 
-                    queryGroups.forEach(group => {
-                        group.forEach(item => {
-                            // Match either exact tag or exact range
-                            const matchesTag = item.tag === currentTag;
-                            const matchesRange = currentRange && 
-                                item.minValue === currentRange.minValue && 
-                                item.maxValue === currentRange.maxValue;
+                if (groupIndex !== undefined && tagIndex !== undefined) {
+                    const item = queryGroups[groupIndex][tagIndex];
+                    const negated = input.value.trim().startsWith('!');
+                    const currentNegated = item.negated;
+                    const newTag = input.value.trim();
 
-                            if (matchesTag || matchesRange) {
-                                if (newTag.includes('->')) {
-                                    // Convert to range
-                                    Object.assign(item, parseRange(newTag));
-                                    delete item.tag;
-                                    delete item.negated;
-                                } else {
-                                    // Convert to regular tag
-                                    delete item.minValue;
-                                    delete item.maxValue;
-                                    if (negated) {
-                                        item.negated = true;
-                                        item.tag = newTag.trim().slice(1);
-                                    } else {
-                                        item.negated = false;
-                                        item.tag = newTag;
-                                    }
-                                    item.tag = item.tag
-                                        .trim()
-                                        .toLowerCase()
-                                        .replace(RegExp('\\s', 'g'), spaceReplace);
-                                }
+                    if (newTag && (newTag !== currentTag || negated !== currentNegated)) {
+                        if (newTag.includes('->')) {
+                            // Convert to range
+                            Object.assign(item, parseRange(newTag));
+                            delete item.tag;
+                            delete item.negated;
+                        } else {
+                            // Convert to regular tag
+                            delete item.minValue;
+                            delete item.maxValue;
+                            if (negated) {
+                                item.negated = true;
+                                item.tag = newTag.slice(1);
+                            } else {
+                                item.negated = false;
+                                item.tag = newTag;
                             }
-                        });
-                    });
-                    updateQueryArea();
-                    sendSearchMessage();
+                            item.tag = item.tag
+                                .trim()
+                                .toLowerCase()
+                                .replace(RegExp('\\s', 'g'), spaceReplace);
+                        }
+                        updateQueryArea();
+                        sendSearchMessage();
+                    }
                 }
             });
             removeContextMenu(contextMenu);
