@@ -1095,7 +1095,9 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             // Create an input field with the tag text
             const input = createInputField(currentTag, target, (input) => {
                 let newTag = input.value;
-                if (newTag && newTag !== currentTag) {
+                const negated = newTag.trim().startsWith('!');
+                const currentNegated = target.classList.contains('negated');
+                if (newTag && (newTag !== currentTag || negated !== currentNegated)) {
                     // Parse current range if it is one
                     const currentRange = currentTag.includes('->') ? parseRange(currentTag) : null;
 
@@ -1117,11 +1119,17 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
                                     // Convert to regular tag
                                     delete item.minValue;
                                     delete item.maxValue;
-                                    item.tag = newTag
+                                    if (negated) {
+                                        item.negated = true;
+                                        item.tag = newTag.trim().slice(1);
+                                    } else {
+                                        item.negated = false;
+                                        item.tag = newTag;
+                                    }
+                                    item.tag = item.tag
                                         .trim()
                                         .toLowerCase()
                                         .replace(RegExp('\\s', 'g'), spaceReplace);
-                                    item.negated = false;
                                 }
                             }
                         });
@@ -1368,6 +1376,9 @@ function createInputField(defaultTag, tagElement, finalizeFunction) {
     input.classList.add('itags-search-replaceTag');
     input.type = 'text';
     input.value = defaultTag;
+    if (tagElement.classList.contains('negated')) {
+        input.value = '!' + input.value;
+    }
     input.style.width = `${tagElement.offsetWidth}px`;
 
     // Replace the tag element with the input
@@ -1723,12 +1734,12 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
         }
     });
     // Handle right-click on tags in list
-    if (event.target.matches('.itags-search-tag') && !event.target.classList.contains('selected')) {
-        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
-    } else if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
+    if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
         createContextMenu(event, null, null, ['editQuery']);
-    } else if (event.target.matches('.itags-search-tag') && event.target.classList.contains('selected')) {
-        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'replaceAll', 'removeAll']);
+    } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
+        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
+    } else if (event.target.matches('.itags-search-tag')) {
+        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
     } else if (event.target.type !== 'text') {
         createContextMenu(event, null, null, []);
     }
