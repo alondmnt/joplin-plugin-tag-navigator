@@ -1100,39 +1100,39 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
             const input = createInputField(currentTag, target, (input) => {
                 const groupIndex = parseInt(target.dataset.groupIndex);
                 const tagIndex = parseInt(target.dataset.tagIndex);
+                if (groupIndex === undefined) { return; }
+                if (tagIndex === undefined) { return; }
 
-                if (groupIndex !== undefined && tagIndex !== undefined) {
-                    const item = queryGroups[groupIndex][tagIndex];
-                    const negated = input.value.trim().startsWith('!');
-                    const currentNegated = item.negated;
-                    const newTag = input.value.trim();
+                const item = queryGroups[groupIndex][tagIndex];
+                const negated = input.value.trim().startsWith('!');
+                const currentNegated = item.negated;
+                const newTag = input.value.trim();
+                if (!newTag) { return; }
+                if (newTag === currentTag && negated === currentNegated) { return; }
 
-                    if (newTag && (newTag !== currentTag || negated !== currentNegated)) {
-                        if (newTag.includes('->')) {
-                            // Convert to range
-                            Object.assign(item, parseRange(newTag));
-                            delete item.tag;
-                            delete item.negated;
-                        } else {
-                            // Convert to regular tag
-                            delete item.minValue;
-                            delete item.maxValue;
-                            if (negated) {
-                                item.negated = true;
-                                item.tag = newTag.slice(1);
-                            } else {
-                                item.negated = false;
-                                item.tag = newTag;
-                            }
-                            item.tag = item.tag
-                                .trim()
-                                .toLowerCase()
-                                .replace(RegExp('\\s', 'g'), spaceReplace);
-                        }
-                        updateQueryArea();
-                        sendSearchMessage();
+                if (newTag.includes('->')) {
+                    // Convert to range
+                    Object.assign(item, parseRange(newTag));
+                    delete item.tag;
+                    delete item.negated;
+                } else {
+                    // Convert to regular tag
+                    delete item.minValue;
+                    delete item.maxValue;
+                    if (negated) {
+                        item.tag = newTag.slice(1);
+                        item.negated = true;
+                    } else {
+                        item.tag = newTag;
+                        item.negated = false;
                     }
+                    item.tag = item.tag
+                        .trim()
+                        .toLowerCase()
+                        .replace(RegExp('\\s', 'g'), spaceReplace);
                 }
+                updateQueryArea();
+                sendSearchMessage();
             });
             removeContextMenu(contextMenu);
         });
