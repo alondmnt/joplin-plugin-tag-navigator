@@ -395,7 +395,11 @@ function updateResultsArea() {
         const result = results[index];
         const resultEl = document.createElement('div');
         resultEl.classList.add('itags-search-resultNote');
-        
+        if (result.color) {
+            // Set the border color of the result note
+            resultEl.style.borderColor = result.color;
+            resultEl.style.borderWidth = '2px';
+        }
         const titleEl = document.createElement('h3');
         titleEl.textContent = result.title;
         titleEl.style.cursor = 'pointer';

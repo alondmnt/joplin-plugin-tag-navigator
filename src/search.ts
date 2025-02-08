@@ -24,6 +24,7 @@ export interface GroupedResult {
   lineNumbers: number[];  // Line numbers where matches were found
   text: string[];        // Text content of matched lines
   html: string[];        // HTML content of matched lines
+  color: string;         // Color of matched lines
   title: string;         // Note title
   notebook?: string;     // Notebook name
   updatedTime?: number;  // Last update timestamp
@@ -42,7 +43,7 @@ export async function runSearch(
 ): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
   const queryResults = await getQueryResults(db, query, currentNote);
-  const groupedResults = await processQueryResults(queryResults);
+  const groupedResults = await processQueryResults(db, queryResults, '#color=');
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
@@ -179,22 +180,61 @@ function unionResults(
  * @returns Array of grouped results with note content
  */
 async function processQueryResults(
-  queryResults: ResultSet
+  db: NoteDatabase,
+  queryResults: ResultSet,
+  colorTag: string
 ): Promise<GroupedResult[]> {
   const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
   if (!queryResults) return groupedResults;
 
   for (const externalId in queryResults) {
-    const result: GroupedResult = {
-      externalId,
-      lineNumbers: Array.from(queryResults[externalId]).sort((a, b) => a - b),
-      text: [],
-      html: [],
-      title: '',
-    };
+    const note = db.notes[externalId];
+    const lineNumbers = Array.from(queryResults[externalId]).sort((a, b) => a - b);
 
-    groupedResults.push(await getTextAndTitle(result, fullPath));
+    // Get the color for each line
+    const colorMap: Map<string, number[]> = new Map();
+    colorMap.set('', [...lineNumbers]);
+
+    for (const lineNumber of lineNumbers) {
+      const lineTags = note.getTagsAtLine(lineNumber);
+
+      for (const tag of lineTags) {
+        if (tag.startsWith(colorTag)) {
+          // Add the color to the map
+          const color = tag.replace(colorTag, '');
+
+          const colorLines = colorMap.get(color) || [];
+          colorLines.push(lineNumber);
+          colorMap.set(color, colorLines);
+
+          // Remove the line from the default color array safely
+          const defaultLines = colorMap.get('');
+          const index = defaultLines.indexOf(lineNumber);
+          if (index !== -1) {
+            defaultLines.splice(index, 1);
+          }
+        }
+      }
+    }
+
+    // Create a separate result for each color
+    for (const [color, lineNumbers] of colorMap.entries()) {
+      if (lineNumbers.length === 0) {
+        continue;
+      }
+
+      const colorResult: GroupedResult = {
+        externalId,
+        lineNumbers,
+        text: [],
+        html: [],
+        color: color,
+        title: '',
+      };
+
+      groupedResults.push(await getTextAndTitle(colorResult, fullPath));
+    }
   }
 
   return groupedResults;
