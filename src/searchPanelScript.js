@@ -373,15 +373,17 @@ function updateResultsArea() {
     // Sort results
     const filter = resultFilter.value;
     results = results.sort((a, b) => {
+        let comparison;
         if (resultSort.value === 'title') {
-            return a.title.localeCompare(b.title);
+            comparison = a.title.localeCompare(b.title);
         } else if (resultSort.value === 'modified') {
-            return a.updatedTime - b.updatedTime;
+            comparison = a.updatedTime - b.updatedTime;
         } else if (resultSort.value === 'created') {
-            return a.createdTime - b.createdTime;
+            comparison = a.createdTime - b.createdTime;
         } else if (resultSort.value === 'notebook') {
-            return a.notebook.localeCompare(b.notebook);
+            comparison = a.notebook.localeCompare(b.notebook);
         }
+        return comparison || Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers);
     });
     if (resultOrderState === 'desc') {
         results = results.reverse();
