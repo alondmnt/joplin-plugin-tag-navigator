@@ -42,8 +42,9 @@ export async function runSearch(
   query: Query[][]
 ): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
+  const colorTag = await joplin.settings.value('itags.colorTag');
   const queryResults = await getQueryResults(db, query, currentNote);
-  const groupedResults = await processQueryResults(db, queryResults, '#color=');
+  const groupedResults = await processQueryResults(db, queryResults, colorTag);
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
