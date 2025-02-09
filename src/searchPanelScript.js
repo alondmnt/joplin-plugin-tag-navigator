@@ -42,6 +42,7 @@ let selectMultiTags = 'first';
 let searchWithRegex = false;
 let spaceReplace = '_';
 let dropdownIsOpen = false;
+let resultColorProperty = 'border';
 const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
 
 // Listen for messages from the main process
@@ -207,6 +208,7 @@ function updatePanelSettings(message) {
     resultOrder.innerHTML = resultOrderState === 'asc' ? 
         '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
     resultMarker = settings.resultMarker;
+    resultColorProperty = settings.resultColorProperty;
 
     hideElements(settings);
     updateResultsArea();
@@ -398,9 +400,12 @@ function updateResultsArea() {
         const resultEl = document.createElement('div');
         resultEl.classList.add('itags-search-resultNote');
         if (result.color) {
-            // Set the border color of the result note
-            resultEl.style.borderColor = result.color;
-            resultEl.style.borderWidth = '2px';
+            if (resultColorProperty === 'border') {
+                resultEl.style.borderColor = result.color;
+                resultEl.style.borderWidth = '2px';
+            } else if (resultColorProperty === 'background') {
+                resultEl.style.backgroundColor = result.color;
+            }
         }
         const titleEl = document.createElement('h3');
         titleEl.textContent = result.title;

@@ -90,6 +90,7 @@ interface PanelSettings {
   selectMultiTags: boolean;
   searchWithRegex: boolean;
   spaceReplace: string;
+  resultColorProperty: string;
 }
 
 // Get the version of Joplin
@@ -382,6 +383,7 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     selectMultiTags: await joplin.settings.value('itags.selectMultiTags'),
     searchWithRegex: await joplin.settings.value('itags.searchWithRegex'),
     spaceReplace: await joplin.settings.value('itags.spaceReplace'),
+    resultColorProperty: await joplin.settings.value('itags.resultColorProperty'),
   };
   const intervalID = setInterval(
     async () => {

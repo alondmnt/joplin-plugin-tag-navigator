@@ -410,6 +410,19 @@ export async function registerSettings(): Promise<void> {
       label: 'Color tag',
       description: 'Tag to use for coloring the results in the search panel. HTML colors are supported. Default: #color=. Example: #color=DarkSeaGreen, or #color=rgb(143, 188, 139)',
     },
+    'itags.resultColorProperty': {
+      value: 'border',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Search: Use color to set result:',
+      isEnum: true,
+      options: {
+        border: 'Border',
+        background: 'Background',
+      }
+    },
     'itags.minCount': {
       value: 1,
       type: SettingItemType.Int,
