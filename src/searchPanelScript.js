@@ -366,9 +366,9 @@ function updateResultsArea() {
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
+            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'collapsed';
         } else {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
+            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'expanded';
         }
     }
 
@@ -415,11 +415,12 @@ function updateResultsArea() {
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
         contentContainer.setAttribute('data-externalId', result.externalId);
+        contentContainer.setAttribute('data-color', result.color);
 
         // Preserve expansion state
-        if (noteState[result.externalId] === 'collapsed') {
+        if (noteState[[result.externalId, result.color]] === 'collapsed') {
             contentContainer.style.display = 'block';
-        } else if (noteState[result.externalId] === 'expanded') {
+        } else if (noteState[[result.externalId, result.color]] === 'expanded') {
             contentContainer.style.display = 'none';
         } else {
             contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
