@@ -28,6 +28,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Tag values**: Assign values to tags. Example: #tag=value. ([tips](#tag-values))
     - **Tag ranges**: Search for a range of tags, according to their lexicographic order. Example: #2024/07 -> #2024/08. ([tips](#tag-ranges))
     - **Today's date**: Search tags by today's date. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago).
+    - **Colour tags**: Use colour tags to highlight results in the search panel. Example: #color=red. ([tips](#colour-tags))
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
     - Display results in a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
@@ -74,6 +75,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Tag values](#tag-values)
 - [Table views](#table-views)
 - [Inline TODOs](#inline-todos)
+- [Colour tags](#colour-tags)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
 
@@ -197,6 +199,19 @@ These tags will be accessible in the search panel / notes / tables like standard
 - You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
 - Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)([#]|\-\s\[[x\s@\?!~]\])([^\s#'\"]*\w)?`.
     - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
+
+### Colour tags
+
+- Colour tags can be used to highlight results in the search panel, e.g., according to their priority.
+    - Example: `#color=DeepSeaGreen`, `#color=#008080` or `#color=rgb(0, 128, 128)`.
+    - HTML colour names are supported.
+- You may customise the colour tag in the plugin settings.
+    - Example: Set it to be `#priority=`, and then tag by `#priority=red`.
+- You may select whether to paint the background or the border of the results with the selected colour.
+- Set the colour of an entire note by tagging one of its first 2 lines with the colour tag.
+- Different sections of the same note may be tagged with different colours. They will be displayed separately in the panel (see an example below).
+
+![colour tags](img/tag-navigator-colours.png)
 
 ### Keyboard shortcuts
 
