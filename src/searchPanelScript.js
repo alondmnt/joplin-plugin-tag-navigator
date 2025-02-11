@@ -42,6 +42,7 @@ let selectMultiTags = 'first';
 let searchWithRegex = false;
 let spaceReplace = '_';
 let dropdownIsOpen = false;
+let resultColorProperty = 'border';
 const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
 
 // Listen for messages from the main process
@@ -207,6 +208,7 @@ function updatePanelSettings(message) {
     resultOrder.innerHTML = resultOrderState === 'asc' ? 
         '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
     resultMarker = settings.resultMarker;
+    resultColorProperty = settings.resultColorProperty;
 
     hideElements(settings);
     updateResultsArea();
@@ -364,24 +366,26 @@ function updateResultsArea() {
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         if (resultNotes[i].style.display === 'block') {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'collapsed';
+            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'collapsed';
         } else {
-            noteState[resultNotes[i].getAttribute('data-externalId')] = 'expanded';
+            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'expanded';
         }
     }
 
     // Sort results
     const filter = resultFilter.value;
     results = results.sort((a, b) => {
+        let comparison;
         if (resultSort.value === 'title') {
-            return a.title.localeCompare(b.title);
+            comparison = a.title.localeCompare(b.title);
         } else if (resultSort.value === 'modified') {
-            return a.updatedTime - b.updatedTime;
+            comparison = a.updatedTime - b.updatedTime;
         } else if (resultSort.value === 'created') {
-            return a.createdTime - b.createdTime;
+            comparison = a.createdTime - b.createdTime;
         } else if (resultSort.value === 'notebook') {
-            return a.notebook.localeCompare(b.notebook);
+            comparison = a.notebook.localeCompare(b.notebook);
         }
+        return comparison || Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers);
     });
     if (resultOrderState === 'desc') {
         results = results.reverse();
@@ -395,7 +399,14 @@ function updateResultsArea() {
         const result = results[index];
         const resultEl = document.createElement('div');
         resultEl.classList.add('itags-search-resultNote');
-        
+        if (result.color) {
+            if (resultColorProperty === 'border') {
+                resultEl.style.borderColor = result.color;
+                resultEl.style.borderWidth = '2px';
+            } else if (resultColorProperty === 'background') {
+                resultEl.style.backgroundColor = result.color;
+            }
+        }
         const titleEl = document.createElement('h3');
         titleEl.textContent = result.title;
         titleEl.style.cursor = 'pointer';
@@ -404,11 +415,12 @@ function updateResultsArea() {
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
         contentContainer.setAttribute('data-externalId', result.externalId);
+        contentContainer.setAttribute('data-color', result.color);
 
         // Preserve expansion state
-        if (noteState[result.externalId] === 'collapsed') {
+        if (noteState[[result.externalId, result.color]] === 'collapsed') {
             contentContainer.style.display = 'block';
-        } else if (noteState[result.externalId] === 'expanded') {
+        } else if (noteState[[result.externalId, result.color]] === 'expanded') {
             contentContainer.style.display = 'none';
         } else {
             contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';

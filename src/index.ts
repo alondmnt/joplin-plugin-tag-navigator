@@ -439,7 +439,8 @@ joplin.plugins.register({
           event.keys.includes('itags.showNotes') ||
           event.keys.includes('itags.showResultFilter') ||
           event.keys.includes('itags.searchWithRegex') ||
-          event.keys.includes('itags.selectMultiTags')) {
+          event.keys.includes('itags.selectMultiTags') ||
+          event.keys.includes('itags.resultColorProperty')) {
         await updatePanelSettings(searchPanel);
       }
       // Changes that require a database clear
