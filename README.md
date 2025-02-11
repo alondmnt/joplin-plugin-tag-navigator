@@ -27,7 +27,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child. ([video](https://www.youtube.com/watch?v=h-HdX7npbIw))
     - **Tag values**: Assign values to tags. Example: #tag=value. ([tips](#tag-values))
     - **Tag ranges**: Search for a range of tags, according to their lexicographic order. Example: #2024/07 -> #2024/08. ([tips](#tag-ranges))
-    - **Today's date**: Search tags by today's date. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago).
+    - **Today's date**: Search tags by today's date. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago). ([tips](#tag-ranges))
     - **Colour tags**: Use colour tags to highlight results in the search panel. Example: #color=red. ([tips](#colour-tags))
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
@@ -100,6 +100,9 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - Tag ranges can be inserted using the "Tag range" input boxes, or by right-clicking on a tag in the query area, and selecting `Edit query`.
     - Example: Edit a tag or tag range and type `#prefix* ->` to search for all tags starting with `#prefix`.
     - If you type only `#prefix`, the query will be converted to a standard tag search (matching only the tag `#prefix`).
+- Tag ranges can be used to search for tags by today's date.
+    - Example: `#today ->` will search for all tags starting with `#today`.
+    - Example: `#today -> #today+1` will search for all tags starting with `#today` and up to `#today+1` (inclusive, i.e., returning two days).
 
 ### Tag values
 
