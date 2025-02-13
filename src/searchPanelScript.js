@@ -374,6 +374,7 @@ function updateResultsArea() {
 
     // Sort results
     const filter = resultFilter.value;
+    const lineSort = (resultOrderState === 'asc') ? 1 : -1;
     results = results.sort((a, b) => {
         let comparison;
         if (resultSort.value === 'title') {
@@ -385,7 +386,8 @@ function updateResultsArea() {
         } else if (resultSort.value === 'notebook') {
             comparison = a.notebook.localeCompare(b.notebook);
         }
-        return comparison || Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers);
+        return comparison || 
+            (lineSort * (Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers)));
     });
     if (resultOrderState === 'desc') {
         results = results.reverse();

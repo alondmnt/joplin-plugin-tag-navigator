@@ -449,8 +449,8 @@ function sortResults<T extends TableResult | GroupedResult>(
       if (comparison !== 0) return comparison;
     }
     // Break ties using minimum line number
-    const sortOrder = sortOrderArray?.[0]?.startsWith('desc') ? -1 : 1;
-    return (Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers)) * sortOrder;
+    // Always sort in ascending order
+    return (Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers));
   });
 }
 
