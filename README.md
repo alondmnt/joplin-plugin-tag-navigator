@@ -70,9 +70,9 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
-- [Front matter tags](#front-matter-tags)
 - [Tag ranges](#tag-ranges)
 - [Tag values](#tag-values)
+- [Front matter tags](#front-matter-tags)
 - [Table views](#table-views)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
