@@ -271,7 +271,8 @@ async function processResultsForTable(
         let parent = tagInfo.find(
           parentInfo =>
             parentInfo.parent &&
-            info.tag.startsWith(parentInfo.tag)
+            (info.tag.startsWith(parentInfo.tag + '/') ||
+             info.tag.startsWith(parentInfo.tag + tagSettings.valueDelim))
         );
         if (!parent) {
           parent = info;
@@ -351,9 +352,11 @@ async function processResultForTable(
   });
 
   for (const info of tagInfo) {
-    // A child tag is a tag that isn't a prefix of any other tag, or a value tag
-    info.child = !tagInfo.some(other => 
-      other.tag !== info.tag && other.tag.startsWith(info.tag)
+    // A child tag is a tag that has no children of its own (is a leaf node)
+    info.child = !tagInfo.some(other =>
+      other.tag !== info.tag &&
+      (other.tag.startsWith(info.tag + '/') ||
+       other.tag.startsWith(info.tag + tagSettings.valueDelim))
     );
   }
 
@@ -364,7 +367,8 @@ async function processResultForTable(
       let parent = tagInfo.find(
         parentInfo =>
           parentInfo.parent &&
-          info.tag.startsWith(parentInfo.tag)
+          (info.tag.startsWith(parentInfo.tag + '/') ||
+           info.tag.startsWith(parentInfo.tag + tagSettings.valueDelim))
       );
       if (!parent) {
         parent = info;
