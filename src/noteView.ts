@@ -436,8 +436,10 @@ function sortResults<T extends TableResult | GroupedResult>(
       } else if (sortBy === 'title') {
         comparison = a.title.localeCompare(b.title) * sortOrder;
       } else if (isTableResult(a) && isTableResult(b)) {
-        const aValue = a.tags[sortBy]?.replace(sortBy + '/', '') || '';
-        const bValue = b.tags[sortBy]?.replace(sortBy + '/', '') || '';
+        const aValue = a.tags[sortBy]?.replace(sortBy + '/', '')
+          ?.replace(sortBy + tagSettings.valueDelim, '') || '';
+        const bValue = b.tags[sortBy]?.replace(sortBy + '/', '')
+          ?.replace(sortBy + tagSettings.valueDelim, '') || '';
         const aNum = Number(aValue);
         const bNum = Number(bValue);
         if (!isNaN(aNum) && !isNaN(bNum)) {
