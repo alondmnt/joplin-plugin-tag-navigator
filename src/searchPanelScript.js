@@ -906,7 +906,7 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result=null, index=null, commands=['searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll']) {
+function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll']) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
@@ -1061,13 +1061,25 @@ function createContextMenu(event, result=null, index=null, commands=['searchTag'
         cmdCount++;
     }
 
-    if (commands.includes('searchTag')) {
+    if (commands.includes('insertTag')) {
         if (cmdCount > 0) {
             // Add a separator between the checkbox states and the other commands
             const separator = document.createElement('hr');
             separator.classList.add('itags-search-contextSeparator');
             fragment.appendChild(separator);
         }
+        const insertTag = document.createElement('span');
+        insertTag.classList.add('itags-search-contextCommand');
+        insertTag.textContent = `Insert tag`;
+        addEventListenerWithTracking(insertTag, 'click', () => {
+            sendInsertMessage(currentTag);
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(insertTag);
+        cmdCount++;
+    }
+
+    if (commands.includes('searchTag')) {
         // Create the "Search tag" command
         const searchTag = document.createElement('span');
         searchTag.classList.add('itags-search-contextCommand');
@@ -1747,9 +1759,9 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
     if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
         createContextMenu(event, null, null, ['editQuery']);
     } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
-        createContextMenu(event, null, null, ['searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
+        createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
     } else if (event.target.matches('.itags-search-tag')) {
-        createContextMenu(event, null, null, ['searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+        createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
     } else if (event.target.type !== 'text') {
         createContextMenu(event, null, null, []);
     }
