@@ -1489,7 +1489,15 @@ addEventListenerWithTracking(tagSearch, 'click', sendSearchMessage);
 
 addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
-        if (tagFilter.value === '') {
+        if (event.shiftKey) {
+            // Insert the tag
+            const tag = tagList.firstChild.textContent;
+            sendInsertMessage(tag);
+            tagFilter.value = '';
+            updateTagList();
+            return;
+
+        } else if (tagFilter.value === '') {
             sendSearchMessage();
 
         } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
