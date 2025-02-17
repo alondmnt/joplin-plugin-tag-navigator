@@ -22,7 +22,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
-    - **Insert tags** from the panel into the note editor. ([video](#tag-insertion))
+    - **Insert tags** from the panel into the note editor. ([tips](#tag-insertion))
     - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). ([tips](#inline-todos))
     - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child. ([video](https://www.youtube.com/watch?v=h-HdX7npbIw))
     - **Tag values**: Assign values to tags. Example: #tag=value. ([tips](#tag-values))
@@ -62,14 +62,11 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 <img src="img/tag-navigator-panel.gif" width="80%" title="navigation panel demo">
 
-### Tag insertion
-
-<img src="img/tag-navigator-insert.gif" width="80%" title="insert tag demo">
-
 ## Tips
 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
+- [Tag insertion](#tag-insertion)
 - [Tag ranges](#tag-ranges)
 - [Tag values](#tag-values)
 - [Front matter tags](#front-matter-tags)
@@ -89,6 +86,12 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - You may also define an exclusion rule to ignore certain tags.
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+### Tag insertion
+
+- You may insert a tag into the note editor by:
+    - Starting to type a tag in the search panel, and pressing `Shift+Enter`.
+    - Right-clicking on a tag in the search panel, and selecting `Insert tag`.
 
 ### Tag ranges
 
