@@ -314,7 +314,11 @@ joplin.plugins.register({
       label: "Convert all notes' inline tags to Joplin tags",
       iconName: 'fas fa-tags',
       execute: async () => {
-        await convertAllNotesToJoplinTags();
+        // Confirmation dialog
+        const confirm = await joplin.views.dialogs.showMessageBox('Are you sure you want to convert all notes to Joplin tags?');
+        if (confirm === 0) {
+          await convertAllNotesToJoplinTags();
+        }
       },
     });
 
@@ -343,15 +347,19 @@ joplin.plugins.register({
       label: "Convert all notes' Joplin tags to inline tags",
       iconName: 'fas fa-tags',
       execute: async () => {
-        const listPrefix = await joplin.settings.value('itags.listPrefix');
-        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
-        const location = await joplin.settings.value('itags.location');
-        await convertAllNotesToInlineTags(listPrefix, tagPrefix, spaceReplace, location);
-        let note = await joplin.workspace.selectedNote();
-        if (!note) { return; }
-        await joplin.commands.execute('editor.setText', note.body);
-        note = clearObjectReferences(note);
+        // Confirmation dialog
+        const confirm = await joplin.views.dialogs.showMessageBox('Are you sure you want to convert all notes to inline tags?');
+        if (confirm === 0) {
+          const listPrefix = await joplin.settings.value('itags.listPrefix');
+          const tagPrefix = await joplin.settings.value('itags.tagPrefix');
+          const spaceReplace = await joplin.settings.value('itags.spaceReplace');
+          const location = await joplin.settings.value('itags.location');
+          await convertAllNotesToInlineTags(listPrefix, tagPrefix, spaceReplace, location);
+          let note = await joplin.workspace.selectedNote();
+          if (!note) { return; }
+          await joplin.commands.execute('editor.setText', note.body);
+          note = clearObjectReferences(note);
+        }
       },
     });
 
