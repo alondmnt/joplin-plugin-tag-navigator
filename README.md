@@ -236,6 +236,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 | Key | Action |
 | --- | ------ |
 | Enter | Add tag(s) / note to query / note (see config) |
+| Shift + Enter | Insert first tag to note |
 | 2nd Enter | Search notes based on current query |
 | Delete | Remove last added tag / note from query |
 | Esc | Clear the filter (display all tags / notes) |
