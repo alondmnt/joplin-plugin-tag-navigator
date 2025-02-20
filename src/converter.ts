@@ -10,6 +10,8 @@ import { TagSettings, getTagSettings } from './settings';
 export async function convertAllNotesToJoplinTags(): Promise<void> {
   const tagSettings = await getTagSettings();
 
+  let allTags = await getAllTags();
+
   // Get all notes
   let hasMore = true;
   let page = 0;
@@ -28,7 +30,7 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
         continue;
       }
       try {
-        await convertNoteToJoplinTags(note, tagSettings);
+        await convertNoteToJoplinTags(note, tagSettings, allTags);
       } catch (error) {
         console.error(`Error converting note ${note.id} to tags: ${error}`);
       }
@@ -37,6 +39,7 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
     // Remove the reference to the notes to avoid memory leaks
     notes.items = null;
   }
+  allTags = clearObjectReferences(allTags);
 }
 
 /**
@@ -85,7 +88,8 @@ export async function convertAllNotesToInlineTags(
  */
 export async function convertNoteToJoplinTags(
   note: { id: string; body: string; markup_language: number }, 
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  allTags?: { id: string; title: string }[]
 ): Promise<void> {
 
   // Parse all inline tags from the note
@@ -107,14 +111,8 @@ export async function convertNoteToJoplinTags(
   }
 
   // Get the existing tags
-  let hasMore = true;
-  let page = 0;
-  let allTags = [];
-  while (hasMore) {
-    const tags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
-    allTags.push(...tags.items);
-    hasMore = tags.has_more;
-    page++;
+  if (!allTags) {
+    allTags = await getAllTags();
   }
   const allTagNamesSet = new Set(allTags.map(tag => tag.title));
 
@@ -177,4 +175,21 @@ export async function convertNoteToInlineTags(
 
   await joplin.data.put(['notes', note.id], null, { body: note.body });
   noteTags = clearObjectReferences(noteTags);
+}
+
+/**
+ * Gets all tags from Joplin
+ * @returns An array of all tags
+ */
+async function getAllTags(): Promise<{ id: string; title: string }[]> {
+  let hasMore = true;
+  let page = 0;
+  const allTags = [];
+  while (hasMore) {
+    const tags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
+    allTags.push(...tags.items);
+    hasMore = tags.has_more;
+    page++;
+  }
+  return allTags;
 }
