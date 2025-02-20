@@ -90,7 +90,8 @@ export async function convertNoteToJoplinTags(
 
   // Parse all inline tags from the note
   const tags = (await parseTagsLines(note.body, tagSettings))
-    .map(tag => tag.tag.replace(tagSettings.tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+    .map(tag => tag.tag.replace(tagSettings.tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
+    .filter(tag => tag.length > 0);
 
   if (tags.length === 0) {
     return;
