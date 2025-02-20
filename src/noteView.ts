@@ -100,7 +100,7 @@ export async function displayResultsInNote(
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
     [tableString, tableColumns] = buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
-    resultsString += tableString + '\nDisplaying ' + filteredResults.length + ' notes\n';
+    resultsString += tableString;
   }
   resultsString += resultsEnd;
 
