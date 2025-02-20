@@ -81,7 +81,7 @@ export async function displayResultsInNote(
     return null;
   }
 
-  let resultsString = resultsStart + '\nDisplaying ' + filteredResults.length + ' notes\n';
+  let resultsString = resultsStart;
   let tableColumns: string[] = [];
   let tableString = '';
   let tableDefaultValues: { [key: string]: string } = {};
@@ -100,7 +100,7 @@ export async function displayResultsInNote(
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
     [tableString, tableColumns] = buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
-    resultsString += tableString;
+    resultsString += tableString + '\nDisplaying ' + filteredResults.length + ' notes\n';
   }
   resultsString += resultsEnd;
 
