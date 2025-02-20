@@ -107,12 +107,21 @@ export async function convertNoteToJoplinTags(
   }
 
   // Get the existing tags
-  let allTags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
-  const allTagNames = allTags.items.map(tag => tag.title);
+  let hasMore = true;
+  let page = 0;
+  let allTags = [];
+  while (hasMore) {
+    const tags = await joplin.data.get(['tags'], { fields: ['id', 'title'] });
+    allTags.push(...tags.items);
+    hasMore = tags.has_more;
+    page++;
+  }
+  const allTagNamesSet = new Set(allTags.map(tag => tag.title));
 
   // Create the tags that don't exist
-  const curTags = allTags.items.filter(tag => tagsToAdd.includes(tag.title));
-  const newTags = tagsToAdd.filter(tag => !allTagNames.includes(tag));
+  const tagsToAddSet = new Set(tagsToAdd);
+  const curTags = allTags.filter(tag => tagsToAddSet.has(tag.title));
+  const newTags = tagsToAdd.filter(tag => !allTagNamesSet.has(tag));
 
   for (const tag of newTags) {
     const newTag = await joplin.data.post(['tags'], null, { title: tag });
