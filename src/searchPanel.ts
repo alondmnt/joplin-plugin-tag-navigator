@@ -12,7 +12,7 @@ const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: tr
 
 /** Cached regex patterns */
 const REGEX = {
-  findQuery: new RegExp(`[\n]+${queryStart}\n([\\s\\S]*?)\n${queryEnd}`),
+  findQuery: new RegExp(`[\n]*${queryStart}\n([\\s\\S]*?)\n${queryEnd}`),
   wikiLink: /\[\[([^\]]+)\]\]/g,
   xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,
   xitDone: /(^[\s]*)- \[x\] (.*)$/gm,
