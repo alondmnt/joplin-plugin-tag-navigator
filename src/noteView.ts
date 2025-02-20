@@ -176,7 +176,7 @@ async function filterAndSortResults(
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
   for (const note of sortedResults) {
     // Filter out lines that don't contain the filter
-    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, note.title));
+    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, '|' + note.title + '|' + note.notebook));
     note.text = note.text.filter((_, i) => filteredIndices.includes(i));
     note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
     if ((parsedFilter.length > 0 && highlight)) {

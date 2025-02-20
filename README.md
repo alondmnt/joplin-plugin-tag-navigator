@@ -18,6 +18,7 @@ Type inline #tags or front matter in the note editor. View your tagged paragraph
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
+    - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path.
     - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))

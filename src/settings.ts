@@ -331,7 +331,7 @@ export async function registerSettings(): Promise<void> {
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Note view: Show notebook path in table view',
+      label: 'Note view: Extract the full notebook path',
     },
     'itags.tableCase': {
       value: 'title',

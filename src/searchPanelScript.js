@@ -433,7 +433,7 @@ function updateResultsArea() {
 
         let hasContent = false;
         for (let index = 0; index < result.html.length; index++) {
-            if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget=result.title)) {
+            if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget='|' + result.title + '|' + result.notebook)) {
                 continue;
             }
             hasContent = true;
