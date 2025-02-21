@@ -446,7 +446,7 @@ export async function processNote(
     }
 
     // Process standard inline tags
-    const tagLines = await parseTagsLines(note.body, tagSettings);
+    const tagLines = parseTagsLines(note.body, tagSettings);
     for (const tagLine of tagLines) {
       for (const lineNumber of tagLine.lines) {
         noteRecord.addTag(tagLine.tag, lineNumber);

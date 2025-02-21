@@ -35,7 +35,7 @@ export interface TagLineInfo {
  * @param tagSettings Configuration for tag parsing
  * @returns Array of tag information including line numbers and relationships
  */
-export async function parseTagsLines(text: string, tagSettings: TagSettings): Promise<TagLineInfo[]> {
+export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
   let inCodeBlock = false;
   let isResultBlock = false;
   let isQueryBlock = false;

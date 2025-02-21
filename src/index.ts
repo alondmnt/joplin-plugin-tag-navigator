@@ -108,7 +108,7 @@ joplin.plugins.register({
         let note = await joplin.workspace.selectedNote();
         if (note.body) {
           tagSettings.inheritTags = false;
-          tagLines = await parseTagsLines(note.body, tagSettings);
+          tagLines = parseTagsLines(note.body, tagSettings);
         }
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
         note = clearObjectReferences(note);
@@ -152,7 +152,7 @@ joplin.plugins.register({
       if (await joplin.views.panels.visible(navPanel)) {
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
-        tagLines = await parseTagsLines(note.body, tagSettings);
+        tagLines = parseTagsLines(note.body, tagSettings);
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
       }
 
@@ -174,7 +174,7 @@ joplin.plugins.register({
         if (!note) { return; }
         const tagSettings = await getTagSettings();
         tagSettings.inheritTags = false;
-        tagLines = await parseTagsLines(note.body, tagSettings);
+        tagLines = parseTagsLines(note.body, tagSettings);
         await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
         note = clearObjectReferences(note);
       },
