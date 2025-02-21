@@ -4,8 +4,8 @@ import * as debounce from 'lodash.debounce';
 import { getTagSettings, registerSettings } from './settings';
 import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
-import { updateNavPanel } from './navPanel';
-import { parseTagsLines } from './parser';
+import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
+import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
 import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
 import { runSearch } from './search';
@@ -72,7 +72,8 @@ joplin.plugins.register({
 
     // Note navigation panel
     const navPanel = await joplin.views.panels.create('itags.navPanel');
-    let tagLines = [];
+    let tagLines: TagLine[] = [];
+    let tagCount: TagCount = {};
 
     /**
      * Updates the database and all UI components:
@@ -104,13 +105,11 @@ joplin.plugins.register({
 
       // Update navigation panel
       if (await joplin.views.panels.visible(navPanel)) {
-        const tagSettings = await getTagSettings();
         let note = await joplin.workspace.selectedNote();
         if (note.body) {
-          tagSettings.inheritTags = false;
-          tagLines = parseTagsLines(note.body, tagSettings);
+          [tagLines, tagCount] = await getNavTagLines(note.body);
         }
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
+        await updateNavPanel(navPanel, tagLines, tagCount);
         note = clearObjectReferences(note);
       }
     }
@@ -150,10 +149,8 @@ joplin.plugins.register({
 
       // Navigation panel update
       if (await joplin.views.panels.visible(navPanel)) {
-        const tagSettings = await getTagSettings();
-        tagSettings.inheritTags = false;
-        tagLines = parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
+        [tagLines, tagCount] = await getNavTagLines(note.body);
+        await updateNavPanel(navPanel, tagLines, tagCount);
       }
 
       note = clearObjectReferences(note);
@@ -172,10 +169,8 @@ joplin.plugins.register({
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
-        const tagSettings = await getTagSettings();
-        tagSettings.inheritTags = false;
-        tagLines = parseTagsLines(note.body, tagSettings);
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
+        [tagLines, tagCount] = await getNavTagLines(note.body);
+        await updateNavPanel(navPanel, tagLines, tagCount);
         note = clearObjectReferences(note);
       },
     });
@@ -472,7 +467,7 @@ joplin.plugins.register({
           event.keys.includes('itags.navPanelStyle') ||
           event.keys.includes('itags.navPanelSort')) {
         if (await joplin.views.panels.visible(navPanel)) {
-          await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
+          await updateNavPanel(navPanel, tagLines, tagCount);
         }
       }
     });
@@ -496,14 +491,14 @@ joplin.plugins.register({
         }
         // Navigate to the line
         const lineIndex = parseInt(message.line);
-        if (lineIndex > 0) {
+        if (lineIndex >= 0) {
           await joplin.commands.execute('editor.execCommand', {
             name: 'scrollToTagLine',
             args: [lineIndex]
           });
         }
         // Update the panel
-        await updateNavPanel(navPanel, tagLines, DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim));
+        await updateNavPanel(navPanel, tagLines, tagCount);
       }
       if (message.name === 'updateSetting') {
         await joplin.settings.setValue(message.field, message.value);

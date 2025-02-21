@@ -1,4 +1,7 @@
 import joplin from 'api';
+import { parseTagsLines, parseTagsFromFrontMatter } from './parser';
+import { getTagSettings } from './settings';
+import { DatabaseManager } from './db';
 
 interface TagNode {
   count: number;
@@ -7,15 +10,28 @@ interface TagNode {
   };
 }
 
-interface TagCount {
+export interface TagCount {
   [tag: string]: number;
 }
 
-interface TagLine {
+export interface TagLine {
   tag: string;
   lines: number[];
   count: number;
   index: number;
+}
+
+export async function getNavTagLines(body: string): Promise<[TagLine[], TagCount]> {
+  const tagSettings = await getTagSettings();
+  tagSettings.inheritTags = false;
+  tagSettings.nestedTags = false;  // Get only child tags
+  const tagLines = [...parseTagsFromFrontMatter(body, tagSettings), ...parseTagsLines(body, tagSettings)];
+  // Get only unique tags
+  const uniqueTagLines = tagLines.filter((tagLine, index, self) =>
+    index === self.findIndex((t) => t.tag === tagLine.tag)
+  );
+  const tagCount = DatabaseManager.getDatabase().getAllTagCounts(tagSettings.valueDelim)
+  return [uniqueTagLines, tagCount];
 }
 
 export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCount: TagCount) {
