@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { parseTagsLines } from './parser';
+import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
 
@@ -93,18 +93,19 @@ export async function convertNoteToJoplinTags(
 ): Promise<void> {
 
   // Parse all inline tags from the note
-  const tags = parseTagsLines(note.body, tagSettings)
+  const tags = [...parseTagsFromFrontMatter(note.body, tagSettings), ...parseTagsLines(note.body, tagSettings)]
     .map(tag => tag.tag.replace(tagSettings.tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
     .filter(tag => tag.length > 0);
+  const uniqueTags = tags.filter((tag, index, self) => self.indexOf(tag) === index);
 
-  if (tags.length === 0) {
+  if (uniqueTags.length === 0) {
     return;
   }
 
   // Get note tags
   let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const noteTagNames = noteTags.items.map(tag => tag.title);
-  const tagsToAdd = tags.filter(tag => !noteTagNames.includes(tag));
+  const tagsToAdd = uniqueTags.filter(tag => !noteTagNames.includes(tag));
 
   if (tagsToAdd.length === 0) {
     return;
