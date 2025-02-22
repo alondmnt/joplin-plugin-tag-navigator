@@ -259,12 +259,13 @@ async function getTextAndTitle(
   } catch (e) {
     folder = { title: 'Unknown notebook' };
   }
-  let notebook = '/' + folder.title + '/';
+  let notebook = folder.title + '/';
   if (fullPath) {
     while (folder.parent_id) {
       folder = await joplin.data.get(['folders', folder.parent_id], { fields: ['title', 'parent_id'] });
-      notebook = '/' + folder.title + notebook;
+      notebook = folder.title + '/' + notebook;
     }
+    notebook = '/' + notebook;
   }
   const lines: string[] = note.body.split('\n');
 
