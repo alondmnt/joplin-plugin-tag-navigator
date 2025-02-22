@@ -213,6 +213,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Search: Use regex for tag / note / content filtering',
     },
+    'itags.tableNotebookPath': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Extract the full notebook path',
+      description: 'The full path can be used to filter results, and will also be shown in the table view.'
+    },
     'itags.showQuery': {
       value: true,
       type: SettingItemType.Bool,
@@ -337,13 +345,6 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Note view: Table view columns',
       description: 'Number of columns to show in the table view. Set to 0 to show all.',
-    },
-    'itags.tableNotebookPath': {
-      value: false,
-      type: SettingItemType.Bool,
-      section: 'itags',
-      public: true,
-      label: 'Note view: Extract the full notebook path',
     },
     'itags.tableCase': {
       value: 'title',
