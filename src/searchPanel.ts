@@ -11,7 +11,7 @@ import { NoteDatabase, processNote } from './db';
 const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
 
 /** Cached regex patterns */
-const REGEX = {
+export const REGEX = {
   findQuery: new RegExp(`[\n]*${queryStart}\n([\\s\\S]*?)\n${queryEnd}`),
   wikiLink: /\[\[([^\]]+)\]\]/g,
   xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,

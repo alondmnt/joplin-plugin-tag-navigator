@@ -137,7 +137,8 @@ joplin.plugins.register({
         if (savedQuery.displayInNote === 'list' || savedQuery.displayInNote === 'table') {
           const tagSettings = await getTagSettings();
           const nColumns = await joplin.settings.value('itags.tableColumns');
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+          const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -250,7 +251,8 @@ joplin.plugins.register({
         if (query.displayInNote === 'list' || query.displayInNote === 'table') {
           const tagSettings = await getTagSettings();
           const nColumns = await joplin.settings.value('itags.tableColumns');
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+          const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -273,7 +275,8 @@ joplin.plugins.register({
         if (!note) { return; }
         const tagSettings = await getTagSettings();
         const nColumns = await joplin.settings.value('itags.tableColumns');
-        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, nColumns);
+        const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
+        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
         if (result) {
           currentTableColumns = result.tableColumns;
           currentTableDefaultValues = result.tableDefaultValues;

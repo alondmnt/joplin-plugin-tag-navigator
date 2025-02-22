@@ -1,11 +1,12 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences } from './utils';
-import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord } from './searchPanel';
+import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
 import { NoteDatabase } from './db';
 
 const REGEX = {
+  query: REGEX_SEARCH.findQuery,
   results: new RegExp(`${resultsStart}.*${resultsEnd}`, 's'),
   resultsWithWhitespace: new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's'),
   quotedText: /"([^"]+)"/g
@@ -39,12 +40,13 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
   // Display results in notes
   const tagSettings = await getTagSettings();
   const nColumns = await joplin.settings.value('itags.tableColumns');
+  const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
   const noteIds = db.getResultNotes();
   let tableColumns: string[] = [];  
   let tableDefaultValues: { [key: string]: string } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    const result = await displayResultsInNote(db, note, tagSettings, nColumns);
+    const result = await displayResultsInNote(db, note, tagSettings, noteViewLocation, nColumns);
     if (result) {
       tableColumns = result.tableColumns;
       tableDefaultValues = result.tableDefaultValues;
@@ -66,6 +68,7 @@ export async function displayResultsInNote(
   db: NoteDatabase, 
   note: { id: string, body: string }, 
   tagSettings: TagSettings, 
+  noteViewLocation: string,
   nColumns: number = 10
 ): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } } | null> {
   if (!note.body) { return null; }
@@ -109,7 +112,26 @@ export async function displayResultsInNote(
   if (REGEX.results.test(note.body)) {
     newBody = newBody.replace(REGEX.results, resultsString);
   } else {
-    newBody += '\n' + resultsString;
+    const queryMatch = REGEX.query.exec(newBody);
+    if (queryMatch) {
+      const insertPosition = noteViewLocation === 'before' 
+        ? queryMatch.index 
+        : queryMatch.index + queryMatch[0].length;
+
+      // Add newline before results if needed
+      const needsNewlineBefore = insertPosition > 0 && newBody[insertPosition - 1] !== '\n';
+
+      newBody = newBody.slice(0, insertPosition) + 
+                (needsNewlineBefore ? '\n\n' : '') +
+                resultsString +
+                newBody.slice(insertPosition);
+    } else {
+      // Ensure there's a newline before appending if the note doesn't end with one
+      if (newBody && !newBody.endsWith('\n')) {
+        newBody += '\n';
+      }
+      newBody += resultsString + '\n';
+    }
   }
   let currentNote = await joplin.workspace.selectedNote();
   if (newBody !== note.body) {

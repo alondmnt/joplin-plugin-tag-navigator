@@ -315,6 +315,18 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Note view: Update view when opening note',
     },
+    'itags.noteViewLocation': {
+      value: 'before',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Location of results',
+      isEnum: true,
+      options: {
+        before: 'Before the query',
+        after: 'After the query',
+      }
+    },
     'itags.tableColumns': {
       value: 10,
       type: SettingItemType.Int,
