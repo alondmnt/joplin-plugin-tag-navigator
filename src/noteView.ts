@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
-import { clearObjectReferences } from './utils';
+import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
 import { NoteDatabase } from './db';
@@ -302,7 +302,7 @@ async function processResultsForTable(
         if (!valueCount[parent.tag]) {
           valueCount[parent.tag] = {};
         }
-        const value = info.tag.replace(RegExp(parent.tag + '/|' + parent.tag + tagSettings.valueDelim, 'g'), '');
+        const value = info.tag.replace(RegExp(escapeRegex(parent.tag) + '/|' + escapeRegex(parent.tag + tagSettings.valueDelim), 'g'), '');
         valueCount[parent.tag][value] = (valueCount[parent.tag][value] || 0) + 1;
       }
     });
@@ -555,7 +555,7 @@ function buildTable(
         } else if (tagValue === column) {
           row += ' + |';
         } else {
-          row += ` ${formatTag(tagValue.replace(RegExp(column + '/|' + column + tagSettings.valueDelim, 'g'), ''), tagSettings)} |`;
+          row += ` ${formatTag(tagValue.replace(RegExp(escapeRegex(column) + '/|' + escapeRegex(column + tagSettings.valueDelim), 'g'), ''), tagSettings)} |`;
         }
       }
     }
