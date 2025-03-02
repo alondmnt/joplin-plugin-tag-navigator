@@ -24,6 +24,7 @@ export const REGEX = {
   backtickContent: /(`[^`]*`)/,
   heading: /^(#{1,6})\s+(.*)$/,
   leadingWhitespace: /^\s*/,
+  trailingWhitespace: /\s*$/,
   checkboxPrefix: /^\s*- \[[x\s@\?!~]\]\s*/,
   checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g
 };
@@ -421,7 +422,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
           if (index % 2 === 1) return block;
           const lines = block.split('\n');
           return lines.map((line, lineNumber) => 
-            replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
+            replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">`)
           ).join('\n');
         }).join('');
       }
@@ -473,7 +474,13 @@ function replaceOutsideBackticks(
     // Even indices are outside backticks; odd indices are content within backticks
     if (index % 2 === 0) {
       // Replace or mark the matches in this segment
-      const processedSegment = segment.replace(tagRegex, replaceString);
+      const processedSegment = segment.replace(tagRegex, (...args) => {
+        // Preserve leading whitespace
+        const leadingWhitespace = args[0].match(REGEX.leadingWhitespace)?.[0] || '';
+        const trailingWhitespace = args[0].match(REGEX.trailingWhitespace)?.[0] || '';
+        const tag = args[0].trim();
+        return `${leadingWhitespace}${replaceString}${tag}</span>${trailingWhitespace}`;
+      });
       processedString += processedSegment;
     } else {
       // Directly concatenate segments within backticks without alteration
@@ -501,7 +508,7 @@ export function normalizeTextIndentation(text: string): string {
     }
 
     // Track the current indentation level
-    const lineIndentation = line.match(REGEX.leadingWhitespace)[0].length;
+    const lineIndentation = line.match(REGEX.leadingWhitespace)?.[0].length || 0;
     if (lineIndentation < currentIndentation) {
       currentIndentation = lineIndentation;
     }

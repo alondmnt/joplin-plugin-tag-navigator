@@ -5,7 +5,7 @@ import { load as yamlLoad } from 'js-yaml';
 /**
  * Regular expressions for parsing different elements
  */
-export const defTagRegex = /(?<=^|\s)#([^\s#'"]*\w)/g; // Matches tag names starting with #
+export const defTagRegex = /(^|\s)#([\p{L}\p{N}]([\p{L}\p{N}_\-\/=.]*[\p{L}\p{N}])?)/gu; // Matches tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
@@ -101,6 +101,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
         if (tagSettings.excludeRegex && tag.match(tagSettings.excludeRegex)) {
           return;
         }
+        tag = tag.trim();  // Remove leading and trailing whitespace
         // Replace the today tag with the current date
         tag = parseDateTag(tag, tagSettings);  // Should probably go here and not inside the loop
 

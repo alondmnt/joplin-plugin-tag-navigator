@@ -36,7 +36,7 @@ export interface TagSettings {
  */
 export async function getTagRegex(): Promise<RegExp> {
   const userRegex = await joplin.settings.value('itags.tagRegex');
-  return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
+  return userRegex ? new RegExp(userRegex, 'gu') : defTagRegex;
 }
 
 /**
@@ -46,7 +46,7 @@ export async function getTagRegex(): Promise<RegExp> {
 export async function getTagSettings(): Promise<TagSettings> {
   const tagRegex = await getTagRegex();
   const excludeRegexString = await joplin.settings.value('itags.excludeRegex');
-  const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'g') : null;
+  const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'gu') : null;
   
   let todayTag = (await joplin.settings.value('itags.todayTag')).toLowerCase();
   if (todayTag.length == 0) {
