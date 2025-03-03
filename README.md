@@ -83,9 +83,9 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ### Custom tag definitions
 
-- The definition of a "tag" can be adjusted with user-defined regular expressions.
+- The definition of a "tag" can be adjusted with user-defined regular expressions (see the advanced setting `Tag regex`).
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
-- You may also define an exclusion rule to ignore certain tags.
+- You may also define an exclusion rule to ignore certain tags (see the advanced setting `Exclude regex`).
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
 
 ### Tag insertion
@@ -193,7 +193,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 ### Inline TODOs
 
 - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
-- Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'\"]*\w)`.
+- Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@+'",.()\[\]:;\?\\]+)`.
 - Supported additional checkbox styles (inspired by `[x]it!`).
     - Set any of them to done by clicking the checkbox in the search panel.
 
@@ -204,7 +204,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 ![checkbox commands](img/checkboxes-commands.png)
 
 - You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
-- Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)([#]|\-\s\[[x\s@\?!~]\])([^\s#'\"]*\w)?`.
+- Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)(#([^\s#'",.()\[\]:;\?\\]+)|(\-\s\[[x\s@\?!~]\]))`.
     - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
 
 ### Colour tags
@@ -266,7 +266,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 - You can highlight tags in the Markdown editor using [Rich Markdown](https://github.com/CalebJohn/joplin-rich-markdown) (version ≥ 0.14).
     - In `Joplin settings --> Rich Markdown --> Advanced Settings --> Custom classes JSON` enter:
     ```
-    [{"name": "rm-tag", "regex": "(?<=^|\\s)#([^\\s#'\"]*\\w)"}]
+    [{"name": "rm-tag", "regex": "(?<=^|\\s)#([^\\s#'\",.()\\[\\]:;\\?\\\\]+)"}]
     ```
     - In `Joplin settings --> Appearance --> Custom stylesheet for Joplin-wide app styles` add the following to the style sheet:
     ```
