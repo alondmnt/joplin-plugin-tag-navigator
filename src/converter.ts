@@ -124,6 +124,8 @@ export async function convertNoteToJoplinTags(
 
   for (const tag of newTags) {
     const newTag = await joplin.data.post(['tags'], null, { title: tag });
+    // Add the tag to allTags
+    allTags.push({ id: newTag.id, title: tag });
     // Update the note tags
     await joplin.data.post(['tags', newTag.id, 'notes'], null, {
       id: note.id
