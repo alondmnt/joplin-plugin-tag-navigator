@@ -194,15 +194,15 @@ async function filterAndSortResults(
   if (!filter) { return sortedResults; }
 
   const highlight = await joplin.settings.value('itags.resultMarker');
-  const parsedFilter = parseFilter(filter, 2, true);
+  const searchWithRegex = await joplin.settings.value('itags.searchWithRegex');
+  const parsedFilter = parseFilter(filter, 3, !searchWithRegex);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
   for (const note of sortedResults) {
     // Filter out lines that don't contain the filter
-    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, '|' + note.title + '|' + note.notebook));
+    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, searchWithRegex,'|' + note.title + '|' + note.notebook));
     note.text = note.text.filter((_, i) => filteredIndices.includes(i));
     note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
     if ((parsedFilter.length > 0 && highlight)) {
-      // TODO: use settings to determine whether to highlight
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
@@ -224,12 +224,17 @@ function containsFilter(
   target: string, 
   filter: string, 
   min_chars: number = 1, 
+  searchWithRegex: boolean = false,
   otherTarget: string = ''
 ): boolean {
   const lowerTarget = (target + otherTarget).toLowerCase();
   const words = parseFilter(filter, min_chars);
 
-  return words.every((word: string) => lowerTarget.includes(word.toLowerCase()));
+  if (searchWithRegex) {
+    return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
+} else {
+    return words.every(word => lowerTarget.includes(word));
+}
 }
 
 /**
