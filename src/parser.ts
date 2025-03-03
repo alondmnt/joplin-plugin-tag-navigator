@@ -5,7 +5,7 @@ import { load as yamlLoad } from 'js-yaml';
 /**
  * Regular expressions for parsing different elements
  */
-export const defTagRegex = /(?<=^|\s)#([^\s#'"]*\w)/g; // Matches tag names starting with #
+export const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g; // Matches multilingual tag names starting with #
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
