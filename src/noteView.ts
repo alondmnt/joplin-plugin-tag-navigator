@@ -194,7 +194,7 @@ async function filterAndSortResults(
   if (!filter) { return sortedResults; }
 
   const highlight = await joplin.settings.value('itags.resultMarker');
-  const parsedFilter = parseFilter(filter);
+  const parsedFilter = parseFilter(filter, 2, true);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
   for (const note of sortedResults) {
     // Filter out lines that don't contain the filter
@@ -236,20 +236,24 @@ function containsFilter(
  * Splits a filter string into words and quoted phrases, like the search panel
  * @param filter The filter string to parse
  * @param min_chars Minimum character length for a word to be included
+ * @param escape_regex Whether to escape regex characters in the filter
  * @returns Array of words and quoted phrases
  * @example
  * parseFilter('"hello world" test') // ['hello world', 'test']
  */
-function parseFilter(filter: string, min_chars: number = 1): string[] {
+function parseFilter(filter: string, min_chars: number = 1, escape_regex: boolean = false): string[] {
   let match: RegExpExecArray;
   const quotes = [];
   while ((match = REGEX.quotedText.exec(filter)) !== null) {
     quotes.push(match[1]);
     filter = filter.replace(match[0], '');
   }
-  const words = filter.replace('"', '').toLowerCase()
+  let words = filter.replace('"', '').toLowerCase()
       .split(' ').filter((word: string) => word.length >= min_chars)
       .concat(quotes);
+  if (escape_regex) {
+    words = words.map(word => escapeRegex(word));
+  }
   return words;
 }
 
