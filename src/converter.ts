@@ -138,7 +138,6 @@ export async function convertNoteToJoplinTags(
   }
 
   noteTags = clearObjectReferences(noteTags);
-  allTags = clearObjectReferences(allTags);
 }
 
 /**
