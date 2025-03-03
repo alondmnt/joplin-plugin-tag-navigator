@@ -10,6 +10,7 @@ import { DatabaseManager, processAllNotes, processNote } from './db';
 import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
 import { runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
+import { RELEASE_NOTES } from './release';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
@@ -21,6 +22,12 @@ let currentTableDefaultValues: { [key: string]: string } = {};
 joplin.plugins.register({
   onStart: async function() {
     await registerSettings();
+
+    const releaseNotes = await joplin.settings.value('itags.releaseNotes');
+    if (releaseNotes !== RELEASE_NOTES.version) {
+      await joplin.settings.setValue('itags.releaseNotes', RELEASE_NOTES.version);
+      await joplin.views.dialogs.showMessageBox(RELEASE_NOTES.notes);
+    }
 
     /**
      * Processes tags for the currently selected note with debouncing

@@ -83,6 +83,14 @@ export async function registerSettings(): Promise<void> {
   });
 
   await joplin.settings.registerSettings({
+    'itags.releaseNotes': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: false,
+      label: 'Release notes',
+      description: 'Keeps track of the last release notes that were shown to the user.',
+    },
     'itags.ignoreHtmlNotes': {
       value: true,
       type: SettingItemType.Bool,
