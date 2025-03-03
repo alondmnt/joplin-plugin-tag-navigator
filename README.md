@@ -72,6 +72,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Tag values](#tag-values)
 - [Front matter tags](#front-matter-tags)
 - [Table views](#table-views)
+- [Filtering results](#filtering-results)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
 - [Keyboard shortcuts](#keyboard-shortcuts)
@@ -189,6 +190,14 @@ These tags will be accessible in the search panel / notes / tables like standard
   }
 }
 ```
+
+### Filtering results
+
+- Text entered in the results filter (on the panel or in a saved query) can be used to search within title of the notes, their notebook name / path, or the content of the displayed results.
+- To gain more control over filtering by notebook, you may enable the setting `Search: Extract the full notebook path`.
+    - Example: Limit results to a notebook that appears in the top level by searching for `|/topNotebook`.
+    - Example: Search for `topNotebook/childNotebook` to show only result from childNotebook.
+- You may enable `Search: Use regex for tag / note / content filtering` to filter using regular expressions.
 
 ### Inline TODOs
 
