@@ -152,11 +152,12 @@ These tags will be accessible in the search panel / notes / tables like standard
 
 ### Table views
 
+- To enable table view, start by [saving a query](#saved-search-queries). Next, select `Tools --> Tag Navigator --> Toggle search results display in note` (or the corresponding toolbar button) until the saved query shows the property `"displayInNote": "table"` and a table appears.
 - Quickly add new entries to the table by clicking on `New table entry note` in the context menu, toolbar, or Tag Navigator menu.
-    - The new note will contain a front matter template with properties for each column.
+    - The new note will contain a [front matter](#front-matter-tags) template with properties for each column.
 - Tables can be customised using the following settings:
     - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
-    - `Note view: Table view notebook path`: Set to true to display the notebook path in the table view.
+    - `Search: Extract the full notebook path`: Enable this to display the notebook path in the table view, and to allow [filtering results](#filtering-results) by this path.
     - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
 - Tables can be customised per note using the saved query, by adding an `options` field with any of the following properties:
     - `includeCols`
@@ -168,7 +169,7 @@ These tags will be accessible in the search panel / notes / tables like standard
         - a comma-separated list of columns to sort the table by
     - `sortOrder`
         - a comma-separated list of the words "ascending" / "descending" (or "desc", "descend", etc.) corresponding to the columns in the `sortBy` field
-    - example:
+    - Example for a saved query:
 
 ```json
 {
@@ -196,7 +197,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 - Text entered in the results filter (on the panel or in a saved query) can be used to search within title of the notes, their notebook name / path, or the content of the displayed results.
 - To gain more control over filtering by notebook, you may enable the setting `Search: Extract the full notebook path`.
     - Example: Limit results to a notebook that appears in the top level by searching for `|/topNotebook`.
-    - Example: Search for `topNotebook/childNotebook` to show only result from childNotebook.
+    - Example: Search for `topNotebook/childNotebook` to show only results from childNotebook.
 - You may enable `Search: Use regex for tag / note / content filtering` to filter using regular expressions.
 
 ### Inline TODOs
