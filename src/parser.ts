@@ -361,7 +361,7 @@ export function parseFrontMatter(text: string): FrontMatterResult {
     };
   }
 
-  const yamlContent = match[1];
+  const yamlContent = "!!str\n" + match[1];
 
   try {
     // Try parsing with js-yaml first
@@ -404,7 +404,7 @@ function parseFrontMatterFallback(text: string): FrontMatterResult {
     const line = lines[i];
     try {
       // Skip comments and empty lines
-      if (line.trim().startsWith('#') || !line.trim()) continue;
+      if (line.trim().startsWith('#') || line.trim().startsWith('!!') || !line.trim()) continue;
 
       // Check for invalid indentation
       const indent = line.match(/^\s*/)[0];
