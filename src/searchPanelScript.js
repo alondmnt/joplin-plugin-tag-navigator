@@ -798,6 +798,7 @@ function clearQueryArea() {
 
 function clearResultsArea() {
     clearNode(resultsArea);
+    updateResultCount(0, false);
 }
 
 // Helper functions for search
