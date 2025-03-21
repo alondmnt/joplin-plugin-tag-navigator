@@ -23,11 +23,7 @@ joplin.plugins.register({
   onStart: async function() {
     await registerSettings();
 
-    const releaseNotes = await joplin.settings.value('itags.releaseNotes');
-    if (releaseNotes !== RELEASE_NOTES.version) {
-      await joplin.settings.setValue('itags.releaseNotes', RELEASE_NOTES.version);
-      await joplin.views.dialogs.showMessageBox(RELEASE_NOTES.notes);
-    }
+    let releaseNotes = await joplin.settings.value('itags.releaseNotes');
 
     /**
      * Processes tags for the currently selected note with debouncing
@@ -125,6 +121,11 @@ joplin.plugins.register({
     }
 
     joplin.workspace.onNoteSelectionChange(async () => {
+      if (releaseNotes !== RELEASE_NOTES.version) {
+        releaseNotes = RELEASE_NOTES.version;
+        await joplin.settings.setValue('itags.releaseNotes', RELEASE_NOTES.version);
+        await joplin.views.dialogs.showMessageBox(RELEASE_NOTES.notes);
+      }
       // Reset table columns and default values
       currentTableColumns = [];
       currentTableDefaultValues = {};
