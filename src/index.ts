@@ -173,7 +173,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.refreshPanel',
-      label: 'Refresh inline tags navigation panel',
+      label: 'Navigation panel: Refresh',
       iconName: 'fas fa-sync',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
@@ -186,7 +186,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.toggleNav',
-      label: 'Toggle inline tags navigation panel',
+      label: 'Navigation panel: Toggle',
       iconName: 'fas fa-tags',
       execute: async () => {
         if (await joplin.views.panels.visible(navPanel)) {
@@ -200,7 +200,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.toggleSearch',
-      label: 'Toggle inline tags search panel',
+      label: 'Search panel: Toggle',
       iconName: 'fas fa-tags',
       execute: async () => {
         const panelState = await joplin.views.panels.visible(searchPanel);
@@ -214,7 +214,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.focusSearch',
-      label: 'Focus inline tags search panel',
+      label: 'Search panel: Focus',
       iconName: 'fas fa-tags',
       execute: async () => {
         await focusSearchPanel(searchPanel);
@@ -223,7 +223,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.loadQuery',
-      label: 'Load inline tags search query',
+      label: 'Search panel: Load query from note',
       iconName: 'fas fa-dharmachakra',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
@@ -240,7 +240,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.toggleNoteView',
-      label: 'Toggle tag search view in note',
+      label: 'Note view: Toggle',
       iconName: 'fas fa-dharmachakra',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
@@ -276,7 +276,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.refreshNoteView',
-      label: 'Refresh tag search view in note',
+      label: 'Note view: Refresh',
       iconName: 'fas fa-sync',
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
@@ -295,14 +295,14 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.updateDB',
-      label: 'Update inline tags database',
+      label: 'Inline-tags: Update database',
       iconName: 'fas fa-database',
       execute: updateDB,
     });
 
     await joplin.commands.register({
       name: 'itags.convertNoteToJoplinTags',
-      label: "Convert note's inline tags to Joplin tags",
+      label: "Convert note: INLINE-TAGS → joplin tags",
       iconName: 'fas fa-tags',
       execute: async () => {
         // Get the selected note
@@ -317,7 +317,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.convertAllNotesToJoplinTags',
-      label: "Convert all notes' inline tags to Joplin tags",
+      label: "Convert all notes: INLINE-TAGS → joplin tags",
       iconName: 'fas fa-tags',
       execute: async () => {
         // Confirmation dialog
@@ -330,7 +330,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.convertNoteToInlineTags',
-      label: "Convert note's Joplin tags to inline tags",
+      label: "Convert note: joplin tags → INLINE-TAGS",
       iconName: 'fas fa-tags',
       execute: async () => {
         // Get the selected note
@@ -350,7 +350,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.convertAllNotesToInlineTags',
-      label: "Convert all notes' Joplin tags to inline tags",
+      label: "Convert all notes: joplin tags → INLINE-TAGS",
       iconName: 'fas fa-tags',
       execute: async () => {
         // Confirmation dialog
@@ -371,7 +371,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.createTableEntryNote',
-      label: 'New table entry note',
+      label: 'Note view: New table entry',
       iconName: 'fas fa-table',
       execute: async () => {
         await createTableEntryNote(currentTableColumns, currentTableDefaultValues);
@@ -393,16 +393,18 @@ joplin.plugins.register({
 
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
+        commandName: 'itags.toggleNav',
+      },
+      {
+        commandName: 'itags.refreshPanel',
+      },
+      {
         commandName: 'itags.toggleSearch',
         accelerator: 'Ctrl+Shift+T',
       },
       {
         commandName: 'itags.focusSearch',
         accelerator: 'Ctrl+Shift+I',
-      },
-      {
-        commandName: 'itags.updateDB',
-        accelerator: 'Ctrl+Shift+D',
       },
       {
         commandName: 'itags.loadQuery',
@@ -419,24 +421,29 @@ joplin.plugins.register({
         commandName: 'itags.createTableEntryNote',
       },
       {
-        commandName: 'itags.refreshPanel',
-      },
-      {
-        commandName: 'itags.toggleNav',
-      },
-      {
-        commandName: 'itags.convertNoteToJoplinTags',
-      },
-      {
-        commandName: 'itags.convertAllNotesToJoplinTags',
-      },
+        commandName: 'itags.updateDB',
+        accelerator: 'Ctrl+Shift+D',
+      }
+    ], MenuItemLocation.Tools);
+
+    await joplin.views.menus.create('itags.menuConvertNote', 'Convert current note', [
       {
         commandName: 'itags.convertNoteToInlineTags',
       },
       {
+        commandName: 'itags.convertNoteToJoplinTags',
+      }
+    ], MenuItemLocation.Note);
+
+    await joplin.views.menus.create('itags.menuConvertAllNotes', 'Convert all notes', [
+      {
         commandName: 'itags.convertAllNotesToInlineTags',
       },
-    ], MenuItemLocation.Tools);
+      {
+        commandName: 'itags.convertAllNotesToJoplinTags',
+      }
+    ], MenuItemLocation.Note);
+
     await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
     await joplin.views.toolbarButtons.create('itags.refreshNoteView', 'itags.refreshNoteView', ToolbarButtonLocation.EditorToolbar);
     await joplin.views.toolbarButtons.create('itags.loadQuery', 'itags.loadQuery', ToolbarButtonLocation.NoteToolbar);
