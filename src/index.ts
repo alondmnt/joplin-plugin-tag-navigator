@@ -510,10 +510,14 @@ joplin.plugins.register({
         // Navigate to the line
         const lineIndex = parseInt(message.line);
         if (lineIndex >= 0) {
-          await joplin.commands.execute('editor.execCommand', {
-            name: 'scrollToTagLine',
-            args: [lineIndex]
-          });
+          try {
+            await joplin.commands.execute('editor.execCommand', {
+              name: 'scrollToTagLine',
+              args: [lineIndex]
+            });
+          } catch (error) {
+            // If the editor is not available, this will fail
+          }
         }
         // Update the panel
         await updateNavPanel(navPanel, tagLines, tagCount);

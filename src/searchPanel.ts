@@ -221,10 +221,14 @@ export async function processMessage(
     }
     note = clearObjectReferences(note);
 
-    await joplin.commands.execute('editor.execCommand', {
-      name: 'scrollToTagLine',
-      args: [message.line]
-    });
+    try {
+      await joplin.commands.execute('editor.execCommand', {
+        name: 'scrollToTagLine',
+        args: [message.line]
+      });
+    } catch (error) {
+      // If the editor is not available, this will fail
+    }
 
   } else if (message.name === 'setCheckBox') {
     await setCheckboxState(message, db, tagSettings);
@@ -808,10 +812,14 @@ async function updateNote(
     if ((selectedNote) && (selectedNote.id === message.externalId)) {
       // Update note editor if it's the currently selected note
       await joplin.commands.execute('editor.setText', newBody);
-      await joplin.commands.execute('editor.execCommand', {
-        name: 'scrollToTagLine',
-        args: [message.line]
-      });
+      try {
+        await joplin.commands.execute('editor.execCommand', {
+          name: 'scrollToTagLine',
+          args: [message.line]
+        });
+      } catch (error) {
+        // If the editor is not available, this will fail
+      }
     }
 
     targetNote.body = newBody;
