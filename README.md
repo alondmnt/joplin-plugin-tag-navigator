@@ -6,6 +6,8 @@ Type inline #tags or front matter in the note editor. View your tagged paragraph
 
 [Community discussion thread](https://discourse.joplinapp.org/t/plugin-inline-tag-navigator-v0-8-0-2024-06-26/35726)
 
+[Release notes](CHANGELOG.md)
+
 - [Features](#features)
 - [Demos](#demos)
 - [Tips](#tips)
