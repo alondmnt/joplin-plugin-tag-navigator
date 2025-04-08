@@ -1,18 +1,18 @@
-## v2.3.2
+# [v2.3.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.3.2)
 *Released on 2025-03-24T19:28:02Z*
 
 - fixed: release notes freeze when Joplin starts minimised
-  - improved: command descriptions
-  - improved: command order in 'Tag Navigator' sub-menu
-  - added: Note sub-menu 'Convert all notes'
-  - added: Note sub-menu 'Convert current note'
-  - improved: error handling when editor is unavailable
+- improved: command descriptions
+- improved: command order in 'Tag Navigator' sub-menu
+- added: Note sub-menu 'Convert all notes'
+- added: Note sub-menu 'Convert current note'
+- improved: error handling when editor is unavailable
 
 **Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.3.1...v2.3.2
 
 ---
 
-## v2.3.1
+# [v2.3.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.3.1)
 *Released on 2025-03-16T13:05:40Z*
 
 - fixed: disable js-yaml type parsing in front matter
@@ -22,7 +22,7 @@
 
 ---
 
-## v2.3.0
+# [v2.3.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.3.0)
 *Released on 2025-03-03T13:53:14Z*
 
 - new: release notes dialog
@@ -38,7 +38,7 @@
 
 ---
 
-## v2.2.0
+# [v2.2.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.2.0)
 *Released on 2025-02-22T05:44:12Z*
 
 - new: convert front matter tags to Joplin tags
@@ -54,7 +54,7 @@
 
 ---
 
-## v2.1.4
+# [v2.1.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.1.4)
 *Released on 2025-02-20T11:12:55Z*
 
 - fixed: handle empty tags during conversion to joplin tags
@@ -65,7 +65,7 @@
 
 ---
 
-## v2.1.3
+# [v2.1.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.1.3)
 *Released on 2025-02-17T13:02:36Z*
 
 - new: use shift+enter to insert tag
@@ -76,7 +76,7 @@
 
 ---
 
-## v2.1.2
+# [v2.1.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.1.2)
 *Released on 2025-02-15T00:49:41Z*
 
 - fixed: table view: display correctly tags with a prefix matching another tag
@@ -85,7 +85,7 @@
 
 ---
 
-## v2.1.1
+# [v2.1.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.1.1)
 *Released on 2025-02-13T11:56:02Z*
 
 - improved: sort results tie break by line numbers always in ascending order
@@ -94,7 +94,7 @@
 
 ---
 
-## v2.1.0
+# [v2.1.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.1.0)
 *Released on 2025-02-11T01:06:02Z*
 
 - added: color tag (see screenshot)
@@ -117,14 +117,14 @@
 
 ---
 
-## v2.0.1
+# [v2.0.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.0.1)
 *Released on 2025-01-26T12:38:10Z*
 
 - fixed: regression: handle deleted notes in database update
 
 ---
 
-## v2.0.0
+# [v2.0.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.0.0)
 *Released on 2025-01-26T11:48:07Z*
 
 - added: [tag values](https://github.com/alondmnt/joplin-plugin-tag-navigator?tab=readme-ov-file#tag-values)
@@ -145,7 +145,7 @@
 
 ---
 
-## v1.5.1
+# [v1.5.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.5.1)
 *Released on 2024-12-31T01:10:07Z*
 
 - fixed: reset currentTableColumns on every note selection
@@ -155,7 +155,7 @@
 
 ---
 
-## v1.5.0
+# [v1.5.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.5.0)
 *Released on 2024-12-30T22:57:37Z*
 
 ## added
@@ -232,7 +232,7 @@
 
 ---
 
-## v1.4.3
+# [v1.4.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.4.3)
 *Released on 2024-12-20T04:10:03Z*
 
 - new: inline tags inherit from headings
@@ -272,7 +272,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.4.2
+# [v1.4.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.4.2)
 *Released on 2024-12-19T12:34:40Z*
 
 - new: inline tags inherit from headings
@@ -286,7 +286,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.4.1
+# [v1.4.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.4.1)
 *Released on 2024-12-13T04:38:45Z*
 
 - added: `#frontmatter` tag automatically added to front matter sections
@@ -295,7 +295,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.4.0
+# [v1.4.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.4.0)
 *Released on 2024-12-12T12:01:34Z*
 
 - added: front matter support
@@ -305,7 +305,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.3.0
+# [v1.3.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.3.0)
 *Released on 2024-12-09T03:47:21Z*
 
 - added: table view (data view / database)
@@ -318,7 +318,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.2.2
+# [v1.2.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.2.2)
 *Released on 2024-08-23T01:07:48Z*
 
 - new: setting `Space replacement`: Character to replace spaces in converted Joplin tags. Default: "_".
@@ -329,7 +329,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.2.1
+# [v1.2.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.2.1)
 *Released on 2024-08-16T01:47:57Z*
 
 - new: insert tags into the note editor (Markdown / Rich Text) with auto-completion
@@ -346,7 +346,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.2.0
+# [v1.2.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.2.0)
 *Released on 2024-08-15T13:16:50Z*
 
 - navigation panel
@@ -363,7 +363,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.1.0
+# [v1.1.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.1.0)
 *Released on 2024-07-20T00:41:27Z*
 
 - commands
@@ -387,7 +387,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v1.0.0 🎉
+# [v1.0.0 🎉](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v1.0.0)
 *Released on 2024-07-13T09:28:15Z*
 
 - enhanced tag search
@@ -411,7 +411,7 @@ the last line will be tagged by `#greatest` and `#song`.
 
 ---
 
-## v0.8.0
+# [v0.8.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.8.0)
 *Released on 2024-06-26T00:50:35Z*
 
 - enhanced tag search
@@ -455,7 +455,7 @@ note how `#today` is used to tag a paragraph, and to search for dates
 
 ---
 
-## v0.7.4
+# [v0.7.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.7.4)
 *Released on 2024-05-23T03:30:23Z*
 
 - various fixes to improve plugin stability and reduce its footprint considerably
@@ -467,7 +467,7 @@ note how `#today` is used to tag a paragraph, and to search for dates
 
 ---
 
-## v0.7.3
+# [v0.7.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.7.3)
 *Released on 2024-05-14T12:46:49Z*
 
 - new: tag context menu commands `Search tag` and `Extend query` (see screenshot)
@@ -476,7 +476,7 @@ note how `#today` is used to tag a paragraph, and to search for dates
 
 ---
 
-## v0.7.2
+# [v0.7.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.7.2)
 *Released on 2024-05-12T12:53:29Z*
 
 - fix: regression in tag exclusion regex
@@ -486,7 +486,7 @@ note how `#today` is used to tag a paragraph, and to search for dates
 
 ---
 
-## v0.7.1
+# [v0.7.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.7.1)
 *Released on 2024-05-11T14:38:55Z*
 
 - fix: load search filter more robustly and preserve its value when toggling the panel
@@ -495,7 +495,7 @@ note how `#today` is used to tag a paragraph, and to search for dates
 
 ---
 
-## v0.7.0
+# [v0.7.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.7.0)
 *Released on 2024-05-10T02:47:44Z*
 
 - new: mobile app support (#2)
@@ -528,7 +528,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.6.3
+# [v0.6.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.6.3)
 *Released on 2024-04-26T09:21:57Z*
 
 - fix: update note view only if changed
@@ -536,21 +536,21 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.6.2
+# [v0.6.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.6.2)
 *Released on 2024-04-25T22:31:12Z*
 
 - new: link to origin in note view
 
 ---
 
-## v0.6.1
+# [v0.6.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.6.1)
 *Released on 2024-04-25T05:20:10Z*
 
 - new: command to toggle note view
 
 ---
 
-## v0.6.0
+# [v0.6.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.6.0)
 *Released on 2024-04-24T15:04:13Z*
 
 - new: search results can be displayed in auto-generated notes
@@ -563,14 +563,14 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.5.1
+# [v0.5.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.5.1)
 *Released on 2024-04-15T14:29:17Z*
 
 - fix: empty list prefix case
 
 ---
 
-## v0.5.0
+# [v0.5.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.5.0)
 *Released on 2024-04-13T12:05:12Z*
 
 - new: commands to convert Joplin tags to inline tags
@@ -580,7 +580,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.4.1
+# [v0.4.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.4.1)
 *Released on 2024-03-29T04:42:21Z*
 
 - fix: CM6 / CM5 script loading logic
@@ -590,7 +590,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.4.0
+# [v0.4.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.4.0)
 *Released on 2024-03-25T13:24:25Z*
 
 - new: tag context menu, with Add, Rename & Remove commands
@@ -605,7 +605,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.3.0
+# [v0.3.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.3.0)
 *Released on 2024-03-17T10:37:21Z*
 
 - new: tag by notes
@@ -622,7 +622,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.2.3
+# [v0.2.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.2.3)
 *Released on 2024-02-27T23:38:03Z*
 
 - new: setting ignoreCodeBlocks
@@ -633,7 +633,7 @@ Tips on setting tag highlighting in the mobile editor appear [here](https://gith
 
 ---
 
-## v0.2.2
+# [v0.2.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.2.2)
 *Released on 2024-02-27T13:27:41Z*
 
 - new: saved searches
@@ -649,7 +649,7 @@ https://youtu.be/xIBZl2Ala9A
 
 ---
 
-## v0.2.1
+# [v0.2.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.2.1)
 *Released on 2024-02-25T23:37:51Z*
 
 - new: setting ignoreHtmlNotes
@@ -659,7 +659,7 @@ https://youtu.be/xIBZl2Ala9A
 
 ---
 
-## v0.2.0
+# [v0.2.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.2.0)
 *Released on 2024-02-25T08:33:10Z*
 
 - a new (inline) tag search system via a dedicated panel
@@ -668,21 +668,21 @@ https://youtu.be/xIBZl2Ala9A
 
 ---
 
-## v0.1.3
+# [v0.1.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.1.3)
 *Released on 2024-02-14T14:03:00Z*
 
 - fix: parsing after newline
 
 ---
 
-## v0.1.2
+# [v0.1.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.1.2)
 *Released on 2024-02-12T12:59:24Z*
 
 - fix: serialized all-note conversion
 
 ---
 
-## v0.1.1
+# [v0.1.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.1.1)
 *Released on 2024-02-10T06:13:32Z*
 
 - improve: tag parser, require preceding whitespace
@@ -693,7 +693,7 @@ https://youtu.be/xIBZl2Ala9A
 
 ---
 
-## v0.1.0
+# [v0.1.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v0.1.0)
 *Released on 2024-02-06T13:57:31Z*
 
 first release.
