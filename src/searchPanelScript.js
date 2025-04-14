@@ -522,7 +522,7 @@ function createClickHandler(result, index) {
             });
         } else if (event.target.matches('a')) {
             event.preventDefault();
-            const externalId = event.target.href.match(noteIdRegex)?.[0];
+            const externalId = event.target.href;
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: externalId ? externalId : event.target.textContent,

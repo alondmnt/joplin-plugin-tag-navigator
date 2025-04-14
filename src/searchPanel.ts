@@ -200,8 +200,13 @@ export async function processMessage(
 
     if ((!note) || (note.id !== message.externalId)) {
       if (noteIdRegex.test(message.externalId)) {
+        // handle note ids
         await joplin.commands.execute('openNote', message.externalId);
+      } else if (message.externalId.startsWith('http')) {
+        // handle external links
+        await joplin.commands.execute('openItem', message.externalId);
       } else {
+        // handle wiki links
         const dbNote = db.getNoteId(message.externalId);
         if (dbNote) {
           await joplin.commands.execute('openNote', dbNote);
