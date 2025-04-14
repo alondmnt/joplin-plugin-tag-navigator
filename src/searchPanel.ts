@@ -196,6 +196,11 @@ export async function processMessage(
     await saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
 
   } else if (message.name === 'openNote') {
+    try {
+      await joplin.commands.execute('dismissPluginPanels');
+    } catch {
+      // Ignore errors (not on mobile, or old version)
+    }
     let note = await joplin.workspace.selectedNote();
 
     if ((!note) || (note.id !== message.externalId)) {
