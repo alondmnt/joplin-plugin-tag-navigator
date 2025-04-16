@@ -180,6 +180,11 @@ export async function processMessage(
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'insertTag') {
+    try {
+      await joplin.commands.execute('dismissPluginPanels');
+    } catch {
+      // Ignore errors (not on mobile, or old version)
+    }
     await joplin.commands.execute('insertText', message.tag);
     await joplin.commands.execute('editor.focus');
 
