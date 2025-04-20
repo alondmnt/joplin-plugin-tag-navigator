@@ -410,10 +410,27 @@ function updateResultsArea() {
             }
         }
         const titleEl = document.createElement('h3');
-        titleEl.textContent = result.title;
         titleEl.style.cursor = 'pointer';
+
+        // Add note icon with link info
+        const openLink = document.createElement('span');
+        openLink.innerHTML = '&larr;';
+        openLink.style.marginRight = '5px';
+        addEventListenerWithTracking(openLink, 'click', (event) => {
+            event.stopPropagation();
+            webviewApi.postMessage({
+                name: 'openNote',
+                externalId: result.externalId,
+                line: Math.min(...result.lineNumbers),
+            });
+        });
+
+        const titleText = document.createTextNode(result.title);
+
+        titleEl.appendChild(openLink);
+        titleEl.appendChild(titleText);
         resultEl.appendChild(titleEl);
-        
+
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
         contentContainer.setAttribute('data-externalId', result.externalId);
