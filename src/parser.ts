@@ -84,7 +84,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     });
 
     // Inherit tags from headings
-    const headingLevel = line.match(/^#+/)?.[0].length || 0;
+    const headingLevel = line.match(/^(#+)\s/)?.[1].length || 0;
     if (tagSettings.inheritTags && headingLevel > 0) {
       // Reset all tags that have a heading level higher than the current heading level
       // e.g., when going from ### (level 3) to ## (level 2), clear level 3 tags
