@@ -191,6 +191,17 @@ export async function registerSettings(): Promise<void> {
       label: 'Navigation: Panel style',
       description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
     },
+    'itags.waitForNote': {
+      value: 1000,
+      type: SettingItemType.Int,
+      minimum: 0,
+      maximum: 10000,
+      step: 100,
+      section: 'itags',
+      public: true,
+      label: 'Search: Wait for note period (ms)',
+      description: 'Wait period for the note to be opened before scrolling to the tag. Default: 1000.',
+    },
     'itags.toggleEditor': {
       value: true,
       type: SettingItemType.Bool,
