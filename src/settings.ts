@@ -301,6 +301,19 @@ export async function registerSettings(): Promise<void> {
         notebook: 'Notebook',
       }
     },
+    'itags.resultGrouping': {
+      value: 'heading',
+      public: true,
+      type: SettingItemType.String,
+      isEnum: true,
+      section: 'itags',
+      label: 'Search: Result grouping',
+      options: {
+        'heading': 'Group by heading / section',
+        'consecutive': 'Group consecutive lines',
+        'item': 'Group by item / paragraph'
+      }
+    },
     'itags.resultOrder': {
       value: 'desc',
       type: SettingItemType.String,

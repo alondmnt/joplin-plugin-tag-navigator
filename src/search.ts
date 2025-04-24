@@ -242,7 +242,7 @@ async function processQueryResults(
 }
 
 /**
- * Retrieves text content and title for a result
+ * Retrieves text content and title for a result, and groups the lines
  * @param result Result to populate with content
  * @param fullPath Whether to include full notebook path
  * @returns Updated result with content
@@ -268,33 +268,101 @@ async function getTextAndTitle(
     notebook = '/' + notebook;
   }
   const lines: string[] = note.body.split('\n');
+  const groupingMode = await joplin.settings.value('itags.resultGrouping');
 
-  // Group consecutive line numbers
-  let currentGroup = [];
-  const groupedLines = [];
-  let previousLineNum = -2;
-  result.lineNumbers.forEach((lineNumber, index) => {
-    if (lineNumber === previousLineNum + 1) {
-      // This line is consecutive; add it to the current group
-      currentGroup.push(lineNumber);
-    } else {
-      // Not consecutive, start a new group, but first push the current group if it's not empty
-      if (currentGroup.length) {
+  // Group line numbers based on the selected mode
+  let groupedLines: number[][] = [];
+
+  if (groupingMode === 'consecutive') {
+    // Original consecutive grouping logic
+    let currentGroup: number[] = [];
+    let previousLineNum = -2;
+    result.lineNumbers.forEach((lineNumber, index) => {
+      if (lineNumber === previousLineNum + 1) {
+        currentGroup.push(lineNumber);
+      } else {
+        if (currentGroup.length) {
+          groupedLines.push(currentGroup);
+        }
+        currentGroup = [lineNumber];
+      }
+      previousLineNum = lineNumber;
+      if (index === result.lineNumbers.length - 1 && currentGroup.length) {
         groupedLines.push(currentGroup);
       }
-      currentGroup = [lineNumber];
+    });
+  } else if (groupingMode === 'heading') {
+    // Group by heading - find the nearest heading above each line
+    const headingRegex = /^(#{1,6})\s+(.*)$/;
+    let currentHeadingLine = -1;
+    let currentGroup: number[] = [];
+
+    for (const lineNumber of result.lineNumbers) {
+      // Find the nearest heading above this line
+      let headingFound = false;
+      for (let i = lineNumber; i >= 0; i--) {
+        if (headingRegex.test(lines[i])) {
+          if (i !== currentHeadingLine) {
+            if (currentGroup.length) {
+              groupedLines.push(currentGroup);
+            }
+            currentGroup = [];
+            currentHeadingLine = i;
+          }
+          headingFound = true;
+          break;
+        }
+      }
+
+      if (!headingFound && currentGroup.length) {
+        groupedLines.push(currentGroup);
+        currentGroup = [];
+        currentHeadingLine = -1;
+      }
+
+      currentGroup.push(lineNumber);
     }
-    previousLineNum = lineNumber;
-  
-    // Ensure the last group is added
-    if (index === result.lineNumbers.length - 1 && currentGroup.length) {
+
+    if (currentGroup.length) {
       groupedLines.push(currentGroup);
     }
-  });
-  // Now, transform grouped line numbers into text blocks
+  } else if (groupingMode === 'item') {
+    // Group by indentation - group lines that are indented under the first line
+    const indentRegex = /^(\s*)/;
+    let currentGroup: number[] = [];
+    let baseIndent = -1;
+
+    for (const lineNumber of result.lineNumbers) {
+      const line = lines[lineNumber];
+      const match = indentRegex.exec(line);
+      const indent = match ? match[1].length : 0;
+
+      // Start a new group if:
+      // - This is the first line
+      // - Current indent is less than or equal to base indent
+      if (currentGroup.length === 0 || indent <= baseIndent) {
+        if (currentGroup.length > 0) {
+          groupedLines.push([...currentGroup]);
+        }
+        currentGroup = [lineNumber];
+        baseIndent = indent;
+      } else {
+        // Add to current group if indented more than base
+        currentGroup.push(lineNumber);
+      }
+    }
+
+    // Push final group
+    if (currentGroup.length > 0) {
+      groupedLines.push([...currentGroup]);
+    }
+  }
+
+  // Transform grouped line numbers into text blocks
   result.text = groupedLines.map(group =>
-    group.map(lineNumber => lines[lineNumber]).join('\n') // Assuming lineNumbers are 1-indexed
+    group.map(lineNumber => lines[lineNumber]).join('\n')
   );
+
   // Update lineNumbers to only include the first line of each group
   result.lineNumbers = groupedLines.map(group => group[0]);
 
@@ -305,5 +373,5 @@ async function getTextAndTitle(
 
   note = clearObjectReferences(note);
 
-  return result
+  return result;
 }
