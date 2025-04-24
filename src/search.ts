@@ -272,6 +272,7 @@ async function getTextAndTitle(
 
   // Group line numbers based on the selected mode
   let groupedLines: number[][] = [];
+  let groupTitleLine: number[] = [];  // Line number of the title for each group
 
   if (groupingMode === 'consecutive') {
     // Original consecutive grouping logic
@@ -308,6 +309,7 @@ async function getTextAndTitle(
             }
             currentGroup = [];
             currentHeadingLine = i;
+            groupTitleLine.push(i);
           }
           headingFound = true;
           break;
@@ -318,6 +320,7 @@ async function getTextAndTitle(
         groupedLines.push(currentGroup);
         currentGroup = [];
         currentHeadingLine = -1;
+        groupTitleLine.push(-1);
       }
 
       currentGroup.push(lineNumber);
@@ -325,6 +328,7 @@ async function getTextAndTitle(
 
     if (currentGroup.length) {
       groupedLines.push(currentGroup);
+      groupTitleLine.push(-1);
     }
   } else if (groupingMode === 'item') {
     // Group by indentation - group lines that are indented under the first line
@@ -359,9 +363,12 @@ async function getTextAndTitle(
   }
 
   // Transform grouped line numbers into text blocks
-  result.text = groupedLines.map(group =>
-    group.map(lineNumber => lines[lineNumber]).join('\n')
-  );
+  result.text = groupedLines.map((group, index) => {
+    if (groupTitleLine[index] > 0) {
+      group.unshift(groupTitleLine[index]);
+    }
+    return group.map(lineNumber => lines[lineNumber]).join('\n');
+  });
 
   // Update lineNumbers to only include the first line of each group
   result.lineNumbers = groupedLines.map(group => group[0]);

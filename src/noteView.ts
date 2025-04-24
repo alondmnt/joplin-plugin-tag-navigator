@@ -92,7 +92,7 @@ export async function displayResultsInNote(
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
-      resultsString += `\n## ${result.title} [>](:/${result.externalId})\n\n`;
+      resultsString += `\n# ${result.title} [>](:/${result.externalId})\n\n`;
       for (let i = 0; i < result.text.length; i++) {
         resultsString += `${formatFrontMatter(normalizeTextIndentation(result.text[i]))}\n\n---\n`;
       }
