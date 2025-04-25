@@ -9,7 +9,8 @@ const REGEX = {
   query: REGEX_SEARCH.findQuery,
   results: new RegExp(`${resultsStart}.*${resultsEnd}`, 's'),
   resultsWithWhitespace: new RegExp(`[\n\s]*${resultsStart}.*${resultsEnd}`, 's'),
-  quotedText: /"([^"]+)"/g
+  quotedText: /"([^"]+)"/g,
+  heading: /^(#{1,6})\s+(.*)$/gm,
 };
 
 /**
@@ -88,12 +89,16 @@ export async function displayResultsInNote(
   let tableColumns: string[] = [];
   let tableString = '';
   let tableDefaultValues: { [key: string]: string } = {};
-
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
       resultsString += `\n# ${result.title} [>](:/${result.externalId})\n\n`;
       for (let i = 0; i < result.text.length; i++) {
+        // If a line is a heading, turn it line into a link
+        result.text[i] = result.text[i].replace(REGEX.heading, (_, level, title) => {
+          const slug = title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+          return `${level} ${title} [>](:/${result.externalId}#${slug})`;
+        });
         resultsString += `${formatFrontMatter(normalizeTextIndentation(result.text[i]))}\n\n---\n`;
       }
     }
