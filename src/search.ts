@@ -302,7 +302,6 @@ async function getTextAndTitleByGroup(
 
     for (const lineNumber of result.lineNumbers[0]) {
       // Find the nearest heading above this line
-      let headingFound = false;
       for (let i = lineNumber; i >= 0; i--) {
         if (headingRegex.test(lines[i])) {
           if (i !== currentHeadingLine) {
@@ -313,16 +312,8 @@ async function getTextAndTitleByGroup(
             currentHeadingLine = i;
             groupTitleLine.push(i);
           }
-          headingFound = true;
           break;
         }
-      }
-
-      if (!headingFound && currentGroup.length) {
-        groupedLines.push(currentGroup);
-        currentGroup = [];
-        currentHeadingLine = -1;
-        groupTitleLine.push(-1);
       }
 
       currentGroup.push(lineNumber);
