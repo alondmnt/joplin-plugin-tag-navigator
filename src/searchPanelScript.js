@@ -387,7 +387,7 @@ function updateResultsArea() {
             comparison = a.notebook.localeCompare(b.notebook);
         }
         return comparison || 
-            (lineSort * (Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers)));
+            (lineSort * (Math.min(...a.lineNumbers[0]) - Math.min(...b.lineNumbers[0])));
     });
     if (resultOrderState === 'desc') {
         results = results.reverse();
@@ -421,7 +421,7 @@ function updateResultsArea() {
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: result.externalId,
-                line: Math.min(...result.lineNumbers),
+                line: Math.min(...result.lineNumbers[0]),
             });
         });
 
@@ -522,7 +522,7 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: event.target.checked ? ' ' : 'x',
                 target: event.target.checked ? 'x' : ' ',
@@ -532,7 +532,7 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(event.target),
                 target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
@@ -549,7 +549,7 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: result.externalId,
-                line: result.lineNumbers[index],
+                line: result.lineNumbers[index][0],
             });
         }
     };
@@ -963,7 +963,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: ' ',
@@ -984,7 +984,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '?',
@@ -1005,7 +1005,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '@',
@@ -1026,7 +1026,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '!',
@@ -1047,7 +1047,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '~',
@@ -1068,7 +1068,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: 'x',
@@ -1202,7 +1202,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
                     webviewApi.postMessage({
                         name: 'addTag',
                         externalId: result.externalId,
-                        line: result.lineNumbers[index] + line,
+                        line: result.lineNumbers[index][line],
                         text: result.text[index].split('\n')[line].trim(),
                         tag: newTag,
                     });
@@ -1227,7 +1227,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
                     webviewApi.postMessage({
                         name: 'replaceTag',
                         externalId: result.externalId,
-                        line: result.lineNumbers[index] + line,
+                        line: result.lineNumbers[index][line],
                         text: result.text[index].split('\n')[line].trim(),
                         oldTag: currentTag,
                         newTag: newTag,
@@ -1272,7 +1272,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'removeTag',
                 externalId: result.externalId,
-                line: result.lineNumbers[index] + line,
+                line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 tag: currentTag,
             });

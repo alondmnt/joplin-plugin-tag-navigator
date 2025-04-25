@@ -21,7 +21,7 @@ export interface Query {
  */
 export interface GroupedResult {
   externalId: string;     // Note ID
-  lineNumbers: number[];  // Line numbers where matches were found
+  lineNumbers: number[][];  // Line numbers where matches were found
   text: string[];        // Text content of matched lines
   html: string[];        // HTML content of matched lines
   color: string;         // Color of matched lines
@@ -227,7 +227,7 @@ async function processQueryResults(
 
       const colorResult: GroupedResult = {
         externalId,
-        lineNumbers,
+        lineNumbers: [lineNumbers],
         text: [],
         html: [],
         color: color,
@@ -278,7 +278,8 @@ async function getTextAndTitle(
     // Original consecutive grouping logic
     let currentGroup: number[] = [];
     let previousLineNum = -2;
-    result.lineNumbers.forEach((lineNumber, index) => {
+    result.lineNumbers[0].forEach((lineNumber, index) => {
+      console.log(note.title, lineNumber);
       if (lineNumber === previousLineNum + 1) {
         currentGroup.push(lineNumber);
       } else {
@@ -288,17 +289,18 @@ async function getTextAndTitle(
         currentGroup = [lineNumber];
       }
       previousLineNum = lineNumber;
-      if (index === result.lineNumbers.length - 1 && currentGroup.length) {
+      if (index === result.lineNumbers[0].length - 1 && currentGroup.length) {
         groupedLines.push(currentGroup);
       }
     });
+
   } else if (groupingMode === 'heading') {
     // Group by heading - find the nearest heading above each line
     const headingRegex = /^(#{1,6})\s+(.*)$/;
     let currentHeadingLine = -1;
     let currentGroup: number[] = [];
 
-    for (const lineNumber of result.lineNumbers) {
+    for (const lineNumber of result.lineNumbers[0]) {
       // Find the nearest heading above this line
       let headingFound = false;
       for (let i = lineNumber; i >= 0; i--) {
@@ -330,6 +332,7 @@ async function getTextAndTitle(
       groupedLines.push(currentGroup);
       groupTitleLine.push(-1);
     }
+
   } else if (groupingMode === 'item') {
     // Group by indentation - group lines that are indented under the first line
     const indentRegex = /^(\s*)/;
@@ -337,7 +340,7 @@ async function getTextAndTitle(
     let baseIndent = -1;
     let lastLine = -1;
 
-    for (const lineNumber of result.lineNumbers) {
+    for (const lineNumber of result.lineNumbers[0]) {
       const line = lines[lineNumber];
       const match = indentRegex.exec(line);
       const indent = match ? match[1].length : 0;
@@ -367,15 +370,13 @@ async function getTextAndTitle(
 
   // Transform grouped line numbers into text blocks
   result.text = groupedLines.map((group, index) => {
-    if (groupTitleLine[index] > 0) {
+    if (groupTitleLine[index] >= 0) {
       group.unshift(groupTitleLine[index]);
     }
     return group.map(lineNumber => lines[lineNumber]).join('\n');
   });
 
-  // Update lineNumbers to only include the first line of each group
-  result.lineNumbers = groupedLines.map(group => group[0]);
-
+  result.lineNumbers = groupedLines;
   result.title = note.title;
   result.notebook = notebook;
   result.updatedTime = note.updated_time;

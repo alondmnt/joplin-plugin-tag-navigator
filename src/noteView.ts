@@ -351,9 +351,10 @@ async function processResultForTable(
 
   // Get the tags for each line in the results from the database
   const tagInfo: TagViewInfo[] = [];
-  result.lineNumbers.forEach((startLine, i) => {
+  result.lineNumbers.forEach((lines, i) => {
     // All lines in each result section are consecutive
-    const endLine = startLine + result.text[i].split('\n').length - 1;
+    const startLine = lines[0];
+    const endLine = lines[lines.length - 1];
     for (let line = startLine; line <= endLine; line++) {
       const lineTags = note.getTagsAtLine(line);
       for (const tag of lineTags) {
@@ -487,7 +488,7 @@ function sortResults<T extends TableResult | GroupedResult>(
     }
     // Break ties using minimum line number
     // Always sort in ascending order
-    return (Math.min(...a.lineNumbers) - Math.min(...b.lineNumbers));
+    return (Math.min(...a.lineNumbers[0]) - Math.min(...b.lineNumbers[0]));
   });
 }
 
@@ -552,7 +553,7 @@ function buildTable(
       } else if (column === 'notebook') {
         row += ` ${result.notebook} |`;
       } else if (column === 'line') {
-        row += ` ${result.lineNumbers.map(line => line + 1).join(', ')} |`;
+        row += ` ${result.lineNumbers.map(line => line[0] + 1).join(', ')} |`;
       } else if (column === 'modified') {
         row += ` ${new Date(result.updatedTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
       } else if (column === 'created') {
