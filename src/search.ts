@@ -234,7 +234,7 @@ async function processQueryResults(
         title: '',
       };
 
-      groupedResults.push(await getTextAndTitle(colorResult, fullPath));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath));
     }
   }
 
@@ -247,7 +247,7 @@ async function processQueryResults(
  * @param fullPath Whether to include full notebook path
  * @returns Updated result with content
  */
-async function getTextAndTitle(
+async function getTextAndTitleByGroup(
   result: GroupedResult, 
   fullPath: boolean
 ): Promise<GroupedResult> {
@@ -370,7 +370,7 @@ async function getTextAndTitle(
 
   // Transform grouped line numbers into text blocks
   result.text = groupedLines.map((group, index) => {
-    if (groupTitleLine[index] >= 0) {
+    if (groupTitleLine[index] >= 0 && !group.includes(groupTitleLine[index])) {
       group.unshift(groupTitleLine[index]);
     }
     return group.map(lineNumber => lines[lineNumber]).join('\n');
