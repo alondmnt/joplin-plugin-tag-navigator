@@ -520,6 +520,10 @@ export function normalizeTextIndentation(text: string): string {
       return line;
     }
 
+    if (REGEX.heading.test(line)) {
+      return line;
+    }
+
     // Track the current indentation level
     const lineIndentation = line.match(REGEX.leadingWhitespace)[0].length;
     if (lineIndentation < currentIndentation) {
