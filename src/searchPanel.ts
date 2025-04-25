@@ -8,7 +8,10 @@ import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 
 // Cached markdown-it instance
-const md = new MarkdownIt({ html: true }).use(markdownItTaskLists, { enabled: true });
+const md = new MarkdownIt({ 
+  html: true,
+  breaks: true 
+}).use(markdownItTaskLists, { enabled: true });
 
 /** Cached regex patterns */
 export const REGEX = {
@@ -443,7 +446,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
           return lines.map((line, lineNumber) => 
             replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
           ).join('\n');
-        }).join('');
+        }).join('\n');
       }
 
       processedSection = processedSection
