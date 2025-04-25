@@ -546,10 +546,26 @@ function createClickHandler(result, index) {
                 line: 0,
             });
         } else {
+            // Get the clicked text content
+            const clickedText = event.target.textContent.trim();
+            
+            // Get the source text and split into lines
+            const sourceText = result.text[index];
+            const lines = sourceText.split('\n');
+
+            // Find the line containing the clicked text
+            let foundLine = 0;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes(clickedText)) {
+                    foundLine = i;
+                    break;
+                }
+            }
+
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][0],
+                line: result.lineNumbers[index][foundLine] || result.lineNumbers[index][0],
             });
         }
     };
