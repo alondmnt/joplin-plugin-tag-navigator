@@ -335,6 +335,7 @@ async function getTextAndTitle(
     const indentRegex = /^(\s*)/;
     let currentGroup: number[] = [];
     let baseIndent = -1;
+    let lastLine = -1;
 
     for (const lineNumber of result.lineNumbers) {
       const line = lines[lineNumber];
@@ -344,7 +345,8 @@ async function getTextAndTitle(
       // Start a new group if:
       // - This is the first line
       // - Current indent is less than or equal to base indent
-      if (currentGroup.length === 0 || indent <= baseIndent) {
+      // - The line is not consecutive to the last line
+      if (currentGroup.length === 0 || indent <= baseIndent || lineNumber > lastLine + 1) {
         if (currentGroup.length > 0) {
           groupedLines.push([...currentGroup]);
         }
@@ -354,6 +356,7 @@ async function getTextAndTitle(
         // Add to current group if indented more than base
         currentGroup.push(lineNumber);
       }
+      lastLine = lineNumber;
     }
 
     // Push final group
