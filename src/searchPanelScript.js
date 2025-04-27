@@ -546,9 +546,13 @@ function createClickHandler(result, index) {
                 line: 0,
             });
         } else {
-            // Get the clicked text content
-            const clickedText = event.target.textContent.trim();
-            
+            // Get only the direct text content of the clicked element
+            const clickedText = Array.from(event.target.childNodes)
+                .filter(node => node.nodeType === Node.TEXT_NODE)
+                .map(node => node.textContent.trim())
+                .join(' ')
+                .trim();
+
             // Get the source text and split into lines
             const sourceText = result.text[index];
             const lines = sourceText.split('\n');
