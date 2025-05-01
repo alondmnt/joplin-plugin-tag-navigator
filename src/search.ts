@@ -284,7 +284,6 @@ async function getTextAndTitleByGroup(
     let currentGroup: number[] = [];
     let previousLineNum = -2;
     result.lineNumbers[0].forEach((lineNumber, index) => {
-      console.log(note.title, lineNumber);
       if (lineNumber === previousLineNum + 1) {
         currentGroup.push(lineNumber);
       } else {
@@ -462,10 +461,8 @@ function normalizeIndentation(noteText: string[], groupLines: number[]): string 
       }
 
       const sliceIndex = Math.max(0, lineIndentation - normalizedIndent[normalizedIndent.length - 1]);
-      console.log(noteText[i], sliceIndex);
       text.push(noteText[i].slice(sliceIndex));
     }
 
-    console.log(text);
     return text.join('\n');
 }
