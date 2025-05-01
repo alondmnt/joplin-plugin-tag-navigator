@@ -420,7 +420,7 @@ function updateResultsArea() {
             event.stopPropagation();
             webviewApi.postMessage({
                 name: 'openNote',
-                externalId: result.externalId,
+                externalId: ':/' + result.externalId,
                 line: Math.min(...result.lineNumbers[0]),
             });
         });
@@ -539,7 +539,11 @@ function createClickHandler(result, index) {
             });
         } else if (event.target.matches('a')) {
             event.preventDefault();
-            const externalId = event.target.href;
+            let externalId = event.target.href;
+            let i = externalId.indexOf('services/plugins/');
+            if (i !== -1) {
+                externalId = externalId.slice(i + 'services/plugins/'.length);
+            }
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: externalId ? externalId : event.target.textContent,
@@ -568,7 +572,7 @@ function createClickHandler(result, index) {
 
             webviewApi.postMessage({
                 name: 'openNote',
-                externalId: result.externalId,
+                externalId: ':/' + result.externalId,
                 line: result.lineNumbers[index][foundLine] || result.lineNumbers[index][0],
             });
         }

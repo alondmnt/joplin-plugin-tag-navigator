@@ -212,11 +212,7 @@ export async function processMessage(
     let note = await joplin.workspace.selectedNote();
 
     if ((!note) || (note.id !== message.externalId)) {
-      if (noteIdRegex.test(message.externalId)) {
-        // handle note ids
-        await joplin.commands.execute('openNote', message.externalId);
-      } else if (message.externalId.startsWith('http')) {
-        // handle external links
+      if (message.externalId.startsWith(':') || message.externalId.startsWith('http')) {
         await joplin.commands.execute('openItem', message.externalId);
       } else {
         // handle wiki links
