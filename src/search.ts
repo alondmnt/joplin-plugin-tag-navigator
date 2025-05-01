@@ -273,6 +273,37 @@ async function getTextAndTitleByGroup(
     notebook = '/' + notebook;
   }
   const lines: string[] = note.body.split('\n');
+  const [groupedLines, groupTitleLine] = await groupLines(lines, result);
+
+  // Transform grouped line numbers into text blocks
+  result.text = groupedLines.map((group, index) => {
+    if (groupTitleLine[index] >= 0 && !group.includes(groupTitleLine[index])) {
+      group.unshift(groupTitleLine[index]);
+    }
+    return normalizeIndentation(lines, group);
+  });
+
+  result.lineNumbers = groupedLines;
+  result.title = note.title;
+  result.notebook = notebook;
+  result.updatedTime = note.updated_time;
+  result.createdTime = note.created_time;
+
+  note = clearObjectReferences(note);
+
+  return result;
+}
+
+/**
+ * Groups lines of text into groups based on the selected grouping mode.
+ * @param lines The lines of text to group.
+ * @param result The search result containing line numbers to group
+ * @returns A tuple containing:
+ *          - An array of line number groups, where each group is consecutive lines or lines under the same heading
+ *          - An array of heading line numbers corresponding to each group
+ */
+async function groupLines(lines: string[], result: GroupedResult): Promise<[number[][], number[]]> {
+
   const groupingMode = await joplin.settings.value('itags.resultGrouping');
 
   // Group line numbers based on the selected mode
@@ -375,23 +406,7 @@ async function getTextAndTitleByGroup(
     }
   }
 
-  // Transform grouped line numbers into text blocks
-  result.text = groupedLines.map((group, index) => {
-    if (groupTitleLine[index] >= 0 && !group.includes(groupTitleLine[index])) {
-      group.unshift(groupTitleLine[index]);
-    }
-    return normalizeIndentation(lines, group);
-  });
-
-  result.lineNumbers = groupedLines;
-  result.title = note.title;
-  result.notebook = notebook;
-  result.updatedTime = note.updated_time;
-  result.createdTime = note.created_time;
-
-  note = clearObjectReferences(note);
-
-  return result;
+  return [groupedLines, groupTitleLine];
 }
 
 /**
