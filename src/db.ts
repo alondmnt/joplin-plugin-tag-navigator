@@ -287,7 +287,16 @@ export class NoteDatabase {
 
   getNoteId(title: string): string {
     // Return the note id given the note title
-    return Object.values(this.notes).find(note => note.title === title)?.id;
+    let noteId =  Object.values(this.notes).find(note => note.title === title)?.id;
+    if (!noteId) {
+      // Try to find a note with the title in lowercase
+      noteId = Object.values(this.notes).find(note => note.title.toLowerCase() === title.toLowerCase())?.id;
+    }
+    if (!noteId) {
+      // Try to find a note based on the first word of the title
+      noteId = Object.values(this.notes).find(note => note.title.toLowerCase().split(' ')[0] === title.toLowerCase())?.id;
+    }
+    return noteId;
   }
 
   getQueryNotes(): string[] {
