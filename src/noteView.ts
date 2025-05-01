@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
-import { formatFrontMatter, loadQuery, normalizeTextIndentation, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
+import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch } from './search';
 import { NoteDatabase } from './db';
 
@@ -99,7 +99,7 @@ export async function displayResultsInNote(
           const slug = title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
           return `${level} ${title} [>](:/${result.externalId}#${slug})`;
         });
-        resultsString += `${formatFrontMatter(normalizeTextIndentation(result.text[i]))}\n\n---\n`;
+        resultsString += `${formatFrontMatter(result.text[i])}\n\n---\n`;
       }
     }
 

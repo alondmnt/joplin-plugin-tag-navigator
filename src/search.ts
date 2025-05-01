@@ -31,6 +31,11 @@ export interface GroupedResult {
   createdTime?: number;  // Creation timestamp
 }
 
+/** Cached regex patterns */
+export const REGEX = {
+  leadingWhitespace: /^\s*/,
+};
+
 /**
  * Executes a search query and returns grouped results
  * @param db Note database to search in
@@ -364,7 +369,7 @@ async function getTextAndTitleByGroup(
     if (groupTitleLine[index] >= 0 && !group.includes(groupTitleLine[index])) {
       group.unshift(groupTitleLine[index]);
     }
-    return group.map(lineNumber => lines[lineNumber]).join('\n');
+    return normalizeIndentation(lines, group);
   });
 
   result.lineNumbers = groupedLines;
@@ -376,4 +381,79 @@ async function getTextAndTitleByGroup(
   note = clearObjectReferences(note);
 
   return result;
+}
+
+/**
+ * Normalizes the indentation of a group of lines in a note.
+ * The goal is to remove the common leading whitespace from the lines,
+ * while maintaining the hierarchy of nested items.
+ * Some lines may be part of a nested item in the group,
+ * and some may be nested under parents that are not in the group.
+ * @param noteText The text of the note.
+ * @param groupLines The lines to normalize.
+ * @returns The normalized text.
+*/
+function normalizeIndentation(noteText: string[], groupLines: number[]): string {
+    if (groupLines.length === 0) return '';
+
+    let text: string[] = [];
+    let parentLines: number[] = [];
+    let parentIndent: number[] = [];
+    let normalizedIndent: number[] = [];  // This array stores the *normalized* indentation for each parent line
+
+    for (let i = Math.min(...groupLines); i <= Math.max(...groupLines); i++) {
+      const lineIndentation = noteText[i]?.match(REGEX.leadingWhitespace)?.[0].length ?? 0;
+
+      // Update indentation arrays
+      while (parentIndent.length > 0 && lineIndentation <= parentIndent[parentIndent.length - 1]) {
+        parentLines.pop();
+        parentIndent.pop();
+        normalizedIndent.pop();
+      }
+
+      // Calculate normalized indentation
+      let currentNormalizedIndent = 0;
+      if (parentIndent.length > 0) {
+        // If we have a parent, our indentation is relative to it
+        currentNormalizedIndent = normalizedIndent[normalizedIndent.length - 1] + 
+          (lineIndentation - parentIndent[parentIndent.length - 1]);
+      } else {
+        // If no parent, this is a root level line
+        currentNormalizedIndent = 0;
+      }
+
+      parentLines.push(i);
+      parentIndent.push(lineIndentation);
+      normalizedIndent.push(currentNormalizedIndent);
+
+      if (!groupLines.includes(i)) {
+        continue;
+      }
+
+      // Find the first parent that appears in the group
+      let parent = -1;
+      for (let j = parentLines.length - 2; j >= 0; j--) {
+        if (groupLines.includes(parentLines[j])) {
+          parent = j;
+          break;
+        }
+      }
+
+      // Update normalized indentation based on the found parent
+      if (parent !== -1) {
+        // If we found a parent in the group, update our normalized indentation
+        normalizedIndent[normalizedIndent.length - 1] = normalizedIndent[parent] + 
+          (lineIndentation - parentIndent[parent]);
+      } else {
+        // If no parent in the group, this is a root level line
+        normalizedIndent[normalizedIndent.length - 1] = 0;
+      }
+
+      const sliceIndex = Math.max(0, lineIndentation - normalizedIndent[normalizedIndent.length - 1]);
+      console.log(noteText[i], sliceIndex);
+      text.push(noteText[i].slice(sliceIndex));
+    }
+
+    console.log(text);
+    return text.join('\n');
 }

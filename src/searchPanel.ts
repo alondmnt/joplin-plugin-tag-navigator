@@ -434,8 +434,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
   for (const group of groupedResults) {
     group.html = [];
     for (const section of group.text) {
-      let processedSection = normalizeTextIndentation(section);
-      processedSection = normalizeHeadingLevel(processedSection);
+      let processedSection = normalizeHeadingLevel(section);
       processedSection = formatFrontMatter(processedSection);
 
       if (resultMarker) {
@@ -505,39 +504,6 @@ function replaceOutsideBackticks(
   });
 
   return processedString;
-}
-
-/**
- * Normalizes text indentation by removing common leading whitespace
- * @param text - Text to normalize
- * @returns Text with normalized indentation
- */
-export function normalizeTextIndentation(text: string): string {
-  const lines = text.split('\n');
-
-  // Process each line to potentially update the current indentation level and remove it
-  let currentIndentation = Infinity;
-  const normalizedLines = lines.map(line => {
-    if (line.trim().length === 0) {
-      // For empty lines, we just return them as is
-      return line;
-    }
-
-    if (REGEX.heading.test(line)) {
-      return line;
-    }
-
-    // Track the current indentation level
-    const lineIndentation = line.match(REGEX.leadingWhitespace)[0].length;
-    if (lineIndentation < currentIndentation) {
-      currentIndentation = lineIndentation;
-    }
-
-    // Remove the current indentation level from the line
-    return line.substring(currentIndentation);
-  });
-
-  return normalizedLines.join('\n');
 }
 
 /**
