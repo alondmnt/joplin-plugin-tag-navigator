@@ -209,32 +209,24 @@ export async function processMessage(
     } catch {
       // Ignore errors (not on mobile, or old version)
     }
-    let note = await joplin.workspace.selectedNote();
-
-    if ((!note) || (note.id !== message.externalId)) {
-      if (message.externalId.startsWith(':') || message.externalId.startsWith('http')) {
-        await joplin.commands.execute('openItem', message.externalId);
-      } else {
-        // handle wiki links
-        const dbNote = db.getNoteId(message.externalId);
-        if (dbNote) {
-          await joplin.commands.execute('openNote', dbNote);
-        }
-      }
-      if (versionInfo.toggleEditorSupport) {
-        // Wait for the note to be opened for 100 ms
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const toggleEditor = await joplin.settings.value('itags.toggleEditor');
-        if (toggleEditor) {
-          await joplin.commands.execute('toggleVisiblePanes');
-        }
-      }
-
-      // Wait for the note to be opened for 1 second
-      const waitForNote = await joplin.settings.value('itags.waitForNote');
-      await new Promise(resolve => setTimeout(resolve, waitForNote));
+    const dbNote = db.getNoteId(message.externalId);
+    if (dbNote) {
+      await joplin.commands.execute('openNote', dbNote);
+    } else {
+      await joplin.commands.execute('openItem', message.externalId);
     }
-    note = clearObjectReferences(note);
+    if (versionInfo.toggleEditorSupport) {
+      // Wait for the note to be opened for 100 ms
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const toggleEditor = await joplin.settings.value('itags.toggleEditor');
+      if (toggleEditor) {
+        await joplin.commands.execute('toggleVisiblePanes');
+      }
+    }
+
+    // Wait for the note to be opened for 1 second
+    const waitForNote = await joplin.settings.value('itags.waitForNote');
+    await new Promise(resolve => setTimeout(resolve, waitForNote));
 
     try {
       await joplin.commands.execute('editor.execCommand', {
@@ -445,7 +437,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
       }
 
       processedSection = processedSection
-        .replace(REGEX.wikiLink, '<a href="#$1">$1</a>');
+        .replace(REGEX.wikiLink, '<a href="$1">$1</a>');
       if (colorTodos) {
         processedSection = processedSection
           .replace(REGEX.xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')

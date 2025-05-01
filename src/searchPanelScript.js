@@ -540,9 +540,10 @@ function createClickHandler(result, index) {
         } else if (event.target.matches('a')) {
             event.preventDefault();
             let externalId = event.target.href;
-            let i = externalId.indexOf('services/plugins/');
+            const prefix = 'services/plugins/';
+            let i = externalId.indexOf(prefix);
             if (i !== -1) {
-                externalId = externalId.slice(i + 'services/plugins/'.length);
+                externalId = externalId.slice(i + prefix.length);
             }
             webviewApi.postMessage({
                 name: 'openNote',
