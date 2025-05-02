@@ -548,7 +548,7 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: externalId ? externalId : event.target.textContent,
-                line: 0,
+                line: -1,
             });
         } else {
             // Get only the direct text content of the clicked element

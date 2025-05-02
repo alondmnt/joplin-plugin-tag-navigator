@@ -224,6 +224,11 @@ export async function processMessage(
       }
     }
 
+    // Do not scroll if the line is negative
+    if (message.line < 0) {
+      return;
+    }
+
     // Wait for the note to be opened for 1 second
     const waitForNote = await joplin.settings.value('itags.waitForNote');
     await new Promise(resolve => setTimeout(resolve, waitForNote));
