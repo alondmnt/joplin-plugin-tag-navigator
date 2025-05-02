@@ -551,12 +551,15 @@ function createClickHandler(result, index) {
                 line: -1,
             });
         } else {
-            // Get only the direct text content of the clicked element
+            // Get the longest consecutive text segment from the clicked element
             const clickedText = Array.from(event.target.childNodes)
-                .filter(node => node.nodeType === Node.TEXT_NODE)
-                .map(node => node.textContent.trim())
-                .join(' ')
-                .trim();
+                .reduce((longest, node) => {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const text = node.textContent.trim();
+                        return text.length > longest.length ? text : longest;
+                    }
+                    return longest;
+                }, '');
 
             // Get the source text and split into lines
             const sourceText = result.text[index];
