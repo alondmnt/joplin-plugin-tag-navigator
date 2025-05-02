@@ -511,6 +511,11 @@ joplin.plugins.register({
         const lineIndex = parseInt(message.line);
         if (lineIndex >= 0) {
           try {
+            await joplin.commands.execute('dismissPluginPanels');
+          } catch {
+            // Ignore errors (not on mobile, or old version)
+          }
+          try {
             await joplin.commands.execute('editor.execCommand', {
               name: 'scrollToTagLine',
               args: [lineIndex]
