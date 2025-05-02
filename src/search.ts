@@ -422,7 +422,7 @@ async function groupLines(lines: string[], result: GroupedResult): Promise<[numb
 function normalizeIndentation(noteText: string[], groupLines: number[]): string {
     if (groupLines.length === 0) return '';
 
-    let text: string[] = [];
+    let groupText: string[] = [];
     let parentLines: number[] = [];
     let parentIndent: number[] = [];
     let normalizedIndent: number[] = [];  // This array stores the *normalized* indentation for each parent line
@@ -476,8 +476,14 @@ function normalizeIndentation(noteText: string[], groupLines: number[]): string 
       }
 
       const sliceIndex = Math.max(0, lineIndentation - normalizedIndent[normalizedIndent.length - 1]);
-      text.push(noteText[i].slice(sliceIndex));
+      const text = noteText[i].slice(sliceIndex);
+      if (text) {
+        groupText.push(text);
+      } else {
+        console.debug(`normalizeIndentation, noteTextLength: ${noteText.length}, i: ${i}, noteText[${i}]: ${noteText[i]}, lineIndentation: ${lineIndentation}, normalizedIndent: ${normalizedIndent[normalizedIndent.length - 1]}`);
+        groupText.push('');
+      }
     }
 
-    return text.join('\n');
+    return groupText.join('\n');
 }
