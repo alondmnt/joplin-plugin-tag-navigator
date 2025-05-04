@@ -198,7 +198,7 @@ async function filterAndSortResults(
 
   if (!filter) { return sortedResults; }
 
-  const highlight = await joplin.settings.value('itags.resultMarker');
+  const highlight = await joplin.settings.value('itags.resultMarkerInNote');
   const searchWithRegex = await joplin.settings.value('itags.searchWithRegex');
   const parsedFilter = parseFilter(filter, 3, !searchWithRegex);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');

@@ -334,13 +334,6 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Search: Collapse results',
     },
-    'itags.resultMarker': {
-      value: true,
-      type: SettingItemType.Bool,
-      section: 'itags',
-      public: true,
-      label: 'Search: Highlight results',
-    },
     'itags.colorTodos': {
       value: true,
       type: SettingItemType.Bool,
@@ -348,6 +341,20 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Search: Colorise todos in results',
       description: 'Supporting [x]it! style todos.'
+    },
+    'itags.resultMarker': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Highlight filter / tag results',
+    },
+    'itags.resultMarkerInNote': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Highlight filter results',
     },
     'itags.updateViewOnOpen': {
       value: true,
