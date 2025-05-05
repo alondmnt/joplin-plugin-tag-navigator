@@ -312,7 +312,7 @@ export async function registerSettings(): Promise<void> {
       options: {
         'heading': 'Group by heading / section',
         'consecutive': 'Group consecutive lines',
-        'item': 'Group by item / paragraph'
+        'item': 'Split at each item / paragraph'
       }
     },
     'itags.resultOrder': {
