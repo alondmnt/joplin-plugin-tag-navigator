@@ -371,39 +371,40 @@ async function groupLines(lines: string[], result: GroupedResult): Promise<[numb
     let currentGroup: number[] = [];
 
     for (const lineNumber of result.lineNumbers[0]) {
+      // Check if current line is a heading
+      const isHeading = headingRegex.test(lines[lineNumber]);
+
       // Find the nearest heading above this line
-      let foundHeading = false;
-      for (let i = lineNumber; i >= 0; i--) {
+      let newHeadingLine = -1;
+      for (let i = lineNumber - 1; i >= 0; i--) {
         if (headingRegex.test(lines[i])) {
-          if (i !== currentHeadingLine) {
-            if (currentGroup.length) {
-              groupedLines.push(currentGroup);
-            }
-            currentGroup = [];
-            currentHeadingLine = i;
-            groupTitleLine.push(i);
-          }
-          foundHeading = true;
+          newHeadingLine = i;
           break;
         }
       }
 
-      // If no heading was found, use -1 to indicate no heading
-      if (!foundHeading) {
+      // If we found a new heading above or this is a heading, start a new group
+      if (newHeadingLine !== currentHeadingLine || isHeading) {
         if (currentGroup.length) {
           groupedLines.push(currentGroup);
+          groupTitleLine.push(currentHeadingLine);
         }
         currentGroup = [];
-        currentHeadingLine = -1;
-        groupTitleLine.push(-1);
+        // Set current heading to:
+        // - The current line if it's a heading
+        // - The heading above if found
+        // - -1 if no heading found
+        currentHeadingLine = isHeading ? lineNumber : (newHeadingLine !== -1 ? newHeadingLine : -1);
       }
 
+      // Add line to current group
       currentGroup.push(lineNumber);
     }
 
+    // Push the final group
     if (currentGroup.length) {
       groupedLines.push(currentGroup);
-      groupTitleLine.push(-1);
+      groupTitleLine.push(currentHeadingLine);
     }
 
   } else if (groupingMode === 'item') {
