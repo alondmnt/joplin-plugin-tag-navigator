@@ -16,6 +16,9 @@ let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
 
+// Store for collapsed/expanded state of note cards in the search panel
+let savedNoteState: { [key: string]: boolean } = {};
+
 /**
  * Main plugin registration and initialization
  */
@@ -68,7 +71,7 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings);
+      await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState);
       clearObjectReferences(message);
     });
     await registerSearchPanel(searchPanel);

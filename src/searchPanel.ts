@@ -67,6 +67,7 @@ interface PanelMessage {
   newTag?: string;
   source?: string;
   target?: string;
+  noteState?: string;
 }
 
 /**
@@ -163,7 +164,8 @@ export async function processMessage(
   searchPanel: string,
   db: NoteDatabase,
   searchParams: QueryRecord,
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  savedNoteState: { [key: string]: boolean }
 ): Promise<void> {
   if (versionInfo.toggleEditorSupport === null) {
     await initializeVersionInfo();
@@ -176,6 +178,7 @@ export async function processMessage(
     await updatePanelSettings(searchPanel);
     const results = await runSearch(db, searchParams.query);
     await updatePanelResults(searchPanel, results, searchParams.query);
+    await updatePanelNoteState(searchPanel, savedNoteState);
 
   } else if (message.name === 'searchQuery') {
     searchParams.query = JSON.parse(message.query);
@@ -300,6 +303,26 @@ export async function processMessage(
     } else {
       console.error('Error in updateSetting: Invalid setting field.');
     }
+
+  } else if (message.name === 'updateNoteState') {
+    // Update the note state from the panel
+    try {
+      // Parse the incoming note state
+      const incomingState = JSON.parse(message.noteState);
+
+      // Clear the current state (preserving the reference)
+      Object.keys(savedNoteState).forEach(key => {
+        delete savedNoteState[key];
+      });
+
+      // Copy all properties from incoming state to savedNoteState
+      Object.keys(incomingState).forEach(key => {
+        savedNoteState[key] = incomingState[key];
+      });
+
+    } catch (e) {
+      console.error('Failed to parse note state:', message.noteState, e);
+    }
   }
 }
 
@@ -414,6 +437,20 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     }
     , 200
   );
+}
+
+/**
+ * Updates the note state displayed in the search panel
+ * @param panel - Panel ID to update
+ * @param savedNoteState - Note state to display (true = expanded/visible, false = collapsed/hidden)
+ */
+export async function updatePanelNoteState(panel: string, savedNoteState: { [key: string]: boolean }): Promise<void> {
+  if (!await joplin.views.panels.visible(panel)) { return; }
+
+  await joplin.views.panels.postMessage(panel, {
+    name: 'updateNoteState',
+    noteState: JSON.stringify(savedNoteState),
+  });
 }
 
 /**

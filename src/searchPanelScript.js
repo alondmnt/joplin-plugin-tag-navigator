@@ -4,6 +4,7 @@ let queryGroups = []; // Array of Sets
 let allTags = [];
 let allNotes = [];
 let results = [];
+let noteState = {}; // Global state to track collapsed/expanded state of notes
 
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 
@@ -79,8 +80,40 @@ webviewApi.onMessage((message) => {
 
     } else if (message.message.name === 'updateSettings') {
         updatePanelSettings(message);
+
+    } else if (message.message.name === 'updateNoteState') {
+        // Restore saved note state from main process (true = expanded/visible, false = collapsed/hidden)
+        try {
+            noteState = JSON.parse(message.message.noteState);
+        } catch (e) {
+            console.error('Failed to parse saved note state:', message.message.noteState, e);
+            noteState = {};
+        }
     }
 });
+
+// Function to update note state and send to main process
+function updateNoteState(externalId, color, isExpanded) {
+    // Create a composite key
+    const key = `${externalId}|${color || 'default'}`;
+    
+    // Update the state (true = expanded/visible, false = collapsed/hidden)
+    noteState[key] = isExpanded;
+    
+    // Send the updated state to the main process
+    webviewApi.postMessage({
+        name: 'updateNoteState',
+        noteState: JSON.stringify(noteState)
+    });
+}
+
+function clearNoteState() {
+    noteState = {};
+    webviewApi.postMessage({
+        name: 'updateNoteState',
+        noteState: JSON.stringify(noteState)
+    });
+}
 
 // Update areas
 function updateTagList() {
@@ -361,17 +394,6 @@ function createQueryElement(item, groupIndex, tagIndex) {
 }
 
 function updateResultsArea() {
-    // Save the current state of expanded/collapsed notes
-    const noteState = {};
-    const resultNotes = document.getElementsByClassName('itags-search-resultContent');
-    for (let i = 0; i < resultNotes.length; i++) {
-        if (resultNotes[i].style.display === 'block') {
-            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'collapsed';
-        } else {
-            noteState[[resultNotes[i].getAttribute('data-externalId'), resultNotes[i].getAttribute('data-color')]] = 'expanded';
-        }
-    }
-
     // Sort results
     const filter = resultFilter.value;
     const lineSort = (resultOrderState === 'asc') ? 1 : -1;
@@ -436,13 +458,18 @@ function updateResultsArea() {
         contentContainer.setAttribute('data-externalId', result.externalId);
         contentContainer.setAttribute('data-color', result.color);
 
-        // Preserve expansion state
-        if (noteState[[result.externalId, result.color]] === 'collapsed') {
-            contentContainer.style.display = 'block';
-        } else if (noteState[[result.externalId, result.color]] === 'expanded') {
-            contentContainer.style.display = 'none';
+        // Create a composite key for note state lookup
+        const stateKey = `${result.externalId}|${result.color || 'default'}`;
+        
+        // Determine display state based on saved state or default
+        if (stateKey in noteState) {
+            // Use saved state (true = expanded/display:block, false = collapsed/display:none)
+            contentContainer.style.display = noteState[stateKey] ? 'block' : 'none';
         } else {
+            // Default based on global setting
             contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
+            // Initialize state for this note (resultToggleState='expand' means expanded/visible)
+            noteState[stateKey] = resultToggleState === 'expand';
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
@@ -494,9 +521,13 @@ function updateResultsArea() {
         resultsArea.appendChild(resultEl);
         displayedNoteCount++;
 
-        // Add title click handler
+        // Add title click handler that updates the state
         addEventListenerWithTracking(titleEl, 'click', () => {
-            contentContainer.style.display = contentContainer.style.display === 'none' ? 'block' : 'none';
+            const isCollapsed = contentContainer.style.display === 'none';
+            contentContainer.style.display = isCollapsed ? 'block' : 'none';
+            // Update the note state with the new state (after toggling)
+            // true means expanded (display:block), false means collapsed (display:none)
+            updateNoteState(result.externalId, result.color, isCollapsed ? true : false);
         });
 
         // Add spacing between notes
@@ -1142,6 +1173,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             handleTagClick(currentTag.toLowerCase());
             updateTagList();
             sendSearchMessage();
+            clearNoteState();
             removeContextMenu(contextMenu);
         });
         fragment.appendChild(searchTag);
@@ -1488,6 +1520,13 @@ function collapseResults() {
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         resultNotes[i].style.display = 'none';
+        
+        // Update note state when collapsing all (setting to expanded=false)
+        const externalId = resultNotes[i].getAttribute('data-externalId');
+        const color = resultNotes[i].getAttribute('data-color');
+        if (externalId) {
+            updateNoteState(externalId, color, false);
+        }
     }
 }
 
@@ -1495,6 +1534,13 @@ function expandResults() {
     const resultNotes = document.getElementsByClassName('itags-search-resultContent');
     for (let i = 0; i < resultNotes.length; i++) {
         resultNotes[i].style.display = 'block';
+        
+        // Update note state when expanding all (setting to expanded=true)
+        const externalId = resultNotes[i].getAttribute('data-externalId');
+        const color = resultNotes[i].getAttribute('data-color');
+        if (externalId) {
+            updateNoteState(externalId, color, true);
+        }
     }
 }
 
@@ -1531,7 +1577,10 @@ addEventListenerWithTracking(saveQuery, 'click', () => {
     });
 });
 
-addEventListenerWithTracking(tagSearch, 'click', sendSearchMessage);
+addEventListenerWithTracking(tagSearch, 'click', () => {
+    sendSearchMessage();
+    clearNoteState();
+});
 
 addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
@@ -1545,6 +1594,7 @@ addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
 
         } else if (tagFilter.value === '') {
             sendSearchMessage();
+            clearNoteState();
 
         } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
             // Get the tag name from the only / fist child element of tagList
@@ -1629,6 +1679,7 @@ addEventListenerWithTracking(tagRangeMax, 'keydown', (event) => {
     if (event.key === 'Enter') {
         if (tagRangeMin.value.length == 0 && tagRangeMax.value.length == 0) {
             sendSearchMessage();
+            clearNoteState();
             return;
         }
         tagRangeAdd.click();
@@ -1666,7 +1717,8 @@ addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
     if (event.key === 'Enter') {
         // Check if there's exactly one tag in the filtered list
         if (noteFilter.value === '') {
-            sendSearchMessage()
+            sendSearchMessage();
+            clearNoteState();
         } else {
             // Get the tag name from the only child element of tagList
             const note = {title: noteList.firstChild.textContent, externalId: noteList.firstChild.value};
