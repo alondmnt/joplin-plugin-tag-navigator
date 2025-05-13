@@ -214,28 +214,35 @@ export async function processMessage(
       // Ignore errors (not on mobile, or old version)
     }
     const dbNote = db.getNoteId(message.externalId);
-    if (dbNote) {
-      await joplin.commands.execute('openNote', dbNote);
-    } else {
-      await joplin.commands.execute('openItem', message.externalId);
-    }
-    if (versionInfo.toggleEditorSupport) {
-      // Wait for the note to be opened for 100 ms
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const toggleEditor = await joplin.settings.value('itags.toggleEditor');
-      if (toggleEditor) {
-        await joplin.commands.execute('toggleVisiblePanes');
+    const currentNote = await joplin.workspace.selectedNote();
+    const noteId = noteIdRegex.test(message.externalId) ? noteIdRegex.exec(message.externalId)[1] : dbNote;
+
+    if ((!currentNote) || (currentNote.id !== noteId)) {
+      // Skip if the note is already open
+      // This will also happen if we try to open a heading in an already open note
+      if (dbNote) {
+        await joplin.commands.execute('openNote', dbNote);
+      } else {
+        await joplin.commands.execute('openItem', message.externalId);
       }
+      if (versionInfo.toggleEditorSupport) {
+        // Wait for the note to be opened for 100 ms
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const toggleEditor = await joplin.settings.value('itags.toggleEditor');
+        if (toggleEditor) {
+          await joplin.commands.execute('toggleVisiblePanes');
+        }
+      }
+
+      // Wait for the note to be opened for 1 second
+      const waitForNote = await joplin.settings.value('itags.waitForNote');
+      await new Promise(resolve => setTimeout(resolve, waitForNote));
     }
 
     // Do not scroll if the line is negative
     if (message.line < 0) {
       return;
     }
-
-    // Wait for the note to be opened for 1 second
-    const waitForNote = await joplin.settings.value('itags.waitForNote');
-    await new Promise(resolve => setTimeout(resolve, waitForNote));
 
     try {
       await joplin.commands.execute('editor.execCommand', {
