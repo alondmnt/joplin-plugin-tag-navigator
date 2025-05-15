@@ -356,6 +356,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Note view: Highlight filter results',
     },
+    'itags.noteViewColorTitles': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Display colors',
+      description: 'Use color tags for titles in note view.',
+    },
     'itags.updateViewOnOpen': {
       value: true,
       type: SettingItemType.Bool,

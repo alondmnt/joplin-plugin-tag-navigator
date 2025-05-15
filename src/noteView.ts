@@ -92,7 +92,14 @@ export async function displayResultsInNote(
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
-      resultsString += `\n# ${result.title} [>](:/${result.externalId})\n\n`;
+      // Check if we should display colors in note view
+      const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+      if (displayColors && result.color) {
+        resultsString += `\n# <span style="color: ${result.color};">${result.title}</span> [>](:/${result.externalId})\n\n`;
+      } else {
+        resultsString += `\n# ${result.title} [>](:/${result.externalId})\n\n`;
+      }
+
       for (let i = 0; i < result.text.length; i++) {
         // If a line is a heading, turn it line into a link
         result.text[i] = result.text[i].replace(REGEX.heading, (_, level, title) => {
@@ -107,7 +114,7 @@ export async function displayResultsInNote(
     // Parse tags from results and accumulate counts
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
-    [tableString, tableColumns] = buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
+    [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
     resultsString += tableString;
   }
   resultsString += resultsEnd;
@@ -506,13 +513,13 @@ function sortResults<T extends TableResult | GroupedResult>(
  * @param nColumns Maximum number of columns to display
  * @returns Tuple of [table string, column names]
  */
-function buildTable(
+async function buildTable(
   tableResults: TableResult[], 
   columnCount: { [key: string]: number }, 
   savedQuery: QueryRecord, 
   tagSettings: TagSettings, 
   nColumns: number = 0
-): [string, string[]] {
+): Promise<[string, string[]]> {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
@@ -551,10 +558,23 @@ function buildTable(
   for (const result of tableResults) {
     if (Object.keys(result.tags).length === 0) { continue; }
     let row = '|';
+    
+    // Check if we should display colors in note view
+    const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+    let titleStyle = '';
+    
+    if (displayColors && result.color) {
+      titleStyle = ` style="color: ${result.color};"`;
+    }
+    
     for (let column of tableColumns) {
       column = column.toLowerCase();
       if (column === 'title') {
-        row += ` [${result.title}](:/${result.externalId}) |`;
+        if (titleStyle) {
+          row += ` [<span${titleStyle}>${result.title}</span>](:/${result.externalId}) |`;
+        } else {
+          row += ` [${result.title}](:/${result.externalId}) |`;
+        }
       } else if (column === 'notebook') {
         row += ` ${result.notebook} |`;
       } else if (column === 'line') {
