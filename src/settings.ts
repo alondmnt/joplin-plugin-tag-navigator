@@ -31,44 +31,48 @@ export interface TagSettings {
 }
 
 /**
- * Retrieves the configured tag regex pattern
- * @returns RegExp pattern for matching tags
- */
-export async function getTagRegex(): Promise<RegExp> {
-  const userRegex = await joplin.settings.value('itags.tagRegex');
-  return userRegex ? new RegExp(userRegex, 'g') : defTagRegex;
-}
-
-/**
  * Retrieves all tag-related settings
  * @returns TagSettings object containing all configuration
  */
 export async function getTagSettings(): Promise<TagSettings> {
-  const tagRegex = await getTagRegex();
-  const excludeRegexString = await joplin.settings.value('itags.excludeRegex');
-  const excludeRegex = excludeRegexString ? new RegExp(excludeRegexString, 'g') : null;
-  
-  let todayTag = (await joplin.settings.value('itags.todayTag')).toLowerCase();
+  const settings = await joplin.settings.values([
+    'itags.tagRegex',
+    'itags.excludeRegex',
+    'itags.todayTag',
+    'itags.valueDelim',
+    'itags.dateFormat',
+    'itags.ignoreHtmlNotes',
+    'itags.ignoreCodeBlocks',
+    'itags.ignoreFrontMatter',
+    'itags.inheritTags',
+    'itags.nestedTags',
+    'itags.spaceReplace',
+    'itags.tagPrefix',
+    'itags.tableCase',
+  ]);
+  const tagRegex = settings['itags.tagRegex'] ? new RegExp(settings['itags.tagRegex'] as string, 'g') : defTagRegex;
+  const excludeRegex = settings['itags.excludeRegex'] ? new RegExp(settings['itags.excludeRegex'] as string, 'g') : null;
+
+  let todayTag = (settings['itags.todayTag'] as string).trim().toLowerCase();
   if (todayTag.length == 0) {
     todayTag = '#today';  // Ensure default value
   }
   const todayTagRegex = new RegExp(`(${escapeRegex(todayTag)})([+-]?\\d*)`, 'g');
-  const valueDelim = await joplin.settings.value('itags.valueDelim');
 
   return {
     tagRegex,
     excludeRegex,
     todayTagRegex,
-    dateFormat: await joplin.settings.value('itags.dateFormat'),
-    ignoreHtmlNotes: await joplin.settings.value('itags.ignoreHtmlNotes'),
-    ignoreCodeBlocks: await joplin.settings.value('itags.ignoreCodeBlocks'),
-    ignoreFrontMatter: await joplin.settings.value('itags.ignoreFrontMatter'),
-    inheritTags: await joplin.settings.value('itags.inheritTags'),
-    nestedTags: await joplin.settings.value('itags.nestedTags'),
-    spaceReplace: await joplin.settings.value('itags.spaceReplace'),
-    valueDelim: valueDelim ? valueDelim : '=',
-    tagPrefix: await joplin.settings.value('itags.tagPrefix'),
-    tableCase: await joplin.settings.value('itags.tableCase')
+    dateFormat: settings['itags.dateFormat'] as string || '#yyyy-MM-dd',
+    ignoreHtmlNotes: settings['itags.ignoreHtmlNotes'] as boolean,
+    ignoreCodeBlocks: settings['itags.ignoreCodeBlocks'] as boolean,
+    ignoreFrontMatter: settings['itags.ignoreFrontMatter'] as boolean,
+    inheritTags: settings['itags.inheritTags'] as boolean,
+    nestedTags: settings['itags.nestedTags'] as boolean,
+    spaceReplace: settings['itags.spaceReplace'] as string || '_',
+    valueDelim: settings['itags.valueDelim'] as string || '=',
+    tagPrefix: settings['itags.tagPrefix'] as string || '#',
+    tableCase: settings['itags.tableCase'] as string || 'title'
   };
 }
 

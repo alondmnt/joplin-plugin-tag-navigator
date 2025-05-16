@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as markdownItHighlightjs from 'markdown-it-highlightjs';
-import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
+import { TagSettings, getTagSettings, queryEnd, queryStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch } from './search';
 import { noteIdRegex } from './parser';
@@ -402,13 +402,13 @@ export async function updatePanelResults(
 ): Promise<void> {
   const resultMarker = await joplin.settings.value('itags.resultMarker');
   const colorTodos = await joplin.settings.value('itags.colorTodos');
-  const tagRegex = await getTagRegex();
+  const tagSettings = await getTagSettings();
   const intervalID = setInterval(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
-          results: JSON.stringify(renderHTML(results, tagRegex, resultMarker, colorTodos)),
+          results: JSON.stringify(renderHTML(results, tagSettings.tagRegex, resultMarker, colorTodos)),
           query: JSON.stringify(query),
         });
       }
@@ -423,20 +423,35 @@ export async function updatePanelResults(
  * @param panel - Panel ID to update
  */
 export async function updatePanelSettings(panel: string): Promise<void> {
+  const joplinSettings = await joplin.settings.values([
+    'itags.resultSort',
+    'itags.resultOrder',
+    'itags.resultToggle',
+    'itags.resultMarker',
+    'itags.showQuery',
+    'itags.expandedTagList',
+    'itags.showTagRange',
+    'itags.showNotes',
+    'itags.showResultFilter',
+    'itags.selectMultiTags',
+    'itags.searchWithRegex',
+    'itags.spaceReplace',
+    'itags.resultColorProperty',
+  ]);
   const settings: PanelSettings = {
-    resultSort: await joplin.settings.value('itags.resultSort'),
-    resultOrder: await joplin.settings.value('itags.resultOrder'),
-    resultToggle: await joplin.settings.value('itags.resultToggle'),
-    resultMarker: await joplin.settings.value('itags.resultMarker'),
-    showQuery: await joplin.settings.value('itags.showQuery'),
-    expandedTagList: await joplin.settings.value('itags.expandedTagList'),
-    showTagRange: await joplin.settings.value('itags.showTagRange'),
-    showNotes: await joplin.settings.value('itags.showNotes'),
-    showResultFilter: await joplin.settings.value('itags.showResultFilter'),
-    selectMultiTags: await joplin.settings.value('itags.selectMultiTags'),
-    searchWithRegex: await joplin.settings.value('itags.searchWithRegex'),
-    spaceReplace: await joplin.settings.value('itags.spaceReplace'),
-    resultColorProperty: await joplin.settings.value('itags.resultColorProperty'),
+    resultSort: joplinSettings['itags.resultSort'] as string,
+    resultOrder: joplinSettings['itags.resultOrder'] as string,
+    resultToggle: joplinSettings['itags.resultToggle'] as boolean,
+    resultMarker: joplinSettings['itags.resultMarker'] as boolean,
+    showQuery: joplinSettings['itags.showQuery'] as boolean,
+    expandedTagList: joplinSettings['itags.expandedTagList'] as boolean,
+    showTagRange: joplinSettings['itags.showTagRange'] as boolean,
+    showNotes: joplinSettings['itags.showNotes'] as boolean,
+    showResultFilter: joplinSettings['itags.showResultFilter'] as boolean,
+    selectMultiTags: joplinSettings['itags.selectMultiTags'] as boolean,
+    searchWithRegex: joplinSettings['itags.searchWithRegex'] as boolean,
+    spaceReplace: joplinSettings['itags.spaceReplace'] as string,
+    resultColorProperty: joplinSettings['itags.resultColorProperty'] as string,
   };
   const intervalID = setInterval(
     async () => {
