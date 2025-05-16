@@ -1,6 +1,7 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
+import * as markdownItHighlightjs from 'markdown-it-highlightjs';
 import { TagSettings, getTagRegex, queryEnd, queryStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch } from './search';
@@ -11,7 +12,11 @@ import { NoteDatabase, processNote } from './db';
 const md = new MarkdownIt({ 
   html: true,
   breaks: true 
-}).use(markdownItTaskLists, { enabled: true });
+}).use(markdownItTaskLists, { enabled: true }).use(markdownItHighlightjs, { 
+  inline: true,
+  auto: false,
+  defaultLanguage: 'text'
+});
 
 /** Cached regex patterns */
 export const REGEX = {
@@ -149,6 +154,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
+  await joplin.views.panels.addScript(panel, 'highlight.css');
 }
 
 /**

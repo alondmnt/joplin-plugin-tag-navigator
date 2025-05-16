@@ -1,0 +1,99 @@
+/*!
+  Theme: Joplin Code Highlighting
+  Description: Simple syntax highlighting that integrates with Joplin's theme
+*/
+
+/* Basic code block styling */
+pre {
+  margin: 0.5em 0;
+  padding: 0;
+  font-family: var(--joplin-monospace-font);
+  font-size: 0.9em;
+  border-radius: 3px;
+  border: 1px solid var(--joplin-divider-color);
+  background-color: var(--joplin-background-color);
+  transition: background-color 0.2s ease;
+}
+
+pre:hover {
+  background-color: var(--joplin-background-color-hover3);
+}
+
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+  line-height: 1.5;
+  background: transparent;
+}
+
+code.hljs {
+  padding: 3px 5px;
+}
+
+/* Inline code styling */
+:not(pre) > code {
+  background-color: transparent !important;
+  border: 1px solid var(--joplin-divider-color) !important;
+  border-radius: 3px !important;
+  padding: 2px 4px !important;
+}
+
+/* Base text color */
+.hljs {
+  color: var(--joplin-color);
+}
+
+/* Syntax colors - using Joplin variables for theme consistency */
+.hljs-keyword, .hljs-doctag, .hljs-type {
+  color: var(--joplin-color-error);
+}
+
+.hljs-title, .hljs-title.class_, .hljs-title.function_ {
+  color: var(--joplin-url-color);
+}
+
+.hljs-attr, .hljs-number, .hljs-selector-id, .hljs-selector-class {
+  color: var(--joplin-text-selection-color);
+}
+
+.hljs-string, .hljs-regexp {
+  color: var(--joplin-url-color);
+  opacity: 0.8;
+}
+
+.hljs-built_in, .hljs-symbol {
+  color: var(--joplin-color-warn);
+}
+
+.hljs-comment {
+  color: var(--joplin-color-faded);
+}
+
+.hljs-name, .hljs-selector-tag {
+  color: var(--joplin-color-correct);
+}
+
+/* Simple element styles */
+.hljs-section {
+  font-weight: bold;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Insertion/deletion styles */
+.hljs-addition {
+  color: var(--joplin-color-correct);
+  background-color: rgba(114, 185, 114, 0.15);
+}
+
+.hljs-deletion {
+  color: var(--joplin-color-error);
+  background-color: rgba(255, 0, 0, 0.15);
+}
