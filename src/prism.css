@@ -92,7 +92,7 @@ pre[class*=language-] {
 .token.property,
 .token.symbol,
 .token.tag {
-  color: var(--joplin-color-warn);
+  color: var(--joplin-color-warn);  /* dimmed red for constants/literals */
 }
 
 .token.attr-name,
@@ -101,8 +101,7 @@ pre[class*=language-] {
 .token.inserted,
 .token.selector,
 .token.string {
-  color: var(--joplin-url-color);
-  opacity: 0.8;
+  color: var(--joplin-color-correct);  /* green for strings */
 }
 
 .language-css .token.string,
@@ -110,25 +109,24 @@ pre[class*=language-] {
 .token.entity,
 .token.operator,
 .token.url {
-  color: var(--joplin-color-warn);
-  background: hsla(0,0%,100%,.5);
+  color: var(--joplin-color-warn-url);  /* yellow for operators */
 }
 
 .token.atrule,
 .token.attr-value,
 .token.keyword {
-  color: var(--joplin-url-color);
+  color: var(--joplin-url-color);  /* purple for keywords */
 }
 
 .token.class-name,
 .token.function {
-  color: var(--joplin-url-color);
+  color: var(--joplin-color-warn-url);  /* yellow for functions */
 }
 
 .token.important,
 .token.regex,
 .token.variable {
-  color: var(--joplin-color-warn);
+  color: var(--joplin-color-warn);  /* dimmed red for variables */
 }
 
 .token.bold,
