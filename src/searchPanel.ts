@@ -1,7 +1,7 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
-import * as markdownItHighlightjs from 'markdown-it-highlightjs';
+import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch } from './search';
@@ -11,12 +11,18 @@ import { NoteDatabase, processNote } from './db';
 // Cached markdown-it instance
 const md = new MarkdownIt({ 
   html: true,
-  breaks: true 
-}).use(markdownItTaskLists, { enabled: true }).use(markdownItHighlightjs, { 
-  inline: true,
-  auto: false,
-  defaultLanguage: 'text'
-});
+  breaks: true,
+  highlight(code: string, lang?: string): string {
+    // ---- core of the integration ----
+    if (lang && prism.languages[lang]) {
+      const html = prism.highlight(code, prism.languages[lang], lang);
+      return `<pre class="language-${lang}"><code>${html}</code></pre>`;
+    }
+    // fallback – no language or unsupported
+    const escaped = md.utils.escapeHtml(code);
+    return `<pre class="language-text"><code>${escaped}</code></pre>`;
+  },
+}).use(markdownItTaskLists, { enabled: true })
 
 /** Cached regex patterns */
 export const REGEX = {
@@ -154,7 +160,8 @@ export async function registerSearchPanel(panel: string): Promise<void> {
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
-  await joplin.views.panels.addScript(panel, 'highlight.css');
+  await joplin.views.panels.addScript(panel, 'prism.js');
+  await joplin.views.panels.addScript(panel, 'prism.css');
 }
 
 /**
