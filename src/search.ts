@@ -22,6 +22,8 @@ export interface Query {
 export interface GroupedResult {
   externalId: string;     // Note ID
   lineNumbers: number[][];  // Line numbers where matches were found
+  // The first dimension is the group
+  // The second dimension is the line numbers in the group that make up text[i]
   text: string[];        // Text content of matched lines
   html: string[];        // HTML content of matched lines
   color: string;         // Color of matched lines
@@ -40,16 +42,21 @@ export const REGEX = {
  * Executes a search query and returns grouped results
  * @param db Note database to search in
  * @param query 2D array of queries representing DNF (Disjunctive Normal Form)
+ * @param groupingMode The grouping mode to use, if not provided, the default from settings will be used
  * @returns Array of grouped search results
  */
 export async function runSearch(
   db: NoteDatabase, 
-  query: Query[][]
+  query: Query[][],
+  groupingMode: string
 ): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
   const colorTag = await joplin.settings.value('itags.colorTag');
+  if (!groupingMode) {
+    groupingMode = await joplin.settings.value('itags.resultGrouping');
+  }
   const queryResults = await getQueryResults(db, query, currentNote);
-  const groupedResults = await processQueryResults(db, queryResults, colorTag);
+  const groupedResults = await processQueryResults(db, queryResults, colorTag, groupingMode);
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
@@ -218,12 +225,15 @@ function unionResults(
 /**
  * Processes raw query results into grouped results with note content
  * @param queryResults Raw query results
+ * @param colorTag The color tag to use
+ * @param groupingMode The grouping mode to use
  * @returns Array of grouped results with note content
  */
 async function processQueryResults(
   db: NoteDatabase,
   queryResults: ResultSet,
-  colorTag: string
+  colorTag: string,
+  groupingMode: string
 ): Promise<GroupedResult[]> {
   const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
@@ -274,7 +284,7 @@ async function processQueryResults(
         title: '',
       };
 
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode));
     }
   }
 
@@ -285,11 +295,13 @@ async function processQueryResults(
  * Retrieves text content and title for a result, and groups the lines
  * @param result Result to populate with content
  * @param fullPath Whether to include full notebook path
+ * @param groupingMode The grouping mode to use
  * @returns Updated result with content
  */
 async function getTextAndTitleByGroup(
   result: GroupedResult, 
-  fullPath: boolean
+  fullPath: boolean,
+  groupingMode: string
 ): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
@@ -308,7 +320,7 @@ async function getTextAndTitleByGroup(
     notebook = '/' + notebook;
   }
   const lines: string[] = note.body.split('\n');
-  const [groupedLines, groupTitleLine] = await groupLines(lines, result);
+  const [groupedLines, groupTitleLine] = await groupLines(lines, result, groupingMode);
 
   // Transform grouped line numbers into text blocks
   result.text = groupedLines.map((group, index) => {
@@ -333,14 +345,12 @@ async function getTextAndTitleByGroup(
  * Groups lines of text into groups based on the selected grouping mode.
  * @param lines The lines of text to group.
  * @param result The search result containing line numbers to group
+ * @param groupingMode The grouping mode to use
  * @returns A tuple containing:
  *          - An array of line number groups, where each group is consecutive lines or lines under the same heading
  *          - An array of heading line numbers corresponding to each group
  */
-async function groupLines(lines: string[], result: GroupedResult): Promise<[number[][], number[]]> {
-
-  const groupingMode = await joplin.settings.value('itags.resultGrouping');
-
+async function groupLines(lines: string[], result: GroupedResult, groupingMode: string): Promise<[number[][], number[]]> {
   // Group line numbers based on the selected mode
   let groupedLines: number[][] = [];
   let groupTitleLine: number[] = [];  // Line number of the title for each group
@@ -455,7 +465,7 @@ async function groupLines(lines: string[], result: GroupedResult): Promise<[numb
  * @param groupLines The lines to normalize.
  * @returns The normalized text.
 */
-function normalizeIndentation(noteText: string[], groupLines: number[]): string {
+export function normalizeIndentation(noteText: string[], groupLines: number[]): string {
     if (groupLines.length === 0) return '';
 
     let groupText: string[] = [];

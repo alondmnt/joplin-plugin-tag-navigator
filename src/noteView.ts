@@ -2,8 +2,11 @@ import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
-import { GroupedResult, runSearch } from './search';
+import { GroupedResult, runSearch, normalizeIndentation } from './search';
 import { NoteDatabase } from './db';
+import { processResultsForKanban, buildKanban } from './kanban';
+
+export const viewList = ['list', 'table', 'kanban'];
 
 const REGEX = {
   query: REGEX_SEARCH.findQuery,
@@ -75,9 +78,11 @@ export async function displayResultsInNote(
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
   if (!savedQuery) { return null; }
-  if (savedQuery.displayInNote !== 'list' && savedQuery.displayInNote !== 'table') { return null; }
+  if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
-  const results = await runSearch(db, savedQuery.query);
+  const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+  const groupingMode = savedQuery.displayInNote === 'kanban' ? 'item' : undefined;
+  const results = await runSearch(db, savedQuery.query, groupingMode);
   const filteredResults = await filterAndSortResults(results, savedQuery.filter, tagSettings, savedQuery.options);
 
   if (filteredResults.length === 0) {
@@ -93,7 +98,6 @@ export async function displayResultsInNote(
     // Create the results string as a list
     for (const result of filteredResults) {
       // Check if we should display colors in note view
-      const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
       if (displayColors && result.color) {
         resultsString += `\n# <span style="color: ${result.color};">${result.title}</span> [>](:/${result.externalId})\n\n`;
       } else {
@@ -116,6 +120,11 @@ export async function displayResultsInNote(
     tableDefaultValues = mostCommonValue;
     [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
     resultsString += tableString;
+
+  } else if (savedQuery.displayInNote === 'kanban') {
+    // Process results for kanban view
+    const kanbanResults = await processResultsForKanban(filteredResults);
+    resultsString += await buildKanban(kanbanResults, savedQuery, tagSettings);
   }
   resultsString += resultsEnd;
 
@@ -655,4 +664,16 @@ export async function createTableEntryNote(
   // Open the new note
   await joplin.commands.execute('openNote', note.id);
   note = clearObjectReferences(note);
+}
+
+/**
+ * Adapter function to utilize the normalizeIndentation function from search.ts
+ * @param lines Array of text lines to normalize
+ * @returns Normalized text
+ */
+function normalizeGroupIndentation(lines: string[]): string {
+  if (!lines || lines.length === 0) return '';
+  // Create an array of indices for all lines
+  const indices = Array.from({ length: lines.length }, (_, i) => i);
+  return normalizeIndentation(lines, indices);
 }

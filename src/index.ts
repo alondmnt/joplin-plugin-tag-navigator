@@ -7,7 +7,7 @@ import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteTo
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
-import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults } from './noteView';
+import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults, viewList } from './noteView';
 import { runSearch } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
@@ -43,7 +43,7 @@ joplin.plugins.register({
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
       await updatePanelResults(searchPanel, results, searchParams.query);
     }, 1000);
 
@@ -97,7 +97,7 @@ joplin.plugins.register({
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
       await updatePanelResults(searchPanel, results, searchParams.query);
 
       // Update note view
@@ -145,7 +145,7 @@ joplin.plugins.register({
       // Update results in note
       const updateViewOnOpen = await joplin.settings.value('itags.updateViewOnOpen');
       if (updateViewOnOpen) {
-        if (savedQuery.displayInNote === 'list' || savedQuery.displayInNote === 'table') {
+        if (viewList.includes(savedQuery.displayInNote)) {
           const tagSettings = await getTagSettings();
           const nColumns = await joplin.settings.value('itags.tableColumns');
           const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
@@ -169,7 +169,7 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
         await updatePanelResults(searchPanel, results, searchParams.query);
       }
     });
@@ -250,16 +250,15 @@ joplin.plugins.register({
         if (!note) { return; }
         const query = await loadQuery(DatabaseManager.getDatabase(), note);
         // toggle display
-        if (query.displayInNote === 'false') {
+        const i = viewList.findIndex(x => x === query.displayInNote);
+        if (i === -1) {
           query.displayInNote = 'list';
-        } else if (query.displayInNote === 'list') {
-          query.displayInNote = 'table';
         } else {
-          query.displayInNote = 'false';
+          query.displayInNote = viewList[(i + 1) % viewList.length];
         }
 
         note.body = await saveQuery(query);
-        if (query.displayInNote === 'list' || query.displayInNote === 'table') {
+        if (viewList.includes(query.displayInNote)) {
           const tagSettings = await getTagSettings();
           const nColumns = await joplin.settings.value('itags.tableColumns');
           const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
@@ -536,7 +535,7 @@ joplin.plugins.register({
       if (message.name === 'searchTag') {
         searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: 'false' };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
         await updatePanelResults(searchPanel, results, searchParams.query);
       }
       clearObjectReferences(message);

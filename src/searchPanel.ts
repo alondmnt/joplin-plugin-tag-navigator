@@ -50,7 +50,7 @@ export interface QueryRecord {
   query: Query[][];
   /** Text filter to apply to results */
   filter: string;
-  /** How to display results in the note: 'false', 'list', or 'table' */
+  /** How to display results in the note: 'false', 'list', 'table', or 'kanban' */
   displayInNote: string;
   /** Optional display settings */
   options?: {
@@ -189,13 +189,13 @@ export async function processMessage(
     await updatePanelNoteData(searchPanel, db);
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelSettings(searchPanel);
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
     await updatePanelNoteState(searchPanel, savedNoteState);
 
   } else if (message.name === 'searchQuery') {
     searchParams.query = JSON.parse(message.query);
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'insertTag') {
@@ -270,7 +270,7 @@ export async function processMessage(
     await setCheckboxState(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeTag') {
@@ -282,7 +282,7 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'removeAll') {
@@ -297,7 +297,7 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'replaceAll') {
@@ -307,7 +307,7 @@ export async function processMessage(
     await addTagToText(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 
   } else if (message.name === 'updateSetting') {
@@ -710,7 +710,7 @@ async function replaceTagAll(
     // update the search panel
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined);
     await updatePanelResults(searchPanel, results, searchParams.query);
 }
 
@@ -745,7 +745,7 @@ async function removeTagAll(
   }
   // update the search panel
   await updatePanelTagData(searchPanel, db);
-  const results = await runSearch(db, searchParams.query);
+  const results = await runSearch(db, searchParams.query, undefined);
   await updatePanelResults(searchPanel, results, searchParams.query);
 }
 

@@ -1,0 +1,493 @@
+/**
+ * Kanban view that support the YesYouKan plugin.
+ */
+import joplin from 'api';
+import { GroupedResult } from './search';
+import { normalizeIndentation } from './search';
+import { QueryRecord } from './searchPanel';
+import { TagSettings } from './settings';
+
+/**
+ * Checkbox information for a line in a group
+ */
+export interface CheckboxItem {
+  line: number;       // Line number in the original note
+  level: number;      // Indentation level
+  state: string;      // State of the checkbox ('Open', 'Done', etc.)
+  hasCheckbox: boolean; // Whether this line has a checkbox
+  text: string;       // Full text of the line
+}
+
+/**
+ * Result item for a kanban group
+ */
+export interface KanbanItem {
+  heading: string;    // Heading text for the item
+  group: string;      // Full content of the group
+  noteId: string;     // ID of the note
+  lineNumber: number; // Starting line number
+  color: string;      // Color for display
+  title: string;      // Note title
+}
+
+/**
+ * Processes search results for kanban display
+ * @param filteredResults Array of filtered search results
+ * @returns Object containing grouped results by checkbox state
+ */
+export async function processResultsForKanban(
+  filteredResults: GroupedResult[]
+): Promise<{ [state: string]: KanbanItem[] }> {
+  // Define checkbox state patterns and their corresponding kanban categories
+  const checkboxStates = {
+    'Open': /- \[ \]/,
+    'In question': /- \[\?\]/,
+    'Ongoing': /- \[\@\]/,
+    'Blocked': /- \[\!\]/,
+    'Obsolete': /- \[~\]/,
+    'Done': /- \[x\]/
+  };
+
+  // Initialize result object with empty arrays for each state
+  const result: { [state: string]: KanbanItem[] } = {
+    'Open': [],
+    'In question': [],
+    'Ongoing': [],
+    'Blocked': [],
+    'Obsolete': [],
+    'Done': []
+  };
+
+  // Track already processed content to avoid duplication
+  const processedContent = new Map<string, { state: string, noteId: string, lineNumber: number }>();
+
+  // Process each result group
+  for (const groupedResult of filteredResults) {
+    for (let groupIndex = 0; groupIndex < groupedResult.text.length; groupIndex++) {
+      // Parse the text into lines and analyze checkboxes
+      const checkboxItems = parseCheckboxes(
+        groupedResult.text[groupIndex].split('\n'),
+        groupedResult.lineNumbers[groupIndex],
+        checkboxStates
+      );
+      
+      if (checkboxItems.length === 0) continue;
+      
+      // Process parent-child relationships for items without checkboxes
+      processRelationships(checkboxItems);
+      
+      // Identify hierarchical structures
+      const hierarchies = buildHierarchies(checkboxItems);
+      
+      // Process hierarchical items
+      processHierarchicalItems(
+        hierarchies,
+        checkboxItems,
+        checkboxStates,
+        groupedResult,
+        processedContent,
+        result
+      );
+      
+      // Process standalone items (items not in hierarchies)
+      processStandaloneItems(
+        checkboxItems, 
+        hierarchies.flatMap(h => h), // All items that are part of hierarchies
+        checkboxStates,
+        groupedResult,
+        processedContent,
+        result
+      );
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Parses checkbox states and metadata from text lines
+ */
+function parseCheckboxes(
+  lines: string[], 
+  lineNumbers: number[], 
+  checkboxStates: { [key: string]: RegExp }
+): CheckboxItem[] {
+  if (lines.length === 0) return [];
+  
+  return lines.map((line, index) => {
+    // Calculate indentation level
+    const indentMatch = line.match(/^(\s*)/);
+    const indentLevel = indentMatch ? indentMatch[1].length : 0;
+    
+    // Check if this line has a checkbox
+    const hasCheckbox = line.includes('- [');
+    
+    // Determine checkbox state
+    let state = 'Open'; // Default state
+    if (hasCheckbox) {
+      for (const [stateKey, pattern] of Object.entries(checkboxStates)) {
+        if (pattern.test(line)) {
+          state = stateKey;
+          break;
+        }
+      }
+    }
+    
+    return {
+      line: lineNumbers[index] || lineNumbers[0],
+      level: indentLevel,
+      state,
+      hasCheckbox,
+      text: line
+    };
+  });
+}
+
+/**
+ * Processes parent-child relationships for items without checkboxes
+ */
+function processRelationships(items: CheckboxItem[]): void {
+  for (let i = 0; i < items.length; i++) {
+    const current = items[i];
+    
+    if (!current.hasCheckbox) {
+      // Check if it has a parent checkbox (case a)
+      let hasParent = false;
+      for (let j = i - 1; j >= 0; j--) {
+        const potentialParent = items[j];
+        if (potentialParent.level < current.level && potentialParent.hasCheckbox) {
+          hasParent = true;
+          current.state = potentialParent.state;
+          break;
+        }
+      }
+      
+      // Check if it has nested checkboxes (case b)
+      if (!hasParent) {
+        const childInfo = findChildCheckboxes(items, i);
+        if (childInfo.hasNestedCheckbox) {
+          current.state = childInfo.effectiveState;
+        } else {
+          // Skip lines with no checkboxes and no nested checkboxes
+          current.state = '';
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Finds child checkboxes and determines the effective state
+ */
+function findChildCheckboxes(items: CheckboxItem[], currentIndex: number): { 
+  hasNestedCheckbox: boolean, 
+  effectiveState: string 
+} {
+  const current = items[currentIndex];
+  let hasNestedCheckbox = false;
+  let effectiveState = 'Done'; // Start with "strongest" state
+  
+  const stateStrength = {
+    'Open': 1,
+    'In question': 2, 
+    'Ongoing': 3,
+    'Blocked': 4,
+    'Obsolete': 5,
+    'Done': 6
+  };
+  
+  // Look at immediate children
+  for (let j = currentIndex + 1; j < items.length; j++) {
+    const potentialChild = items[j];
+    if (potentialChild.level > current.level) {
+      if (potentialChild.hasCheckbox) {
+        hasNestedCheckbox = true;
+        
+        // If any child is Open, the parent is Open (weakest state)
+        // Otherwise take the "weakest" state of children
+        if (potentialChild.state === 'Open' || 
+            stateStrength[potentialChild.state] < stateStrength[effectiveState]) {
+          effectiveState = potentialChild.state;
+        }
+      }
+    } else if (potentialChild.level <= current.level) {
+      // We've reached a sibling or higher level, stop looking
+      break;
+    }
+  }
+  
+  return { hasNestedCheckbox, effectiveState };
+}
+
+/**
+ * Builds hierarchical structures from checkbox items
+ */
+function buildHierarchies(items: CheckboxItem[]): number[][] {
+  const hierarchies: number[][] = [];
+  const processedIndices = new Set<number>();
+  
+  for (let i = 0; i < items.length; i++) {
+    if (processedIndices.has(i)) continue;
+    
+    const current = items[i];
+    if (!current.hasCheckbox && !current.state) continue; // Skip items with no state
+    
+    const hierarchy: number[] = [i];
+    processedIndices.add(i);
+    
+    // Add parent items (items above with lower indentation)
+    let parentLevel = current.level;
+    for (let j = i - 1; j >= 0; j--) {
+      const item = items[j];
+      if (item.level < parentLevel) {
+        hierarchy.unshift(j); // Add parent to beginning
+        processedIndices.add(j);
+        parentLevel = item.level;
+      }
+    }
+    
+    // Add child items (items below with higher indentation)
+    let currentLevel = current.level;
+    for (let j = i + 1; j < items.length; j++) {
+      const item = items[j];
+      if (item.level <= currentLevel) break; // Not a child
+      
+      hierarchy.push(j);
+      processedIndices.add(j);
+    }
+    
+    if (hierarchy.length > 0) {
+      hierarchies.push(hierarchy);
+    }
+  }
+  
+  return hierarchies;
+}
+
+/**
+ * Processes hierarchical items and adds them to results
+ */
+function processHierarchicalItems(
+  hierarchies: number[][],
+  items: CheckboxItem[],
+  checkboxStates: { [key: string]: RegExp },
+  groupedResult: GroupedResult,
+  processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
+  result: { [state: string]: KanbanItem[] }
+): void {
+  for (const hierarchy of hierarchies) {
+    if (hierarchy.length === 0) continue;
+    
+    // Get the root/parent item of this hierarchy
+    const rootItem = items[hierarchy[0]];
+    
+    // Extract heading from the root item
+    const heading = formatHeading(rootItem.text);
+    
+    // Determine primary state
+    let primaryState: string;
+    
+    // If the root item has a checkbox, use its state
+    if (rootItem.hasCheckbox && rootItem.state && Object.keys(checkboxStates).includes(rootItem.state)) {
+      primaryState = rootItem.state;
+    } else {
+      // Check if all child checkboxes are "Done" recursively
+      const childStates = getAllChildCheckboxStates(hierarchy, items, 0);
+      
+      if (childStates.length === 0) {
+        // No checkboxes found, skip this hierarchy
+        continue;
+      } else if (childStates.every(state => state === 'Done')) {
+        // All checkboxes are "Done"
+        primaryState = 'Done';
+      } else {
+        // Mixed states - find the most restrictive non-Done state
+        // Order of priority: Open, In question, Ongoing, Blocked, Obsolete
+        const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete'];
+        
+        for (const state of stateOrder) {
+          if (childStates.includes(state)) {
+            primaryState = state;
+            break;
+          }
+        }
+        
+        // Fallback to most common state if no priority state found
+        if (!primaryState) {
+          primaryState = findMostCommonState(childStates);
+        }
+      }
+    }
+    
+    // Extract lines for this group
+    const groupLines = hierarchy.map(idx => items[idx].text);
+    const contentSignature = groupLines.join('\n').trim();
+    
+    // Skip if already processed
+    const existingEntry = processedContent.get(contentSignature);
+    if (existingEntry && existingEntry.state === primaryState) continue;
+    
+    // Mark as processed
+    processedContent.set(contentSignature, {
+      state: primaryState,
+      noteId: groupedResult.externalId,
+      lineNumber: rootItem.line
+    });
+    
+    // Extract content separately
+    const contentLines = groupLines.slice(1);
+    const contentIndices = Array.from({ length: contentLines.length }, (_, i) => i);
+    const normalizedContent = contentLines.length > 0 ? normalizeIndentation(contentLines, contentIndices) : '';
+    
+    // Add to results
+    result[primaryState].push({
+      heading: heading.trim(),
+      group: normalizedContent,
+      noteId: groupedResult.externalId,
+      lineNumber: rootItem.line,
+      color: groupedResult.color,
+      title: groupedResult.title
+    });
+  }
+}
+
+/**
+ * Gets all checkbox states from children recursively
+ */
+function getAllChildCheckboxStates(hierarchy: number[], items: CheckboxItem[], startIdx: number): string[] {
+  const states: string[] = [];
+  
+  for (let i = startIdx; i < hierarchy.length; i++) {
+    const item = items[hierarchy[i]];
+    
+    if (item.hasCheckbox && item.state) {
+      states.push(item.state);
+    }
+  }
+  
+  return states.filter(state => state); // Filter out empty states
+}
+
+/**
+ * Processes standalone items not part of hierarchies
+ */
+function processStandaloneItems(
+  items: CheckboxItem[],
+  processedIndices: number[],
+  checkboxStates: { [key: string]: RegExp },
+  groupedResult: GroupedResult,
+  processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
+  result: { [state: string]: KanbanItem[] }
+): void {
+  const processedSet = new Set(processedIndices);
+  
+  for (let i = 0; i < items.length; i++) {
+    if (processedSet.has(i)) continue;
+    
+    const current = items[i];
+    if (!current.hasCheckbox || !current.state || !Object.keys(checkboxStates).includes(current.state)) {
+      continue; // Skip invalid items
+    }
+    
+    const contentSignature = current.text.trim();
+    
+    // Skip if already processed
+    const existingEntry = processedContent.get(contentSignature);
+    if (existingEntry && existingEntry.state === current.state) continue;
+    
+    // Mark as processed
+    processedContent.set(contentSignature, {
+      state: current.state,
+      noteId: groupedResult.externalId,
+      lineNumber: current.line
+    });
+    
+    // Extract heading (normalize not needed for single line items)
+    const heading = formatHeading(current.text);
+    
+    result[current.state].push({
+      heading: heading.trim(),
+      group: '', // No content for standalone items
+      noteId: groupedResult.externalId,
+      lineNumber: current.line,
+      color: groupedResult.color,
+      title: groupedResult.title
+    });
+  }
+}
+
+/**
+ * Finds the most common state in an array of states
+ */
+function findMostCommonState(states: string[]): string {
+  const stateCounts = states.reduce((acc, state) => {
+    acc[state] = (acc[state] || 0) + 1;
+    return acc;
+  }, {} as {[key: string]: number});
+  
+  return Object.keys(stateCounts).reduce((a, b) => 
+    stateCounts[a] > stateCounts[b] ? a : b
+  );
+}
+
+/**
+ * Formats a line to be used as a heading by removing checkbox notation
+ */
+function formatHeading(line: string): string {
+  let heading = line;
+  
+  // Remove checkbox notation and list marker from heading
+  if (heading.includes('- [')) {
+    heading = heading.replace(/^(\s*)- \[[^\]]+\](\s*)/, '$1$2');
+  } else if (heading.trim().startsWith('-')) {
+    heading = heading.replace(/^(\s*)-(\s*)/, '$1$2');
+  }
+  
+  return heading.trim();
+}
+
+/**
+ * Builds a markdown kanban board from the results
+ * @param kanbanResults Results grouped by checkbox state
+ * @param savedQuery Saved query configuration
+ * @param tagSettings Configuration for tag formatting
+ * @returns Markdown string representing the kanban board
+ */
+export async function buildKanban(
+  kanbanResults: { [state: string]: KanbanItem[] },
+  savedQuery: QueryRecord,
+  tagSettings: TagSettings
+): Promise<string> {
+  // The order of states to display
+  const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+  const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete', 'Done'];
+  let kanbanString = '\n';
+
+  // Build the kanban board
+  for (const state of stateOrder) {
+    const groups = kanbanResults[state];
+    if (groups.length === 0) continue;
+
+    // Add state header
+    kanbanString += `# ${state}\n\n`;
+
+    // Display each group
+    for (const group of groups) {
+      // Format the note title (with color if enabled)
+      let titleDisplay = group.title;
+      if (displayColors && group.color) {
+        titleDisplay = `<span style="color: ${group.color};">${group.title}</span>`;
+      }
+      
+      // Add the group heading (converted to H2)
+      kanbanString += `## ${group.heading}\n[${titleDisplay} (L${group.lineNumber + 1})](:/${group.noteId})\n\n`;
+      
+      // Add the content (already normalized)
+      if (group.group && group.group.trim()) {
+        kanbanString += `${group.group}\n\n`;
+      }
+    }
+  }
+
+  return kanbanString;
+} 
