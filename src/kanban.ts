@@ -6,6 +6,8 @@ import { GroupedResult } from './search';
 import { normalizeIndentation } from './search';
 import { QueryRecord } from './searchPanel';
 import { TagSettings } from './settings';
+import { DatabaseManager } from './db';
+import { escapeRegex } from './utils';
 
 /**
  * Checkbox information for a line in a group
@@ -28,6 +30,9 @@ export interface KanbanItem {
   lineNumber: number; // Starting line number
   color: string;      // Color for display
   title: string;      // Note title
+  tags: string[];     // Tags associated with the item
+  processedHeading: string; // Heading with tags removed
+  processedContent: string; // Content with tags removed
 }
 
 /**
@@ -60,6 +65,9 @@ export async function processResultsForKanban(
 
   // Track already processed content to avoid duplication
   const processedContent = new Map<string, { state: string, noteId: string, lineNumber: number }>();
+  
+  // Get database instance for tag processing
+  const db = DatabaseManager.getDatabase();
 
   // Process each result group
   for (const groupedResult of filteredResults) {
@@ -86,7 +94,8 @@ export async function processResultsForKanban(
         checkboxStates,
         groupedResult,
         processedContent,
-        result
+        result,
+        db
       );
       
       // Process standalone items (items not in hierarchies)
@@ -96,7 +105,8 @@ export async function processResultsForKanban(
         checkboxStates,
         groupedResult,
         processedContent,
-        result
+        result,
+        db
       );
     }
   }
@@ -273,8 +283,12 @@ function processHierarchicalItems(
   checkboxStates: { [key: string]: RegExp },
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
-  result: { [state: string]: KanbanItem[] }
+  result: { [state: string]: KanbanItem[] },
+  db: DatabaseManager
 ): void {
+  // Get the actual NoteDatabase instance
+  const noteDb = DatabaseManager.getDatabase();
+  
   for (const hierarchy of hierarchies) {
     if (hierarchy.length === 0) continue;
     
@@ -339,6 +353,60 @@ function processHierarchicalItems(
     const contentIndices = Array.from({ length: contentLines.length }, (_, i) => i);
     const normalizedContent = contentLines.length > 0 ? normalizeIndentation(contentLines, contentIndices) : '';
     
+    // Process tags for this group
+    const lineNumbers = [];
+    let startLine = rootItem.line;
+    
+    // Process all lines in this group to find their line numbers
+    if (normalizedContent && normalizedContent.trim()) {
+      const lines = normalizedContent.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        lineNumbers.push(startLine + i + 1);  // +1 because the heading is at startLine
+      }
+    }
+    
+    // Add the group heading line itself
+    lineNumbers.push(startLine);
+    
+    // Get tags from all lines
+    const allTags = new Set<string>();
+    const note = noteDb.notes[groupedResult.externalId];
+    if (note) {
+      lineNumbers.forEach(lineNum => {
+        const lineTags = note.getTagsAtLine(lineNum);
+        lineTags.forEach(tag => allTags.add(tag));
+      });
+    }
+    
+    // Sort tags alphabetically
+    const sortedTags = Array.from(allTags).sort();
+    
+    // Process the heading to remove tag mentions
+    let processedHeading = heading;
+    sortedTags.forEach(tag => {
+      const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+      processedHeading = processedHeading.replace(tagPattern, '');
+    });
+    // Clean up any trailing whitespace
+    processedHeading = processedHeading.trim();
+    
+    // Process the group content to remove tag mentions
+    let processedGroupContent = '';
+    if (normalizedContent && normalizedContent.trim()) {
+      processedGroupContent = normalizedContent;
+      
+      // Replace tag mentions with empty string
+      sortedTags.forEach(tag => {
+        const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+        processedGroupContent = processedGroupContent.replace(tagPattern, '');
+      });
+      
+      // Clean up extra newlines
+      processedGroupContent = processedGroupContent.split('\n')
+        .filter(line => line.length > 0)
+        .join('\n');
+    }
+    
     // Add to results
     result[primaryState].push({
       heading: heading.trim(),
@@ -346,7 +414,10 @@ function processHierarchicalItems(
       noteId: groupedResult.externalId,
       lineNumber: rootItem.line,
       color: groupedResult.color,
-      title: groupedResult.title
+      title: groupedResult.title,
+      tags: sortedTags,
+      processedHeading: processedHeading,
+      processedContent: processedGroupContent
     });
   }
 }
@@ -377,8 +448,12 @@ function processStandaloneItems(
   checkboxStates: { [key: string]: RegExp },
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
-  result: { [state: string]: KanbanItem[] }
+  result: { [state: string]: KanbanItem[] },
+  db: DatabaseManager
 ): void {
+  // Get the actual NoteDatabase instance
+  const noteDb = DatabaseManager.getDatabase();
+  
   const processedSet = new Set(processedIndices);
   
   for (let i = 0; i < items.length; i++) {
@@ -405,13 +480,41 @@ function processStandaloneItems(
     // Extract heading (normalize not needed for single line items)
     const heading = formatHeading(current.text);
     
+    // Process tags for this item
+    const lineNumbers = [current.line];
+    
+    // Get tags from this line
+    const allTags = new Set<string>();
+    const note = noteDb.notes[groupedResult.externalId];
+    if (note) {
+      lineNumbers.forEach(lineNum => {
+        const lineTags = note.getTagsAtLine(lineNum);
+        lineTags.forEach(tag => allTags.add(tag));
+      });
+    }
+    
+    // Sort tags alphabetically
+    const sortedTags = Array.from(allTags).sort();
+    
+    // Process the heading to remove tag mentions
+    let processedHeading = heading;
+    sortedTags.forEach(tag => {
+      const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+      processedHeading = processedHeading.replace(tagPattern, '');
+    });
+    // Clean up any trailing whitespace
+    processedHeading = processedHeading.trim();
+    
     result[current.state].push({
       heading: heading.trim(),
       group: '', // No content for standalone items
       noteId: groupedResult.externalId,
       lineNumber: current.line,
       color: groupedResult.color,
-      title: groupedResult.title
+      title: groupedResult.title,
+      tags: sortedTags,
+      processedHeading: processedHeading,
+      processedContent: ''
     });
   }
 }
@@ -462,7 +565,7 @@ export async function buildKanban(
   const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
   const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete', 'Done'];
   let kanbanString = '\n';
-
+  
   // Build the kanban board
   for (const state of stateOrder) {
     const groups = kanbanResults[state];
@@ -480,11 +583,20 @@ export async function buildKanban(
       }
       
       // Add the group heading (converted to H2)
-      kanbanString += `## ${group.heading}\n[${titleDisplay} (L${group.lineNumber + 1})](:/${group.noteId})\n\n`;
+      kanbanString += `## ${group.processedHeading}\n`;
       
-      // Add the content (already normalized)
-      if (group.group && group.group.trim()) {
-        kanbanString += `${group.group}\n\n`;
+      // Add tags right after the heading (comma separated)
+      if (group.tags.length > 0) {
+        const noParentTags = group.tags.filter(tag => !group.tags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + '=')) && !tag.startsWith(tagSettings.colorTag));
+        kanbanString += `${noParentTags.join(', ')}\n`;
+      }
+      
+      // Add link to the note
+      kanbanString += `[${titleDisplay} (L${group.lineNumber + 1})](:/${group.noteId})\n\n`;
+      
+      // Add the processed content
+      if (group.processedContent) {
+        kanbanString += `${group.processedContent}\n\n`;
       }
     }
   }

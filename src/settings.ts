@@ -17,7 +17,8 @@ export const resultsEnd = '<!-- itags-results-end -->';
 export interface TagSettings {
   tagRegex: RegExp;        // Regular expression for matching tags
   excludeRegex: RegExp;    // Regular expression for excluding tags
-  todayTagRegex: RegExp; // Regex for today's date
+  todayTagRegex: RegExp;   // Regex for today's date
+  colorTag: string;        // Tag for coloring the results in the search panel
   dateFormat: string;      // Format string for date tags
   ignoreHtmlNotes: boolean;    // Whether to ignore tags in HTML notes
   ignoreCodeBlocks: boolean;   // Whether to ignore tags in code blocks
@@ -38,7 +39,8 @@ export async function getTagSettings(): Promise<TagSettings> {
   const settings = await joplin.settings.values([
     'itags.tagRegex',
     'itags.excludeRegex',
-    'itags.todayTag',
+    'itags.todayTag', 
+    'itags.colorTag',
     'itags.valueDelim',
     'itags.dateFormat',
     'itags.ignoreHtmlNotes',
@@ -63,6 +65,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     tagRegex,
     excludeRegex,
     todayTagRegex,
+    colorTag: settings['itags.colorTag'] as string || '#color=',
     dateFormat: settings['itags.dateFormat'] as string || '#yyyy-MM-dd',
     ignoreHtmlNotes: settings['itags.ignoreHtmlNotes'] as boolean,
     ignoreCodeBlocks: settings['itags.ignoreCodeBlocks'] as boolean,
