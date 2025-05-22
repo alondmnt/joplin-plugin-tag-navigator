@@ -26,7 +26,7 @@ const md = new MarkdownIt({
 
 /** Cached regex patterns */
 export const REGEX = {
-  findQuery: new RegExp(`[\n]*${queryStart}\n([\\s\\S]*?)\n${queryEnd}`),
+  findQuery: new RegExp(`[\n]*${queryStart}([\\s\\S]*?)${queryEnd}`),
   wikiLink: /\[\[([^\]]+)\]\]/g,
   xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,
   xitDone: /(^[\s]*)- \[x\] (.*)$/gm,
@@ -907,14 +907,18 @@ export async function saveQuery(
   }
 
   let newBody = '';
+  const decoration = [
+    `${queryStart}<span style="display: none">`,
+    `</span>${queryEnd}`
+  ];
   if (REGEX.findQuery.test(note.body)) {
     if (query.query.length === 0) {
       newBody = note.body.replace(REGEX.findQuery, '');
     } else {
-      newBody = note.body.replace(REGEX.findQuery, `\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`);
+      newBody = note.body.replace(REGEX.findQuery, `\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${decoration[1]}`);
     }
   } else {
-    newBody = `${note.body.replace(/\s+$/, '')}\n\n${queryStart}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${queryEnd}`;
+    newBody = `${note.body.replace(/\s+$/, '')}\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${decoration[1]}`;
     // trimming trailing spaces in note body before insertion
   }
 
@@ -943,8 +947,10 @@ export async function loadQuery(
   let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
     try {
-      // Strip the code block delimiters
-      const queryString = record[1].replace(/^```json\n/, '').replace(/\n```$/, '');
+      // Strip the code block delimiters, and remove decorations
+      const queryString = record[1]
+        .split('\n').slice(1, -1).join('\n')
+        .replace(/^```json\n/, '').replace(/\n```$/, '');
       const savedQuery = await testQuery(db, JSON.parse(queryString));
       if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
         loadedQuery = savedQuery;
