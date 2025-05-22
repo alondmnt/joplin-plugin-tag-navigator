@@ -77,6 +77,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Tag values](#tag-values)
 - [Front matter tags](#front-matter-tags)
 - [Table views](#table-views)
+- [Kanban views](#kanban-views)
 - [Filtering results](#filtering-results)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
