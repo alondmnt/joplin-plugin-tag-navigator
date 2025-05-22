@@ -55,7 +55,7 @@ export async function processResultsForKanban(
     'Ongoing': /- \[\@\]/,
     'Blocked': /- \[\!\]/,
     'Obsolete': /- \[~\]/,
-    'Done': /- \[x\]/
+    'Done': /- \[[xX]\]/
   };
   
   // Create checkboxStates using the order from CHECKBOX_STATE_ORDER

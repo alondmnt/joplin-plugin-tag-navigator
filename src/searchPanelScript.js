@@ -556,7 +556,7 @@ function createClickHandler(result, index) {
                 line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
                 source: event.target.checked ? ' ' : 'x',
-                target: event.target.checked ? 'x' : ' ',
+                target: event.target.checked ? '[xX]' : ' ',
             });
         } else if (event.target.matches('.itags-search-checkbox')) {
             const line = parseInt(event.target.getAttribute('data-line-number'));
@@ -955,7 +955,7 @@ function getCheckboxState(checkbox) {
         } else if (checkbox.classList.contains('xitBlocked')) {
             return '!';
         } else if (checkbox.classList.contains('xitDone')) {
-            return 'x';
+            return '[xX]';
         } else if (checkbox.classList.contains('xitObsolete')) {
             return '~';
         } else {

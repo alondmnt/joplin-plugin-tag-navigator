@@ -29,7 +29,7 @@ export const REGEX = {
   findQuery: new RegExp(`[\n]*${queryStart}([\\s\\S]*?)${queryEnd}`),
   wikiLink: /\[\[([^\]]+)\]\]/g,
   xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,
-  xitDone: /(^[\s]*)- \[x\] (.*)$/gm,
+  xitDone: /(^[\s]*)- \[[xX]\] (.*)$/gm,
   xitOngoing: /(^[\s]*)- \[@\] (.*)$/gm,
   xitObsolete: /(^[\s]*)- \[~\] (.*)$/gm,
   xitInQuestion: /(^[\s]*)- \[\?\] (.*)$/gm,
