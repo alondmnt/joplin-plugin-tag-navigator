@@ -139,7 +139,7 @@ function parseCheckboxes(
     const indentLevel = indentMatch ? indentMatch[1].length : 0;
     
     // Check if this line has a checkbox
-    const hasCheckbox = line.includes('- [');
+    const hasCheckbox = /^\s*- \[[xX\s@\?!~]\]/.test(line);
     
     // Determine checkbox state
     let state = 'Open'; // Default state
