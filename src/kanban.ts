@@ -587,7 +587,7 @@ export async function buildKanban(
       
       // Add tags right after the heading (comma separated)
       if (group.tags.length > 0) {
-        const noParentTags = group.tags.filter(tag => !group.tags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + '=')) && !tag.startsWith(tagSettings.colorTag));
+        const noParentTags = group.tags.filter(tag => !group.tags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim)) && !tag.startsWith(tagSettings.colorTag));
         kanbanString += `${noParentTags.join(', ')}\n`;
       }
       
