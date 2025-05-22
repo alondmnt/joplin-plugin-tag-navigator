@@ -10,6 +10,11 @@ import { DatabaseManager } from './db';
 import { escapeRegex } from './utils';
 
 /**
+ * The priority order for checkbox states
+ */
+const CHECKBOX_STATE_ORDER = ['Open', 'Ongoing', 'In question', 'Blocked', 'Done', 'Obsolete'];
+
+/**
  * Checkbox information for a line in a group
  */
 export interface CheckboxItem {
@@ -44,7 +49,7 @@ export async function processResultsForKanban(
   filteredResults: GroupedResult[]
 ): Promise<{ [state: string]: KanbanItem[] }> {
   // Define checkbox state patterns and their corresponding kanban categories
-  const checkboxStates = {
+  const checkboxPatterns = {
     'Open': /- \[ \]/,
     'In question': /- \[\?\]/,
     'Ongoing': /- \[\@\]/,
@@ -52,16 +57,20 @@ export async function processResultsForKanban(
     'Obsolete': /- \[~\]/,
     'Done': /- \[x\]/
   };
+  
+  // Create checkboxStates using the order from CHECKBOX_STATE_ORDER
+  const checkboxStates: { [key: string]: RegExp } = {};
+  for (const state of CHECKBOX_STATE_ORDER) {
+    if (state in checkboxPatterns) {
+      checkboxStates[state] = checkboxPatterns[state];
+    }
+  }
 
   // Initialize result object with empty arrays for each state
-  const result: { [state: string]: KanbanItem[] } = {
-    'Open': [],
-    'In question': [],
-    'Ongoing': [],
-    'Blocked': [],
-    'Obsolete': [],
-    'Done': []
-  };
+  const result: { [state: string]: KanbanItem[] } = {};
+  for (const state of CHECKBOX_STATE_ORDER) {
+    result[state] = [];
+  }
 
   // Track already processed content to avoid duplication
   const processedContent = new Map<string, { state: string, noteId: string, lineNumber: number }>();
@@ -197,14 +206,11 @@ function findChildCheckboxes(items: CheckboxItem[], currentIndex: number): {
   let hasNestedCheckbox = false;
   let effectiveState = 'Done'; // Start with "strongest" state
   
-  const stateStrength = {
-    'Open': 1,
-    'In question': 2, 
-    'Ongoing': 3,
-    'Blocked': 4,
-    'Obsolete': 5,
-    'Done': 6
-  };
+  // Generate stateStrength dynamically from CHECKBOX_STATE_ORDER
+  const stateStrength: {[key: string]: number} = {};
+  CHECKBOX_STATE_ORDER.forEach((state, index) => {
+    stateStrength[state] = index + 1;
+  });
   
   // Look at immediate children
   for (let j = currentIndex + 1; j < items.length; j++) {
@@ -316,10 +322,9 @@ function processHierarchicalItems(
         primaryState = 'Done';
       } else {
         // Find highest priority state using the same logic as in getAllChildCheckboxStates
-        const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete'];
         let foundState = false;
         
-        for (const state of stateOrder) {
+        for (const state of CHECKBOX_STATE_ORDER) {
           if (childStates.includes(state)) {
             primaryState = state;
             foundState = true;
@@ -428,7 +433,6 @@ function processHierarchicalItems(
  */
 function getAllChildCheckboxStates(hierarchy: number[], items: CheckboxItem[], startIdx: number): string[] {
   const states: string[] = [];
-  const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete'];
   
   // Process items at the current level
   for (let i = startIdx; i < hierarchy.length; i++) {
@@ -444,24 +448,19 @@ function getAllChildCheckboxStates(hierarchy: number[], items: CheckboxItem[], s
         const childStates = getAllChildCheckboxStates(childIndices, items, 0);
         
         if (childStates.length > 0) {
-          // If all children are "Done", this parent is "Done"
-          if (childStates.every(state => state === 'Done')) {
-            states.push('Done');
-          } else {
-            // Find the highest priority state
-            let foundState = false;
-            for (const state of stateOrder) {
-              if (childStates.includes(state)) {
-                states.push(state);
-                foundState = true;
-                break;
-              }
+          // Find the highest priority state
+          let foundState = false;
+          for (const state of CHECKBOX_STATE_ORDER) {
+            if (childStates.includes(state)) {
+              states.push(state);
+              foundState = true;
+              break;
             }
-            
-            // Fallback to most common if no priority found
-            if (!foundState) {
-              states.push(findMostCommonState(childStates));
-            }
+          }
+          
+          // Fallback to most common if no priority found
+          if (!foundState) {
+            states.push(findMostCommonState(childStates));
           }
         }
       }
@@ -637,11 +636,10 @@ export async function buildKanban(
 ): Promise<string> {
   // The order of states to display
   const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
-  const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete', 'Done'];
   let kanbanString = '\n';
   
   // Build the kanban board
-  for (const state of stateOrder) {
+  for (const state of CHECKBOX_STATE_ORDER) {
     const groups = kanbanResults[state];
     if (groups.length === 0) continue;
 
