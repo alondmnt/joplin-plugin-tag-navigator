@@ -34,7 +34,10 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Colour tags**: Use colour tags to highlight results in the search panel. Example: #color=red. ([tips](#colour-tags))
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
-    - Display results in a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
+    - Display results:
+        - In a sections (similarly to the the panel).
+        - In a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
+        - In a kanban board. ([tips](#kanban-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
@@ -193,6 +196,22 @@ These tags will be accessible in the search panel / notes / tables like standard
   }
 }
 ```
+
+### Kanban views
+
+- To enable kanban view, start by [saving a query](#saved-search-queries). Next, select `Tools --> Tag Navigator --> Toggle search results display in note` (or the corresponding toolbar button) until the saved query shows the property `"displayInNote": "kanban"` and a kanban board appears.
+- The kanban board organises tasks by their checkbox state:
+    - Open tasks `- [ ]`
+    - Ongoing tasks `- [@]` 
+    - Tasks in question `- [?]`
+    - Blocked tasks `- [!]`
+    - Done tasks `- [x]`
+    - Obsolete tasks `- [~]`
+- The kanban note is read only.
+    - Tasks can be moved between states by clicking on the checkbox in the search panel.
+    - Like other note views, it updates automatically as you modify tasks in your notes.
+        - When you open the kanban note, or when you press `Note view: Refresh`.
+- You may use the [YesYouKan](https://joplinapp.org/plugins/plugin/org.joplinapp.plugins.YesYouKan/) plugin to visualise the note as a kanban board.
 
 ### Filtering results
 
