@@ -202,16 +202,17 @@ These tags will be accessible in the search panel / notes / tables like standard
 
 - To enable kanban view, start by [saving a query](#saved-search-queries). Next, select `Tools --> Tag Navigator --> Toggle search results display in note` (or the corresponding toolbar button) until the saved query shows the property `"displayInNote": "kanban"` and a kanban board appears.
 - The kanban board organises tasks by their checkbox state:
-    - Open tasks `- [ ]`
-    - Ongoing tasks `- [@]` 
-    - Tasks in question `- [?]`
-    - Blocked tasks `- [!]`
-    - Done tasks `- [x]`
-    - Obsolete tasks `- [~]`
+    - `- [ ]` Open tasks
+    - `- [@]` Ongoing tasks 
+    - `- [?]` Tasks in question
+    - `- [!]` Blocked tasks
+    - `- [x]` Done tasks
+    - `- [~]` Obsolete tasks
 - The kanban note is read only.
     - Tasks can be moved between states by clicking on the checkbox in the search panel.
     - Like other note views, it updates automatically as you modify tasks in your notes.
-        - When you open the kanban note, or when you press `Note view: Refresh` (Ctrl + Shift + R).
+        - When you open the kanban note;
+        - Or when you press `Note view: Refresh` (Ctrl + Shift + R).
 - You may use the [YesYouKan](https://joplinapp.org/plugins/plugin/org.joplinapp.plugins.YesYouKan/) plugin to visualise the note as a kanban board.
 
 ### Filtering results
