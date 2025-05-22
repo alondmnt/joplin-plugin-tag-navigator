@@ -305,7 +305,7 @@ function processHierarchicalItems(
     if (rootItem.hasCheckbox && rootItem.state && Object.keys(checkboxStates).includes(rootItem.state)) {
       primaryState = rootItem.state;
     } else {
-      // Check if all child checkboxes are "Done" recursively
+      // Use the recursive getAllChildCheckboxStates to determine state based on children
       const childStates = getAllChildCheckboxStates(hierarchy, items, 0);
       
       if (childStates.length === 0) {
@@ -315,19 +315,20 @@ function processHierarchicalItems(
         // All checkboxes are "Done"
         primaryState = 'Done';
       } else {
-        // Mixed states - find the most restrictive non-Done state
-        // Order of priority: Open, In question, Ongoing, Blocked, Obsolete
+        // Find highest priority state using the same logic as in getAllChildCheckboxStates
         const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete'];
+        let foundState = false;
         
         for (const state of stateOrder) {
           if (childStates.includes(state)) {
             primaryState = state;
+            foundState = true;
             break;
           }
         }
         
         // Fallback to most common state if no priority state found
-        if (!primaryState) {
+        if (!foundState) {
           primaryState = findMostCommonState(childStates);
         }
       }
@@ -427,16 +428,89 @@ function processHierarchicalItems(
  */
 function getAllChildCheckboxStates(hierarchy: number[], items: CheckboxItem[], startIdx: number): string[] {
   const states: string[] = [];
+  const stateOrder = ['Open', 'In question', 'Ongoing', 'Blocked', 'Obsolete'];
   
+  // Process items at the current level
   for (let i = startIdx; i < hierarchy.length; i++) {
     const item = items[hierarchy[i]];
     
     if (item.hasCheckbox && item.state) {
       states.push(item.state);
+    } else {
+      // For items without checkboxes, derive state from their children recursively
+      const childIndices = findChildIndices(hierarchy, items, i);
+      
+      if (childIndices.length > 0) {
+        const childStates = getAllChildCheckboxStates(childIndices, items, 0);
+        
+        if (childStates.length > 0) {
+          // If all children are "Done", this parent is "Done"
+          if (childStates.every(state => state === 'Done')) {
+            states.push('Done');
+          } else {
+            // Find the highest priority state
+            let foundState = false;
+            for (const state of stateOrder) {
+              if (childStates.includes(state)) {
+                states.push(state);
+                foundState = true;
+                break;
+              }
+            }
+            
+            // Fallback to most common if no priority found
+            if (!foundState) {
+              states.push(findMostCommonState(childStates));
+            }
+          }
+        }
+      }
     }
   }
   
   return states.filter(state => state); // Filter out empty states
+}
+
+/**
+ * Finds child indices within a hierarchy for a given parent
+ */
+function findChildIndices(hierarchy: number[], items: CheckboxItem[], parentIndex: number): number[] {
+  const childIndices: number[] = [];
+  const parentItem = items[hierarchy[parentIndex]];
+  const parentLevel = parentItem.level;
+  let minChildLevel = Infinity;
+  
+  // First pass: find the minimum indentation level of direct children
+  for (let i = parentIndex + 1; i < hierarchy.length; i++) {
+    const currentItem = items[hierarchy[i]];
+    
+    // Stop when we reach the same or lower indentation level
+    if (currentItem.level <= parentLevel) {
+      break;
+    }
+    
+    // Track the minimum child indentation level
+    if (currentItem.level < minChildLevel) {
+      minChildLevel = currentItem.level;
+    }
+  }
+  
+  // Second pass: add only direct children
+  for (let i = parentIndex + 1; i < hierarchy.length; i++) {
+    const currentItem = items[hierarchy[i]];
+    
+    // Stop when we reach the same or lower indentation level
+    if (currentItem.level <= parentLevel) {
+      break;
+    }
+    
+    // Only add direct children (with the minimum indentation level found)
+    if (currentItem.level === minChildLevel) {
+      childIndices.push(hierarchy[i]);
+    }
+  }
+  
+  return childIndices;
 }
 
 /**
