@@ -210,7 +210,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 - The kanban note is read only.
     - Tasks can be moved between states by clicking on the checkbox in the search panel.
     - Like other note views, it updates automatically as you modify tasks in your notes.
-        - When you open the kanban note, or when you press `Note view: Refresh`.
+        - When you open the kanban note, or when you press `Note view: Refresh` (Ctrl + Shift + R).
 - You may use the [YesYouKan](https://joplinapp.org/plugins/plugin/org.joplinapp.plugins.YesYouKan/) plugin to visualise the note as a kanban board.
 
 ### Filtering results
@@ -260,6 +260,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 | --- | ------ |
 | Ctrl + Shift + T | Toggle search panel |
 | Ctrl + Shift + I | Focus on search panel (search tag / insert tag) |
+| Ctrl + Shift + R | Refresh the current note view |
 | Ctrl + Shift + D | Update tag database |
 | Ctrl + Shift + L | Load search query from current note |
 
