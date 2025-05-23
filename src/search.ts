@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { getTagSettings } from './settings';
+import { getResultSettings, getTagSettings, TagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
 import { clearObjectReferences } from './utils';
@@ -31,6 +31,7 @@ export interface GroupedResult {
   notebook?: string;     // Notebook name
   updatedTime?: number;  // Last update timestamp
   createdTime?: number;  // Creation timestamp
+  tags?: string[];       // Array of unique tags for sorting
 }
 
 /** Cached regex patterns */
@@ -43,20 +44,48 @@ export const REGEX = {
  * @param db Note database to search in
  * @param query 2D array of queries representing DNF (Disjunctive Normal Form)
  * @param groupingMode The grouping mode to use, if not provided, the default from settings will be used
+ * @param sortOptions Optional sorting configuration (sortBy and sortOrder)
  * @returns Array of grouped search results
  */
 export async function runSearch(
   db: NoteDatabase, 
   query: Query[][],
-  groupingMode: string
+  groupingMode: string,
+  sortOptions?: {
+    sortBy?: string,
+    sortOrder?: string
+  }
 ): Promise<GroupedResult[]> {
   let currentNote = (await joplin.workspace.selectedNote());
-  const colorTag = await joplin.settings.value('itags.colorTag');
+  const settings = await getTagSettings();
+  const resultSettings = await getResultSettings();
   if (!groupingMode) {
-    groupingMode = await joplin.settings.value('itags.resultGrouping');
+    groupingMode = resultSettings.resultGrouping;
   }
   const queryResults = await getQueryResults(db, query, currentNote);
-  const groupedResults = await processQueryResults(db, queryResults, colorTag, groupingMode);
+  let groupedResults = await processQueryResults(
+    db,
+    queryResults,
+    settings.colorTag,
+    groupingMode,
+    settings.tagPrefix,
+    settings.spaceReplace
+  );
+
+  if (sortOptions?.sortBy) {
+    const tagSettings = await getTagSettings();
+    groupedResults = sortResults(groupedResults, sortOptions, tagSettings);
+
+  } else {
+    if (resultSettings.resultSort) {
+      const tagSettings = await getTagSettings();
+      groupedResults = sortResults(groupedResults, {
+        sortBy: resultSettings.resultSort,
+        sortOrder: resultSettings.resultOrder
+      }, tagSettings);
+    }
+  }
+
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
@@ -233,7 +262,9 @@ async function processQueryResults(
   db: NoteDatabase,
   queryResults: ResultSet,
   colorTag: string,
-  groupingMode: string
+  groupingMode: string,
+  tagPrefix: string,
+  spaceReplace: string
 ): Promise<GroupedResult[]> {
   const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
@@ -275,6 +306,19 @@ async function processQueryResults(
         continue;
       }
 
+      // Extract unique tags from all matched lines
+      const uniqueTags: Set<string> = new Set();
+      for (const lineNumber of lineNumbers) {
+        const lineTags = note.getTagsAtLine(lineNumber);
+        for (const tag of lineTags) {
+          // Format tag (remove prefix, normalize spaces)
+          const formattedTag = tag.replace(tagPrefix, '')
+            .replace(RegExp(spaceReplace, 'g'), ' ')
+            .toLowerCase();
+          uniqueTags.add(formattedTag);
+        }
+      }
+
       const colorResult: GroupedResult = {
         externalId,
         lineNumbers: [lineNumbers],
@@ -282,6 +326,7 @@ async function processQueryResults(
         html: [],
         color: color,
         title: '',
+        tags: Array.from(uniqueTags).sort((a, b) => a.localeCompare(b)),
       };
 
       groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode));
@@ -532,4 +577,99 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
     }
 
     return groupText.join('\n');
+}
+
+/**
+ * Sorts results based on specified criteria
+ * @param results Array of results to sort
+ * @param options Sorting configuration
+ * @param tagSettings Configuration for tag formatting
+ * @returns Sorted array of results
+ */
+export function sortResults(
+  results: GroupedResult[], 
+  options: { 
+    sortBy?: string, 
+    sortOrder?: string 
+  },
+  tagSettings: TagSettings
+): GroupedResult[] {
+  const sortByArray = options?.sortBy?.toLowerCase()
+    .split(',')
+    .map(s => s.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
+    .filter(s => s);
+
+  const sortOrderArray = options?.sortOrder?.toLowerCase()
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s);
+
+  if (!sortByArray?.length) return results;
+
+  return results.sort((a, b) => {
+    for (let i = 0; i < sortByArray.length; i++) {
+      const sortBy = sortByArray[i];
+      // Get corresponding sort order or default to 'asc'
+      const sortOrder = sortOrderArray?.[i]?.startsWith('desc') ? -1 : 1;
+
+      let comparison = 0;
+
+      if (sortBy === 'created') {
+        comparison = (a.createdTime - b.createdTime) * sortOrder;
+      } else if (sortBy === 'modified') {
+        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+      } else if (sortBy === 'notebook') {
+        comparison = a.notebook.localeCompare(b.notebook) * sortOrder;
+      } else if (sortBy === 'title') {
+        comparison = a.title.localeCompare(b.title) * sortOrder;
+      } else if (a.tags && b.tags) {
+        // Find matching tags for sorting
+        const aTagValue = a.tags.find(tag => 
+          tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
+        ) || a.tags.find(tag => tag === sortBy);
+
+        const bTagValue = b.tags.find(tag => 
+          tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
+        ) || b.tags.find(tag => tag === sortBy);
+
+        // Handle missing tags - put them at the end regardless of sort order
+        if (!aTagValue && !bTagValue) {
+          comparison = 0; // Both missing, treat as equal
+        } else if (!aTagValue) {
+          comparison = 1; // a missing, always put at end
+        } else if (!bTagValue) {
+          comparison = -1; // b missing, always put at end
+        } else {
+          // Both have values, proceed with normal comparison
+          // Try to extract values after delimiter
+          // If there is no delimiter, use the whole tag value
+          let aValue = aTagValue;
+          let bValue = bTagValue;
+          if (aTagValue.includes(tagSettings.valueDelim)) {
+            aValue = aTagValue.split(tagSettings.valueDelim)[1];
+          }
+          if (bTagValue.includes(tagSettings.valueDelim)) {
+            bValue = bTagValue.split(tagSettings.valueDelim)[1];
+          }
+
+          // Try numeric comparison first
+          const aNum = Number(aValue);
+          const bNum = Number(bValue);
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            comparison = (aNum - bNum) * sortOrder;
+          } else {
+            comparison = aValue.localeCompare(bValue) * sortOrder;
+          }
+        }
+      } else {
+        // Default to modified time if we don't have tags
+        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+      }
+
+      if (comparison !== 0) return comparison;
+    }
+
+    // Break ties using minimum line number
+    return (Math.min(...a.lineNumbers[0]) - Math.min(...b.lineNumbers[0]));
+  });
 }

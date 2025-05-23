@@ -20,7 +20,7 @@ const REGEX = {
  * Represents a table result with associated tags
  */
 interface TableResult extends GroupedResult {
-  tags: { [key: string]: string };
+  columns: { [key: string]: string };
 }
 
 interface TagViewInfo {
@@ -82,8 +82,12 @@ export async function displayResultsInNote(
 
   const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
   const groupingMode = savedQuery.displayInNote === 'kanban' ? 'item' : undefined;
-  const results = await runSearch(db, savedQuery.query, groupingMode);
-  const filteredResults = await filterAndSortResults(results, savedQuery.filter, tagSettings, savedQuery.options);
+  
+  // Run search with sorting options
+  const results = await runSearch(db, savedQuery.query, groupingMode, savedQuery.options);
+  
+  // Apply filtering
+  const filteredResults = await filterResults(results, savedQuery.filter, tagSettings);
 
   if (filteredResults.length === 0) {
     await removeResults(note);
@@ -197,40 +201,36 @@ export async function removeResults(note: { id: string, body: string }): Promise
  * @param options Optional sorting configuration
  * @returns Filtered and sorted results array
  */
-async function filterAndSortResults(
+async function filterResults(
   results: GroupedResult[], 
   filter: string, 
-  tagSettings: TagSettings, 
-  options?: { 
-    sortBy?: string, 
-    sortOrder?: string 
-  }
+  tagSettings: TagSettings
 ): Promise<GroupedResult[]> {
-  // Sort results
-  const sortBy = options?.sortBy || await joplin.settings.value('itags.resultSort');
-  const sortOrder = options?.sortBy ? options?.sortOrder : await joplin.settings.value('itags.resultOrder');
-  let sortedResults = sortResults(results, { sortBy, sortOrder }, tagSettings);
-  sortedResults = sortedResults.filter(note => note.text.length > 0);
-
-  if (!filter) { return sortedResults; }
+  if (!filter) { return results; }
 
   const highlight = await joplin.settings.value('itags.resultMarkerInNote');
   const searchWithRegex = await joplin.settings.value('itags.searchWithRegex');
   const parsedFilter = parseFilter(filter, 3, !searchWithRegex);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
-  for (const note of sortedResults) {
+
+  let filteredResults = [...results]; // Create a copy to avoid modifying the original
+
+  for (const note of filteredResults) {
     // Filter out lines that don't contain the filter
-    const filteredIndices = note.text.map((_, i) => i).filter(i => containsFilter(note.text[i], filter, 2, searchWithRegex,'|' + note.title + '|' + note.notebook));
+    const filteredIndices = note.text.map((_, i) => i).filter(i => 
+      containsFilter(note.text[i], filter, 2, searchWithRegex, '|' + note.title + '|' + note.notebook)
+    );
+
     note.text = note.text.filter((_, i) => filteredIndices.includes(i));
     note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
+
     if ((parsedFilter.length > 0 && highlight)) {
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
   }
-  sortedResults = sortedResults.filter(note => note.text.length > 0);
-
-  return sortedResults
+  
+  return filteredResults.filter(note => note.text.length > 0);
 }
 
 /**
@@ -414,7 +414,7 @@ async function processResultForTable(
   }
 
   // Create a mapping from column (parent tag) to value (child tag)
-  tableResult.tags = tagInfo
+  tableResult.columns = tagInfo
     .filter(info => info.child)
     .reduce((acc, info) => {
       let parent = tagInfo.find(
@@ -489,9 +489,9 @@ function sortResults<T extends TableResult | GroupedResult>(
       } else if (sortBy === 'title') {
         comparison = a.title.localeCompare(b.title) * sortOrder;
       } else if (isTableResult(a) && isTableResult(b)) {
-        const aValue = a.tags[sortBy]?.replace(sortBy + '/', '')
+        const aValue = a.columns[sortBy]?.replace(sortBy + '/', '')
           ?.replace(sortBy + tagSettings.valueDelim, '') || '';
-        const bValue = b.tags[sortBy]?.replace(sortBy + '/', '')
+        const bValue = b.columns[sortBy]?.replace(sortBy + '/', '')
           ?.replace(sortBy + tagSettings.valueDelim, '') || '';
         const aNum = Number(aValue);
         const bNum = Number(bValue);
@@ -565,7 +565,7 @@ async function buildTable(
   let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
   resultsString += `|${tableColumns.map((col) => col === 'title' ? '---' : ':---:').join('|')}|\n`;
   for (const result of tableResults) {
-    if (Object.keys(result.tags).length === 0) { continue; }
+    if (Object.keys(result.columns).length === 0) { continue; }
     let row = '|';
     
     // Check if we should display colors in note view
@@ -593,7 +593,7 @@ async function buildTable(
       } else if (column === 'created') {
         row += ` ${new Date(result.createdTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
       } else {
-        const tagValue = result.tags[column] || '';
+        const tagValue = result.columns[column] || '';
         if (!tagValue) {
           row += ' |';
         } else if (tagValue === column) {

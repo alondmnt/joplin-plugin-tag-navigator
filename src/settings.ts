@@ -31,6 +31,12 @@ export interface TagSettings {
   tableCase: string;           // Case formatting for table view
 }
 
+export interface ResultSettings {
+  resultSort: string;
+  resultOrder: string;
+  resultGrouping: string;
+}
+
 /**
  * Retrieves all tag-related settings
  * @returns TagSettings object containing all configuration
@@ -76,6 +82,19 @@ export async function getTagSettings(): Promise<TagSettings> {
     valueDelim: settings['itags.valueDelim'] as string || '=',
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
     tableCase: settings['itags.tableCase'] as string || 'title'
+  };
+}
+
+export async function getResultSettings(): Promise<ResultSettings> {
+  const settings = await joplin.settings.values([
+    'itags.resultSort',
+    'itags.resultOrder',
+    'itags.resultGrouping',
+  ]);
+  return {
+    resultSort: settings['itags.resultSort'] as string || 'modified',
+    resultOrder: settings['itags.resultOrder'] as string || 'desc',
+    resultGrouping: settings['itags.resultGrouping'] as string || 'heading',
   };
 }
 

@@ -4,7 +4,7 @@ import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
-import { GroupedResult, Query, runSearch } from './search';
+import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 
@@ -79,6 +79,8 @@ interface PanelMessage {
   source?: string;
   target?: string;
   noteState?: string;
+  currentSortBy?: string;
+  currentSortOrder?: string;
 }
 
 /**
@@ -152,6 +154,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
         <option value="created">Created</option>
         <option value="title">Title</option>
         <option value="notebook">Notebook</option>
+        <option value="custom">Custom</option>
       </select>
       <button id="itags-search-resultOrder" class="hidden" title="Ascend / descend"><b>↑</b></button>
       <button id="itags-search-resultToggle" class="hidden" title="Collapse / expand">v</button>
@@ -178,8 +181,9 @@ export async function processMessage(
   db: NoteDatabase,
   searchParams: QueryRecord,
   tagSettings: TagSettings,
-  savedNoteState: { [key: string]: boolean }
-): Promise<void> {
+  savedNoteState: { [key: string]: boolean },
+  lastSearchResults: GroupedResult[]
+): Promise<GroupedResult[]> {
   if (versionInfo.toggleEditorSupport === null) {
     await initializeVersionInfo();
   }
@@ -189,14 +193,21 @@ export async function processMessage(
     await updatePanelNoteData(searchPanel, db);
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelSettings(searchPanel);
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     await updatePanelNoteState(searchPanel, savedNoteState);
 
   } else if (message.name === 'searchQuery') {
     searchParams.query = JSON.parse(message.query);
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+
+  } else if (message.name === 'showSortDialog') {
+    // Show a dialog to configure custom sort options
 
   } else if (message.name === 'insertTag') {
     try {
@@ -270,8 +281,9 @@ export async function processMessage(
     await setCheckboxState(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   } else if (message.name === 'removeTag') {
     const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`, 'ig');  // Case insensitive
@@ -282,11 +294,12 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   } else if (message.name === 'removeAll') {
-    await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
+    lastSearchResults = await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
 
   } else if (message.name === 'replaceTag') {
     const tagRegex = new RegExp(`${escapeRegex(message.oldTag)}`, 'ig');  // Case insensitive
@@ -297,23 +310,44 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   } else if (message.name === 'replaceAll') {
-    await replaceTagAll(message, db, tagSettings, searchPanel, searchParams);
+    lastSearchResults = await replaceTagAll(message, db, tagSettings, searchPanel, searchParams);
 
   } else if (message.name === 'addTag') {
     await addTagToText(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    lastSearchResults = results; // Cache the results
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   } else if (message.name === 'updateSetting') {
 
     if (message.field.startsWith('result')) {
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
+
+      // Update searchParams options if setting customized sort options
+      if (message.field === 'resultSort') {
+        if (!searchParams.options) {
+          searchParams.options = {sortOrder: 'desc'};
+        }
+        searchParams.options.sortBy = message.value;
+        const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+        await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+
+      } else if (message.field === 'resultOrder') {
+        if (!searchParams.options) {
+          searchParams.options = {sortBy: 'modified'};
+        }
+        searchParams.options.sortOrder = message.value;
+        const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+        await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+      }
+
     } else if (message.field.startsWith('show')) {
       await joplin.settings.setValue(`itags.${message.field}`, message.value);
     } else if (message.field === 'expandedTagList') {
@@ -321,7 +355,7 @@ export async function processMessage(
     } else if (message.field === 'filter') {
       searchParams.filter = message.value;
     } else {
-      console.error('Error in updateSetting: Invalid setting field.');
+      console.error(`Error in updateSetting: Invalid setting field: ${message.field}`);
     }
 
   } else if (message.name === 'updateNoteState') {
@@ -344,6 +378,7 @@ export async function processMessage(
       console.error('Failed to parse note state:', message.noteState, e);
     }
   }
+  return lastSearchResults;
 }
 
 /**
@@ -401,15 +436,22 @@ export async function updatePanelNoteData(panel: string, db: NoteDatabase): Prom
  * @param panel - Panel ID to update
  * @param results - Search results to display
  * @param query - Current search query
+ * @param options - Sorting options
  */
 export async function updatePanelResults(
   panel: string, 
   results: GroupedResult[], 
-  query: Query[][]
+  query: Query[][],
+  options?: {
+    sortBy?: string;
+    sortOrder?: string;
+  }
 ): Promise<void> {
   const resultMarker = await joplin.settings.value('itags.resultMarker');
   const colorTodos = await joplin.settings.value('itags.colorTodos');
   const tagSettings = await getTagSettings();
+
+  // Just render the HTML and pass along the sorting options that were used
   const intervalID = setInterval(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
@@ -417,11 +459,13 @@ export async function updatePanelResults(
           name: 'updateResults',
           results: JSON.stringify(renderHTML(results, tagSettings.tagRegex, resultMarker, colorTodos)),
           query: JSON.stringify(query),
+          sortBy: options?.sortBy || '',
+          sortOrder: options?.sortOrder || '',
         });
       }
       clearInterval(intervalID);
     }
-    , 200
+    , 100
   );
 }
 
@@ -680,7 +724,7 @@ async function replaceTagAll(
   tagSettings: TagSettings,
   searchPanel: string,
   searchParams: QueryRecord
-): Promise<void> {
+): Promise<GroupedResult[]> {
     const cancel = await joplin.views.dialogs.showMessageBox(
       `Are you sure you want to replace the tag ${message.oldTag} with ${message.newTag} in ALL of your notes?`);
     if (cancel) { return; }
@@ -710,8 +754,10 @@ async function replaceTagAll(
     // update the search panel
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined);
-    await updatePanelResults(searchPanel, results, searchParams.query);
+    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+
+    return results;
 }
 
 /**
@@ -728,7 +774,7 @@ async function removeTagAll(
   tagSettings: TagSettings,
   searchPanel: string,
   searchParams: QueryRecord
-): Promise<void> {
+): Promise<GroupedResult[]> {
   const cancel = await joplin.views.dialogs.showMessageBox(
     `Are you sure you want to remove the tag ${message.tag} from ALL of your notes?`);
   if (cancel) { return; }
@@ -745,8 +791,10 @@ async function removeTagAll(
   }
   // update the search panel
   await updatePanelTagData(searchPanel, db);
-  const results = await runSearch(db, searchParams.query, undefined);
-  await updatePanelResults(searchPanel, results, searchParams.query);
+  const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+  await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+
+  return results;
 }
 
 /**

@@ -48,6 +48,9 @@ const eventListenersMap = new WeakMap();  // Map to store event listeners and cl
 
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
+    // Store the message for later access
+    lastMessage = message;
+
     if (message.message.name === 'updateTagData') {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
@@ -68,18 +71,45 @@ webviewApi.onMessage((message) => {
         updateQueryArea();
         sendSearchMessage();
 
-    } else if (message.message.name === 'updateResults') {
-        results = JSON.parse(message.message.results);
-        const searchQuery = JSON.stringify(queryGroups);
-        if (searchQuery === message.message.query) {
-            updateResultsArea();
-        }
-
-    } else if (message.message.name === 'focusTagFilter') {
-        tagFilter.focus();
-
     } else if (message.message.name === 'updateSettings') {
         updatePanelSettings(message);
+
+    } else if (message.message.name === 'updateResults') {
+        try {
+            results = JSON.parse(message.message.results);
+        } catch (e) {
+            console.error('Failed to parse results:', message.message.results, e);
+        }
+
+        // Set sort value if provided
+        if (message.message.sortBy) {
+            // If sortBy is not in the options, add it
+            if (!Array.from(resultSort.options).some(option => option.value === message.message.sortBy)) {
+                // Remove elements from resultSort (iterate backwards to avoid index issues)
+                for (let i = resultSort.options.length - 1; i >= 0; i--) {
+                    const option = resultSort.options[i];
+                    if (!['modified', 'created', 'title', 'notebook', 'custom'].includes(option.value)) {
+                        resultSort.removeChild(option);
+                    }
+                }
+                const option = document.createElement('option');
+                option.value = message.message.sortBy;
+                option.text = message.message.sortBy;
+                resultSort.add(option);
+            }
+            resultSort.value = message.message.sortBy;
+        }
+
+        // Set sort order if provided
+        if (message.message.sortOrder) {
+            // Set it by the first letter of the sortOrder (even though it can be a list)
+            resultOrderState = message.message.sortOrder.toLowerCase().startsWith('a') ? 'asc' : 'desc';
+            resultOrder.textContent = resultOrderState === 'asc' ? '↓': '↑';
+        }
+
+        updateResultsArea();
+    } else if (message.message.name === 'focusTagFilter') {
+        tagFilter.focus();
 
     } else if (message.message.name === 'updateNoteState') {
         // Restore saved note state from main process (true = expanded/visible, false = collapsed/hidden)
@@ -394,30 +424,11 @@ function createQueryElement(item, groupIndex, tagIndex) {
 }
 
 function updateResultsArea() {
-    // Sort results
+    // Filter results
     const filter = resultFilter.value;
-    const lineSort = (resultOrderState === 'asc') ? 1 : -1;
-    results = results.sort((a, b) => {
-        let comparison;
-        if (resultSort.value === 'title') {
-            comparison = a.title.localeCompare(b.title);
-        } else if (resultSort.value === 'modified') {
-            comparison = a.updatedTime - b.updatedTime;
-        } else if (resultSort.value === 'created') {
-            comparison = a.createdTime - b.createdTime;
-        } else if (resultSort.value === 'notebook') {
-            comparison = a.notebook.localeCompare(b.notebook);
-        }
-        return comparison || 
-            (lineSort * (Math.min(...a.lineNumbers[0]) - Math.min(...b.lineNumbers[0])));
-    });
-    if (resultOrderState === 'desc') {
-        results = results.reverse();
-    }
-
     // Clear existing results and event listeners
     clearNode(resultsArea);
-    
+
     let displayedNoteCount = 0;
     for (let index = 0; index < results.length; index++) {
         const result = results[index];
@@ -1803,11 +1814,37 @@ addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
     }
 });
 
-addEventListenerWithTracking(resultSort, 'change', () => {
-    sendSetting('resultSort', resultSort.value);
-    updateResultsArea();
-});
+// Add custom sort dialog when "Custom..." is selected
+addEventListenerWithTracking(resultSort, 'change', (event) => {
+    if (resultSort.value === 'custom') {
+        // Get current sortBy and sortOrder values from last message
+        let currentSortBy = '';
+        let currentSortOrder = '';
 
+        if (lastMessage && lastMessage.message && lastMessage.message.sortBy) {
+            currentSortBy = lastMessage.message.sortBy;
+        }
+
+        if (lastMessage && lastMessage.message && lastMessage.message.sortOrder) {
+            currentSortOrder = lastMessage.message.sortOrder;
+        }
+
+        // Send message to show the sort dialog on the server side
+        webviewApi.postMessage({
+            name: 'showSortDialog',
+            currentSortBy: currentSortBy,
+            currentSortOrder: currentSortOrder
+        });
+
+        // Revert dropdown to previous value until dialog is confirmed
+        const prevValue = resultSort.getAttribute('data-prev-value') || 'modified';
+        resultSort.value = prevValue;
+    } else {
+        // Store selected value as previous for potential revert
+        resultSort.setAttribute('data-prev-value', resultSort.value);
+        sendSetting('resultSort', resultSort.value);
+    }
+});
 
 addEventListenerWithTracking(resultOrder, 'click', () => {
     if (resultOrderState === 'asc') {
@@ -1818,7 +1855,6 @@ addEventListenerWithTracking(resultOrder, 'click', () => {
         resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
     }
     sendSetting('resultOrder', resultOrderState);
-    updateResultsArea();
 });
 
 addEventListenerWithTracking(resultToggle, 'click', () => {
@@ -1828,6 +1864,7 @@ addEventListenerWithTracking(resultToggle, 'click', () => {
         resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
         sendSetting('resultToggle', true);
         return;
+
     } else if (resultToggleState === 'collapse') {
         expandResults();
         resultToggleState = 'expand';

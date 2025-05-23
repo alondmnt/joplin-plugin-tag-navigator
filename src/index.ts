@@ -5,16 +5,16 @@ import { getTagSettings, registerSettings } from './settings';
 import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
-import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { DatabaseManager, processAllNotes, processNote } from './db';
 import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults, viewList } from './noteView';
-import { runSearch } from './search';
+import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
+let lastSearchResults: GroupedResult[] = []; // Cache for search results
 
 // Store for collapsed/expanded state of note cards in the search panel
 let savedNoteState: { [key: string]: boolean } = {};
@@ -43,8 +43,9 @@ joplin.plugins.register({
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
-      await updatePanelResults(searchPanel, results, searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+      lastSearchResults = results; // Cache the results
+      await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     }, 1000);
 
     // Periodic conversion of tags
@@ -71,7 +72,7 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState);
+      lastSearchResults = await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState, lastSearchResults);
       clearObjectReferences(message);
     });
     await registerSearchPanel(searchPanel);
@@ -97,8 +98,9 @@ joplin.plugins.register({
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
-      await updatePanelResults(searchPanel, results, searchParams.query);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+      lastSearchResults = results; // Cache the results
+      await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
       // Update note view
       if (await joplin.settings.value('itags.periodicNoteUpdate')) {
@@ -169,8 +171,9 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
-        await updatePanelResults(searchPanel, results, searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+        lastSearchResults = results; // Cache the results
+        await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
     });
 
@@ -535,8 +538,9 @@ joplin.plugins.register({
       if (message.name === 'searchTag') {
         searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: 'false' };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined);
-        await updatePanelResults(searchPanel, results, searchParams.query);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+        lastSearchResults = results; // Cache the results
+        await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
       clearObjectReferences(message);
     });

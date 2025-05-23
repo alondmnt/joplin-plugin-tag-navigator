@@ -385,7 +385,7 @@ function processHierarchicalItems(
     }
     
     // Sort tags alphabetically
-    const sortedTags = Array.from(allTags).sort();
+    const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
     
     // Process the heading to remove tag mentions
     let processedHeading = heading;
@@ -567,7 +567,7 @@ function processStandaloneItems(
     }
     
     // Sort tags alphabetically
-    const sortedTags = Array.from(allTags).sort();
+    const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
     
     // Process the heading to remove tag mentions
     let processedHeading = heading;
