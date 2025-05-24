@@ -2,7 +2,7 @@ import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
-import { GroupedResult, runSearch, normalizeIndentation } from './search';
+import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
 import { NoteDatabase } from './db';
 import { processResultsForKanban, buildKanban } from './kanban';
 
@@ -437,81 +437,7 @@ async function processResultForTable(
   return [tableResult, tagInfo];
 }
 
-/**
- * Type guard to check if a result is a TableResult
- */
-function isTableResult(result: TableResult | GroupedResult): result is TableResult {
-  return 'tags' in result;
-}
 
-/**
- * Sorts results based on specified criteria
- * @param results Array of results to sort
- * @param options Sorting configuration
- * @param tagSettings Configuration for tag formatting
- * @returns Sorted array of results
- * @template T Type of results (TableResult or GroupedResult)
- */
-function sortResults<T extends TableResult | GroupedResult>(
-  results: T[], 
-  options: { 
-    sortBy?: string, 
-    sortOrder?: string 
-  },
-  tagSettings: TagSettings
-): T[] {
-  const sortByArray = options?.sortBy?.toLowerCase()
-    .split(',')
-    .map(s => s.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
-    .filter(s => s);
-
-  const sortOrderArray = options?.sortOrder?.toLowerCase()
-    .split(',')
-    .map(s => s.trim())
-    .filter(s => s);
-
-  if (!sortByArray?.length) return results;
-
-  return results.sort((a, b) => {
-    for (let i = 0; i < sortByArray.length; i++) {
-      const sortBy = sortByArray[i];
-      // Get corresponding sort order or default to 'asc'
-      const sortOrder = sortOrderArray?.[i]?.startsWith('desc') ? -1 : 1;
-
-      let comparison = 0;
-
-      if (sortBy === 'created') {
-        comparison = (a.createdTime - b.createdTime) * sortOrder;
-      } else if (sortBy === 'modified') {
-        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
-      } else if (sortBy === 'notebook') {
-        comparison = a.notebook.localeCompare(b.notebook) * sortOrder;
-      } else if (sortBy === 'title') {
-        comparison = a.title.localeCompare(b.title) * sortOrder;
-      } else if (isTableResult(a) && isTableResult(b)) {
-        const aValue = a.columns[sortBy]?.replace(sortBy + '/', '')
-          ?.replace(sortBy + tagSettings.valueDelim, '') || '';
-        const bValue = b.columns[sortBy]?.replace(sortBy + '/', '')
-          ?.replace(sortBy + tagSettings.valueDelim, '') || '';
-        const aNum = Number(aValue);
-        const bNum = Number(bValue);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          comparison = (aNum - bNum) * sortOrder;
-        } else {
-          comparison = aValue.localeCompare(bValue) * sortOrder;
-        }
-      } else {
-        // Default to modified time for GroupedResults
-        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
-      }
-
-      if (comparison !== 0) return comparison;
-    }
-    // Break ties using minimum line number
-    // Always sort in ascending order
-    return (Math.min(...a.lineNumbers[0]) - Math.min(...b.lineNumbers[0]));
-  });
-}
 
 /**
  * Builds a markdown table from the results

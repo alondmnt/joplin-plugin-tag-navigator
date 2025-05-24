@@ -585,15 +585,16 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
  * @param options Sorting configuration
  * @param tagSettings Configuration for tag formatting
  * @returns Sorted array of results
+ * @template T Type of results (must extend GroupedResult)
  */
-export function sortResults(
-  results: GroupedResult[], 
+export function sortResults<T extends GroupedResult>(
+  results: T[], 
   options: { 
     sortBy?: string, 
     sortOrder?: string 
   },
   tagSettings: TagSettings
-): GroupedResult[] {
+): T[] {
   const sortByArray = options?.sortBy?.toLowerCase()
     .split(',')
     .map(s => s.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
