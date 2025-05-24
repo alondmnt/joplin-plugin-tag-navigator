@@ -98,6 +98,8 @@ webviewApi.onMessage((message) => {
                 resultSort.add(option);
             }
             resultSort.value = message.message.sortBy;
+            // Update the data-prev-value attribute to keep it in sync
+            resultSort.setAttribute('data-prev-value', message.message.sortBy);
         }
 
         // Set sort order if provided
@@ -267,6 +269,8 @@ function updatePanelSettings(message) {
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
     resultSort.value = settings.resultSort;
+    // Initialize the data-prev-value attribute with the current value
+    resultSort.setAttribute('data-prev-value', settings.resultSort);
     resultOrderState = settings.resultOrder;
     resultOrder.innerHTML = resultOrderState === 'asc' ? 
         '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
@@ -1814,7 +1818,7 @@ addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
     }
 });
 
-// Add custom sort dialog when "Custom..." is selected
+// Handle sort option selection
 addEventListenerWithTracking(resultSort, 'change', (event) => {
     if (resultSort.value === 'custom') {
         // Get current sortBy and sortOrder values from last message
@@ -1840,20 +1844,26 @@ addEventListenerWithTracking(resultSort, 'change', (event) => {
         const prevValue = resultSort.getAttribute('data-prev-value') || 'modified';
         resultSort.value = prevValue;
     } else {
+        // Handle standard sort options (modified, created, title, notebook)
         // Store selected value as previous for potential revert
         resultSort.setAttribute('data-prev-value', resultSort.value);
+
+        // Send setting update to trigger sorting on the backend
         sendSetting('resultSort', resultSort.value);
     }
 });
 
 addEventListenerWithTracking(resultOrder, 'click', () => {
+    // Toggle the sort order
     if (resultOrderState === 'asc') {
         resultOrderState = 'desc';
-        resultOrder.innerHTML = '<b>↑</b>';  // Button shows the currrent state (desc)
+        resultOrder.innerHTML = '<b>↑</b>';  // Button shows the current state (desc)
     } else if (resultOrderState === 'desc') {
         resultOrderState = 'asc';
         resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
     }
+    
+    // Send setting update to trigger sorting on the backend
     sendSetting('resultOrder', resultOrderState);
 });
 

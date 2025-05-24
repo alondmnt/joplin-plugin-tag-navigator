@@ -328,24 +328,42 @@ export async function processMessage(
   } else if (message.name === 'updateSetting') {
 
     if (message.field.startsWith('result')) {
-      await joplin.settings.setValue(`itags.${message.field}`, message.value);
-
       // Update searchParams options if setting customized sort options
       if (message.field === 'resultSort') {
         if (!searchParams.options) {
           searchParams.options = {sortOrder: 'desc'};
         }
         searchParams.options.sortBy = message.value;
-        const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
-        await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+
+        // Only save standard sort values to persistent settings to avoid enum validation errors
+        // Custom sort values (like 'tag1,tag2') are applied in memory but not persisted
+        const standardSortValues = ['modified', 'created', 'title', 'notebook'];
+        if (standardSortValues.includes(message.value)) {
+          await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        }
+
+        // Only sort and update if we have existing results, otherwise just save the setting
+        if (lastSearchResults && lastSearchResults.length > 0) {
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+        } else {
+          console.debug('No results to sort - lastSearchResults:', lastSearchResults ? lastSearchResults.length : 'null');
+        }
 
       } else if (message.field === 'resultOrder') {
         if (!searchParams.options) {
           searchParams.options = {sortBy: 'modified'};
         }
         searchParams.options.sortOrder = message.value;
-        const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
-        await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+
+        // Save resultOrder to settings (it's not an enum, so no validation issues)
+        await joplin.settings.setValue(`itags.${message.field}`, message.value);
+
+        // Only sort and update if we have existing results, otherwise just save the setting
+        if (lastSearchResults && lastSearchResults.length > 0) {
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+        }
       }
 
     } else if (message.field.startsWith('show')) {
@@ -462,6 +480,8 @@ export async function updatePanelResults(
           sortBy: options?.sortBy || '',
           sortOrder: options?.sortOrder || '',
         });
+      } else {
+        console.debug('Panel not visible, skipping updateResults message');
       }
       clearInterval(intervalID);
     }
