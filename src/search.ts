@@ -610,7 +610,7 @@ export function sortResults<T extends GroupedResult>(
     for (let i = 0; i < sortByArray.length; i++) {
       const sortBy = sortByArray[i];
       // Get corresponding sort order or default to 'asc'
-      const sortOrder = sortOrderArray?.[i]?.startsWith('desc') ? -1 : 1;
+      const sortOrder = sortOrderArray?.[i]?.startsWith('d') ? -1 : 1;
 
       let comparison = 0;
 

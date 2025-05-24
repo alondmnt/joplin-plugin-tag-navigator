@@ -115,6 +115,9 @@ let versionInfo = {
   toggleEditorSupport: null,
 };
 
+// Dialog handle for the sort configuration dialog
+let sortDialogHandle: string | null = null;
+
 async function initializeVersionInfo() {
   const version = await joplin.versionInfo();
   versionInfo.toggleEditorSupport = 
@@ -165,6 +168,9 @@ export async function registerSearchPanel(panel: string): Promise<void> {
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
   await joplin.views.panels.addScript(panel, 'prism.js');
   await joplin.views.panels.addScript(panel, 'prism.css');
+
+  // Create the sort configuration dialog
+  sortDialogHandle = await joplin.views.dialogs.create('sortConfigDialog');
 }
 
 /**
@@ -208,6 +214,10 @@ export async function processMessage(
 
   } else if (message.name === 'showSortDialog') {
     // Show a dialog to configure custom sort options
+    await showCustomSortDialog(
+      message.currentSortBy || '',
+      message.currentSortOrder || '',
+      searchPanel, searchParams, tagSettings, lastSearchResults);
 
   } else if (message.name === 'insertTag') {
     try {
@@ -1110,4 +1120,110 @@ export async function updatePanelQuery(
     query: JSON.stringify(query),
     filter: filter,
   });
+}
+
+/**
+ * Shows the custom sort configuration dialog
+ * @param currentSortBy Current sort by value
+ * @param currentSortOrder Current sort order value
+ * @param searchPanel Panel ID to update
+ * @param searchParams Current search parameters
+ * @param tagSettings Tag configuration settings
+ * @param lastSearchResults Last search results for re-sorting
+ */
+async function showCustomSortDialog(
+  currentSortBy: string,
+  currentSortOrder: string,
+  searchPanel: string,
+  searchParams: QueryRecord,
+  tagSettings: TagSettings,
+  lastSearchResults: GroupedResult[]
+): Promise<void> {
+  try {
+    if (!sortDialogHandle) {
+      throw new Error('Sort dialog not initialized');
+    }
+    // If on mobile, dismiss plugin panels
+    if (versionInfo.toggleEditorSupport) {
+      await joplin.commands.execute('dismissPluginPanels');
+    }
+
+    // Basic HTML escaping function
+    const escapeHtml = (text: string) => {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    };
+
+    await joplin.views.dialogs.setHtml(sortDialogHandle, `
+      <h2>Custom Sort</h2>
+      <form class="sortConfigForm" name="sort-config-form">
+        <div style="margin-bottom: 10px;">
+          <label for="sortBy" style="display: block; margin-bottom: 3px; font-weight: bold;">Sort by:</label>
+          <input type="text" id="sortBy" name="sortBy" value="${escapeHtml(currentSortBy)}" 
+                 placeholder="tag1,tag2 or modified,title" 
+                 style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
+          <small style="opacity: 0.7; font-size: 10px;">
+            Tags or fields (modified, created, title, notebook), comma-separated
+          </small>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="sortOrder" style="display: block; margin-bottom: 3px; font-weight: bold;">Order:</label>
+          <input type="text" id="sortOrder" name="sortOrder" value="${escapeHtml(currentSortOrder)}" 
+                 placeholder="asc,desc or desc" 
+                 style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
+          <small style="opacity: 0.7; font-size: 10px;">
+            asc or desc for each field, comma-separated. Default: asc
+          </small>
+        </div>
+      </form>
+    `);
+
+    // Add buttons to the dialog
+    await joplin.views.dialogs.setButtons(sortDialogHandle, [
+      { id: "apply", title: "Apply" },
+      { id: "cancel", title: "Cancel" }
+    ]);
+
+    // Make dialog size adapt to content
+    await joplin.views.dialogs.setFitToContent(sortDialogHandle, true);
+
+    const result = await joplin.views.dialogs.open(sortDialogHandle);
+    
+    if (result.id === 'apply') {
+      // Get the form data
+      const sortBy = result.formData?.['sort-config-form']?.sortBy?.trim() || '';
+      const sortOrder = result.formData?.['sort-config-form']?.sortOrder?.trim() || '';
+
+      if (sortBy) {
+        // Update search parameters
+        if (!searchParams.options) {
+          searchParams.options = {};
+        }
+        searchParams.options.sortBy = sortBy;
+        searchParams.options.sortOrder = sortOrder || 'asc';
+
+        // Add the custom sort option to the dropdown and apply it
+        await joplin.views.panels.postMessage(searchPanel, {
+          name: 'updateResults',
+          results: JSON.stringify([]), // Empty results to trigger UI update
+          query: JSON.stringify(searchParams.query),
+          sortBy: sortBy,
+          sortOrder: sortOrder || 'asc',
+        });
+
+        // Apply sorting to existing results if available
+        if (lastSearchResults && lastSearchResults.length > 0) {
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in showCustomSortDialog:', error);
+    await joplin.views.dialogs.showMessageBox('Failed to open sort configuration dialog: ' + error.message);
+  }
 }
