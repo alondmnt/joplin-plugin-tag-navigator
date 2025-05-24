@@ -311,9 +311,8 @@ async function processQueryResults(
       for (const lineNumber of lineNumbers) {
         const lineTags = note.getTagsAtLine(lineNumber);
         for (const tag of lineTags) {
-          // Format tag (remove prefix, normalize spaces)
+          // Format tag (remove prefix, keep original format for accurate sorting)
           const formattedTag = tag.replace(tagPrefix, '')
-            .replace(RegExp(spaceReplace, 'g'), ' ')
             .toLowerCase();
           uniqueTags.add(formattedTag);
         }
@@ -597,7 +596,7 @@ export function sortResults<T extends GroupedResult>(
 ): T[] {
   const sortByArray = options?.sortBy?.toLowerCase()
     .split(',')
-    .map(s => s.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
+    .map(s => s.trim())
     .filter(s => s);
 
   const sortOrderArray = options?.sortOrder?.toLowerCase()
