@@ -153,7 +153,7 @@ function parseCheckboxes(
     }
     
     return {
-      line: lineNumbers[index] || lineNumbers[0],
+      line: lineNumbers[index] !== undefined ? lineNumbers[index] : (lineNumbers[0] || 0),
       level: indentLevel,
       state,
       hasCheckbox,

@@ -513,7 +513,7 @@ async function buildTable(
       } else if (column === 'notebook') {
         row += ` ${result.notebook} |`;
       } else if (column === 'line') {
-        row += ` ${result.lineNumbers.map(line => line[0] + 1).join(', ')} |`;
+        row += ` ${result.lineNumbers.map(line => Math.min(...line) + 1).join(', ')} |`;
       } else if (column === 'modified') {
         row += ` ${new Date(result.updatedTime).toISOString().replace('T', ' ').slice(0, 19)} |`;
       } else if (column === 'created') {

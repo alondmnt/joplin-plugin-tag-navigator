@@ -31,7 +31,7 @@ export interface GroupedResult {
   notebook?: string;     // Notebook name
   updatedTime?: number;  // Last update timestamp
   createdTime?: number;  // Creation timestamp
-  tags?: string[];       // Array of unique tags for sorting
+  tags?: string[][];     // Array of unique tags per group for sorting
 }
 
 /** Cached regex patterns */
@@ -306,18 +306,6 @@ async function processQueryResults(
         continue;
       }
 
-      // Extract unique tags from all matched lines
-      const uniqueTags: Set<string> = new Set();
-      for (const lineNumber of lineNumbers) {
-        const lineTags = note.getTagsAtLine(lineNumber);
-        for (const tag of lineTags) {
-          // Format tag (remove prefix, keep original format for accurate sorting)
-          const formattedTag = tag.replace(tagPrefix, '')
-            .toLowerCase();
-          uniqueTags.add(formattedTag);
-        }
-      }
-
       const colorResult: GroupedResult = {
         externalId,
         lineNumbers: [lineNumbers],
@@ -325,10 +313,10 @@ async function processQueryResults(
         html: [],
         color: color,
         title: '',
-        tags: Array.from(uniqueTags).sort((a, b) => a.localeCompare(b)),
+        tags: [], // Will be populated after grouping
       };
 
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode, db, tagPrefix));
     }
   }
 
@@ -345,7 +333,9 @@ async function processQueryResults(
 async function getTextAndTitleByGroup(
   result: GroupedResult, 
   fullPath: boolean,
-  groupingMode: string
+  groupingMode: string,
+  db: NoteDatabase,
+  tagPrefix: string
 ): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
@@ -375,6 +365,9 @@ async function getTextAndTitleByGroup(
   });
 
   result.lineNumbers = groupedLines;
+  
+  // Extract unique tags per group
+  result.tags = extractTagsPerGroup(groupedLines, db, result.externalId, tagPrefix);
   result.title = note.title;
   result.notebook = notebook;
   result.updatedTime = note.updated_time;
@@ -500,6 +493,35 @@ async function groupLines(lines: string[], result: GroupedResult, groupingMode: 
 }
 
 /**
+ * Extracts unique tags per group from grouped line numbers
+ * @param groupedLines Array of line number groups
+ * @param db Note database
+ * @param externalId Note ID
+ * @param tagPrefix Tag prefix to remove
+ * @returns Array of unique tags per group
+ */
+function extractTagsPerGroup(
+  groupedLines: number[][],
+  db: NoteDatabase,
+  externalId: string,
+  tagPrefix: string
+): string[][] {
+  return groupedLines.map(group => {
+    const uniqueTags: Set<string> = new Set();
+    for (const lineNumber of group) {
+      const lineTags = db.notes[externalId].getTagsAtLine(lineNumber);
+      for (const tag of lineTags) {
+        // Format tag (remove prefix, keep original format for accurate sorting)
+        const formattedTag = tag.replace(tagPrefix, '')
+          .toLowerCase();
+        uniqueTags.add(formattedTag);
+      }
+    }
+    return Array.from(uniqueTags).sort((a, b) => a.localeCompare(b));
+  });
+}
+
+/**
  * Normalizes the indentation of a group of lines in a note.
  * The goal is to remove the common leading whitespace from the lines,
  * while maintaining the hierarchy of nested items.
@@ -579,6 +601,116 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
 }
 
 /**
+ * Compares two tag arrays for a specific sort criterion
+ * @param aTags First tag array
+ * @param bTags Second tag array
+ * @param sortBy Sort criterion
+ * @param sortOrder Sort order (-1 for desc, 1 for asc)
+ * @param tagSettings Tag settings for value delimiter
+ * @returns Comparison result (-1, 0, 1)
+ */
+function compareTagArrays(
+  aTags: string[],
+  bTags: string[],
+  sortBy: string,
+  sortOrder: number,
+  tagSettings: TagSettings
+): number {
+  // Find matching tags for sorting
+  const aTagValue = aTags.find(tag => 
+    tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
+  ) || aTags.find(tag => tag === sortBy);
+
+  const bTagValue = bTags.find(tag => 
+    tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
+  ) || bTags.find(tag => tag === sortBy);
+
+  // Handle missing tags - put them at the end regardless of sort order
+  if (!aTagValue && !bTagValue) {
+    return 0; // Both missing, treat as equal
+  } else if (!aTagValue) {
+    return 1; // a missing, always put at end
+  } else if (!bTagValue) {
+    return -1; // b missing, always put at end
+  }
+
+  // Both have values, proceed with normal comparison
+  let aValue = aTagValue;
+  let bValue = bTagValue;
+  if (aTagValue.includes(tagSettings.valueDelim)) {
+    aValue = aTagValue.split(tagSettings.valueDelim)[1];
+  }
+  if (bTagValue.includes(tagSettings.valueDelim)) {
+    bValue = bTagValue.split(tagSettings.valueDelim)[1];
+  }
+
+  // Try numeric comparison first
+  const aNum = Number(aValue);
+  const bNum = Number(bValue);
+  if (!isNaN(aNum) && !isNaN(bNum)) {
+    return (aNum - bNum) * sortOrder;
+  } else {
+    return aValue.localeCompare(bValue) * sortOrder;
+  }
+}
+
+/**
+ * Sorts sections within a single result based on tag criteria
+ * @param result The result whose sections to sort
+ * @param sortByArray Array of sort criteria
+ * @param sortOrderArray Array of sort orders
+ * @param tagSettings Configuration for tag formatting
+ */
+function sortSectionsWithinResult(
+  result: GroupedResult,
+  sortByArray: string[],
+  sortOrderArray: string[],
+  tagSettings: TagSettings
+): void {
+  if (!result.tags || result.tags.length <= 1) return;
+
+  // Create array of indices to sort
+  const indices = Array.from({ length: result.tags.length }, (_, i) => i);
+
+  indices.sort((aIndex, bIndex) => {
+    for (let i = 0; i < sortByArray.length; i++) {
+      const sortBy = sortByArray[i];
+      const sortOrder = sortOrderArray?.[i]?.startsWith('d') ? -1 : 1;
+
+      // Skip default sorting criteria for section sorting
+      if (['created', 'modified', 'notebook', 'title'].includes(sortBy)) {
+        continue;
+      }
+
+      const aTags = result.tags[aIndex] || [];
+      const bTags = result.tags[bIndex] || [];
+
+      const comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
+
+      if (comparison !== 0) return comparison;
+    }
+
+    // Break ties using minimum line number
+    const aMinLine = Math.min(...result.lineNumbers[aIndex]);
+    const bMinLine = Math.min(...result.lineNumbers[bIndex]);
+    return aMinLine - bMinLine;
+  });
+
+  // Reorder all arrays based on sorted indices
+  const originalLineNumbers = [...result.lineNumbers];
+  const originalText = [...result.text];
+  const originalHtml = [...result.html];
+  const originalTags = [...result.tags];
+
+  indices.forEach((originalIndex, newIndex) => {
+    result.lineNumbers[newIndex] = originalLineNumbers[originalIndex];
+    result.text[newIndex] = originalText[originalIndex];
+    result.html[newIndex] = originalHtml[originalIndex];
+    result.tags[newIndex] = originalTags[originalIndex];
+  });
+}
+
+/**
  * Sorts results based on specified criteria
  * @param results Array of results to sort
  * @param options Sorting configuration
@@ -606,6 +738,17 @@ export function sortResults<T extends GroupedResult>(
 
   if (!sortByArray?.length) return results;
 
+  // Sort sections within each result for custom tag sorting
+  const isCustomTagSort = sortByArray.some(sortBy => 
+    !['created', 'modified', 'notebook', 'title'].includes(sortBy)
+  );
+
+  if (isCustomTagSort) {
+    results.forEach(result => {
+      sortSectionsWithinResult(result, sortByArray, sortOrderArray, tagSettings);
+    });
+  }
+
   return results.sort((a, b) => {
     for (let i = 0; i < sortByArray.length; i++) {
       const sortBy = sortByArray[i];
@@ -623,44 +766,11 @@ export function sortResults<T extends GroupedResult>(
       } else if (sortBy === 'title') {
         comparison = a.title.localeCompare(b.title) * sortOrder;
       } else if (a.tags && b.tags) {
-        // Find matching tags for sorting
-        const aTagValue = a.tags.find(tag => 
-          tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
-        ) || a.tags.find(tag => tag === sortBy);
-
-        const bTagValue = b.tags.find(tag => 
-          tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
-        ) || b.tags.find(tag => tag === sortBy);
-
-        // Handle missing tags - put them at the end regardless of sort order
-        if (!aTagValue && !bTagValue) {
-          comparison = 0; // Both missing, treat as equal
-        } else if (!aTagValue) {
-          comparison = 1; // a missing, always put at end
-        } else if (!bTagValue) {
-          comparison = -1; // b missing, always put at end
-        } else {
-          // Both have values, proceed with normal comparison
-          // Try to extract values after delimiter
-          // If there is no delimiter, use the whole tag value
-          let aValue = aTagValue;
-          let bValue = bTagValue;
-          if (aTagValue.includes(tagSettings.valueDelim)) {
-            aValue = aTagValue.split(tagSettings.valueDelim)[1];
-          }
-          if (bTagValue.includes(tagSettings.valueDelim)) {
-            bValue = bTagValue.split(tagSettings.valueDelim)[1];
-          }
-
-          // Try numeric comparison first
-          const aNum = Number(aValue);
-          const bNum = Number(bValue);
-          if (!isNaN(aNum) && !isNaN(bNum)) {
-            comparison = (aNum - bNum) * sortOrder;
-          } else {
-            comparison = aValue.localeCompare(bValue) * sortOrder;
-          }
-        }
+        // For tag-based sorting, use the first group's tags (or aggregate if needed)
+        const aTags = a.tags.length > 0 ? a.tags[0] : [];
+        const bTags = b.tags.length > 0 ? b.tags[0] : [];
+        
+        comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
       } else {
         // Default to modified time if we don't have tags
         comparison = (a.updatedTime - b.updatedTime) * sortOrder;
