@@ -81,17 +81,18 @@ webviewApi.onMessage((message) => {
             console.error('Failed to parse results:', message.message.results, e);
         }
 
-        // Set sort value if provided
+        // Always clean up dropdown first, then set sort value if provided
+        // Remove any custom options that are not in the standard list
+        for (let i = resultSort.options.length - 1; i >= 0; i--) {
+            const option = resultSort.options[i];
+            if (!['modified', 'created', 'title', 'notebook', 'custom'].includes(option.value)) {
+                resultSort.removeChild(option);
+            }
+        }
+        
         if (message.message.sortBy) {
-            // If sortBy is not in the options, add it
+            // If sortBy is not in the standard options, add it as a custom option
             if (!Array.from(resultSort.options).some(option => option.value === message.message.sortBy)) {
-                // Remove elements from resultSort (iterate backwards to avoid index issues)
-                for (let i = resultSort.options.length - 1; i >= 0; i--) {
-                    const option = resultSort.options[i];
-                    if (!['modified', 'created', 'title', 'notebook', 'custom'].includes(option.value)) {
-                        resultSort.removeChild(option);
-                    }
-                }
                 const option = document.createElement('option');
                 option.value = message.message.sortBy;
                 option.text = message.message.sortBy;

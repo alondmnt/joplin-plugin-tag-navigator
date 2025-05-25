@@ -479,6 +479,19 @@ export async function updatePanelResults(
   const colorTodos = await joplin.settings.value('itags.colorTodos');
   const tagSettings = await getTagSettings();
 
+  // Ensure we always have valid sort parameters
+  let sortBy = options?.sortBy;
+  let sortOrder = options?.sortOrder;
+  
+  // If no sort options provided, get defaults from settings
+  if (!sortBy || !sortOrder) {
+    const defaultSortBy = await joplin.settings.value('itags.resultSort') as string;
+    const defaultSortOrder = await joplin.settings.value('itags.resultOrder') as string;
+    
+    sortBy = sortBy || defaultSortBy || 'modified';
+    sortOrder = sortOrder || defaultSortOrder || 'desc';
+  }
+
   // Just render the HTML and pass along the sorting options that were used
   const intervalID = setInterval(
     async () => {
@@ -487,8 +500,8 @@ export async function updatePanelResults(
           name: 'updateResults',
           results: JSON.stringify(renderHTML(results, tagSettings.tagRegex, resultMarker, colorTodos)),
           query: JSON.stringify(query),
-          sortBy: options?.sortBy || '',
-          sortOrder: options?.sortOrder || '',
+          sortBy: sortBy,
+          sortOrder: sortOrder,
         });
       } else {
         console.debug('Panel not visible, skipping updateResults message');
