@@ -536,7 +536,14 @@ joplin.plugins.register({
         await joplin.settings.setValue(message.field, message.value);
       }
       if (message.name === 'searchTag') {
-        searchParams = { query: [[{ tag: message.tag, negated: false }]], filter: '', displayInNote: 'false' };
+        // Preserve existing options when creating a new search from navigation panel
+        const existingOptions = searchParams.options;
+        searchParams = { 
+          query: [[{ tag: message.tag, negated: false }]], 
+          filter: '', 
+          displayInNote: 'false',
+          options: existingOptions
+        };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
         lastSearchResults = results; // Cache the results

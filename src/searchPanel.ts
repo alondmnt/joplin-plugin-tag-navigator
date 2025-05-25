@@ -238,7 +238,12 @@ export async function processMessage(
     const currentQuery = await loadQuery(db, currentNote);
     clearObjectReferences(currentNote);
 
-    await saveQuery({query: JSON.parse(message.query), filter: message.filter, displayInNote: currentQuery.displayInNote});
+    await saveQuery({
+      query: JSON.parse(message.query), 
+      filter: message.filter, 
+      displayInNote: searchParams.displayInNote,
+      options: searchParams.options
+    });
     await joplin.commands.execute('itags.refreshNoteView');
 
   } else if (message.name === 'openNote') {
