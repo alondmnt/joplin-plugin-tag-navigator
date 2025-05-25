@@ -774,10 +774,14 @@ export function sortResults<T extends GroupedResult>(
       } else if (sortBy === 'title') {
         comparison = a.title.localeCompare(b.title) * sortOrder;
       } else if (a.tags && b.tags) {
-        // For tag-based sorting, use the first group's tags (or aggregate if needed)
-        const aTags = a.tags.length > 0 ? a.tags[0] : [];
-        const bTags = b.tags.length > 0 ? b.tags[0] : [];
-        
+        // For tag-based sorting, aggregate tags from all groups
+        const aTags = a.tags ? a.tags
+          .flat()
+          .sort((x, y) => x.localeCompare(y)) : [];
+        const bTags = b.tags ? b.tags
+          .flat()
+          .sort((x, y) => x.localeCompare(y)) : [];
+
         comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
       } else {
         // Default to modified time if we don't have tags
