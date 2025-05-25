@@ -619,11 +619,11 @@ function compareTagArrays(
   // Find matching tags for sorting
   const aTagValue = aTags.find(tag => 
     tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
-  ) || aTags.find(tag => tag === sortBy);
+  );
 
   const bTagValue = bTags.find(tag => 
     tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
-  ) || bTags.find(tag => tag === sortBy);
+  );
 
   // Handle missing tags - put them at the end regardless of sort order
   if (!aTagValue && !bTagValue) {
