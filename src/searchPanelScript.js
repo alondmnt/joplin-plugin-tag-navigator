@@ -6,6 +6,9 @@ let allNotes = [];
 let results = [];
 let noteState = {}; // Global state to track collapsed/expanded state of notes
 
+// Standard sort values used throughout the script
+const STANDARD_SORT_VALUES = ['modified', 'created', 'title', 'notebook', 'custom'];
+
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 
 const tagFilter = document.getElementById('itags-search-tagFilter');
@@ -85,7 +88,7 @@ webviewApi.onMessage((message) => {
         // Remove any custom options that are not in the standard list
         for (let i = resultSort.options.length - 1; i >= 0; i--) {
             const option = resultSort.options[i];
-            if (!['modified', 'created', 'title', 'notebook', 'custom'].includes(option.value)) {
+            if (!STANDARD_SORT_VALUES.includes(option.value)) {
                 resultSort.removeChild(option);
             }
         }
@@ -269,9 +272,16 @@ function updatePanelSettings(message) {
     }
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
-    resultSort.value = settings.resultSort;
-    // Initialize the data-prev-value attribute with the current value
-    resultSort.setAttribute('data-prev-value', settings.resultSort);
+
+    // Only update resultSort if it's not a custom value (preserve custom sort options)
+    const currentValue = resultSort.value;
+    if (!currentValue || STANDARD_SORT_VALUES.includes(currentValue)) {
+        resultSort.value = settings.resultSort;
+        // Initialize the data-prev-value attribute with the current value
+        resultSort.setAttribute('data-prev-value', settings.resultSort);
+    }
+    // If current value is custom, keep it and don't update data-prev-value
+
     resultOrderState = settings.resultOrder;
     resultOrder.innerHTML = resultOrderState === 'asc' ? 
         '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
