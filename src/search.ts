@@ -617,13 +617,21 @@ function compareTagArrays(
   tagSettings: TagSettings
 ): number {
   // Find matching tags for sorting
-  const aTagValue = aTags.find(tag => 
+  // For ascending order, use the first (smallest) tag; for descending, use the last (largest) tag
+  const aMatchingTags = aTags.filter(tag => 
+    tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
+  );
+  const bMatchingTags = bTags.filter(tag => 
     tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
   );
 
-  const bTagValue = bTags.find(tag => 
-    tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
-  );
+  const aTagValue = aMatchingTags.length > 0 
+    ? (sortOrder === 1 ? aMatchingTags[0] : aMatchingTags[aMatchingTags.length - 1])
+    : undefined;
+
+  const bTagValue = bMatchingTags.length > 0 
+    ? (sortOrder === 1 ? bMatchingTags[0] : bMatchingTags[bMatchingTags.length - 1])
+    : undefined;
 
   // Handle missing tags - put them at the end regardless of sort order
   if (!aTagValue && !bTagValue) {
