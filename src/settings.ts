@@ -334,7 +334,7 @@ export async function registerSettings(): Promise<void> {
       isEnum: true,
       section: 'itags',
       label: 'Search: Result grouping',
-      description: 'Each group is shown as a section within a note in the search results.',
+      description: 'Each group is shown as a section within a note in the search results. Groups can be filtered and sorted.',
       options: {
         'heading': 'Group by heading / section',
         'consecutive': 'Group consecutive lines',
