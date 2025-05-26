@@ -46,7 +46,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
 
   lines.forEach((line, lineIndex) => {
     // Toggle code block status
-    if (line.match('```')) {
+    if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
     }
     if (line.match(resultsStart)) {
@@ -101,6 +101,15 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
         if (tagSettings.excludeRegex && tag.match(tagSettings.excludeRegex)) {
           return;
         }
+
+        // Skip tags within inline code (single backticks) if ignoreCodeBlocks is enabled
+        if (tagSettings.ignoreCodeBlocks) {
+          const tagIndex = line.indexOf(tag);
+          if (tagIndex !== -1 && isWithinInlineCode(line, tagIndex)) {
+            return;
+          }
+        }
+
         // Replace the today tag with the current date
         tag = parseDateTag(tag, tagSettings);  // Should probably go here and not inside the loop
 
@@ -190,6 +199,35 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
 }
 
 /**
+ * Checks if a position in a line is within inline code (single backticks)
+ * @param line The line of text to check
+ * @param position The character position to check
+ * @returns True if the position is within inline code
+ */
+function isWithinInlineCode(line: string, position: number): boolean {
+  // Find all single backtick positions (not part of triple backticks)
+  const backtickPositions: number[] = [];
+  const singleBacktickRegex = /(?<!`)`(?!`)/g;
+  let match;
+
+  while ((match = singleBacktickRegex.exec(line)) !== null) {
+    backtickPositions.push(match.index);
+  }
+
+  // Check if position falls between any pair of backticks
+  for (let i = 0; i < backtickPositions.length - 1; i += 2) {
+    const start = backtickPositions[i];
+    const end = backtickPositions[i + 1];
+
+    if (end !== undefined && position > start && position < end) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Processes a date tag according to settings
  * @param tag The tag to process
  * @param tagSettings Configuration for tag processing
@@ -240,7 +278,7 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
 
   lines.forEach((line, index) => {
     // Toggle code block status
-    if (line.match('```')) {
+    if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
     }
     if (line.match(resultsStart)) {
