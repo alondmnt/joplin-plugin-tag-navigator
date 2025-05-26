@@ -2,7 +2,7 @@ import joplin from 'api';
 import { getResultSettings, getTagSettings, TagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
-import { clearObjectReferences } from './utils';
+import { clearObjectReferences, compareTagValues, sortTags } from './utils';
 
 /**
  * Represents a search query component
@@ -66,10 +66,8 @@ export async function runSearch(
   let groupedResults = await processQueryResults(
     db,
     queryResults,
-    settings.colorTag,
     groupingMode,
-    settings.tagPrefix,
-    settings.spaceReplace
+    settings
   );
 
   if (sortOptions?.sortBy) {
@@ -261,10 +259,8 @@ function unionResults(
 async function processQueryResults(
   db: NoteDatabase,
   queryResults: ResultSet,
-  colorTag: string,
   groupingMode: string,
-  tagPrefix: string,
-  spaceReplace: string
+  tagSettings: TagSettings
 ): Promise<GroupedResult[]> {
   const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
@@ -282,9 +278,9 @@ async function processQueryResults(
       const lineTags = note.getTagsAtLine(lineNumber);
 
       for (const tag of lineTags) {
-        if (tag.startsWith(colorTag)) {
+        if (tag.startsWith(tagSettings.colorTag)) {
           // Add the color to the map
-          const color = tag.replace(colorTag, '');
+          const color = tag.replace(tagSettings.colorTag, '');
 
           const colorLines = colorMap.get(color) || [];
           colorLines.push(lineNumber);
@@ -316,7 +312,7 @@ async function processQueryResults(
         tags: [], // Will be populated after grouping
       };
 
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode, db, tagPrefix));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode, db, tagSettings));
     }
   }
 
@@ -335,7 +331,7 @@ async function getTextAndTitleByGroup(
   fullPath: boolean,
   groupingMode: string,
   db: NoteDatabase,
-  tagPrefix: string
+  tagSettings: TagSettings
 ): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
@@ -367,7 +363,7 @@ async function getTextAndTitleByGroup(
   result.lineNumbers = groupedLines;
   
   // Extract unique tags per group
-  result.tags = extractTagsPerGroup(groupedLines, db, result.externalId, tagPrefix);
+  result.tags = extractTagsPerGroup(groupedLines, db, result.externalId, tagSettings);
   result.title = note.title;
   result.notebook = notebook;
   result.updatedTime = note.updated_time;
@@ -504,7 +500,7 @@ function extractTagsPerGroup(
   groupedLines: number[][],
   db: NoteDatabase,
   externalId: string,
-  tagPrefix: string
+  tagSettings: TagSettings
 ): string[][] {
   return groupedLines.map(group => {
     const uniqueTags: Set<string> = new Set();
@@ -512,12 +508,12 @@ function extractTagsPerGroup(
       const lineTags = db.notes[externalId].getTagsAtLine(lineNumber);
       for (const tag of lineTags) {
         // Format tag (remove prefix, keep original format for accurate sorting)
-        const formattedTag = tag.replace(tagPrefix, '')
+        const formattedTag = tag.replace(tagSettings.tagPrefix, '')
           .toLowerCase();
         uniqueTags.add(formattedTag);
       }
     }
-    return Array.from(uniqueTags).sort((a, b) => a.localeCompare(b));
+    return sortTags(Array.from(uniqueTags), tagSettings.valueDelim);
   });
 }
 
@@ -642,24 +638,8 @@ function compareTagArrays(
     return -1; // b missing, always put at end
   }
 
-  // Both have values, proceed with normal comparison
-  let aValue = aTagValue;
-  let bValue = bTagValue;
-  if (aTagValue.includes(tagSettings.valueDelim)) {
-    aValue = aTagValue.split(tagSettings.valueDelim)[1];
-  }
-  if (bTagValue.includes(tagSettings.valueDelim)) {
-    bValue = bTagValue.split(tagSettings.valueDelim)[1];
-  }
-
-  // Try numeric comparison first
-  const aNum = Number(aValue);
-  const bNum = Number(bValue);
-  if (!isNaN(aNum) && !isNaN(bNum)) {
-    return (aNum - bNum) * sortOrder;
-  } else {
-    return aValue.localeCompare(bValue) * sortOrder;
-  }
+  // Both have values, proceed with normal comparison using utility function
+  return compareTagValues(aTagValue, bTagValue, tagSettings.valueDelim) * sortOrder;
 }
 
 /**
@@ -775,12 +755,8 @@ export function sortResults<T extends GroupedResult>(
         comparison = a.title.localeCompare(b.title) * sortOrder;
       } else if (a.tags && b.tags) {
         // For tag-based sorting, aggregate tags from all groups
-        const aTags = a.tags ? a.tags
-          .flat()
-          .sort((x, y) => x.localeCompare(y)) : [];
-        const bTags = b.tags ? b.tags
-          .flat()
-          .sort((x, y) => x.localeCompare(y)) : [];
+        const aTags = a.tags ? sortTags(a.tags.flat(), tagSettings.valueDelim) : [];
+        const bTags = b.tags ? sortTags(b.tags.flat(), tagSettings.valueDelim) : [];
 
         comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
       } else {
