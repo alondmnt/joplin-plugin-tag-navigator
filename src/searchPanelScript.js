@@ -264,11 +264,18 @@ function updatePanelSettings(message) {
     searchWithRegex = settings.searchWithRegex;
     selectMultiTags = settings.selectMultiTags;
     spaceReplace = settings.spaceReplace;
-    resultToggleState = settings.resultToggle ? 'collapse' : 'expand';
-    if ( resultToggleState === 'collapse' ) {
-        collapseResults();
-    } else {
-        expandResults();
+    
+    // Only apply global collapse/expand if the resultToggle setting actually changed
+    const newResultToggleState = settings.resultToggle ? 'collapse' : 'expand';
+    const resultToggleChanged = resultToggleState !== newResultToggleState;
+    resultToggleState = newResultToggleState;
+    
+    if (resultToggleChanged) {
+        if ( resultToggleState === 'collapse' ) {
+            collapseResults();
+        } else {
+            expandResults();
+        }
     }
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
