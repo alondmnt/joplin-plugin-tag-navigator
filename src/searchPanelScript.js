@@ -588,8 +588,8 @@ function createClickHandler(result, index) {
                 externalId: result.externalId,
                 line: result.lineNumbers[index][line],
                 text: result.text[index].split('\n')[line].trim(),
-                source: event.target.checked ? ' ' : 'x',
-                target: event.target.checked ? '[xX]' : ' ',
+                source: event.target.checked ? ' ' : '[xX]',
+                target: event.target.checked ? 'x' : ' ',
             });
         } else if (event.target.matches('.itags-search-checkbox')) {
             const line = parseInt(event.target.getAttribute('data-line-number'));
