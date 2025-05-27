@@ -348,7 +348,11 @@ joplin.plugins.register({
         await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
         note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
-        await joplin.commands.execute('editor.setText', note.body);
+        try {
+          await joplin.commands.execute('editor.setText', note.body);
+        } catch (error) {
+          console.debug('itags.convertNoteToInlineTags: error', error);
+        }
         note = clearObjectReferences(note);
       },
     });
@@ -368,7 +372,11 @@ joplin.plugins.register({
           await convertAllNotesToInlineTags(listPrefix, tagPrefix, spaceReplace, location);
           let note = await joplin.workspace.selectedNote();
           if (!note) { return; }
-          await joplin.commands.execute('editor.setText', note.body);
+          try {
+            await joplin.commands.execute('editor.setText', note.body);
+          } catch (error) {
+            console.debug('itags.convertAllNotesToInlineTags: error', error);
+          }
           note = clearObjectReferences(note);
         }
       },

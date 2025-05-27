@@ -225,11 +225,19 @@ export async function processMessage(
     } catch {
       // Ignore errors (not on mobile, or old version)
     }
-    await joplin.commands.execute('insertText', message.tag);
-    await joplin.commands.execute('editor.focus');
+    try {
+      await joplin.commands.execute('insertText', message.tag);
+      await joplin.commands.execute('editor.focus');
+    } catch (error) {
+      console.debug('itags.insertTag: error', error);
+    }
 
   } else if (message.name === 'focusEditor') {
-    await joplin.commands.execute('editor.focus');
+    try { 
+      await joplin.commands.execute('editor.focus');
+    } catch (error) {
+      console.debug('itags.focusEditor: error', error);
+    }
 
   } else if (message.name === 'saveQuery') {
     // Save the query into the current note
@@ -249,8 +257,8 @@ export async function processMessage(
   } else if (message.name === 'openNote') {
     try {
       await joplin.commands.execute('dismissPluginPanels');
-    } catch {
-      // Ignore errors (not on mobile, or old version)
+    } catch (error) {
+      console.debug('itags.insertTag: error', error);
     }
     const dbNote = db.getNoteId(message.externalId);
     const currentNote = await joplin.workspace.selectedNote();
@@ -259,17 +267,25 @@ export async function processMessage(
     if ((!currentNote) || (currentNote.id !== noteId)) {
       // Skip if the note is already open
       // This will also happen if we try to open a heading in an already open note
-      if (dbNote) {
-        await joplin.commands.execute('openNote', dbNote);
-      } else {
-        await joplin.commands.execute('openItem', message.externalId);
+      try {
+        if (dbNote) {
+          await joplin.commands.execute('openNote', dbNote);
+        } else {
+          await joplin.commands.execute('openItem', message.externalId);
+        }
+      } catch (error) {
+        console.debug('itags.openNote: error', error);
       }
       if (versionInfo.toggleEditorSupport) {
         // Wait for the note to be opened for 100 ms
         await new Promise(resolve => setTimeout(resolve, 100));
         const toggleEditor = await joplin.settings.value('itags.toggleEditor');
         if (toggleEditor) {
-          await joplin.commands.execute('toggleVisiblePanes');
+          try {
+            await joplin.commands.execute('toggleVisiblePanes');
+          } catch (error) {
+            console.debug('itags.openNote: error', error);
+          }
         }
       }
 
@@ -289,7 +305,7 @@ export async function processMessage(
         args: [message.line]
       });
     } catch (error) {
-      // If the editor is not available, this will fail
+      console.debug('itags.openNote: error', error);
     }
 
   } else if (message.name === 'setCheckBox') {
@@ -962,14 +978,14 @@ async function updateNote(
 
     if ((selectedNote) && (selectedNote.id === message.externalId)) {
       // Update note editor if it's the currently selected note
-      await joplin.commands.execute('editor.setText', newBody);
       try {
+        await joplin.commands.execute('editor.setText', newBody);
         await joplin.commands.execute('editor.execCommand', {
           name: 'scrollToTagLine',
           args: [message.line]
         });
       } catch (error) {
-        // If the editor is not available, this will fail
+        console.debug('itags.updateNote: error', error);
       }
     }
 
@@ -1021,7 +1037,11 @@ export async function saveQuery(
   await joplin.data.put(['notes', note.id], null, { body: newBody });
   let currentNote = await joplin.workspace.selectedNote();
   if ((currentNote) && (note.id === currentNote.id)) {
-    await joplin.commands.execute('editor.setText', newBody);
+    try {
+      await joplin.commands.execute('editor.setText', newBody);
+    } catch (error) {
+      console.debug('itags.saveQuery: error', error);
+    }
   }
 
   note = clearObjectReferences(note);
@@ -1163,7 +1183,11 @@ async function showCustomSortDialog(
     }
     // If on mobile, dismiss plugin panels
     if (versionInfo.toggleEditorSupport) {
-      await joplin.commands.execute('dismissPluginPanels');
+      try {
+        await joplin.commands.execute('dismissPluginPanels');
+      } catch (error) {
+        console.debug('itags.showCustomSortDialog: error', error);
+      }
     }
 
     // Basic HTML escaping function

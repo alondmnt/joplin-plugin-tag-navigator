@@ -163,7 +163,11 @@ export async function displayResultsInNote(
     await joplin.data.put(['notes', note.id], null, { body: newBody });
     if (!currentNote) { return; }
     if (currentNote.id === note.id) {
-      await joplin.commands.execute('editor.setText', newBody);
+      try {
+        await joplin.commands.execute('editor.setText', newBody);
+      } catch (error) {
+        console.debug('itags.displayResultsInNote: error', error);
+      }
     }
   }
   const updatedCurrentNote = currentNote.id === note.id;
@@ -187,7 +191,11 @@ export async function removeResults(note: { id: string, body: string }): Promise
     let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
     if (currentNote.id === note.id) {
-      await joplin.commands.execute('editor.setText', newBody);
+      try {
+        await joplin.commands.execute('editor.setText', newBody);
+      } catch (error) {
+        console.debug('itags.removeResults: error', error);
+      }
     }
     currentNote = clearObjectReferences(currentNote);
   }
@@ -588,7 +596,11 @@ export async function createTableEntryNote(
   });
 
   // Open the new note
-  await joplin.commands.execute('openNote', note.id);
+  try {
+    await joplin.commands.execute('openNote', note.id);
+  } catch (error) {
+    console.debug('itags.createTableEntryNote: error', error);
+  }
   note = clearObjectReferences(note);
 }
 
