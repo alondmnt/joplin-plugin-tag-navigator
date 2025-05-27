@@ -549,7 +549,7 @@ export function parseTagsFromFrontMatter(
 ): TagLineInfo[] {
   const frontMatter = parseFrontMatter(text);
   if (frontMatter.errors) {
-    console.warn('Front matter parsed with warnings:', frontMatter.errors);
+    console.warn('Frontmatter: ', frontMatter.data, '\nParsed with warnings:', frontMatter.errors);
   }
   if (!frontMatter.data || tagSettings.ignoreFrontMatter) return [];
 
