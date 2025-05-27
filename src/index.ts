@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
-import { getTagSettings, registerSettings } from './settings';
+import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings } from './settings';
 import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
@@ -145,13 +145,11 @@ joplin.plugins.register({
       }
 
       // Update results in note
-      const updateViewOnOpen = await joplin.settings.value('itags.updateViewOnOpen');
-      if (updateViewOnOpen) {
+      const viewSettings = await getNoteViewSettings();
+      if (viewSettings.updateViewOnOpen) {
         if (viewList.includes(savedQuery.displayInNote)) {
           const tagSettings = await getTagSettings();
-          const nColumns = await joplin.settings.value('itags.tableColumns');
-          const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -263,9 +261,8 @@ joplin.plugins.register({
         note.body = await saveQuery(query);
         if (viewList.includes(query.displayInNote)) {
           const tagSettings = await getTagSettings();
-          const nColumns = await joplin.settings.value('itags.tableColumns');
-          const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
+          const viewSettings = await getNoteViewSettings();
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -287,9 +284,8 @@ joplin.plugins.register({
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
         const tagSettings = await getTagSettings();
-        const nColumns = await joplin.settings.value('itags.tableColumns');
-        const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
-        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, noteViewLocation, nColumns);
+        const viewSettings = await getNoteViewSettings();
+        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
         if (result) {
           currentTableColumns = result.tableColumns;
           currentTableDefaultValues = result.tableDefaultValues;
@@ -341,11 +337,9 @@ joplin.plugins.register({
         // Get the selected note
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
-        const listPrefix = await joplin.settings.value('itags.listPrefix');
-        const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-        const spaceReplace = await joplin.settings.value('itags.spaceReplace');
-        const location = await joplin.settings.value('itags.location');
-        await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
+
+        const conversionSettings = await getConversionSettings();
+        await convertNoteToInlineTags(note, conversionSettings);
         note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
         try {
@@ -365,11 +359,8 @@ joplin.plugins.register({
         // Confirmation dialog
         const confirm = await joplin.views.dialogs.showMessageBox('Are you sure you want to convert all notes to inline tags?');
         if (confirm === 0) {
-          const listPrefix = await joplin.settings.value('itags.listPrefix');
-          const tagPrefix = await joplin.settings.value('itags.tagPrefix');
-          const spaceReplace = await joplin.settings.value('itags.spaceReplace');
-          const location = await joplin.settings.value('itags.location');
-          await convertAllNotesToInlineTags(listPrefix, tagPrefix, spaceReplace, location);
+          const conversionSettings = await getConversionSettings();
+          await convertAllNotesToInlineTags(conversionSettings);
           let note = await joplin.workspace.selectedNote();
           if (!note) { return; }
           try {

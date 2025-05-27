@@ -449,17 +449,19 @@ export async function focusSearchPanel(panel: string): Promise<void> {
  */
 export async function updatePanelTagData(panel: string, db: NoteDatabase): Promise<void> {
   if (!await joplin.views.panels.visible(panel)) { return; }
-  
-  const tagSort = await joplin.settings.value('itags.tagSort');
-  const valueDelim = await joplin.settings.value('itags.valueDelim') || '=';
-  
+
+  const panelSettings = await joplin.settings.values([
+    'itags.tagSort',
+    'itags.valueDelim',
+  ]);
+
   // Get and sort tags in one pass
-  const allTags = db.getTags(valueDelim);
-  if (tagSort === 'count') {
+  const allTags = db.getTags(panelSettings['itags.valueDelim'] as string);
+  if (panelSettings['itags.tagSort'] as string === 'count') {
     const tagCounts = new Map(allTags.map(tag => [tag, db.getTagCount(tag)]));
     allTags.sort((a, b) => tagCounts.get(b) - tagCounts.get(a));
   }
-  
+
   await joplin.views.panels.postMessage(panel, {
     name: 'updateTagData',
     tags: JSON.stringify(allTags),
@@ -496,21 +498,22 @@ export async function updatePanelResults(
     sortOrder?: string;
   }
 ): Promise<void> {
-  const resultMarker = await joplin.settings.value('itags.resultMarker');
-  const colorTodos = await joplin.settings.value('itags.colorTodos');
+  const panelSettings = await joplin.settings.values([
+    'itags.resultMarker',
+    'itags.colorTodos',
+    'itags.resultSort',
+    'itags.resultOrder',
+  ]);
   const tagSettings = await getTagSettings();
 
   // Ensure we always have valid sort parameters
   let sortBy = options?.sortBy;
   let sortOrder = options?.sortOrder;
-  
+
   // If no sort options provided, get defaults from settings
   if (!sortBy || !sortOrder) {
-    const defaultSortBy = await joplin.settings.value('itags.resultSort') as string;
-    const defaultSortOrder = await joplin.settings.value('itags.resultOrder') as string;
-    
-    sortBy = sortBy || defaultSortBy || 'modified';
-    sortOrder = sortOrder || defaultSortOrder || 'desc';
+    sortBy = sortBy || panelSettings['itags.resultSort'] as string || 'modified';
+    sortOrder = sortOrder || panelSettings['itags.resultOrder'] as string || 'desc';
   }
 
   // Just render the HTML and pass along the sorting options that were used
@@ -519,7 +522,10 @@ export async function updatePanelResults(
       if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
-          results: JSON.stringify(renderHTML(results, tagSettings.tagRegex, resultMarker, colorTodos)),
+          results: JSON.stringify(renderHTML(
+            results, tagSettings.tagRegex,
+            panelSettings['itags.resultMarker'] as boolean,
+            panelSettings['itags.colorTodos'] as boolean)),
           query: JSON.stringify(query),
           sortBy: sortBy,
           sortOrder: sortOrder,

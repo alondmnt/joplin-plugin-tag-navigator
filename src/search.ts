@@ -262,7 +262,6 @@ async function processQueryResults(
   groupingMode: string,
   tagSettings: TagSettings
 ): Promise<GroupedResult[]> {
-  const fullPath = await joplin.settings.value('itags.tableNotebookPath');
   const groupedResults: GroupedResult[] = [];
   if (!queryResults) return groupedResults;
 
@@ -312,7 +311,7 @@ async function processQueryResults(
         tags: [], // Will be populated after grouping
       };
 
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, fullPath, groupingMode, db, tagSettings));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings));
     }
   }
 

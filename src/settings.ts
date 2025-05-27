@@ -17,24 +17,42 @@ export const resultsEnd = '<!-- itags-results-end -->';
 export interface TagSettings {
   tagRegex: RegExp;        // Regular expression for matching tags
   excludeRegex: RegExp;    // Regular expression for excluding tags
-  todayTagRegex: RegExp;   // Regex for today's date
+  minCount: number;        // Minimum number of occurrences for a tag to be included
   colorTag: string;        // Tag for coloring the results in the search panel
+  todayTagRegex: RegExp;   // Regex for today's date
   dateFormat: string;      // Format string for date tags
+  valueDelim: string;           // Character to assign a value to a tag
+  spaceReplace: string;        // Character to replace spaces in tags
+  tagPrefix: string;           // Prefix for converted Joplin tags
   ignoreHtmlNotes: boolean;    // Whether to ignore tags in HTML notes
   ignoreCodeBlocks: boolean;   // Whether to ignore tags in code blocks
   ignoreFrontMatter: boolean;  // Whether to ignore front matter fields as tags
   inheritTags: boolean;        // Whether to inherit tags from parent items
   nestedTags: boolean;         // Whether to support nested tag hierarchy
-  spaceReplace: string;        // Character to replace spaces in tags
-  valueDelim: string;           // Character to assign a value to a tag
-  tagPrefix: string;           // Prefix for converted Joplin tags
-  tableCase: string;           // Case formatting for table view
+  fullNotebookPath: boolean;  // Whether to extract the full notebook path
 }
 
 export interface ResultSettings {
   resultSort: string;
   resultOrder: string;
   resultGrouping: string;
+}
+
+export interface NoteViewSettings {
+  tableCase: string;           // Case formatting for table view
+  tableColumns: number;        // Number of columns to show in the table view
+  noteViewLocation: string;    // Location of results in the note view  
+  noteViewColorTitles: boolean; // Whether to use color tags for titles in note view
+  resultMarkerInNote: boolean;  // Whether to highlight filter results in the note view
+  searchWithRegex: boolean;     // Whether to use regex for tag / note / content filtering
+  updateViewOnOpen: boolean;    // Whether to update the view when opening a note
+}
+
+export interface ConversionSettings {
+  tagPrefix: string;           // Prefix for converted Joplin tags
+  spaceReplace: string;        // Character to replace spaces in converted Joplin tags
+  listPrefix: string;          // Prefix for converted Joplin tags
+  location: string;            // Location for converted Joplin tags
 }
 
 /**
@@ -45,18 +63,19 @@ export async function getTagSettings(): Promise<TagSettings> {
   const settings = await joplin.settings.values([
     'itags.tagRegex',
     'itags.excludeRegex',
-    'itags.todayTag', 
+    'itags.minCount',
     'itags.colorTag',
-    'itags.valueDelim',
+    'itags.todayTag', 
     'itags.dateFormat',
+    'itags.valueDelim',
+    'itags.tagPrefix',
+    'itags.spaceReplace',
     'itags.ignoreHtmlNotes',
     'itags.ignoreCodeBlocks',
     'itags.ignoreFrontMatter',
     'itags.inheritTags',
     'itags.nestedTags',
-    'itags.spaceReplace',
-    'itags.tagPrefix',
-    'itags.tableCase',
+    'itags.tableNotebookPath',
   ]);
   const tagRegex = settings['itags.tagRegex'] ? new RegExp(settings['itags.tagRegex'] as string, 'g') : defTagRegex;
   const excludeRegex = settings['itags.excludeRegex'] ? new RegExp(settings['itags.excludeRegex'] as string, 'g') : null;
@@ -70,18 +89,19 @@ export async function getTagSettings(): Promise<TagSettings> {
   return {
     tagRegex,
     excludeRegex,
-    todayTagRegex,
+    minCount: settings['itags.minCount'] as number || 1,
     colorTag: settings['itags.colorTag'] as string || '#color=',
+    todayTagRegex,
     dateFormat: settings['itags.dateFormat'] as string || '#yyyy-MM-dd',
+    valueDelim: settings['itags.valueDelim'] as string || '=',
+    tagPrefix: settings['itags.tagPrefix'] as string || '#',
+    spaceReplace: settings['itags.spaceReplace'] as string || '_',
     ignoreHtmlNotes: settings['itags.ignoreHtmlNotes'] as boolean,
     ignoreCodeBlocks: settings['itags.ignoreCodeBlocks'] as boolean,
     ignoreFrontMatter: settings['itags.ignoreFrontMatter'] as boolean,
     inheritTags: settings['itags.inheritTags'] as boolean,
     nestedTags: settings['itags.nestedTags'] as boolean,
-    spaceReplace: settings['itags.spaceReplace'] as string || '_',
-    valueDelim: settings['itags.valueDelim'] as string || '=',
-    tagPrefix: settings['itags.tagPrefix'] as string || '#',
-    tableCase: settings['itags.tableCase'] as string || 'title'
+    fullNotebookPath: settings['itags.tableNotebookPath'] as boolean,
   };
 }
 
@@ -95,6 +115,42 @@ export async function getResultSettings(): Promise<ResultSettings> {
     resultSort: settings['itags.resultSort'] as string || 'modified',
     resultOrder: settings['itags.resultOrder'] as string || 'desc',
     resultGrouping: settings['itags.resultGrouping'] as string || 'heading',
+  };
+}
+
+export async function getNoteViewSettings(): Promise<NoteViewSettings> {
+  const settings = await joplin.settings.values([
+    'itags.tableCase',
+    'itags.tableColumns',
+    'itags.noteViewLocation',
+    'itags.noteViewColorTitles',
+    'itags.resultMarkerInNote',
+    'itags.searchWithRegex',
+    'itags.updateViewOnOpen',
+  ]);
+  return {
+    tableCase: settings['itags.tableCase'] as string || 'title',
+    tableColumns: settings['itags.tableColumns'] as number || 10,
+    noteViewLocation: settings['itags.noteViewLocation'] as string || 'before',
+    noteViewColorTitles: settings['itags.noteViewColorTitles'] as boolean,
+    resultMarkerInNote: settings['itags.resultMarkerInNote'] as boolean,
+    searchWithRegex: settings['itags.searchWithRegex'] as boolean,
+    updateViewOnOpen: settings['itags.updateViewOnOpen'] as boolean,
+  };
+}
+
+export async function getConversionSettings(): Promise<ConversionSettings> {
+  const settings = await joplin.settings.values([
+    'itags.tagPrefix',
+    'itags.spaceReplace',
+    'itags.listPrefix',
+    'itags.location',
+  ]);
+  return {
+    tagPrefix: settings['itags.tagPrefix'] as string || '#',
+    spaceReplace: settings['itags.spaceReplace'] as string || '_',
+    listPrefix: settings['itags.listPrefix'] as string || 'tags: ',
+    location: settings['itags.location'] as string || 'top',
   };
 }
 

@@ -421,8 +421,7 @@ export async function processAllNotes() {
     note = clearObjectReferences(note);
   }
 
-  const minCount = await joplin.settings.value('itags.minCount');
-  db.filterTags(minCount);
+  db.filterTags(tagSettings.minCount);
 }
 
 /**

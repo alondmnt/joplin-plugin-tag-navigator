@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { getTagSettings, TagSettings, resultsEnd, resultsStart } from './settings';
+import { getTagSettings, TagSettings, resultsEnd, resultsStart, NoteViewSettings, getNoteViewSettings } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
@@ -43,14 +43,13 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
 }> {
   // Display results in notes
   const tagSettings = await getTagSettings();
-  const nColumns = await joplin.settings.value('itags.tableColumns');
-  const noteViewLocation = await joplin.settings.value('itags.noteViewLocation');
+  const viewSettings = await getNoteViewSettings();
   const noteIds = db.getResultNotes();
   let tableColumns: string[] = [];  
   let tableDefaultValues: { [key: string]: string } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    const result = await displayResultsInNote(db, note, tagSettings, noteViewLocation, nColumns);
+    const result = await displayResultsInNote(db, note, tagSettings, viewSettings);
     if (result) {
       tableColumns = result.tableColumns;
       tableDefaultValues = result.tableDefaultValues;
@@ -65,29 +64,30 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
  * @param db The note database
  * @param note The note to display results in
  * @param tagSettings Configuration for tag formatting
- * @param nColumns Maximum number of columns to display in table view
+ * @param viewSettings Configuration for note view
  * @returns Configuration for table columns and default values, or null if no results
  */
 export async function displayResultsInNote(
   db: NoteDatabase, 
   note: { id: string, body: string }, 
-  tagSettings: TagSettings, 
-  noteViewLocation: string,
-  nColumns: number = 10
+  tagSettings: TagSettings,
+  viewSettings: NoteViewSettings
 ): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } } | null> {
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
   if (!savedQuery) { return null; }
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
-  const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+  const displayColors = viewSettings.noteViewColorTitles;
   const groupingMode = savedQuery.displayInNote === 'kanban' ? 'item' : undefined;
-  
+  const nColumns = viewSettings.tableColumns;
+  const noteViewLocation = viewSettings.noteViewLocation;
+
   // Run search with sorting options
   const results = await runSearch(db, savedQuery.query, groupingMode, savedQuery.options);
-  
+
   // Apply filtering
-  const filteredResults = await filterResults(results, savedQuery.filter, tagSettings);
+  const filteredResults = await filterResults(results, savedQuery.filter, viewSettings);
 
   if (filteredResults.length === 0) {
     await removeResults(note);
@@ -122,13 +122,13 @@ export async function displayResultsInNote(
     // Parse tags from results and accumulate counts
     const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
     tableDefaultValues = mostCommonValue;
-    [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, nColumns);
+    [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, viewSettings);
     resultsString += tableString;
 
   } else if (savedQuery.displayInNote === 'kanban') {
     // Process results for kanban view
     const kanbanResults = await processResultsForKanban(filteredResults);
-    resultsString += await buildKanban(kanbanResults, savedQuery, tagSettings);
+    resultsString += await buildKanban(kanbanResults, tagSettings, viewSettings);
   }
   resultsString += resultsEnd;
 
@@ -212,13 +212,11 @@ export async function removeResults(note: { id: string, body: string }): Promise
 async function filterResults(
   results: GroupedResult[], 
   filter: string, 
-  tagSettings: TagSettings
+  viewSettings: NoteViewSettings
 ): Promise<GroupedResult[]> {
   if (!filter) { return results; }
 
-  const highlight = await joplin.settings.value('itags.resultMarkerInNote');
-  const searchWithRegex = await joplin.settings.value('itags.searchWithRegex');
-  const parsedFilter = parseFilter(filter, 3, !searchWithRegex);
+  const parsedFilter = parseFilter(filter, 3, !viewSettings.searchWithRegex);
   const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
 
   let filteredResults = [...results]; // Create a copy to avoid modifying the original
@@ -226,13 +224,13 @@ async function filterResults(
   for (const note of filteredResults) {
     // Filter out lines that don't contain the filter
     const filteredIndices = note.text.map((_, i) => i).filter(i => 
-      containsFilter(note.text[i], filter, 2, searchWithRegex, '|' + note.title + '|' + note.notebook)
+      containsFilter(note.text[i], filter, 2, viewSettings.searchWithRegex, '|' + note.title + '|' + note.notebook)
     );
 
     note.text = note.text.filter((_, i) => filteredIndices.includes(i));
     note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
 
-    if ((parsedFilter.length > 0 && highlight)) {
+    if ((parsedFilter.length > 0 && viewSettings.resultMarkerInNote)) {
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
@@ -461,7 +459,7 @@ async function buildTable(
   columnCount: { [key: string]: number }, 
   savedQuery: QueryRecord, 
   tagSettings: TagSettings, 
-  nColumns: number = 0
+  viewSettings: NoteViewSettings
 ): Promise<[string, string[]]> {
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
@@ -476,9 +474,9 @@ async function buildTable(
     );
   } else {
     // When includeCols is not specified, add default columns
-    if (nColumns > 0) {
+    if (viewSettings.tableColumns > 0) {
       // Select the top N tags
-      tableColumns = tableColumns.slice(0, nColumns);
+      tableColumns = tableColumns.slice(0, viewSettings.tableColumns);
     }
     if (!excludeCols?.includes('line')) {
       tableColumns.unshift('line');
@@ -496,20 +494,18 @@ async function buildTable(
     tableColumns = tableColumns.filter(col => !excludeCols.includes(col));
   }
 
-  let resultsString = `\n| ${tableColumns.map(col => formatTag(col, tagSettings)).join(' | ')} |\n`;
+  let resultsString = `\n| ${tableColumns.map(col => formatTag(col, viewSettings)).join(' | ')} |\n`;
   resultsString += `|${tableColumns.map((col) => col === 'title' ? '---' : ':---:').join('|')}|\n`;
   for (const result of tableResults) {
     if (Object.keys(result.columns).length === 0) { continue; }
     let row = '|';
-    
+
     // Check if we should display colors in note view
-    const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
     let titleStyle = '';
-    
-    if (displayColors && result.color) {
+    if (viewSettings.noteViewColorTitles && result.color) {
       titleStyle = ` style="color: ${result.color};"`;
     }
-    
+
     for (let column of tableColumns) {
       column = column.toLowerCase();
       if (column === 'title') {
@@ -533,7 +529,7 @@ async function buildTable(
         } else if (tagValue === column) {
           row += ' + |';
         } else {
-          row += ` ${formatTag(tagValue.replace(RegExp(escapeRegex(column) + '/|' + escapeRegex(column + tagSettings.valueDelim), 'g'), ''), tagSettings)} |`;
+          row += ` ${formatTag(tagValue.replace(RegExp(escapeRegex(column) + '/|' + escapeRegex(column + tagSettings.valueDelim), 'g'), ''), viewSettings)} |`;
         }
       }
     }
@@ -546,11 +542,11 @@ async function buildTable(
 /**
  * Formats a tag according to the specified settings
  * @param tag Tag string to format
- * @param tagSettings Configuration for tag formatting
+ * @param viewSettings Configuration for tag formatting
  * @returns Formatted tag string
  */
-function formatTag(tag: string, tagSettings: TagSettings): string {
-  if (tagSettings.tableCase === 'title') {
+function formatTag(tag: string, viewSettings: NoteViewSettings): string {
+  if (viewSettings.tableCase === 'title') {
     return tag.split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');

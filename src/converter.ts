@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { clearObjectReferences } from './utils';
-import { TagSettings, getTagSettings } from './settings';
+import { ConversionSettings, TagSettings, getTagSettings } from './settings';
 
 /**
  * Converts all inline tags in notes to Joplin tags
@@ -44,16 +44,10 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
 
 /**
  * Converts all Joplin tags to inline tags in notes
- * @param listPrefix - The prefix to use for the tag list (e.g. "Tags: ")
- * @param tagPrefix - The prefix for each tag (e.g. "#")
- * @param spaceReplace - The character to replace spaces in tags
- * @param location - Where to place the tag list ('top' or 'bottom')
+ * @param conversionSettings - The settings for the conversion
  */
 export async function convertAllNotesToInlineTags(
-  listPrefix: string, 
-  tagPrefix: string, 
-  spaceReplace: string, 
-  location: 'top' | 'bottom'
+  conversionSettings: ConversionSettings
 ): Promise<void> {
   const ignoreHtmlNotes = true;
   // Get all notes
@@ -73,7 +67,7 @@ export async function convertAllNotesToInlineTags(
         note = clearObjectReferences(note);
         continue;
       }
-      await convertNoteToInlineTags(note, listPrefix, tagPrefix, spaceReplace, location);
+      await convertNoteToInlineTags(note, conversionSettings);
       note = clearObjectReferences(note);
     }
     // Remove the reference to the notes to avoid memory leaks
@@ -145,31 +139,25 @@ export async function convertNoteToJoplinTags(
 /**
  * Converts Joplin tags to inline tags for a single note
  * @param note - The note to process
- * @param listPrefix - The prefix to use for the tag list
- * @param tagPrefix - The prefix for each tag
- * @param spaceReplace - The character to replace spaces in tags
- * @param location - Where to place the tag list
+ * @param conversionSettings - The settings for the conversion
  */
 export async function convertNoteToInlineTags(
   note: { id: string; body: string; markup_language: number },
-  listPrefix: string,
-  tagPrefix: string,
-  spaceReplace: string,
-  location: 'top' | 'bottom'
+  conversionSettings: ConversionSettings
 ): Promise<void> {
   let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
-  const tagList = listPrefix + noteTags.items
+  const tagList = conversionSettings.listPrefix + noteTags.items
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map(tag => tagPrefix + tag.title.replace(/\s/g, spaceReplace)).join(' ');
+    .map(tag => conversionSettings.tagPrefix + tag.title.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
   if (note.body.includes(tagList + '\n')) { return; }
 
   // need to remove previous lists
   const lines = note.body.split('\n');
   let filteredLines = lines;
-  if (listPrefix.length > 2) {
-    filteredLines = lines.filter(line => !line.startsWith(listPrefix));
+  if (conversionSettings.listPrefix.length > 2) {
+    filteredLines = lines.filter(line => !line.startsWith(conversionSettings.listPrefix));
   }
-  if (location === 'top') {
+  if (conversionSettings.location === 'top') {
     note.body = tagList + '\n' + filteredLines.join('\n');
   } else {
     note.body = filteredLines.join('\n') + '\n' + tagList;

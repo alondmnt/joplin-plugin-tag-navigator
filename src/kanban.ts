@@ -5,7 +5,7 @@ import joplin from 'api';
 import { GroupedResult } from './search';
 import { normalizeIndentation } from './search';
 import { QueryRecord } from './searchPanel';
-import { TagSettings } from './settings';
+import { NoteViewSettings, TagSettings } from './settings';
 import { DatabaseManager } from './db';
 import { escapeRegex } from './utils';
 
@@ -625,19 +625,19 @@ function formatHeading(line: string): string {
 /**
  * Builds a markdown kanban board from the results
  * @param kanbanResults Results grouped by checkbox state
- * @param savedQuery Saved query configuration
  * @param tagSettings Configuration for tag formatting
+ * @param viewSettings Configuration for note view
  * @returns Markdown string representing the kanban board
  */
 export async function buildKanban(
   kanbanResults: { [state: string]: KanbanItem[] },
-  savedQuery: QueryRecord,
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  viewSettings: NoteViewSettings
 ): Promise<string> {
   // The order of states to display
-  const displayColors = await joplin.settings.value('itags.noteViewColorTitles');
+  const displayColors = viewSettings.noteViewColorTitles;
   let kanbanString = '\n';
-  
+
   // Build the kanban board
   for (const state of CHECKBOX_STATE_ORDER) {
     const groups = kanbanResults[state];

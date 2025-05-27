@@ -35,9 +35,14 @@ export async function getNavTagLines(body: string): Promise<[TagLine[], TagCount
 }
 
 export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCount: TagCount) {
-  const selectedTab = await joplin.settings.value('itags.navPanelScope') as 'global' | 'note';
-  const userStyle = await joplin.settings.value('itags.navPanelStyle') as string;
-  const tagSort = await joplin.settings.value('itags.navPanelSort') as 'name' | 'count';
+  const navSettings = await joplin.settings.values([
+    'itags.navPanelScope',
+    'itags.navPanelStyle',
+    'itags.navPanelSort',
+  ]);
+  const selectedTab = navSettings['itags.navPanelScope'] as 'global' | 'note';
+  const userStyle = navSettings['itags.navPanelStyle'] as string;
+  const tagSort = navSettings['itags.navPanelSort'] as 'name' | 'count';
 
   // Sort tagsLines by tag name
   if (tagSort === 'count') {
