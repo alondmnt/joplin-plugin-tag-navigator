@@ -257,8 +257,8 @@ export async function processMessage(
   } else if (message.name === 'openNote') {
     try {
       await joplin.commands.execute('dismissPluginPanels');
-    } catch (error) {
-      console.debug('itags.insertTag: error', error);
+    } catch {
+      // Ignore errors (not on mobile, or old version)
     }
     const dbNote = db.getNoteId(message.externalId);
     const currentNote = await joplin.workspace.selectedNote();
@@ -1191,8 +1191,8 @@ async function showCustomSortDialog(
     if (versionInfo.toggleEditorSupport) {
       try {
         await joplin.commands.execute('dismissPluginPanels');
-      } catch (error) {
-        console.debug('itags.showCustomSortDialog: error', error);
+      } catch {
+        // Ignore errors (not on mobile, or old version)
       }
     }
 
