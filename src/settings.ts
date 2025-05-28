@@ -21,8 +21,11 @@ export interface TagSettings {
   colorTag: string;        // Tag for coloring the results in the search panel
   todayTagRegex: RegExp;   // Regex for today's date
   monthTagRegex: RegExp;   // Regex for month's date
+  weekTagRegex: RegExp;    // Regex for week's date
   dateFormat: string;      // Format string for date tags
   monthFormat: string;     // Format string for month tags
+  weekFormat: string;      // Format string for week tags
+  weekStartDay: number;    // Day of week that starts the week (0=Sunday, 1=Monday, etc.)
   valueDelim: string;           // Character to assign a value to a tag
   spaceReplace: string;        // Character to replace spaces in tags
   tagPrefix: string;           // Prefix for converted Joplin tags
@@ -69,8 +72,11 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.colorTag',
     'itags.todayTag', 
     'itags.monthTag',
+    'itags.weekTag',
     'itags.dateFormat',
     'itags.monthFormat',
+    'itags.weekFormat',
+    'itags.weekStartDay',
     'itags.valueDelim',
     'itags.tagPrefix',
     'itags.spaceReplace',
@@ -96,6 +102,12 @@ export async function getTagSettings(): Promise<TagSettings> {
   }
   const monthTagRegex = new RegExp(`(${escapeRegex(monthTag)})([+-]?\\d*)`, 'g');
 
+  let weekTag = (settings['itags.weekTag'] as string).trim().toLowerCase();
+  if (weekTag.length == 0) {
+    weekTag = '#week';  // Ensure default value
+  }
+  const weekTagRegex = new RegExp(`(${escapeRegex(weekTag)})([+-]?\\d*)`, 'g');
+
   return {
     tagRegex,
     excludeRegex,
@@ -103,8 +115,11 @@ export async function getTagSettings(): Promise<TagSettings> {
     colorTag: settings['itags.colorTag'] as string || '#color=',
     todayTagRegex,
     monthTagRegex,
+    weekTagRegex,
     dateFormat: settings['itags.dateFormat'] as string || '#yyyy-MM-dd',
     monthFormat: settings['itags.monthFormat'] as string || '#yyyy-MM',
+    weekFormat: settings['itags.weekFormat'] as string || '#yyyy-MM-dd',
+    weekStartDay: parseInt(settings['itags.weekStartDay'] as string) || 0,
     valueDelim: settings['itags.valueDelim'] as string || '=',
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
     spaceReplace: settings['itags.spaceReplace'] as string || '_',
@@ -556,6 +571,15 @@ export async function registerSettings(): Promise<void> {
       label: 'Date tags: Month',
       description: 'Use this tag to tag or find notes relative to the current month. Usage: #month, #month+1, #month-5',
     },
+    'itags.weekTag': {
+      value: '#week',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Week',
+      description: 'Use this tag to tag or find notes relative to the current week. Usage: #week, #week+1, #week-5',
+    },
     'itags.dateFormat': {
       value: '#yyyy-MM-dd',
       type: SettingItemType.String,
@@ -573,6 +597,33 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Date tags: Month format',
       description: 'Format for month tags. Default: #yyyy-MM. See https://date-fns.org/docs/format for options.',
+    },
+    'itags.weekFormat': {
+      value: '#yyyy-MM-dd',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Week format',
+      description: 'Format for week tags. Default: #yyyy-MM-dd. See https://date-fns.org/docs/format for options.',
+    },
+    'itags.weekStartDay': {
+      value: 0,
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Date tags: Week start day',
+      description: 'Day of week that starts the week. Default: Sunday.',
+      isEnum: true,
+      options: {
+        '0': 'Sunday',
+        '1': 'Monday',
+        '2': 'Tuesday',
+        '3': 'Wednesday',
+        '4': 'Thursday',
+        '5': 'Friday',
+        '6': 'Saturday',
+      }
     },
     'itags.colorTag': {
       value: '#color=',

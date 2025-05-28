@@ -234,7 +234,7 @@ function isWithinInlineCode(line: string, position: number): boolean {
  * @param dateModifier Function to modify the date
  * @param tagSettings Configuration for tag processing
  * @param baseDate Base date to use for calculations
- * @param dateFormat Optional custom date format (defaults to tagSettings.dateFormat)
+ * @param dateFormat The date format to use for this specific tag type
  * @returns Processed tag string
  */
 function processDateTagPattern(
@@ -243,13 +243,11 @@ function processDateTagPattern(
   dateModifier: (date: Date, increment: number) => Date,
   tagSettings: TagSettings,
   baseDate: Date,
-  dateFormat?: string
+  dateFormat: string
 ): string {
   // Reset regex state to avoid issues with global flag
   regex.lastIndex = 0;
-
-  const formatToUse = dateFormat || tagSettings.dateFormat;
-
+  
   return tag.replace(regex, (match, tagName, increment) => {
     let amount = 0;
     if (increment) {
@@ -262,7 +260,7 @@ function processDateTagPattern(
 
     try {
       const modifiedDate = dateModifier(new Date(baseDate), amount);
-      return format(modifiedDate, formatToUse);
+      return format(modifiedDate, dateFormat);
     } catch (error) {
       console.error(`Error while formatting date: ${tag}, amount: ${amount}. Error: ${error}`);
       return match;
@@ -285,6 +283,31 @@ function getMonthWithIncrement(date: Date, monthIncrement: number): Date {
 }
 
 /**
+ * Gets the week start date with increment support
+ * @param date Base date
+ * @param dayIncrement Number of days to add to current week start (can be negative)
+ * @param weekStartDay Day of week that starts the week (0=Sunday, 1=Monday, etc.)
+ * @returns New date set to the start of the target week plus day increment
+ */
+function getWeekStartWithIncrement(date: Date, dayIncrement: number, weekStartDay: number): Date {
+  const result = new Date(date);
+  
+  // Get current day of week (0=Sunday, 1=Monday, etc.)
+  const currentDay = result.getDay();
+  
+  // Calculate days to subtract to get to week start
+  let daysToWeekStart = (currentDay - weekStartDay + 7) % 7;
+  
+  // Go to start of current week
+  result.setDate(result.getDate() - daysToWeekStart);
+  
+  // Add the day increment
+  result.setDate(result.getDate() + dayIncrement);
+  
+  return result;
+}
+
+/**
  * Processes a date tag according to settings
  * @param tag The tag to process
  * @param tagSettings Configuration for tag processing
@@ -293,16 +316,16 @@ function getMonthWithIncrement(date: Date, monthIncrement: number): Date {
 export function parseDateTag(tag: string, tagSettings: TagSettings): string {
   // Early return for empty tags
   if (!tag) return tag;
-
+  
   // Validate required settings
-  if (!tagSettings?.todayTagRegex || !tagSettings?.monthTagRegex) {
+  if (!tagSettings?.todayTagRegex || !tagSettings?.monthTagRegex || !tagSettings?.weekTagRegex) {
     console.warn('Missing required regex patterns in tagSettings');
     return tag;
   }
 
   // Cache the current date to avoid creating multiple Date objects
   const now = new Date();
-
+  
   // Process today tags with day arithmetic using full date format
   let processedTag = processDateTagPattern(
     tag,
@@ -324,6 +347,16 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
     tagSettings,
     now,
     tagSettings.monthFormat
+  );
+
+  // Process week tags with day arithmetic using dedicated week format
+  processedTag = processDateTagPattern(
+    processedTag,
+    tagSettings.weekTagRegex,
+    (date, days) => getWeekStartWithIncrement(date, days, tagSettings.weekStartDay),
+    tagSettings,
+    now,
+    tagSettings.weekFormat
   );
 
   return processedTag;

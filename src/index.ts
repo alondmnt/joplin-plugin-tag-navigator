@@ -473,8 +473,11 @@ joplin.plugins.register({
           event.keys.includes('itags.excludeRegex') ||
           event.keys.includes('itags.todayTag') ||
           event.keys.includes('itags.monthTag') ||
+          event.keys.includes('itags.weekTag') ||
           event.keys.includes('itags.dateFormat') ||
           event.keys.includes('itags.monthFormat') ||
+          event.keys.includes('itags.weekFormat') ||
+          event.keys.includes('itags.weekStartDay') ||
           event.keys.includes('itags.minCount') ||
           event.keys.includes('itags.valueDelim') ||
           event.keys.includes('itags.tagPrefix') ||
