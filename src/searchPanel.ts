@@ -514,14 +514,14 @@ export async function updatePanelResults(
   const tagSettings = await getTagSettings();
 
   // Ensure we always have valid sort parameters with proper type checking and fallbacks
-  let sortBy = ensureSortByString(options?.sortBy);
-  let sortOrder = ensureSortOrderString(options?.sortOrder);
+  let sortBy = options?.sortBy;
+  let sortOrder = options?.sortOrder;
 
   // If no sort options provided, get defaults from settings with fallbacks
-  if (!options?.sortBy) {
+  if (!sortBy) {
     sortBy = ensureSortByString(panelSettings['itags.resultSort']) || 'modified';
   }
-  if (!options?.sortOrder) {
+  if (!sortOrder) {
     sortOrder = ensureSortOrderString(panelSettings['itags.resultOrder']) || 'desc';
   }
 
@@ -1225,8 +1225,8 @@ async function showCustomSortDialog(
     }
 
     // Ensure we have valid strings for the dialog with proper fallbacks
-    const validSortBy = ensureSortByString(currentSortBy);
-    const validSortOrder = ensureSortOrderString(currentSortOrder);
+    const validSortBy = currentSortBy || 'modified';
+    const validSortOrder = currentSortOrder || 'desc';
 
     // Basic HTML escaping function
     const escapeHtml = (text: string) => {
@@ -1341,7 +1341,7 @@ function ensureSortOrderString(sortOrder: any): string {
     return 'desc';
   }
 
-  return sortOrder;
+  return sortOrder.toLowerCase().trim();
 }
 
 /**
@@ -1360,28 +1360,25 @@ function ensureSortByString(sortBy: any): string {
     return 'modified';
   }
 
-  return sortBy;
+  return sortBy.toLowerCase().trim();
 }
 
 /**
  * Normalizes sort order input to a standardized array format
- * @param sortOrder - Raw sort order input (comma-separated string)
+ * @param sortOrder - Validated sort order string (comma-separated)
  * @returns Normalized array of 'asc'/'desc' values, or null if invalid
  */
 function normalizeSortOrder(sortOrder: string): string[] | null {
   try {
-    // Ensure we have a valid string
-    const validSortOrder = ensureSortOrderString(sortOrder);
-
     // Handle comma-separated string input
-    const orderArray = validSortOrder.split(',').map(s => s.trim().toLowerCase());
+    const orderArray = sortOrder.split(',').map(s => s.trim().toLowerCase());
 
     // Normalize each value to 'asc' or 'desc'
     const normalized = orderArray.map((order, index) => {
       if (order.startsWith('a')) return 'asc';
       if (order.startsWith('d')) return 'desc';
       if (order === '') return 'asc'; // Default to ascending for empty values
-      throw new Error(`Invalid sort order: "${validSortOrder}". Invalid value "${order}" at position ${index + 1}. Use "asc" or "desc".`);
+      throw new Error(`Invalid sort order: "${sortOrder}". Invalid value "${order}" at position ${index + 1}. Use "asc" or "desc".`);
     });
 
     return normalized;
