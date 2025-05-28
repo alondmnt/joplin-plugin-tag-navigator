@@ -1859,10 +1859,22 @@ addEventListenerWithTracking(resultSort, 'change', (event) => {
         // Revert dropdown to previous value until dialog is confirmed
         const prevValue = resultSort.getAttribute('data-prev-value') || 'modified';
         resultSort.value = prevValue;
+
     } else {
         // Handle standard sort options (modified, created, title, notebook)
         // Store selected value as previous for potential revert
         resultSort.setAttribute('data-prev-value', resultSort.value);
+
+        // Check if we have a custom sort order and simplify it to first element only
+        const currentSortOrder = lastMessage?.message?.sortOrder;
+        if (currentSortOrder && currentSortOrder.includes(',')) {
+            // Extract first element from comma-separated order
+            const simplifiedOrder = currentSortOrder.toLowerCase().startsWith('a') ? 'asc' : 'desc';
+            
+            // Update the display and send the simplified order
+            updateResultOrderDisplay(simplifiedOrder);
+            sendSetting('resultOrder', simplifiedOrder);
+        }
 
         // Send setting update to trigger sorting on the backend
         sendSetting('resultSort', resultSort.value);
@@ -1873,13 +1885,10 @@ addEventListenerWithTracking(resultOrder, 'click', () => {
     // Check if we have a custom sort order (string with commas) from the last message
     const currentSortOrder = lastMessage?.message?.sortOrder;
     
-    if (currentSortOrder && typeof currentSortOrder === 'string' && currentSortOrder.includes(',')) {
+    if (currentSortOrder && currentSortOrder.includes(',')) {
         // For custom sort orders, toggle each element between asc/desc
         const orderArray = currentSortOrder.split(',').map(s => s.trim());
         const toggledArray = orderArray.map(order => {
-            if (!order || typeof order !== 'string') {
-                return 'asc'; // Default fallback for null/undefined/invalid values
-            }
             return order.toLowerCase().startsWith('a') ? 'desc' : 'asc';
         });
         
@@ -1983,14 +1992,6 @@ function removeContextMenu(menu) {
 
 // Function to update result order display based on sort order string
 function updateResultOrderDisplay(sortOrderStr) {
-    if (!sortOrderStr || typeof sortOrderStr !== 'string') {
-        // Fallback for invalid values
-        resultOrderState = 'desc';
-        resultOrder.innerHTML = '<b>↑</b>';
-        resultOrder.title = 'desc';
-        return;
-    }
-
     // Check if it's a custom sort order (contains comma)
     const isCustomSort = sortOrderStr.includes(',');
     
@@ -1998,9 +1999,6 @@ function updateResultOrderDisplay(sortOrderStr) {
         // Convert comma-separated order to arrows: asc,desc,asc -> ↓↑↓
         const orderArray = sortOrderStr.split(',').map(s => s.trim());
         const arrows = orderArray.map(order => {
-            if (!order || typeof order !== 'string') {
-                return '↑'; // Default fallback
-            }
             return order.toLowerCase().startsWith('a') ? '↓' : '↑';
         }).join('');
         

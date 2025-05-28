@@ -364,13 +364,15 @@ export async function processMessage(
         if (!searchParams.options) {
           searchParams.options = {sortOrder: 'desc'};
         }
-        searchParams.options.sortBy = message.value;
+        // Ensure sortBy is a valid string
+        const validSortBy = ensureSortByString(message.value);
+        searchParams.options.sortBy = validSortBy;
 
         // Only save standard sort values to persistent settings to avoid enum validation errors
         // Custom sort values (like 'tag1,tag2') are applied in memory but not persisted
         const standardSortValues = ['modified', 'created', 'title', 'notebook'];
-        if (standardSortValues.includes(message.value)) {
-          await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        if (standardSortValues.includes(validSortBy)) {
+          await joplin.settings.setValue(`itags.${message.field}`, validSortBy);
         }
 
         // Only sort and update if we have existing results, otherwise just save the setting
@@ -385,12 +387,14 @@ export async function processMessage(
         if (!searchParams.options) {
           searchParams.options = {sortBy: 'modified'};
         }
-        searchParams.options.sortOrder = message.value;
+        // Ensure sortOrder is a valid string
+        const validSortOrder = ensureSortOrderString(message.value);
+        searchParams.options.sortOrder = validSortOrder;
 
         // Only save simple string values to persistent settings to avoid enum validation errors
         // Custom sort order strings (with commas) are kept in memory for the current session
-        if (!message.value.includes(',')) {
-          await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        if (!validSortOrder.includes(',')) {
+          await joplin.settings.setValue(`itags.${message.field}`, validSortOrder);
         }
 
         // Only sort and update if we have existing results, otherwise just save the setting
@@ -509,14 +513,16 @@ export async function updatePanelResults(
   ]);
   const tagSettings = await getTagSettings();
 
-  // Ensure we always have valid sort parameters
-  let sortBy = options?.sortBy;
-  let sortOrder = options?.sortOrder;
+  // Ensure we always have valid sort parameters with proper type checking and fallbacks
+  let sortBy = ensureSortByString(options?.sortBy);
+  let sortOrder = ensureSortOrderString(options?.sortOrder);
 
-  // If no sort options provided, get defaults from settings
-  if (!sortBy || !sortOrder) {
-    sortBy = sortBy || panelSettings['itags.resultSort'] as string || 'modified';
-    sortOrder = sortOrder || panelSettings['itags.resultOrder'] as string || 'desc';
+  // If no sort options provided, get defaults from settings with fallbacks
+  if (!options?.sortBy) {
+    sortBy = ensureSortByString(panelSettings['itags.resultSort']) || 'modified';
+  }
+  if (!options?.sortOrder) {
+    sortOrder = ensureSortOrderString(panelSettings['itags.resultOrder']) || 'desc';
   }
 
   // Just render the HTML and pass along the sorting options that were used
@@ -563,8 +569,8 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     'itags.resultColorProperty',
   ]);
   const settings: PanelSettings = {
-    resultSort: joplinSettings['itags.resultSort'] as string,
-    resultOrder: joplinSettings['itags.resultOrder'] as string,
+    resultSort: ensureSortByString(joplinSettings['itags.resultSort']),
+    resultOrder: ensureSortOrderString(joplinSettings['itags.resultOrder']),
     resultToggle: joplinSettings['itags.resultToggle'] as boolean,
     resultMarker: joplinSettings['itags.resultMarker'] as boolean,
     showQuery: joplinSettings['itags.showQuery'] as boolean,
@@ -1144,10 +1150,21 @@ async function testQuery(
 
   // Normalize sort order if it exists
   if (query.options?.sortOrder) {
+    // Ensure sortOrder is a valid string first
+    query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);
+    
     const normalizedSortOrder = normalizeSortOrder(query.options.sortOrder);
     if (normalizedSortOrder) {
       query.options.sortOrder = normalizedSortOrder.join(',');
+    } else {
+      // If normalization fails, use default
+      query.options.sortOrder = 'desc';
     }
+  }
+
+  // Ensure sortBy is a valid string if it exists
+  if (query.options?.sortBy) {
+    query.options.sortBy = ensureSortByString(query.options.sortBy);
   }
 
   return query;
@@ -1207,6 +1224,10 @@ async function showCustomSortDialog(
       }
     }
 
+    // Ensure we have valid strings for the dialog with proper fallbacks
+    const validSortBy = ensureSortByString(currentSortBy);
+    const validSortOrder = ensureSortOrderString(currentSortOrder);
+
     // Basic HTML escaping function
     const escapeHtml = (text: string) => {
       return text
@@ -1222,7 +1243,7 @@ async function showCustomSortDialog(
       <form class="sortConfigForm" name="sort-config-form">
         <div style="margin-bottom: 10px;">
           <label for="sortBy" style="display: block; margin-bottom: 3px; font-weight: bold;">Sort by:</label>
-          <input type="text" id="sortBy" name="sortBy" value="${escapeHtml(currentSortBy)}" 
+          <input type="text" id="sortBy" name="sortBy" value="${escapeHtml(validSortBy)}" 
                  placeholder="tag1,tag2 or modified,title" 
                  style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
           <small style="opacity: 0.7; font-size: 10px;">
@@ -1231,7 +1252,7 @@ async function showCustomSortDialog(
         </div>
         <div style="margin-bottom: 10px;">
           <label for="sortOrder" style="display: block; margin-bottom: 3px; font-weight: bold;">Order:</label>
-          <input type="text" id="sortOrder" name="sortOrder" value="${escapeHtml(currentSortOrder)}" 
+          <input type="text" id="sortOrder" name="sortOrder" value="${escapeHtml(validSortOrder)}" 
                  placeholder="asc,desc or desc" 
                  style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
           <small style="opacity: 0.7; font-size: 10px;">
@@ -1253,18 +1274,22 @@ async function showCustomSortDialog(
     const result = await joplin.views.dialogs.open(sortDialogHandle);
     
     if (result.id === 'apply') {
-      // Get the form data
-      const sortBy = result.formData?.['sort-config-form']?.sortBy?.trim() || '';
-      const sortOrderInput = result.formData?.['sort-config-form']?.sortOrder?.trim() || '';
+      // Get the form data with proper validation
+      const rawSortBy = result.formData?.['sort-config-form']?.sortBy || '';
+      const rawSortOrderInput = result.formData?.['sort-config-form']?.sortOrder || '';
 
-      if (sortBy) {
+      // Ensure we have valid strings
+      const sortBy = ensureSortByString(rawSortBy.trim());
+      const sortOrderInput = ensureSortOrderString(rawSortOrderInput.trim() || 'asc');
+
+      if (sortBy && sortBy !== 'modified') { // Only proceed if we have a non-default sortBy
         // Normalize the sort order input
-        const normalizedSortOrder = normalizeSortOrder(sortOrderInput || 'asc');
+        const normalizedSortOrder = normalizeSortOrder(sortOrderInput);
         
         if (!normalizedSortOrder) {
           // Show error dialog for invalid sort order
           await joplin.views.dialogs.showMessageBox(
-            `Invalid sort order: "${sortOrderInput}"\n\n` +
+            `Invalid sort order: "${rawSortOrderInput}"\n\n` +
             'Please use "asc" or "desc" values, comma-separated.\n' +
             'Examples: "asc", "desc,asc", "ascending,descending"'
           );
@@ -1284,7 +1309,7 @@ async function showCustomSortDialog(
           results: JSON.stringify([]), // Empty results to trigger UI update
           query: JSON.stringify(searchParams.query),
           sortBy: sortBy,
-          sortOrder: normalizedSortOrder,
+          sortOrder: normalizedSortOrder.join(','),
         });
 
         // Apply sorting to existing results if available
@@ -1301,25 +1326,62 @@ async function showCustomSortDialog(
 }
 
 /**
+ * Ensures sortOrder is always a valid string with proper fallbacks
+ * @param sortOrder - Raw sort order input (any type)
+ * @returns Normalized sort order string
+ */
+function ensureSortOrderString(sortOrder: any): string {
+  // Handle null, undefined, or non-string types
+  if (!sortOrder || typeof sortOrder !== 'string') {
+    return 'desc'; // Default fallback
+  }
+
+  // Handle empty string
+  if (sortOrder.trim() === '') {
+    return 'desc';
+  }
+
+  return sortOrder;
+}
+
+/**
+ * Ensures sortBy is always a valid string with proper fallbacks
+ * @param sortBy - Raw sort by input (any type)
+ * @returns Normalized sort by string
+ */
+function ensureSortByString(sortBy: any): string {
+  // Handle null, undefined, or non-string types
+  if (!sortBy || typeof sortBy !== 'string') {
+    return 'modified'; // Default fallback
+  }
+
+  // Handle empty string
+  if (sortBy.trim() === '') {
+    return 'modified';
+  }
+
+  return sortBy;
+}
+
+/**
  * Normalizes sort order input to a standardized array format
  * @param sortOrder - Raw sort order input (comma-separated string)
  * @returns Normalized array of 'asc'/'desc' values, or null if invalid
  */
 function normalizeSortOrder(sortOrder: string): string[] | null {
   try {
-    if (typeof sortOrder !== 'string') {
-      return null;
-    }
+    // Ensure we have a valid string
+    const validSortOrder = ensureSortOrderString(sortOrder);
 
     // Handle comma-separated string input
-    const orderArray = sortOrder.split(',').map(s => s.trim().toLowerCase());
+    const orderArray = validSortOrder.split(',').map(s => s.trim().toLowerCase());
 
     // Normalize each value to 'asc' or 'desc'
     const normalized = orderArray.map((order, index) => {
       if (order.startsWith('a')) return 'asc';
       if (order.startsWith('d')) return 'desc';
       if (order === '') return 'asc'; // Default to ascending for empty values
-      throw new Error(`Invalid sort order: "${sortOrder}". Invalid value "${order}" at position ${index + 1}. Use "asc" or "desc".`);
+      throw new Error(`Invalid sort order: "${validSortOrder}". Invalid value "${order}" at position ${index + 1}. Use "asc" or "desc".`);
     });
 
     return normalized;
