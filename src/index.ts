@@ -472,7 +472,9 @@ joplin.plugins.register({
       if (event.keys.includes('itags.tagRegex') ||
           event.keys.includes('itags.excludeRegex') ||
           event.keys.includes('itags.todayTag') ||
+          event.keys.includes('itags.monthTag') ||
           event.keys.includes('itags.dateFormat') ||
+          event.keys.includes('itags.monthFormat') ||
           event.keys.includes('itags.minCount') ||
           event.keys.includes('itags.valueDelim') ||
           event.keys.includes('itags.tagPrefix') ||

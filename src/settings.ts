@@ -20,7 +20,9 @@ export interface TagSettings {
   minCount: number;        // Minimum number of occurrences for a tag to be included
   colorTag: string;        // Tag for coloring the results in the search panel
   todayTagRegex: RegExp;   // Regex for today's date
+  monthTagRegex: RegExp;   // Regex for month's date
   dateFormat: string;      // Format string for date tags
+  monthFormat: string;     // Format string for month tags
   valueDelim: string;           // Character to assign a value to a tag
   spaceReplace: string;        // Character to replace spaces in tags
   tagPrefix: string;           // Prefix for converted Joplin tags
@@ -66,7 +68,9 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.minCount',
     'itags.colorTag',
     'itags.todayTag', 
+    'itags.monthTag',
     'itags.dateFormat',
+    'itags.monthFormat',
     'itags.valueDelim',
     'itags.tagPrefix',
     'itags.spaceReplace',
@@ -86,13 +90,21 @@ export async function getTagSettings(): Promise<TagSettings> {
   }
   const todayTagRegex = new RegExp(`(${escapeRegex(todayTag)})([+-]?\\d*)`, 'g');
 
+  let monthTag = (settings['itags.monthTag'] as string).trim().toLowerCase();
+  if (monthTag.length == 0) {
+    monthTag = '#month';  // Ensure default value
+  }
+  const monthTagRegex = new RegExp(`(${escapeRegex(monthTag)})([+-]?\\d*)`, 'g');
+
   return {
     tagRegex,
     excludeRegex,
     minCount: settings['itags.minCount'] as number || 1,
     colorTag: settings['itags.colorTag'] as string || '#color=',
     todayTagRegex,
+    monthTagRegex,
     dateFormat: settings['itags.dateFormat'] as string || '#yyyy-MM-dd',
+    monthFormat: settings['itags.monthFormat'] as string || '#yyyy-MM',
     valueDelim: settings['itags.valueDelim'] as string || '=',
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
     spaceReplace: settings['itags.spaceReplace'] as string || '_',
@@ -535,6 +547,15 @@ export async function registerSettings(): Promise<void> {
       label: 'Date tags: Today',
       description: 'Use this tag to tag or find notes relative to today\'s date. Usage: #today, #today+1, #today-5',
     },
+    'itags.monthTag': {
+      value: '#month',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Month',
+      description: 'Use this tag to tag or find notes relative to the current month. Usage: #month, #month+1, #month-5',
+    },
     'itags.dateFormat': {
       value: '#yyyy-MM-dd',
       type: SettingItemType.String,
@@ -543,6 +564,15 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Date tags: Date format',
       description: 'Format for date tags. Default: #yyyy-MM-dd. See https://date-fns.org/docs/format for options.',
+    },
+    'itags.monthFormat': {
+      value: '#yyyy-MM',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Date tags: Month format',
+      description: 'Format for month tags. Default: #yyyy-MM. See https://date-fns.org/docs/format for options.',
     },
     'itags.colorTag': {
       value: '#color=',

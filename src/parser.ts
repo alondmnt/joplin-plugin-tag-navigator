@@ -228,37 +228,105 @@ function isWithinInlineCode(line: string, position: number): boolean {
 }
 
 /**
+ * Helper function to process date tags with arithmetic
+ * @param tag The tag to process
+ * @param regex The regex pattern to match
+ * @param dateModifier Function to modify the date
+ * @param tagSettings Configuration for tag processing
+ * @param baseDate Base date to use for calculations
+ * @param dateFormat Optional custom date format (defaults to tagSettings.dateFormat)
+ * @returns Processed tag string
+ */
+function processDateTagPattern(
+  tag: string,
+  regex: RegExp,
+  dateModifier: (date: Date, increment: number) => Date,
+  tagSettings: TagSettings,
+  baseDate: Date,
+  dateFormat?: string
+): string {
+  // Reset regex state to avoid issues with global flag
+  regex.lastIndex = 0;
+
+  const formatToUse = dateFormat || tagSettings.dateFormat;
+
+  return tag.replace(regex, (match, tagName, increment) => {
+    let amount = 0;
+    if (increment) {
+      amount = parseInt(increment, 10);
+      if (isNaN(amount)) {
+        console.error(`Error while parsing date tag: ${tag}, increment: ${increment}.`);
+        return match;
+      }
+    }
+
+    try {
+      const modifiedDate = dateModifier(new Date(baseDate), amount);
+      return format(modifiedDate, formatToUse);
+    } catch (error) {
+      console.error(`Error while formatting date: ${tag}, amount: ${amount}. Error: ${error}`);
+      return match;
+    }
+  });
+}
+
+/**
+ * Gets the month number with increment support
+ * @param date Base date
+ * @param monthIncrement Number of months to add to current month (can be negative)
+ * @returns New date set to the target month
+ */
+function getMonthWithIncrement(date: Date, monthIncrement: number): Date {
+  const result = new Date(date);
+  // Set to first day of the target month to avoid day overflow issues
+  result.setDate(1);
+  result.setMonth(result.getMonth() + monthIncrement);
+  return result;
+}
+
+/**
  * Processes a date tag according to settings
  * @param tag The tag to process
  * @param tagSettings Configuration for tag processing
  * @returns Processed tag string with date calculations applied
  */
 export function parseDateTag(tag: string, tagSettings: TagSettings): string {
-  // Replace the today tag with the current date, including basic arithmetic support
-  if (!tag) { return tag; }
+  // Early return for empty tags
+  if (!tag) return tag;
 
-  return tag.replace(tagSettings.todayTagRegex, (match, todayTag, increment) => {
-    // Default increment is 0 if not provided
-    let days = 0;
-    if (increment) {
-      days = parseInt(increment, 10);
-      if (isNaN(days)) {
-        console.error(`Error while parsing date tag: ${tag}, ${increment}.`);
-        return match; // Return the matched portion on error
-      }
-    }
+  // Validate required settings
+  if (!tagSettings?.todayTagRegex || !tagSettings?.monthTagRegex) {
+    console.warn('Missing required regex patterns in tagSettings');
+    return tag;
+  }
 
-    // Calculate the date
-    const date = new Date();
-    date.setDate(date.getDate() + days);
+  // Cache the current date to avoid creating multiple Date objects
+  const now = new Date();
 
-    try {
-      return format(date, tagSettings.dateFormat);
-    } catch (error) {
-      console.error(`Error while formatting date: ${tag}, ${days}. Error: ${error}`);
-      return match; // Return the matched portion on error
-    }
-  });
+  // Process today tags with day arithmetic using full date format
+  let processedTag = processDateTagPattern(
+    tag,
+    tagSettings.todayTagRegex,
+    (date, days) => {
+      date.setDate(date.getDate() + days);
+      return date;
+    },
+    tagSettings,
+    now,
+    tagSettings.dateFormat
+  );
+
+  // Process month tags with month arithmetic using dedicated month format
+  processedTag = processDateTagPattern(
+    processedTag,
+    tagSettings.monthTagRegex,
+    getMonthWithIncrement,
+    tagSettings,
+    now,
+    tagSettings.monthFormat
+  );
+
+  return processedTag;
 }
 
 /**
