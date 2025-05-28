@@ -39,6 +39,7 @@ let resultToggleState = 'expand';
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
+let lastMessage = null; // Store the last message from the main process
 const resultToggle = document.getElementById('itags-search-resultToggle');
 const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
@@ -92,7 +93,7 @@ webviewApi.onMessage((message) => {
                 resultSort.removeChild(option);
             }
         }
-        
+
         if (message.message.sortBy) {
             // If sortBy is not in the standard options, add it as a custom option
             if (!Array.from(resultSort.options).some(option => option.value === message.message.sortBy)) {
@@ -108,9 +109,7 @@ webviewApi.onMessage((message) => {
 
         // Set sort order if provided
         if (message.message.sortOrder) {
-            // Set it by the first letter of the sortOrder (even though it can be a list)
-            resultOrderState = message.message.sortOrder.toLowerCase().startsWith('a') ? 'asc' : 'desc';
-            resultOrder.textContent = resultOrderState === 'asc' ? '↓': '↑';
+            updateResultOrderDisplay(message.message.sortOrder);
         }
 
         updateResultsArea();
@@ -289,9 +288,8 @@ function updatePanelSettings(message) {
     }
     // If current value is custom, keep it and don't update data-prev-value
 
-    resultOrderState = settings.resultOrder;
-    resultOrder.innerHTML = resultOrderState === 'asc' ? 
-        '<b>↓</b>' : '<b>↑</b>';  // Button shows the current state (asc / desc)
+    // Handle string resultOrder format
+    updateResultOrderDisplay(settings.resultOrder);
     resultMarker = settings.resultMarker;
     resultColorProperty = settings.resultColorProperty;
 
@@ -1872,17 +1870,42 @@ addEventListenerWithTracking(resultSort, 'change', (event) => {
 });
 
 addEventListenerWithTracking(resultOrder, 'click', () => {
-    // Toggle the sort order
-    if (resultOrderState === 'asc') {
-        resultOrderState = 'desc';
-        resultOrder.innerHTML = '<b>↑</b>';  // Button shows the current state (desc)
-    } else if (resultOrderState === 'desc') {
-        resultOrderState = 'asc';
-        resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
-    }
+    // Check if we have a custom sort order (string with commas) from the last message
+    const currentSortOrder = lastMessage?.message?.sortOrder;
     
-    // Send setting update to trigger sorting on the backend
-    sendSetting('resultOrder', resultOrderState);
+    if (currentSortOrder && typeof currentSortOrder === 'string' && currentSortOrder.includes(',')) {
+        // For custom sort orders, toggle each element between asc/desc
+        const orderArray = currentSortOrder.split(',').map(s => s.trim());
+        const toggledArray = orderArray.map(order => {
+            if (!order || typeof order !== 'string') {
+                return 'asc'; // Default fallback for null/undefined/invalid values
+            }
+            return order.toLowerCase().startsWith('a') ? 'desc' : 'asc';
+        });
+        
+        const toggledOrder = toggledArray.join(',');
+        
+        // Update display using the new function
+        updateResultOrderDisplay(toggledOrder);
+        
+        // Send the toggled string to the backend
+        sendSetting('resultOrder', toggledOrder);
+    } else {
+        // Handle simple string sort orders
+        if (resultOrderState === 'asc') {
+            resultOrderState = 'desc';
+            resultOrder.innerHTML = '<b>↑</b>';  // Button shows the current state (desc)
+        } else if (resultOrderState === 'desc') {
+            resultOrderState = 'asc';
+            resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
+        }
+        
+        // Update visual indicator for simple sort order
+        resultOrder.title = resultOrderState;
+        
+        // Send setting update to trigger sorting on the backend
+        sendSetting('resultOrder', resultOrderState);
+    }
 });
 
 addEventListenerWithTracking(resultToggle, 'click', () => {
@@ -1956,4 +1979,40 @@ function removeContextMenu(menu) {
     if (!menu) return;
     clearNode(menu);  // Clear event listeners
     menu.remove();    // Remove from DOM
+}
+
+// Function to update result order display based on sort order string
+function updateResultOrderDisplay(sortOrderStr) {
+    if (!sortOrderStr || typeof sortOrderStr !== 'string') {
+        // Fallback for invalid values
+        resultOrderState = 'desc';
+        resultOrder.innerHTML = '<b>↑</b>';
+        resultOrder.title = 'desc';
+        return;
+    }
+
+    // Check if it's a custom sort order (contains comma)
+    const isCustomSort = sortOrderStr.includes(',');
+    
+    if (isCustomSort) {
+        // Convert comma-separated order to arrows: asc,desc,asc -> ↓↑↓
+        const orderArray = sortOrderStr.split(',').map(s => s.trim());
+        const arrows = orderArray.map(order => {
+            if (!order || typeof order !== 'string') {
+                return '↑'; // Default fallback
+            }
+            return order.toLowerCase().startsWith('a') ? '↓' : '↑';
+        }).join('');
+        
+        // Set state based on first element for toggle behavior
+        const firstElement = orderArray[0] || 'desc';
+        resultOrderState = (firstElement.toLowerCase().startsWith('a')) ? 'asc' : 'desc';
+        resultOrder.innerHTML = `<b>${arrows}</b>`;
+        resultOrder.title = sortOrderStr;
+    } else {
+        // Simple sort order
+        resultOrderState = sortOrderStr.toLowerCase().startsWith('a') ? 'asc' : 'desc';
+        resultOrder.innerHTML = resultOrderState === 'asc' ? '<b>↓</b>' : '<b>↑</b>';
+        resultOrder.title = resultOrderState;
+    }
 }

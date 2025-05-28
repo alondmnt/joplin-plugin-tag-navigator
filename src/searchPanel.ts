@@ -387,8 +387,11 @@ export async function processMessage(
         }
         searchParams.options.sortOrder = message.value;
 
-        // Save resultOrder to settings (it's not an enum, so no validation issues)
-        await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        // Only save simple string values to persistent settings to avoid enum validation errors
+        // Custom sort order strings (with commas) are kept in memory for the current session
+        if (!message.value.includes(',')) {
+          await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        }
 
         // Only sort and update if we have existing results, otherwise just save the setting
         if (lastSearchResults && lastSearchResults.length > 0) {
@@ -1139,6 +1142,14 @@ async function testQuery(
   // filter null groups
   query.query = queryGroups.filter((group: any) => group.length > 0);
 
+  // Normalize sort order if it exists
+  if (query.options?.sortOrder) {
+    const normalizedSortOrder = normalizeSortOrder(query.options.sortOrder);
+    if (normalizedSortOrder) {
+      query.options.sortOrder = normalizedSortOrder.join(',');
+    }
+  }
+
   return query;
 }
 
@@ -1244,15 +1255,28 @@ async function showCustomSortDialog(
     if (result.id === 'apply') {
       // Get the form data
       const sortBy = result.formData?.['sort-config-form']?.sortBy?.trim() || '';
-      const sortOrder = result.formData?.['sort-config-form']?.sortOrder?.trim() || '';
+      const sortOrderInput = result.formData?.['sort-config-form']?.sortOrder?.trim() || '';
 
       if (sortBy) {
+        // Normalize the sort order input
+        const normalizedSortOrder = normalizeSortOrder(sortOrderInput || 'asc');
+        
+        if (!normalizedSortOrder) {
+          // Show error dialog for invalid sort order
+          await joplin.views.dialogs.showMessageBox(
+            `Invalid sort order: "${sortOrderInput}"\n\n` +
+            'Please use "asc" or "desc" values, comma-separated.\n' +
+            'Examples: "asc", "desc,asc", "ascending,descending"'
+          );
+          return;
+        }
+
         // Update search parameters
         if (!searchParams.options) {
           searchParams.options = {};
         }
         searchParams.options.sortBy = sortBy;
-        searchParams.options.sortOrder = sortOrder || 'asc';
+        searchParams.options.sortOrder = normalizedSortOrder.join(',');
 
         // Add the custom sort option to the dropdown and apply it
         await joplin.views.panels.postMessage(searchPanel, {
@@ -1260,7 +1284,7 @@ async function showCustomSortDialog(
           results: JSON.stringify([]), // Empty results to trigger UI update
           query: JSON.stringify(searchParams.query),
           sortBy: sortBy,
-          sortOrder: sortOrder || 'asc',
+          sortOrder: normalizedSortOrder,
         });
 
         // Apply sorting to existing results if available
@@ -1273,5 +1297,34 @@ async function showCustomSortDialog(
   } catch (error) {
     console.error('Error in showCustomSortDialog:', error);
     await joplin.views.dialogs.showMessageBox('Failed to open sort configuration dialog: ' + error.message);
+  }
+}
+
+/**
+ * Normalizes sort order input to a standardized array format
+ * @param sortOrder - Raw sort order input (comma-separated string)
+ * @returns Normalized array of 'asc'/'desc' values, or null if invalid
+ */
+function normalizeSortOrder(sortOrder: string): string[] | null {
+  try {
+    if (typeof sortOrder !== 'string') {
+      return null;
+    }
+
+    // Handle comma-separated string input
+    const orderArray = sortOrder.split(',').map(s => s.trim().toLowerCase());
+
+    // Normalize each value to 'asc' or 'desc'
+    const normalized = orderArray.map((order, index) => {
+      if (order.startsWith('a')) return 'asc';
+      if (order.startsWith('d')) return 'desc';
+      if (order === '') return 'asc'; // Default to ascending for empty values
+      throw new Error(`Invalid sort order: "${sortOrder}". Invalid value "${order}" at position ${index + 1}. Use "asc" or "desc".`);
+    });
+
+    return normalized;
+  } catch (error) {
+    console.error('Error normalizing sort order:', error);
+    return null;
   }
 }

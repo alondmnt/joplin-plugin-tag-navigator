@@ -709,7 +709,7 @@ export function sortResults<T extends GroupedResult>(
   results: T[], 
   options: { 
     sortBy?: string, 
-    sortOrder?: string 
+    sortOrder?: string
   },
   tagSettings: TagSettings
 ): T[] {
