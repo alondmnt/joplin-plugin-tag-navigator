@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
-import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings } from './settings';
+import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardSortKeys, getStandardOrderKeys, getStandardGroupingKeys } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
@@ -362,61 +362,80 @@ export async function processMessage(
   } else if (message.name === 'updateSetting') {
 
     if (message.field.startsWith('result')) {
-      // Update searchParams options if setting customized sort options
+      // Implement linear flow: standard options → settings, custom options → query
       if (message.field === 'resultSort') {
-        if (!searchParams.options) {
-          searchParams.options = {sortOrder: 'desc'};
-        }
-        // Ensure sortBy is a valid string
         const validSortBy = ensureSortByString(message.value);
-        searchParams.options.sortBy = validSortBy;
-
-        // Only save standard sort values to persistent settings to avoid enum validation errors
-        // Custom sort values (like 'tag1,tag2') are applied in memory but not persisted
-        const standardSortValues = ['modified', 'created', 'title', 'notebook'];
+        const standardSortValues = getStandardSortKeys();
+        
         if (standardSortValues.includes(validSortBy)) {
+          // Standard option: update global setting, remove query override
           await joplin.settings.setValue(`itags.${message.field}`, validSortBy);
+          if (searchParams.options?.sortBy) {
+            delete searchParams.options.sortBy;
+            // Clean up options object if it becomes empty
+            if (Object.keys(searchParams.options).length === 0) {
+              searchParams.options = undefined;
+            }
+          }
+        } else {
+          // Custom option: update query only, don't touch global setting
+          if (!searchParams.options) {
+            searchParams.options = {};
+          }
+          searchParams.options.sortBy = validSortBy;
         }
 
-        // Only sort and update if we have existing results, otherwise just save the setting
+        // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
-          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          const resultSettings = await getResultSettings();
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings, resultSettings);
           await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
         }
 
       } else if (message.field === 'resultOrder') {
-        if (!searchParams.options) {
-          searchParams.options = {sortBy: 'modified'};
-        }
-        // Ensure sortOrder is a valid string
         const validSortOrder = ensureSortOrderString(message.value);
-        searchParams.options.sortOrder = validSortOrder;
-
-        // Only save simple string values to persistent settings to avoid enum validation errors
-        // Custom sort order strings (with commas) are kept in memory for the current session
-        if (!validSortOrder.includes(',')) {
+        const standardSortOrders = getStandardOrderKeys();
+        
+        if (standardSortOrders.includes(validSortOrder)) {
+          // Standard option: update global setting, remove query override  
           await joplin.settings.setValue(`itags.${message.field}`, validSortOrder);
+          if (searchParams.options?.sortOrder) {
+            delete searchParams.options.sortOrder;
+            // Clean up options object if it becomes empty
+            if (Object.keys(searchParams.options).length === 0) {
+              searchParams.options = undefined;
+            }
+          }
+        } else {
+          // Custom option (comma-separated): update query only
+          if (!searchParams.options) {
+            searchParams.options = {};
+          }
+          searchParams.options.sortOrder = validSortOrder;
         }
 
-        // Only sort and update if we have existing results, otherwise just save the setting
+        // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
-          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          const resultSettings = await getResultSettings();
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings, resultSettings);
           await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
         }
 
       } else if (message.field === 'resultGrouping') {
-        if (!searchParams.options) {
-          searchParams.options = {sortBy: 'modified', sortOrder: 'desc'};
-        }
-        // Ensure resultGrouping is a valid string
-        const validGroupingModes = ['heading', 'consecutive', 'item'];
+        // All grouping modes are standard values
+        const validGroupingModes = getStandardGroupingKeys();
         if (typeof message.value === 'string' && validGroupingModes.includes(message.value)) {
-          searchParams.options.resultGrouping = message.value;
-
-          // All grouping modes are standard values, so always save to settings
+          // Standard option: update global setting, remove query override
           await joplin.settings.setValue(`itags.${message.field}`, message.value);
+          if (searchParams.options?.resultGrouping) {
+            delete searchParams.options.resultGrouping;
+            // Clean up options object if it becomes empty
+            if (Object.keys(searchParams.options).length === 0) {
+              searchParams.options = undefined;
+            }
+          }
 
-          // Re-run search with new grouping if we have existing results
+          // Re-run search with new grouping from global setting
           if (lastSearchResults && lastSearchResults.length > 0 && searchParams.query && searchParams.query.length > 0) {
             const results = await runSearch(db, searchParams.query, message.value, searchParams.options);
             lastSearchResults = results; // Update cached results
@@ -1207,7 +1226,7 @@ async function testQuery(
 
   // Ensure resultGrouping is a valid string if it exists
   if (query.options?.resultGrouping) {
-    const validGroupingModes = ['heading', 'consecutive', 'item'];
+    const validGroupingModes = getStandardGroupingKeys();
     if (typeof query.options.resultGrouping === 'string' && 
         validGroupingModes.includes(query.options.resultGrouping)) {
       // Keep the valid value
@@ -1365,7 +1384,8 @@ async function showCustomSortDialog(
 
         // Apply sorting to existing results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
-          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
+          const resultSettings = await getResultSettings();
+          const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings, resultSettings);
           await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
         }
       }

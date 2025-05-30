@@ -70,19 +70,10 @@ export async function runSearch(
     settings
   );
 
-  if (sortOptions?.sortBy) {
-    const tagSettings = await getTagSettings();
-    groupedResults = sortResults(groupedResults, sortOptions, tagSettings);
-
-  } else {
-    if (resultSettings.resultSort) {
-      const tagSettings = await getTagSettings();
-      groupedResults = sortResults(groupedResults, {
-        sortBy: resultSettings.resultSort,
-        sortOrder: resultSettings.resultOrder
-      }, tagSettings);
-    }
-  }
+  // Sort results using options with fallbacks to global settings
+  const tagSettings = await getTagSettings();
+  groupedResults = sortResults(
+    groupedResults,sortOptions, tagSettings, resultSettings);
 
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
@@ -698,27 +689,35 @@ function sortSectionsWithinResult(
 }
 
 /**
- * Sorts results based on specified criteria
- * @param results Array of results to sort
- * @param options Sorting configuration
- * @param tagSettings Configuration for tag formatting
+ * Sort search results based on the specified options with fallbacks to global settings
+ * @param results - Array of grouped results to sort
+ * @param options - Optional sorting options (query-specific overrides)
+ * @param tagSettings - Tag processing settings
+ * @param resultSettings - Global result settings for fallbacks
  * @returns Sorted array of results
- * @template T Type of results (must extend GroupedResult)
  */
 export function sortResults<T extends GroupedResult>(
   results: T[], 
   options: { 
     sortBy?: string, 
     sortOrder?: string
-  },
-  tagSettings: TagSettings
+  } | undefined,
+  tagSettings: TagSettings,
+  resultSettings: {
+    resultSort: string,
+    resultOrder: string
+  }
 ): T[] {
-  const sortByArray = options?.sortBy?.toLowerCase()
+  // Use query-specific options with fallbacks to global settings
+  const effectiveSortBy = options?.sortBy || resultSettings.resultSort;
+  const effectiveSortOrder = options?.sortOrder || resultSettings.resultOrder;
+
+  const sortByArray = effectiveSortBy?.toLowerCase()
     .split(',')
     .map(s => s.trim())
     .filter(s => s);
 
-  const sortOrderArray = options?.sortOrder?.toLowerCase()
+  const sortOrderArray = effectiveSortOrder?.toLowerCase()
     .split(',')
     .map(s => s.trim())
     .filter(s => s);

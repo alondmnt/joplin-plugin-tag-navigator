@@ -124,7 +124,7 @@ export async function displayResultsInNote(
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery);
+    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery, resultSettings);
     tableDefaultValues = mostCommonValue;
     [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, viewSettings);
     resultsString += tableString;
@@ -299,6 +299,7 @@ function parseFilter(filter: string, min_chars: number = 1, escape_regex: boolea
  * @param db The note database
  * @param tagSettings Configuration for tag formatting
  * @param savedQuery Saved query configuration
+ * @param resultSettings Global result settings for sorting fallbacks
  * @returns Tuple containing:
  *   - Processed table results
  *   - Column count mapping
@@ -308,7 +309,8 @@ async function processResultsForTable(
   filteredResults: GroupedResult[], 
   db: NoteDatabase, 
   tagSettings: TagSettings, 
-  savedQuery: QueryRecord
+  savedQuery: QueryRecord,
+  resultSettings: ResultSettings
 ): Promise<[
   TableResult[], 
   { [key: string]: number }, 
@@ -351,7 +353,7 @@ async function processResultsForTable(
   }));
 
   // Sort table results based on options
-  tableResults = sortResults(tableResults, savedQuery?.options, tagSettings);
+  tableResults = sortResults(tableResults, savedQuery?.options, tagSettings, resultSettings);
 
   // Find the most common value for each column
   for (const key in valueCount) {

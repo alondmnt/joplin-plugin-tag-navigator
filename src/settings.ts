@@ -4,6 +4,34 @@ import { defTagRegex } from './parser';
 import { escapeRegex } from './utils';
 
 /**
+ * Standard options for search panel settings
+ */
+export const STANDARD_SORT_OPTIONS = {
+  modified: 'Modified',
+  created: 'Created',
+  title: 'Title',
+  notebook: 'Notebook',
+} as const;
+
+export const STANDARD_ORDER_OPTIONS = {
+  desc: 'Descending',
+  asc: 'Ascending',
+} as const;
+
+export const STANDARD_GROUPING_OPTIONS = {
+  heading: 'Group by heading / section',
+  consecutive: 'Group consecutive lines',
+  item: 'Split by item / paragraph',
+} as const;
+
+/**
+ * Helper functions to get standard option keys
+ */
+export const getStandardSortKeys = (): string[] => Object.keys(STANDARD_SORT_OPTIONS);
+export const getStandardOrderKeys = (): string[] => Object.keys(STANDARD_ORDER_OPTIONS);
+export const getStandardGroupingKeys = (): string[] => Object.keys(STANDARD_GROUPING_OPTIONS);
+
+/**
  * HTML comment markers for query sections
  */
 export const queryStart = '<!-- itags-query-start -->';
@@ -396,20 +424,6 @@ export async function registerSettings(): Promise<void> {
         count: 'Count',
       }
     },
-    'itags.resultSort': {
-      value: 'modified',
-      type: SettingItemType.String,
-      section: 'itags',
-      public: true,
-      label: 'Search: Result sort by',
-      isEnum: true,
-      options: {
-        modified: 'Modified',
-        created: 'Created',
-        title: 'Title',
-        notebook: 'Notebook',
-      }
-    },
     'itags.resultGrouping': {
       value: 'heading',
       public: true,
@@ -418,11 +432,16 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       label: 'Search: Result grouping',
       description: 'Each group is shown as a section within a note in the search results. Groups can be filtered and sorted.',
-      options: {
-        'heading': 'Group by heading / section',
-        'consecutive': 'Group consecutive lines',
-        'item': 'Split by item / paragraph'
-      }
+      options: STANDARD_GROUPING_OPTIONS
+    },
+    'itags.resultSort': {
+      value: 'modified',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Search: Result sort by',
+      isEnum: true,
+      options: STANDARD_SORT_OPTIONS
     },
     'itags.resultOrder': {
       value: 'desc',
@@ -431,10 +450,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Search: Result sort order',
       isEnum: true,
-      options: {
-        desc: 'Descending',
-        asc: 'Ascending',
-      }
+      options: STANDARD_ORDER_OPTIONS
     },
     'itags.resultToggle': {
       value: false,
