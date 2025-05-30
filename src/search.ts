@@ -17,21 +17,25 @@ export interface Query {
 }
 
 /**
- * Represents a grouped search result
+ * Base interface for items that can be sorted
  */
-export interface GroupedResult {
+export interface SortableItem {
   externalId: string;     // Note ID
   lineNumbers: number[][];  // Line numbers where matches were found
-  // The first dimension is the group
-  // The second dimension is the line numbers in the group that make up text[i]
-  text: string[];        // Text content of matched lines
-  html: string[];        // HTML content of matched lines
-  color: string;         // Color of matched lines
+  color: string;         // Color for display
   title: string;         // Note title
   notebook?: string;     // Notebook name
   updatedTime?: number;  // Last update timestamp
   createdTime?: number;  // Creation timestamp
   tags?: string[][];     // Array of unique tags per group for sorting
+}
+
+/**
+ * Represents a grouped search result
+ */
+export interface GroupedResult extends SortableItem {
+  text: string[];        // Text content of matched lines
+  html: string[];        // HTML content of matched lines
 }
 
 /** Cached regex patterns */
@@ -629,7 +633,8 @@ function compareTagArrays(
   }
 
   // Both have values, proceed with normal comparison using utility function
-  return compareTagValues(aTagValue, bTagValue, tagSettings.valueDelim) * sortOrder;
+  const result = compareTagValues(aTagValue, bTagValue, tagSettings.valueDelim) * sortOrder;
+  return result;
 }
 
 /**
@@ -696,7 +701,7 @@ function sortSectionsWithinResult(
  * @param resultSettings - Global result settings for fallbacks
  * @returns Sorted array of results
  */
-export function sortResults<T extends GroupedResult>(
+export function sortResults<T extends SortableItem>(
   results: T[], 
   options: { 
     sortBy?: string, 
@@ -723,15 +728,17 @@ export function sortResults<T extends GroupedResult>(
     .filter(s => s);
 
   if (!sortByArray?.length) return results;
-
+  
   // Sort sections within each result for custom tag sorting
   const isCustomTagSort = sortByArray.some(sortBy => 
     !['created', 'modified', 'notebook', 'title'].includes(sortBy)
   );
-
   if (isCustomTagSort) {
     results.forEach(result => {
-      sortSectionsWithinResult(result, sortByArray, sortOrderArray, tagSettings);
+      // Only sort sections if the result has text and html properties (is a GroupedResult)
+      if ('text' in result && 'html' in result) {
+        sortSectionsWithinResult(result as GroupedResult, sortByArray, sortOrderArray, tagSettings);
+      }
     });
   }
 
@@ -755,14 +762,16 @@ export function sortResults<T extends GroupedResult>(
         // For tag-based sorting, aggregate tags from all groups
         const aTags = a.tags ? sortTags(a.tags.flat(), tagSettings.valueDelim) : [];
         const bTags = b.tags ? sortTags(b.tags.flat(), tagSettings.valueDelim) : [];
-
+        
         comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
       } else {
         // Default to modified time if we don't have tags
         comparison = (a.updatedTime - b.updatedTime) * sortOrder;
       }
 
-      if (comparison !== 0) return comparison;
+      if (comparison !== 0) {
+        return comparison;
+      }
     }
 
     // Break ties using minimum line number

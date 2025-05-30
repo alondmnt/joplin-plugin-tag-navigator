@@ -1,13 +1,12 @@
 /**
  * Kanban view that support the YesYouKan plugin.
  */
-import joplin from 'api';
-import { GroupedResult } from './search';
-import { normalizeIndentation } from './search';
-import { QueryRecord } from './searchPanel';
+import { GroupedResult, SortableItem } from './search';
+import { normalizeIndentation, sortResults } from './search';
 import { NoteViewSettings, TagSettings } from './settings';
 import { DatabaseManager } from './db';
 import { escapeRegex } from './utils';
+import { sortTags } from './utils';
 
 /**
  * The priority order for checkbox states
@@ -28,14 +27,9 @@ export interface CheckboxItem {
 /**
  * Result item for a kanban group
  */
-export interface KanbanItem {
+export interface KanbanItem extends SortableItem {
   heading: string;    // Heading text for the item
   group: string;      // Full content of the group
-  noteId: string;     // ID of the note
-  lineNumber: number; // Starting line number
-  color: string;      // Color for display
-  title: string;      // Note title
-  tags: string[];     // Tags associated with the item
   processedHeading: string; // Heading with tags removed
   processedContent: string; // Content with tags removed
 }
@@ -46,7 +40,8 @@ export interface KanbanItem {
  * @returns Object containing grouped results by checkbox state
  */
 export async function processResultsForKanban(
-  filteredResults: GroupedResult[]
+  filteredResults: GroupedResult[],
+  tagSettings: TagSettings
 ): Promise<{ [state: string]: KanbanItem[] }> {
   // Define checkbox state patterns and their corresponding kanban categories
   const checkboxPatterns = {
@@ -104,7 +99,7 @@ export async function processResultsForKanban(
         groupedResult,
         processedContent,
         result,
-        db
+        tagSettings
       );
       
       // Process standalone items (items not in hierarchies)
@@ -115,7 +110,7 @@ export async function processResultsForKanban(
         groupedResult,
         processedContent,
         result,
-        db
+        tagSettings
       );
     }
   }
@@ -290,7 +285,7 @@ function processHierarchicalItems(
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
   result: { [state: string]: KanbanItem[] },
-  db: DatabaseManager
+  tagSettings: TagSettings
 ): void {
   // Get the actual NoteDatabase instance
   const noteDb = DatabaseManager.getDatabase();
@@ -374,56 +369,67 @@ function processHierarchicalItems(
     // Add the group heading line itself
     lineNumbers.push(startLine);
     
-    // Get tags from all lines
-    const allTags = new Set<string>();
+    // Get raw tags from all lines (keep original format for accurate text removal)
+    const allRawTags = new Set<string>();
     const note = noteDb.notes[groupedResult.externalId];
     if (note) {
       lineNumbers.forEach(lineNum => {
         const lineTags = note.getTagsAtLine(lineNum);
-        lineTags.forEach(tag => allTags.add(tag));
+        lineTags.forEach(tag => allRawTags.add(tag));
       });
     }
-    
-    // Sort tags alphabetically
-    const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
-    
-    // Process the heading to remove tag mentions
+
+    // Process the heading to remove tag mentions (using raw tags for accurate matching)
     let processedHeading = heading;
-    sortedTags.forEach(tag => {
-      const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+    allRawTags.forEach(rawTag => {
+      // Remove exact tag from text, handling spaces properly
+      const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
       processedHeading = processedHeading.replace(tagPattern, '');
     });
-    // Clean up any trailing whitespace
-    processedHeading = processedHeading.trim();
+    // Clean up any trailing whitespace and multiple spaces
+    processedHeading = processedHeading.replace(/\s+/g, ' ').trim();
     
-    // Process the group content to remove tag mentions
+    // Process the group content to remove tag mentions (using raw tags)
     let processedGroupContent = '';
     if (normalizedContent && normalizedContent.trim()) {
       processedGroupContent = normalizedContent;
       
       // Replace tag mentions with empty string
-      sortedTags.forEach(tag => {
-        const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+      allRawTags.forEach(rawTag => {
+        // Remove exact tag from text, handling spaces properly
+        const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
         processedGroupContent = processedGroupContent.replace(tagPattern, '');
       });
       
-      // Clean up extra newlines
+      // Clean up extra newlines and spaces
       processedGroupContent = processedGroupContent.split('\n')
+        .map(line => line.replace(/\s+/g, ' ').trim())
         .filter(line => line.length > 0)
         .join('\n');
     }
+
+    // Now format tags for sorting (remove prefix, lowercase)
+    const formattedTags = Array.from(allRawTags).map(tag => 
+      tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+    );
+    
+    // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
+    const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
     
     // Add to results
     result[primaryState].push({
       heading: heading.trim(),
       group: normalizedContent,
-      noteId: groupedResult.externalId,
-      lineNumber: rootItem.line,
+      externalId: groupedResult.externalId,
+      lineNumbers: [[rootItem.line]],
       color: groupedResult.color,
       title: groupedResult.title,
-      tags: sortedTags,
+      tags: [sortedTags],
       processedHeading: processedHeading,
-      processedContent: processedGroupContent
+      processedContent: processedGroupContent,
+      notebook: groupedResult.notebook,
+      updatedTime: groupedResult.updatedTime,
+      createdTime: groupedResult.createdTime,
     });
   }
 }
@@ -522,7 +528,7 @@ function processStandaloneItems(
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
   result: { [state: string]: KanbanItem[] },
-  db: DatabaseManager
+  tagSettings: TagSettings
 ): void {
   // Get the actual NoteDatabase instance
   const noteDb = DatabaseManager.getDatabase();
@@ -556,38 +562,67 @@ function processStandaloneItems(
     // Process tags for this item
     const lineNumbers = [current.line];
     
-    // Get tags from this line
-    const allTags = new Set<string>();
+    // Get raw tags from all lines (keep original format for accurate text removal)
+    const allRawTags = new Set<string>();
     const note = noteDb.notes[groupedResult.externalId];
     if (note) {
       lineNumbers.forEach(lineNum => {
         const lineTags = note.getTagsAtLine(lineNum);
-        lineTags.forEach(tag => allTags.add(tag));
+        lineTags.forEach(tag => allRawTags.add(tag));
       });
     }
-    
-    // Sort tags alphabetically
-    const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b));
-    
-    // Process the heading to remove tag mentions
+
+    // Process the heading to remove tag mentions (using raw tags for accurate matching)
     let processedHeading = heading;
-    sortedTags.forEach(tag => {
-      const tagPattern = new RegExp(`${escapeRegex(tag)}($|[\\s\\n,.;:?!]+)`, 'g');
+    allRawTags.forEach(rawTag => {
+      // Remove exact tag from text, handling spaces properly
+      const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
       processedHeading = processedHeading.replace(tagPattern, '');
     });
-    // Clean up any trailing whitespace
-    processedHeading = processedHeading.trim();
+    // Clean up any trailing whitespace and multiple spaces
+    processedHeading = processedHeading.replace(/\s+/g, ' ').trim();
     
+    // Process the group content to remove tag mentions (using raw tags)
+    let processedGroupContent = '';
+    if (current.text && current.text.trim()) {
+      processedGroupContent = current.text;
+      
+      // Replace tag mentions with empty string
+      allRawTags.forEach(rawTag => {
+        // Remove exact tag from text, handling spaces properly
+        const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
+        processedGroupContent = processedGroupContent.replace(tagPattern, '');
+      });
+      
+      // Clean up extra newlines and spaces
+      processedGroupContent = processedGroupContent.split('\n')
+        .map(line => line.replace(/\s+/g, ' ').trim())
+        .filter(line => line.length > 0)
+        .join('\n');
+    }
+    
+    // Now format tags for sorting (remove prefix, lowercase)
+    const formattedTags = Array.from(allRawTags).map(tag => 
+      tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+    );
+    
+    // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
+    const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
+    
+    // Add to results
     result[current.state].push({
       heading: heading.trim(),
       group: '', // No content for standalone items
-      noteId: groupedResult.externalId,
-      lineNumber: current.line,
+      externalId: groupedResult.externalId,
+      lineNumbers: [[current.line]],
       color: groupedResult.color,
       title: groupedResult.title,
-      tags: sortedTags,
+      tags: [sortedTags],
       processedHeading: processedHeading,
-      processedContent: ''
+      processedContent: processedGroupContent,
+      notebook: groupedResult.notebook,
+      updatedTime: groupedResult.updatedTime,
+      createdTime: groupedResult.createdTime,
     });
   }
 }
@@ -659,12 +694,14 @@ export async function buildKanban(
       
       // Add tags right after the heading (comma separated)
       if (group.tags.length > 0) {
-        const noParentTags = group.tags.filter(tag => !group.tags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim)) && !tag.startsWith(tagSettings.colorTag));
+        // Flatten the 2D tags array to work with the filtering logic
+        const flatTags = group.tags.flat();
+        const noParentTags = flatTags.filter(tag => !flatTags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim)) && !tag.startsWith(tagSettings.colorTag));
         kanbanString += `${noParentTags.join(', ')}\n`;
       }
       
       // Add link to the note
-      kanbanString += `[${titleDisplay} (L${group.lineNumber + 1})](:/${group.noteId})\n\n`;
+      kanbanString += `[${titleDisplay} (L${group.lineNumbers[0][0] + 1})](:/${group.externalId})\n\n`;
       
       // Add the processed content
       if (group.processedContent) {
@@ -674,4 +711,37 @@ export async function buildKanban(
   }
 
   return kanbanString;
+}
+
+/**
+ * Sort kanban items using the same sorting logic as search results
+ * @param kanbanResults Object containing kanban items grouped by state
+ * @param options Optional sorting options
+ * @param tagSettings Tag processing settings
+ * @param resultSettings Global result settings for fallbacks
+ * @returns Sorted kanban results object with the same structure
+ */
+export function sortKanbanItems(
+  kanbanResults: { [state: string]: KanbanItem[] },
+  options: { 
+    sortBy?: string, 
+    sortOrder?: string
+  } | undefined,
+  tagSettings: TagSettings,
+  resultSettings: {
+    resultSort: string,
+    resultOrder: string
+  }
+): { [state: string]: KanbanItem[] } {
+  const sortedResults: { [state: string]: KanbanItem[] } = {};
+  
+  // Sort items within each state group
+  for (const [state, items] of Object.entries(kanbanResults)) {
+    // sortResults can now accept KanbanItem[] directly
+    const sortedItems = sortResults(items, options, tagSettings, resultSettings);
+    
+    sortedResults[state] = sortedItems;
+  }
+  
+  return sortedResults;
 } 

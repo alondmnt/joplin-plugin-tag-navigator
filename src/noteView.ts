@@ -4,7 +4,7 @@ import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
 import { NoteDatabase } from './db';
-import { processResultsForKanban, buildKanban } from './kanban';
+import { processResultsForKanban, buildKanban, sortKanbanItems } from './kanban';
 
 export const viewList = ['list', 'table', 'kanban'];
 
@@ -82,9 +82,7 @@ export async function displayResultsInNote(
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
   const displayColors = viewSettings.noteViewColorTitles;
-  const groupingMode = savedQuery.options?.resultGrouping || 
-                      (savedQuery.displayInNote === 'kanban' ? 'item' : resultSettings.resultGrouping);
-  const nColumns = viewSettings.tableColumns;
+  const groupingMode = savedQuery.options?.resultGrouping || resultSettings.resultGrouping;
   const noteViewLocation = viewSettings.noteViewLocation;
 
   // Run search with sorting options
@@ -131,8 +129,17 @@ export async function displayResultsInNote(
 
   } else if (savedQuery.displayInNote === 'kanban') {
     // Process results for kanban view
-    const kanbanResults = await processResultsForKanban(filteredResults);
-    resultsString += await buildKanban(kanbanResults, tagSettings, viewSettings);
+    const kanbanResults = await processResultsForKanban(filteredResults, tagSettings);
+
+    // Sort kanban items using the same sorting logic as search results
+    const sortedKanbanResults = sortKanbanItems(
+      kanbanResults, 
+      savedQuery.options, 
+      tagSettings, 
+      resultSettings
+    );
+
+    resultsString += await buildKanban(sortedKanbanResults, tagSettings, viewSettings);
   }
   resultsString += resultsEnd;
 
@@ -455,7 +462,7 @@ async function processResultForTable(
  * @param columnCount Count of occurrences for each column
  * @param savedQuery Saved query configuration
  * @param tagSettings Configuration for tag formatting
- * @param nColumns Maximum number of columns to display
+ * @param viewSettings Configuration for view settings
  * @returns Tuple of [table string, column names]
  */
 async function buildTable(
