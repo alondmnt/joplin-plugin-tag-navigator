@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
-import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings } from './settings';
+import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings } from './settings';
 import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
@@ -43,7 +43,7 @@ joplin.plugins.register({
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     }, 1000);
@@ -98,7 +98,7 @@ joplin.plugins.register({
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -149,7 +149,8 @@ joplin.plugins.register({
       if (viewSettings.updateViewOnOpen) {
         if (viewList.includes(savedQuery.displayInNote)) {
           const tagSettings = await getTagSettings();
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
+          const resultSettings = await getResultSettings();
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings, resultSettings);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -169,7 +170,7 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
@@ -262,7 +263,8 @@ joplin.plugins.register({
         if (viewList.includes(query.displayInNote)) {
           const tagSettings = await getTagSettings();
           const viewSettings = await getNoteViewSettings();
-          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
+          const resultSettings = await getResultSettings();
+          const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings, resultSettings);
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
@@ -285,7 +287,8 @@ joplin.plugins.register({
         if (!note) { return; }
         const tagSettings = await getTagSettings();
         const viewSettings = await getNoteViewSettings();
-        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings);
+        const resultSettings = await getResultSettings();
+        const result = await displayResultsInNote(DatabaseManager.getDatabase(), note, tagSettings, viewSettings, resultSettings);
         if (result) {
           currentTableColumns = result.tableColumns;
           currentTableDefaultValues = result.tableDefaultValues;
@@ -465,8 +468,9 @@ joplin.plugins.register({
           event.keys.includes('itags.showResultFilter') ||
           event.keys.includes('itags.searchWithRegex') ||
           event.keys.includes('itags.selectMultiTags') ||
-          event.keys.includes('itags.resultColorProperty')) {
-        await updatePanelSettings(searchPanel);
+          event.keys.includes('itags.resultColorProperty') ||
+          event.keys.includes('itags.resultGrouping')) {
+        await updatePanelSettings(searchPanel, searchParams);
       }
       // Changes that require a database clear
       if (event.keys.includes('itags.tagRegex') ||
@@ -549,7 +553,7 @@ joplin.plugins.register({
           options: existingOptions
         };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, undefined, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }

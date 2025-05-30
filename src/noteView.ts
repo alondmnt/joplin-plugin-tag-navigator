@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { getTagSettings, TagSettings, resultsEnd, resultsStart, NoteViewSettings, getNoteViewSettings } from './settings';
+import { getTagSettings, TagSettings, resultsEnd, resultsStart, NoteViewSettings, getNoteViewSettings, getResultSettings, ResultSettings } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
@@ -44,12 +44,13 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
   // Display results in notes
   const tagSettings = await getTagSettings();
   const viewSettings = await getNoteViewSettings();
+  const resultSettings = await getResultSettings();
   const noteIds = db.getResultNotes();
   let tableColumns: string[] = [];  
   let tableDefaultValues: { [key: string]: string } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
-    const result = await displayResultsInNote(db, note, tagSettings, viewSettings);
+    const result = await displayResultsInNote(db, note, tagSettings, viewSettings, resultSettings);
     if (result) {
       tableColumns = result.tableColumns;
       tableDefaultValues = result.tableDefaultValues;
@@ -65,13 +66,15 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
  * @param note The note to display results in
  * @param tagSettings Configuration for tag formatting
  * @param viewSettings Configuration for note view
+ * @param resultSettings Configuration for result settings including default grouping
  * @returns Configuration for table columns and default values, or null if no results
  */
 export async function displayResultsInNote(
   db: NoteDatabase, 
   note: { id: string, body: string }, 
   tagSettings: TagSettings,
-  viewSettings: NoteViewSettings
+  viewSettings: NoteViewSettings,
+  resultSettings: ResultSettings
 ): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } } | null> {
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
@@ -79,7 +82,8 @@ export async function displayResultsInNote(
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
   const displayColors = viewSettings.noteViewColorTitles;
-  const groupingMode = savedQuery.displayInNote === 'kanban' ? 'item' : undefined;
+  const groupingMode = savedQuery.options?.resultGrouping || 
+                      (savedQuery.displayInNote === 'kanban' ? 'item' : resultSettings.resultGrouping);
   const nColumns = viewSettings.tableColumns;
   const noteViewLocation = viewSettings.noteViewLocation;
 
@@ -442,8 +446,6 @@ async function processResultForTable(
 
   return [tableResult, tagInfo];
 }
-
-
 
 /**
  * Builds a markdown table from the results

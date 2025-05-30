@@ -48,6 +48,7 @@ let searchWithRegex = false;
 let spaceReplace = '_';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
+let resultGrouping = 'heading'; // Current result grouping setting
 const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
 
 // Listen for messages from the main process
@@ -263,6 +264,7 @@ function updatePanelSettings(message) {
     searchWithRegex = settings.searchWithRegex;
     selectMultiTags = settings.selectMultiTags;
     spaceReplace = settings.spaceReplace;
+    resultGrouping = settings.resultGrouping || 'heading'; // Store resultGrouping setting
     
     // Only apply global collapse/expand if the resultToggle setting actually changed
     const newResultToggleState = settings.resultToggle ? 'collapse' : 'expand';
@@ -559,6 +561,11 @@ function updateResultsArea() {
             // Update the note state with the new state (after toggling)
             // true means expanded (display:block), false means collapsed (display:none)
             updateNoteState(result.externalId, result.color, isCollapsed ? true : false);
+        });
+
+        // Add right-click context menu handler for note titles
+        addEventListenerWithTracking(titleEl, 'contextmenu', (event) => {
+            createContextMenu(event, null, null, ['resultGrouping']);
         });
 
         // Add spacing between notes
@@ -1389,12 +1396,50 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
         cmdCount++;
     }
 
+    // Add resultGrouping options when requested
+    if (commands.includes('resultGrouping')) {
+        if (cmdCount > 0) {
+            const separator = document.createElement('hr');
+            separator.classList.add('itags-search-contextSeparator');
+            fragment.appendChild(separator);
+        }
+
+        // Result grouping options
+        const groupingOptions = [
+            { value: 'heading', label: 'Group by heading' },
+            { value: 'consecutive', label: 'Group adjacent lines' },
+            { value: 'item', label: 'Split by item' }
+        ];
+
+        groupingOptions.forEach(option => {
+            const groupingOption = document.createElement('span');
+            groupingOption.classList.add('itags-search-contextCommand');
+
+            // Mark the current active option with a checkmark
+            if (resultGrouping === option.value) {
+                groupingOption.textContent = `✓ ${option.label}`;
+            } else {
+                groupingOption.textContent = option.label;
+            }
+
+            addEventListenerWithTracking(groupingOption, 'click', () => {
+                resultGrouping = option.value;
+                sendSetting('resultGrouping', option.value);
+                removeContextMenu(contextMenu);
+            });
+
+            fragment.appendChild(groupingOption);
+            cmdCount++;
+        });
+    }
+
     // Default commands: show / hide sections
     if (cmdCount > 0) {
         const separator = document.createElement('hr');
         separator.classList.add('itags-search-contextSeparator');
         fragment.appendChild(separator);
     }
+
     const sectionState = {
         showQuery: !queryArea.classList.contains('hidden'),
         expandedTagList: tagList.classList.contains('expandedTagList'),
@@ -1952,6 +1997,9 @@ addEventListenerWithTracking(document, 'contextmenu', (event) => {
         event.target.click();
         return;
     }
+    // Check if this is a note title element - if so, let its specific handler deal with it
+    if (event.target.tagName === 'H3' || event.target.closest('h3')) { return; }
+    
     const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
     contextMenu.forEach(menu => {
         if (!menu.contains(event.target)) {

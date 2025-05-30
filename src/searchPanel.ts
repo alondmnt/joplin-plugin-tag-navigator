@@ -2,7 +2,7 @@ import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
-import { TagSettings, getTagSettings, queryEnd, queryStart } from './settings';
+import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings } from './settings';
 import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
@@ -58,6 +58,7 @@ export interface QueryRecord {
     excludeCols?: string;
     sortBy?: string;
     sortOrder?: string;
+    resultGrouping?: string;
   };
 }
 
@@ -81,6 +82,7 @@ interface PanelMessage {
   noteState?: string;
   currentSortBy?: string;
   currentSortOrder?: string;
+  resetGrouping?: boolean;
 }
 
 /**
@@ -108,6 +110,7 @@ interface PanelSettings {
   searchWithRegex: boolean;
   spaceReplace: string;
   resultColorProperty: string;
+  resultGrouping: string;
 }
 
 // Get the version of Joplin
@@ -198,9 +201,9 @@ export async function processMessage(
     await updatePanelTagData(searchPanel, db);
     await updatePanelNoteData(searchPanel, db);
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-    await updatePanelSettings(searchPanel);
+    await updatePanelSettings(searchPanel, searchParams);
 
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     await updatePanelNoteState(searchPanel, savedNoteState);
@@ -208,7 +211,7 @@ export async function processMessage(
   } else if (message.name === 'searchQuery') {
     searchParams.query = JSON.parse(message.query);
 
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -312,7 +315,7 @@ export async function processMessage(
     await setCheckboxState(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -325,7 +328,7 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -341,7 +344,7 @@ export async function processMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -352,7 +355,7 @@ export async function processMessage(
     await addTagToText(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -379,8 +382,6 @@ export async function processMessage(
         if (lastSearchResults && lastSearchResults.length > 0) {
           const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
           await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
-        } else {
-          console.debug('No results to sort - lastSearchResults:', lastSearchResults ? lastSearchResults.length : 'null');
         }
 
       } else if (message.field === 'resultOrder') {
@@ -401,6 +402,28 @@ export async function processMessage(
         if (lastSearchResults && lastSearchResults.length > 0) {
           const sortedResults = sortResults(lastSearchResults, searchParams.options, tagSettings);
           await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
+        }
+
+      } else if (message.field === 'resultGrouping') {
+        if (!searchParams.options) {
+          searchParams.options = {sortBy: 'modified', sortOrder: 'desc'};
+        }
+        // Ensure resultGrouping is a valid string
+        const validGroupingModes = ['heading', 'consecutive', 'item'];
+        if (typeof message.value === 'string' && validGroupingModes.includes(message.value)) {
+          searchParams.options.resultGrouping = message.value;
+
+          // All grouping modes are standard values, so always save to settings
+          await joplin.settings.setValue(`itags.${message.field}`, message.value);
+
+          // Re-run search with new grouping if we have existing results
+          if (lastSearchResults && lastSearchResults.length > 0 && searchParams.query && searchParams.query.length > 0) {
+            const results = await runSearch(db, searchParams.query, message.value, searchParams.options);
+            lastSearchResults = results; // Update cached results
+            await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+          }
+        } else {
+          console.error(`Error in updateSetting: Invalid resultGrouping value: ${message.value}`);
         }
       }
 
@@ -551,8 +574,9 @@ export async function updatePanelResults(
 /**
  * Updates the panel settings display
  * @param panel - Panel ID to update
+ * @param searchParams - Optional current search parameters to override settings
  */
-export async function updatePanelSettings(panel: string): Promise<void> {
+export async function updatePanelSettings(panel: string, searchParams?: QueryRecord): Promise<void> {
   const joplinSettings = await joplin.settings.values([
     'itags.resultSort',
     'itags.resultOrder',
@@ -567,10 +591,23 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     'itags.searchWithRegex',
     'itags.spaceReplace',
     'itags.resultColorProperty',
+    'itags.resultGrouping',
   ]);
+  
+  // Use query-specific settings if available, otherwise use global settings
+  const resultGrouping = searchParams?.options?.resultGrouping || 
+                         joplinSettings['itags.resultGrouping'] as string || 
+                         'heading';
+  
+  const resultSort = searchParams?.options?.sortBy || 
+                     ensureSortByString(joplinSettings['itags.resultSort']);
+                     
+  const resultOrder = searchParams?.options?.sortOrder || 
+                      ensureSortOrderString(joplinSettings['itags.resultOrder']);
+  
   const settings: PanelSettings = {
-    resultSort: ensureSortByString(joplinSettings['itags.resultSort']),
-    resultOrder: ensureSortOrderString(joplinSettings['itags.resultOrder']),
+    resultSort: resultSort,
+    resultOrder: resultOrder,
     resultToggle: joplinSettings['itags.resultToggle'] as boolean,
     resultMarker: joplinSettings['itags.resultMarker'] as boolean,
     showQuery: joplinSettings['itags.showQuery'] as boolean,
@@ -582,6 +619,7 @@ export async function updatePanelSettings(panel: string): Promise<void> {
     searchWithRegex: joplinSettings['itags.searchWithRegex'] as boolean,
     spaceReplace: joplinSettings['itags.spaceReplace'] as string,
     resultColorProperty: joplinSettings['itags.resultColorProperty'] as string,
+    resultGrouping: resultGrouping,
   };
   const intervalID = setInterval(
     async () => {
@@ -833,7 +871,7 @@ async function replaceTagAll(
     // update the search panel
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
     return results;
@@ -870,7 +908,7 @@ async function removeTagAll(
   }
   // update the search panel
   await updatePanelTagData(searchPanel, db);
-  const results = await runSearch(db, searchParams.query, undefined, searchParams.options);
+  const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
   await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   return results;
@@ -1152,7 +1190,7 @@ async function testQuery(
   if (query.options?.sortOrder) {
     // Ensure sortOrder is a valid string first
     query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);
-    
+
     const normalizedSortOrder = normalizeSortOrder(query.options.sortOrder);
     if (normalizedSortOrder) {
       query.options.sortOrder = normalizedSortOrder.join(',');
@@ -1165,6 +1203,19 @@ async function testQuery(
   // Ensure sortBy is a valid string if it exists
   if (query.options?.sortBy) {
     query.options.sortBy = ensureSortByString(query.options.sortBy);
+  }
+
+  // Ensure resultGrouping is a valid string if it exists
+  if (query.options?.resultGrouping) {
+    const validGroupingModes = ['heading', 'consecutive', 'item'];
+    if (typeof query.options.resultGrouping === 'string' && 
+        validGroupingModes.includes(query.options.resultGrouping)) {
+      // Keep the valid value
+    } else {
+      // Set to default from settings if invalid
+      const resultSettings = await getResultSettings();
+      query.options.resultGrouping = resultSettings.resultGrouping;
+    }
   }
 
   return query;
