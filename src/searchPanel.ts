@@ -444,6 +444,9 @@ export async function processMessage(
         } else {
           console.error(`Error in updateSetting: Invalid resultGrouping value: ${message.value}`);
         }
+      } else if (message.field === 'resultToggle') {
+        // Handle resultToggle setting updates
+        await joplin.settings.setValue(`itags.${message.field}`, message.value);
       }
 
     } else if (message.field.startsWith('show')) {
