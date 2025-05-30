@@ -266,18 +266,12 @@ function updatePanelSettings(message) {
     spaceReplace = settings.spaceReplace;
     resultGrouping = settings.resultGrouping || 'heading'; // Store resultGrouping setting
     
-    // Only apply global collapse/expand if the resultToggle setting actually changed
+    // Sync panel state with Joplin settings - don't apply global toggle
+    // Global toggle should only happen when user clicks the toggle button directly
     const newResultToggleState = settings.resultToggle ? 'collapse' : 'expand';
-    const resultToggleChanged = resultToggleState !== newResultToggleState;
+    // Update local state to match Joplin settings (affects future searches only)
     resultToggleState = newResultToggleState;
-    
-    if (resultToggleChanged) {
-        if ( resultToggleState === 'collapse' ) {
-            collapseResults();
-        } else {
-            expandResults();
-        }
-    }
+    // Update the toggle button display to match current setting
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
 
