@@ -1147,7 +1147,7 @@ export async function loadQuery(
         loadedQuery = savedQuery;
       }
     } catch (error) {
-      console.error('Error loading query:', record[1], error);
+      console.debug('Error loading query:', record[1], error);
     }
   }
   return loadedQuery;
