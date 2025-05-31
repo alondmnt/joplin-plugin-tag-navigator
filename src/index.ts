@@ -550,10 +550,22 @@ joplin.plugins.register({
       }
     ], MenuItemLocation.Note);
 
-    await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
-    await joplin.views.toolbarButtons.create('itags.refreshNoteView', 'itags.refreshNoteView', ToolbarButtonLocation.EditorToolbar);
+    // Conditionally register toolbar buttons based on settings
+    if (await joplin.settings.value('itags.toolbarToggleNoteView')) {
+      await joplin.views.toolbarButtons.create('itags.toggleNoteView', 'itags.toggleNoteView', ToolbarButtonLocation.EditorToolbar);
+    }
+    if (await joplin.settings.value('itags.toolbarRefreshNoteView')) {
+      await joplin.views.toolbarButtons.create('itags.refreshNoteView', 'itags.refreshNoteView', ToolbarButtonLocation.EditorToolbar);
+    }
+    if (await joplin.settings.value('itags.toolbarNewTableEntry')) {
+      await joplin.views.toolbarButtons.create('itags.createTableEntryNote', 'itags.createTableEntryNote', ToolbarButtonLocation.EditorToolbar);
+    }
+    if (await joplin.settings.value('itags.toolbarReplaceDateTags')) {
+      await joplin.views.toolbarButtons.create('itags.replaceDateTags', 'itags.replaceDateTags', ToolbarButtonLocation.EditorToolbar);
+    }
+    
+    // Always create this one as it's in the note toolbar (not configurable yet)
     await joplin.views.toolbarButtons.create('itags.loadQuery', 'itags.loadQuery', ToolbarButtonLocation.NoteToolbar);
-    await joplin.views.toolbarButtons.create('itags.createTableEntryNote', 'itags.createTableEntryNote', ToolbarButtonLocation.EditorToolbar);
 
     await joplin.settings.onChange(async (event) => {
       if (event.keys.includes('itags.resultSort') || 

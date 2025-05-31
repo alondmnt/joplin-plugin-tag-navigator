@@ -725,5 +725,37 @@ export async function registerSettings(): Promise<void> {
         bottom: 'Bottom',
       }
     },
+    'itags.toolbarToggleNoteView': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Toolbar: Toggle note view button',
+      description: '(Requires restart)',
+    },
+    'itags.toolbarRefreshNoteView': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Toolbar: Refresh note view button',
+      description: '(Requires restart)',
+    },
+    'itags.toolbarNewTableEntry': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Toolbar: New table entry button',
+      description: '(Requires restart)',
+    },
+    'itags.toolbarReplaceDateTags': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Toolbar: Replace date tags button',
+      description: '(Requires restart)',
+    },
   });
 }
