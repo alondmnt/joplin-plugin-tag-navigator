@@ -387,7 +387,7 @@ joplin.plugins.register({
     await joplin.commands.register({
       name: 'itags.replaceDateTags',
       label: 'Replace date tags in current lines',
-      iconName: 'fas fa-calendar',
+      iconName: 'fas fa-clock',
       execute: async () => {
         try {
           // Get current line(s) content from the editor
