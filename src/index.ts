@@ -149,6 +149,8 @@ joplin.plugins.register({
         // Updating this variable will ensure it's sent to the panel on initPanel
         searchParams = savedQuery;
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        // Update panel settings to reflect the loaded query's options
+        await updatePanelSettings(searchPanel, searchParams);
       }
 
       // Update results in note
@@ -245,6 +247,8 @@ joplin.plugins.register({
           // Updating this variable will ensure it's sent to the panel on initPanel
           searchParams = savedQuery;
           await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          // Update panel settings to reflect the loaded query's options
+          await updatePanelSettings(searchPanel, searchParams);
         }
         note = clearObjectReferences(note);
       },
