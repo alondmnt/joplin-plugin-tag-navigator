@@ -10,6 +10,7 @@ import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeRe
 import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
+import { parseDateTag } from './parser';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
@@ -65,6 +66,11 @@ joplin.plugins.register({
       ContentScriptType.CodeMirrorPlugin,
       'cm6scroller',
       './cm6scroller.js',
+    );
+    await joplin.contentScripts.register(
+      ContentScriptType.CodeMirrorPlugin,
+      'replaceText',
+      './replaceText.js',
     );
 
     // Search panel
@@ -377,6 +383,91 @@ joplin.plugins.register({
     });
 
     await joplin.commands.register({
+      name: 'itags.replaceDateTags',
+      label: 'Replace date tags in current lines',
+      iconName: 'fas fa-calendar',
+      execute: async () => {
+        try {
+          // Get current line(s) content from the editor
+          const lineInfo = await joplin.commands.execute('editor.execCommand', {
+            name: 'getSelectedLines'
+          });
+
+          if (!lineInfo || !lineInfo.lines || lineInfo.lines.length === 0) {
+            // Fallback to current line if no selection
+            const currentLineInfo = await joplin.commands.execute('editor.execCommand', {
+              name: 'getCurrentLine'
+            });
+            
+            if (!currentLineInfo) {
+              await joplin.views.dialogs.showMessageBox('Unable to get current line content from editor.');
+              return;
+            }
+            
+            lineInfo.lines = [currentLineInfo];
+          }
+
+          const tagSettings = await getTagSettings();
+          let hasChanges = false;
+
+          // Process each line to replace date tags
+          const processedLines = lineInfo.lines.map(line => {
+            const originalContent = line.lineContent;
+            
+            // Find all tags in the line and process them for date replacements
+            const tagMatches = originalContent.match(tagSettings.tagRegex);
+            let processedContent = originalContent;
+            
+            if (tagMatches) {
+              tagMatches.forEach(tag => {
+                const processedTag = parseDateTag(tag, tagSettings);
+                if (processedTag !== tag) {
+                  processedContent = processedContent.replace(tag, processedTag);
+                  hasChanges = true;
+                }
+              });
+            }
+            
+            return processedContent;
+          });
+
+          if (!hasChanges) {
+            await joplin.views.dialogs.showMessageBox('No date tags found to replace in the current line(s).');
+            return;
+          }
+
+          // Replace the content in the editor
+          if (lineInfo.lines.length === 1) {
+            // Single line replacement
+            await joplin.commands.execute('editor.execCommand', {
+              name: 'replaceCurrentLine',
+              args: [processedLines[0]]
+            });
+          } else {
+            // Multiple lines replacement
+            await joplin.commands.execute('editor.execCommand', {
+              name: 'replaceSelectedLines',
+              args: [processedLines]
+            });
+          }
+
+          // Update the database for the current note
+          let note = await joplin.workspace.selectedNote();
+          if (note) {
+            // Get the updated note content
+            const updatedNote = await joplin.workspace.selectedNote();
+            await processNote(DatabaseManager.getDatabase(), updatedNote, tagSettings);
+            note = clearObjectReferences(note);
+          }
+
+        } catch (error) {
+          console.error('Error replacing date tags:', error);
+          await joplin.views.dialogs.showMessageBox(`Error replacing date tags: ${error.message}`);
+        }
+      },
+    });
+
+    await joplin.commands.register({
       name: 'itags.createTableEntryNote',
       label: 'Note view: New table entry',
       iconName: 'fas fa-table',
@@ -428,6 +519,10 @@ joplin.plugins.register({
         commandName: 'itags.createTableEntryNote',
       },
       {
+        commandName: 'itags.replaceDateTags',
+        accelerator: 'Ctrl+Alt+D',
+      },
+      {
         commandName: 'itags.updateDB',
         accelerator: 'Ctrl+Shift+D',
       }
@@ -439,6 +534,10 @@ joplin.plugins.register({
       },
       {
         commandName: 'itags.convertNoteToJoplinTags',
+      },
+      {
+        commandName: 'itags.replaceDateTags',
+        accelerator: 'Ctrl+Alt+D',
       }
     ], MenuItemLocation.Note);
 
