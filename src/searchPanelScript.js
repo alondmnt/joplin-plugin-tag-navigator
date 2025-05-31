@@ -940,6 +940,18 @@ function sendSetting(field, value) {
     })
 }
 
+function resetToGlobalSettings() {
+    webviewApi.postMessage({
+        name: 'resetToGlobalSettings'
+    });
+}
+
+function sendClearQuery() {
+    webviewApi.postMessage({
+        name: 'clearQuery'
+    });
+}
+
 function addLineNumberToCheckboxes(entryEl, text) {
     const textContent = text
         .replace(/\[([^\]]+)\]\(.*?\)/g, '$1')  // strip links
@@ -1202,6 +1214,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             noteFilter.value = '';
             resultFilter.value = '';
             sendSetting('filter', '');
+            resetToGlobalSettings(); // Reset to global settings for new searches
             handleTagClick(currentTag.toLowerCase());
             updateTagList();
             sendSearchMessage();
@@ -1636,6 +1649,9 @@ addEventListenerWithTracking(tagClear, 'click', () => {
     noteFilter.value = '';
     resultFilter.value = '';
     sendSetting('filter', '');
+    sendClearQuery(); // Clear the main process query and filter
+    results = []; // Clear the results array before resetToGlobalSettings
+    resetToGlobalSettings(); // Reset to global settings for new searches
     updateTagList();
 });
 

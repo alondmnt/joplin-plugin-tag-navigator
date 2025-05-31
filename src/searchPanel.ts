@@ -478,6 +478,29 @@ export async function processMessage(
     } catch (e) {
       console.error('Failed to parse note state:', message.noteState, e);
     }
+
+  } else if (message.name === 'resetToGlobalSettings') {
+    // Reset query options to global settings
+    if (searchParams.options) {
+      delete searchParams.options.sortBy;
+      delete searchParams.options.sortOrder; 
+      delete searchParams.options.resultGrouping;
+      // Clean up options object if it becomes empty
+      if (Object.keys(searchParams.options).length === 0) {
+        searchParams.options = undefined;
+      }
+    }
+    
+    // Update panel to reflect global settings
+    await updatePanelSettings(searchPanel, searchParams);
+
+  } else if (message.name === 'clearQuery') {
+    // Clear the query and filter in the main process
+    searchParams.query = [[]];
+    searchParams.filter = '';
+    // Clear the cached search results
+    lastSearchResults = [];
+    // Note: Don't reset options here, that's handled by resetToGlobalSettings
   }
   return lastSearchResults;
 }

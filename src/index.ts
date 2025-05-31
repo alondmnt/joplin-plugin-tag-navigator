@@ -692,15 +692,15 @@ joplin.plugins.register({
         await joplin.settings.setValue(message.field, message.value);
       }
       if (message.name === 'searchTag') {
-        // Preserve existing options when creating a new search from navigation panel
-        const existingOptions = searchParams.options;
+        // Reset to global settings for new searches (don't preserve existing options)
         searchParams = { 
           query: [[{ tag: message.tag, negated: false }]], 
           filter: '', 
-          displayInNote: 'false',
-          options: existingOptions
+          displayInNote: 'false'
+          // Don't preserve existing options - let it use global settings
         };
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
