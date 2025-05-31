@@ -11,6 +11,7 @@ import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
 import { parseDateTag } from './parser';
+import { clearAllTagConversionData } from './tagTracker';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
@@ -348,7 +349,8 @@ joplin.plugins.register({
         if (!note) { return; }
 
         const conversionSettings = await getConversionSettings();
-        await convertNoteToInlineTags(note, conversionSettings);
+        const tagSettings = await getTagSettings();
+        await convertNoteToInlineTags(note, conversionSettings, tagSettings);
         note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
         try {
@@ -476,6 +478,34 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'itags.clearTagTracking',
+      label: 'Clear tag conversion history',
+      iconName: 'fas fa-eraser',
+      execute: async () => {
+        // Check if tag tracking is enabled
+        const enableTagTracking = await joplin.settings.value('itags.enableTagTracking') as boolean;
+        if (!enableTagTracking) {
+          await joplin.views.dialogs.showMessageBox(
+            'Tag conversion tracking is currently disabled.\n\n' +
+            'Enable "Tag conversion tracking" in Tag Navigator settings to use this feature.'
+          );
+          return;
+        }
+
+        // Confirmation dialog
+        const confirm = await joplin.views.dialogs.showMessageBox(
+          'Are you sure you want to clear all tag conversion history?\n\n' +
+          'This will remove tracking data that helps maintain consistency between Joplin tags and inline tags during conversions. ' +
+          'It cannot be undone.'
+        );
+        if (confirm === 0) {
+          await clearAllTagConversionData();
+          await joplin.views.dialogs.showMessageBox('Tag conversion history has been cleared.');
+        }
+      },
+    });
+
     await joplin.workspace.filterEditorContextMenu(async (object: any) => {
       if (currentTableColumns.length > 0) {
         object.items.push({
@@ -547,6 +577,9 @@ joplin.plugins.register({
       },
       {
         commandName: 'itags.convertAllNotesToJoplinTags',
+      },
+      {
+        commandName: 'itags.clearTagTracking',
       }
     ], MenuItemLocation.Note);
 

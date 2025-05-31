@@ -551,6 +551,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Periodic tag conversion (minutes)',
       description: 'Periodically convert all notes to Joplin tags. Set to 0 to disable periodic updates. (Requires restart)',
     },
+    'itags.enableTagTracking': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Tag conversion tracking',
+      description: 'Track converted tags for intelligent cleanup when removing / modifying inline tags.',
+    },
     'itags.tagRegex': {
       value: '',
       type: SettingItemType.String,
