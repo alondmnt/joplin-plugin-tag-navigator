@@ -369,64 +369,26 @@ function processHierarchicalItems(
     // Add the group heading line itself
     lineNumbers.push(startLine);
     
-    // Get raw tags from all lines (keep original format for accurate text removal)
-    const allRawTags = new Set<string>();
-    const note = noteDb.notes[groupedResult.externalId];
-    if (note) {
-      lineNumbers.forEach(lineNum => {
-        const lineTags = note.getTagsAtLine(lineNum);
-        lineTags.forEach(tag => allRawTags.add(tag));
-      });
-    }
-
-    // Process the heading to remove tag mentions (using raw tags for accurate matching)
-    let processedHeading = heading;
-    allRawTags.forEach(rawTag => {
-      // Remove exact tag from text, handling spaces properly
-      const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
-      processedHeading = processedHeading.replace(tagPattern, '');
-    });
-    // Clean up any trailing whitespace and multiple spaces
-    processedHeading = processedHeading.replace(/\s+/g, ' ').trim();
-    
-    // Process the group content to remove tag mentions (using raw tags)
-    let processedGroupContent = '';
-    if (normalizedContent && normalizedContent.trim()) {
-      processedGroupContent = normalizedContent;
-      
-      // Replace tag mentions with empty string
-      allRawTags.forEach(rawTag => {
-        // Remove exact tag from text, handling spaces properly
-        const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
-        processedGroupContent = processedGroupContent.replace(tagPattern, '');
-      });
-      
-      // Clean up extra newlines and spaces
-      processedGroupContent = processedGroupContent.split('\n')
-        .map(line => line.replace(/\s+/g, ' ').trim())
-        .filter(line => line.length > 0)
-        .join('\n');
-    }
-
-    // Now format tags for sorting (remove prefix, lowercase)
-    const formattedTags = Array.from(allRawTags).map(tag => 
-      tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+    // Process tags for this group
+    const tagsResult = processTagsForKanbanItem(
+      lineNumbers,
+      heading,
+      normalizedContent,
+      groupedResult,
+      tagSettings
     );
-    
-    // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
-    const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
     
     // Add to results
     result[primaryState].push({
-      heading: heading.trim(),
+      heading: tagsResult.processedHeading,
       group: normalizedContent,
       externalId: groupedResult.externalId,
       lineNumbers: [[rootItem.line]],
       color: groupedResult.color,
       title: groupedResult.title,
-      tags: [sortedTags],
-      processedHeading: processedHeading,
-      processedContent: processedGroupContent,
+      tags: [tagsResult.sortedTags],
+      processedHeading: tagsResult.processedHeading,
+      processedContent: tagsResult.processedContent,
       notebook: groupedResult.notebook,
       updatedTime: groupedResult.updatedTime,
       createdTime: groupedResult.createdTime,
@@ -562,64 +524,26 @@ function processStandaloneItems(
     // Process tags for this item
     const lineNumbers = [current.line];
     
-    // Get raw tags from all lines (keep original format for accurate text removal)
-    const allRawTags = new Set<string>();
-    const note = noteDb.notes[groupedResult.externalId];
-    if (note) {
-      lineNumbers.forEach(lineNum => {
-        const lineTags = note.getTagsAtLine(lineNum);
-        lineTags.forEach(tag => allRawTags.add(tag));
-      });
-    }
-
-    // Process the heading to remove tag mentions (using raw tags for accurate matching)
-    let processedHeading = heading;
-    allRawTags.forEach(rawTag => {
-      // Remove exact tag from text, handling spaces properly
-      const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
-      processedHeading = processedHeading.replace(tagPattern, '');
-    });
-    // Clean up any trailing whitespace and multiple spaces
-    processedHeading = processedHeading.replace(/\s+/g, ' ').trim();
-    
-    // Process the group content to remove tag mentions (using raw tags)
-    let processedGroupContent = '';
-    if (current.text && current.text.trim()) {
-      processedGroupContent = current.text;
-      
-      // Replace tag mentions with empty string
-      allRawTags.forEach(rawTag => {
-        // Remove exact tag from text, handling spaces properly
-        const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
-        processedGroupContent = processedGroupContent.replace(tagPattern, '');
-      });
-      
-      // Clean up extra newlines and spaces
-      processedGroupContent = processedGroupContent.split('\n')
-        .map(line => line.replace(/\s+/g, ' ').trim())
-        .filter(line => line.length > 0)
-        .join('\n');
-    }
-    
-    // Now format tags for sorting (remove prefix, lowercase)
-    const formattedTags = Array.from(allRawTags).map(tag => 
-      tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+    // Process tags for this item
+    const tagsResult = processTagsForKanbanItem(
+      lineNumbers,
+      heading,
+      current.text,
+      groupedResult,
+      tagSettings
     );
-    
-    // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
-    const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
     
     // Add to results
     result[current.state].push({
-      heading: heading.trim(),
+      heading: tagsResult.processedHeading,
       group: '', // No content for standalone items
       externalId: groupedResult.externalId,
       lineNumbers: [[current.line]],
       color: groupedResult.color,
       title: groupedResult.title,
-      tags: [sortedTags],
-      processedHeading: processedHeading,
-      processedContent: processedGroupContent,
+      tags: [tagsResult.sortedTags],
+      processedHeading: tagsResult.processedHeading,
+      processedContent: tagsResult.processedContent,
       notebook: groupedResult.notebook,
       updatedTime: groupedResult.updatedTime,
       createdTime: groupedResult.createdTime,
@@ -744,4 +668,81 @@ export function sortKanbanItems(
   }
   
   return sortedResults;
+}
+
+/**
+ * Processes tags for a kanban item: extracts raw tags, cleans text, formats and sorts tags
+ * @param lineNumbers Array of line numbers to extract tags from
+ * @param heading The heading text to clean
+ * @param content The content text to clean (optional)
+ * @param groupedResult The grouped result containing note info
+ * @param tagSettings Tag processing settings
+ * @returns Object containing processed heading, content, and sorted tags
+ */
+function processTagsForKanbanItem(
+  lineNumbers: number[],
+  heading: string,
+  content: string,
+  groupedResult: GroupedResult,
+  tagSettings: TagSettings
+): {
+  processedHeading: string;
+  processedContent: string;
+  sortedTags: string[];
+} {
+  // Get the actual NoteDatabase instance
+  const noteDb = DatabaseManager.getDatabase();
+  
+  // Get raw tags from all lines (keep original format for accurate text removal)
+  const allRawTags = new Set<string>();
+  const note = noteDb.notes[groupedResult.externalId];
+  if (note) {
+    lineNumbers.forEach(lineNum => {
+      const lineTags = note.getTagsAtLine(lineNum);
+      lineTags.forEach(tag => allRawTags.add(tag));
+    });
+  }
+
+  // Process the heading to remove tag mentions (using raw tags for accurate matching)
+  let processedHeading = heading;
+  allRawTags.forEach(rawTag => {
+    // Remove exact tag from text, handling spaces properly
+    const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
+    processedHeading = processedHeading.replace(tagPattern, '');
+  });
+  // Clean up any trailing whitespace and multiple spaces
+  processedHeading = processedHeading.replace(/\s+/g, ' ').trim();
+  
+  // Process the content to remove tag mentions (using raw tags)
+  let processedContent = '';
+  if (content && content.trim()) {
+    processedContent = content;
+    
+    // Replace tag mentions with empty string
+    allRawTags.forEach(rawTag => {
+      // Remove exact tag from text, handling spaces properly
+      const tagPattern = new RegExp(`\\s*${escapeRegex(rawTag)}(?=$|[\\s\\n,.;:?!]+)`, 'gi');
+      processedContent = processedContent.replace(tagPattern, '');
+    });
+    
+    // Clean up extra newlines and spaces
+    processedContent = processedContent.split('\n')
+      .map(line => line.replace(/\s+/g, ' ').trim())
+      .filter(line => line.length > 0)
+      .join('\n');
+  }
+
+  // Now format tags for sorting (remove prefix, lowercase)
+  const formattedTags = Array.from(allRawTags).map(tag => 
+    tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+  );
+  
+  // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
+  const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
+  
+  return {
+    processedHeading,
+    processedContent,
+    sortedTags
+  };
 } 
