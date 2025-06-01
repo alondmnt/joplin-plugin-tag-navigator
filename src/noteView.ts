@@ -129,7 +129,7 @@ export async function displayResultsInNote(
 
   } else if (savedQuery.displayInNote === 'kanban') {
     // Process results for kanban view
-    const kanbanResults = await processResultsForKanban(filteredResults, tagSettings);
+    const kanbanResults = await processResultsForKanban(filteredResults, tagSettings, viewSettings);
 
     // Sort kanban items using the same sorting logic as search results
     const sortedKanbanResults = sortKanbanItems(

@@ -79,6 +79,7 @@ export interface NoteViewSettings {
   resultMarkerInNote: boolean;  // Whether to highlight filter results in the note view
   searchWithRegex: boolean;     // Whether to use regex for tag / note / content filtering
   updateViewOnOpen: boolean;    // Whether to update the view when opening a note
+  kanbanTagSummary: boolean;    // Whether to show kanban tag summary in note view
 }
 
 export interface ConversionSettings {
@@ -182,6 +183,7 @@ export async function getNoteViewSettings(): Promise<NoteViewSettings> {
     'itags.resultMarkerInNote',
     'itags.searchWithRegex',
     'itags.updateViewOnOpen',
+    'itags.kanbanTagSummary',
   ]);
   return {
     tableCase: settings['itags.tableCase'] as string || 'title',
@@ -191,6 +193,7 @@ export async function getNoteViewSettings(): Promise<NoteViewSettings> {
     resultMarkerInNote: settings['itags.resultMarkerInNote'] as boolean,
     searchWithRegex: settings['itags.searchWithRegex'] as boolean,
     updateViewOnOpen: settings['itags.updateViewOnOpen'] as boolean,
+    kanbanTagSummary: settings['itags.kanbanTagSummary'] as boolean,
   };
 }
 
@@ -488,6 +491,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Note view: Display colors',
       description: 'Use color tags for titles in note view.',
+    },
+    'itags.kanbanTagSummary': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Note view: Kanban tag summary',
+      description: 'Show a summary of tags for each item in the kanban view.',
     },
     'itags.updateViewOnOpen': {
       value: true,

@@ -37,11 +37,14 @@ export interface KanbanItem extends SortableItem {
 /**
  * Processes search results for kanban display
  * @param filteredResults Array of filtered search results
+ * @param tagSettings Configuration for tag processing
+ * @param viewSettings Configuration for note view
  * @returns Object containing grouped results by checkbox state
  */
 export async function processResultsForKanban(
   filteredResults: GroupedResult[],
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  viewSettings: NoteViewSettings
 ): Promise<{ [state: string]: KanbanItem[] }> {
   // Define checkbox state patterns and their corresponding kanban categories
   const checkboxPatterns = {
@@ -99,7 +102,8 @@ export async function processResultsForKanban(
         groupedResult,
         processedContent,
         result,
-        tagSettings
+        tagSettings,
+        viewSettings
       );
       
       // Process standalone items (items not in hierarchies)
@@ -110,7 +114,8 @@ export async function processResultsForKanban(
         groupedResult,
         processedContent,
         result,
-        tagSettings
+        tagSettings,
+        viewSettings
       );
     }
   }
@@ -285,7 +290,8 @@ function processHierarchicalItems(
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
   result: { [state: string]: KanbanItem[] },
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  viewSettings: NoteViewSettings
 ): void {
   // Get the actual NoteDatabase instance
   const noteDb = DatabaseManager.getDatabase();
@@ -370,13 +376,28 @@ function processHierarchicalItems(
     lineNumbers.push(startLine);
     
     // Process tags for this group
-    const tagsResult = processTagsForKanbanItem(
-      lineNumbers,
-      heading,
-      normalizedContent,
-      groupedResult,
-      tagSettings
-    );
+    let tagsResult: {
+      processedHeading: string;
+      processedContent: string;
+      sortedTags: string[];
+    };
+    
+    if (viewSettings.kanbanTagSummary) {
+      tagsResult = processTagsForKanbanItem(
+        lineNumbers,
+        heading,
+        normalizedContent,
+        groupedResult,
+        tagSettings
+      );
+    } else {
+      // Use original text when tag summary is disabled
+      tagsResult = {
+        processedHeading: heading,
+        processedContent: normalizedContent,
+        sortedTags: []
+      };
+    }
     
     // Add to results
     result[primaryState].push({
@@ -490,7 +511,8 @@ function processStandaloneItems(
   groupedResult: GroupedResult,
   processedContent: Map<string, { state: string, noteId: string, lineNumber: number }>,
   result: { [state: string]: KanbanItem[] },
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  viewSettings: NoteViewSettings
 ): void {
   // Get the actual NoteDatabase instance
   const noteDb = DatabaseManager.getDatabase();
@@ -524,14 +546,28 @@ function processStandaloneItems(
     // Process tags for this item
     const lineNumbers = [current.line];
     
-    // Process tags for this item
-    const tagsResult = processTagsForKanbanItem(
-      lineNumbers,
-      heading,
-      current.text,
-      groupedResult,
-      tagSettings
-    );
+    let tagsResult: {
+      processedHeading: string;
+      processedContent: string;
+      sortedTags: string[];
+    };
+    
+    if (viewSettings.kanbanTagSummary) {
+      tagsResult = processTagsForKanbanItem(
+        lineNumbers,
+        heading,
+        current.text,
+        groupedResult,
+        tagSettings
+      );
+    } else {
+      // Use original text when tag summary is disabled
+      tagsResult = {
+        processedHeading: heading,
+        processedContent: current.text,
+        sortedTags: []
+      };
+    }
     
     // Add to results
     result[current.state].push({
