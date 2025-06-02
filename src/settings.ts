@@ -90,6 +90,64 @@ export interface ConversionSettings {
 }
 
 /**
+ * Validates a regex pattern to prevent ReDoS attacks
+ * @param pattern - The regex pattern to validate
+ * @returns true if safe, false if potentially dangerous
+ */
+function isRegexSafe(pattern: string): boolean {
+  // Check for potentially dangerous patterns that could cause ReDoS
+  const dangerousPatterns = [
+    // Nested quantifiers like (a+)+ or (a*)* or (a+)*
+    /\([^)]*[+*]\)[+*]/,
+    // Alternation with overlapping patterns like (a|a)*
+    /\([^)]*\|[^)]*\)[+*]/,
+    // Excessive nesting depth
+    /\([^)]*\([^)]*\([^)]*\(/,
+    // Very long strings that could cause exponential backtracking
+    /.{200,}/,
+    // Catastrophic backtracking patterns like (.*)*
+    /\(\.\*\)[+*]/,
+    // Multiple consecutive quantifiers
+    /[+*?]{2,}/,
+  ];
+
+  return !dangerousPatterns.some(dangerous => dangerous.test(pattern));
+}
+
+/**
+ * Safely creates a RegExp from user input with validation
+ * @param pattern - The regex pattern string
+ * @param flags - Regex flags
+ * @param fallback - Fallback regex if validation fails
+ * @returns A safe RegExp object
+ */
+function createSafeRegex(pattern: string, flags: string = 'g', fallback: RegExp = defTagRegex): RegExp {
+  try {
+    // Basic validation
+    if (!pattern || pattern.length === 0) {
+      return fallback;
+    }
+
+    // Check for dangerous patterns
+    if (!isRegexSafe(pattern)) {
+      console.warn('Tag Navigator: Potentially dangerous regex pattern detected, using fallback:', pattern);
+      return fallback;
+    }
+
+    // Test the regex by attempting to create it and run a basic test
+    const testRegex = new RegExp(pattern, flags);
+    
+    // Test with a simple string to catch other issues
+    testRegex.test('test');
+    
+    return testRegex;
+  } catch (error) {
+    console.warn('Tag Navigator: Invalid regex pattern, using fallback:', pattern, error);
+    return fallback;
+  }
+}
+
+/**
  * Retrieves all tag-related settings
  * @returns TagSettings object containing all configuration
  */
@@ -116,8 +174,8 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.nestedTags',
     'itags.tableNotebookPath',
   ]);
-  const tagRegex = settings['itags.tagRegex'] ? new RegExp(settings['itags.tagRegex'] as string, 'g') : defTagRegex;
-  const excludeRegex = settings['itags.excludeRegex'] ? new RegExp(settings['itags.excludeRegex'] as string, 'g') : null;
+  const tagRegex = settings['itags.tagRegex'] ? createSafeRegex(settings['itags.tagRegex'] as string, 'g', defTagRegex) : defTagRegex;
+  const excludeRegex = settings['itags.excludeRegex'] ? createSafeRegex(settings['itags.excludeRegex'] as string, 'g', null) : null;
 
   let todayTag = (settings['itags.todayTag'] as string).trim().toLowerCase();
   if (todayTag.length == 0) {
