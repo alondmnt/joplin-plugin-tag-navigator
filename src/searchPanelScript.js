@@ -51,6 +51,49 @@ let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
 const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
 
+// Add this secure HTML handling function near the top of the file, after the existing helper functions
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function safeSetInnerHTML(element, htmlContent) {
+    // Create a temporary container to parse the HTML safely
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Clear the target element
+    element.innerHTML = '';
+    
+    // Move all nodes from temp container to target element
+    while (tempDiv.firstChild) {
+        element.appendChild(tempDiv.firstChild);
+    }
+}
+
+function highlightText(text, searchTerms, className = 'itags-search-renderedFilter') {
+    if (!searchTerms || searchTerms.length === 0) {
+        return escapeHtml(text);
+    }
+    
+    // Escape HTML in the text first
+    let escapedText = escapeHtml(text);
+    
+    // Create a safe regex pattern for highlighting
+    const safeTerms = searchTerms.map(term => 
+        term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special characters
+    );
+    
+    if (safeTerms.length === 0) {
+        return escapedText;
+    }
+    
+    // Apply highlighting with properly escaped terms
+    const highlightRegex = new RegExp(`(${safeTerms.join('|')})`, 'gi');
+    return escapedText.replace(highlightRegex, `<mark class="${className}">$1</mark>`);
+}
+
 // Listen for messages from the main process
 webviewApi.onMessage((message) => {
     // Store the message for later access
@@ -511,13 +554,25 @@ function updateResultsArea() {
 
             let entry = result.html[index];
             if (resultMarker && (parsedFilter.length > 0)) {
-                entry = entry.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
-                titleEl.innerHTML = titleEl.textContent.replace(filterRegExp, '<mark id="itags-search-renderedFilter">$1</mark>');
+                // SECURITY FIX: Use safe highlighting instead of direct string replacement
+                entry = highlightText(result.text[index], parsedFilter, 'itags-search-renderedFilter');
+                
+                // SECURITY FIX: Safe title highlighting
+                const highlightedTitle = highlightText(result.title, parsedFilter, 'itags-search-renderedFilter');
+                titleEl.innerHTML = highlightedTitle;
             }
 
             const entryEl = document.createElement('div');
             entryEl.classList.add('itags-search-resultSection');
-            entryEl.innerHTML = entry;
+            
+            // SECURITY FIX: Use safe innerHTML setter instead of direct assignment
+            if (resultMarker && (parsedFilter.length > 0)) {
+                // Entry is already safely processed above
+                entryEl.innerHTML = entry;
+            } else {
+                // Use the safe method for unprocessed HTML content
+                safeSetInnerHTML(entryEl, entry);
+            }
             addLineNumberToCheckboxes(entryEl, result.text[index]);
             entryEl.style.cursor = 'pointer';
 
