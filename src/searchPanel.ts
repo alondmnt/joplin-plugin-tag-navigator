@@ -7,6 +7,7 @@ import { clearObjectReferences, escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
+import { validatePanelMessage, ValidationError } from './validation';
 
 // Cached markdown-it instance
 const md = new MarkdownIt({ 
@@ -177,15 +178,69 @@ export async function registerSearchPanel(panel: string): Promise<void> {
 }
 
 /**
- * Processes messages received from the search panel UI
- * @param message - Message object containing panel interaction details
- * @param searchPanel - Panel ID to update
- * @param db - Note database instance
- * @param searchParams - Current search parameters
- * @param tagSettings - Tag configuration settings
+ * Processes messages received from the search panel UI with comprehensive input validation
+ * @param message - Message from the search panel
+ * @param searchPanel - Panel ID
+ * @param db - Note database
+ * @param searchParams - Current search parameters  
+ * @param tagSettings - Tag settings
+ * @param savedNoteState - Saved note state
+ * @param lastSearchResults - Last search results
+ * @returns Updated search results
  */
 export async function processMessage(
   message: PanelMessage,
+  searchPanel: string,
+  db: NoteDatabase,
+  searchParams: QueryRecord,
+  tagSettings: TagSettings,
+  savedNoteState: { [key: string]: boolean },
+  lastSearchResults: GroupedResult[]
+): Promise<GroupedResult[]> {
+  
+  try {
+    // SECURITY FIX: Validate all user input before processing
+    const validatedMessage = validatePanelMessage(message);
+    
+    // Use validated message for all subsequent operations
+    return await processValidatedMessage(
+      validatedMessage,
+      searchPanel,
+      db,
+      searchParams,
+      tagSettings,
+      savedNoteState,
+      lastSearchResults
+    );
+    
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      console.error(`Tag Navigator: Input validation failed:`, error.message, { 
+        field: error.field, 
+        value: error.value 
+      });
+      // Don't process the message if validation fails
+      return lastSearchResults;
+    } else {
+      // Re-throw other errors
+      throw error;
+    }
+  }
+}
+
+/**
+ * Processes a validated panel message
+ * @param message - Validated message from the search panel
+ * @param searchPanel - Panel ID
+ * @param db - Note database
+ * @param searchParams - Current search parameters  
+ * @param tagSettings - Tag settings
+ * @param savedNoteState - Saved note state
+ * @param lastSearchResults - Last search results
+ * @returns Updated search results
+ */
+async function processValidatedMessage(
+  message: any, // Already validated by validatePanelMessage
   searchPanel: string,
   db: NoteDatabase,
   searchParams: QueryRecord,
@@ -209,10 +264,16 @@ export async function processMessage(
     await updatePanelNoteState(searchPanel, savedNoteState);
 
   } else if (message.name === 'searchQuery') {
-    searchParams.query = JSON.parse(message.query);
+    try {
+      searchParams.query = message.query; // Already validated and parsed
+    } catch (e) {
+      console.error('Failed to parse query:', message.query, e);
+      searchParams.query = [[]];
+    }
 
+    // Run the search and update results
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
-    lastSearchResults = results; // Cache the results
+    lastSearchResults = results; // Update cached results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
   } else if (message.name === 'showSortDialog') {
@@ -250,7 +311,7 @@ export async function processMessage(
     clearObjectReferences(currentNote);
 
     await saveQuery({
-      query: JSON.parse(message.query), 
+      query: message.query, 
       filter: message.filter, 
       displayInNote: searchParams.displayInNote,
       options: searchParams.options
@@ -462,8 +523,7 @@ export async function processMessage(
   } else if (message.name === 'updateNoteState') {
     // Update the note state from the panel
     try {
-      // Parse the incoming note state
-      const incomingState = JSON.parse(message.noteState);
+      const incomingState = message.noteState; // Already parsed by validation
 
       // Clear the current state (preserving the reference)
       Object.keys(savedNoteState).forEach(key => {
