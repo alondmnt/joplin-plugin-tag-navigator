@@ -2,7 +2,6 @@ import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
 import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings } from './settings';
-import { clearObjectReferences } from './utils';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { DatabaseManager, processAllNotes, processNote } from './db';
@@ -12,6 +11,7 @@ import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults,
 import { RELEASE_NOTES } from './release';
 import { parseDateTag } from './parser';
 import { clearAllTagConversionData } from './tagTracker';
+import { clearObjectReferences, createManagedInterval, getMemoryManager } from './memory';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
@@ -53,9 +53,9 @@ joplin.plugins.register({
     // Periodic conversion of tags
     const periodicConversion: number = await joplin.settings.value('itags.periodicConversion');
     if (periodicConversion > 0) {
-      setInterval(async () => {
+      createManagedInterval(async () => {
         await convertAllNotesToJoplinTags();
-      }, periodicConversion * 60 * 1000);
+      }, periodicConversion * 60 * 1000, 'Periodic tag conversion');
     }
 
     await joplin.contentScripts.register(
@@ -129,7 +129,7 @@ joplin.plugins.register({
       }
     }
     if (periodicDBUpdate > 0) {
-      setInterval(updateDB, periodicDBUpdate * 60 * 1000);
+      createManagedInterval(updateDB, periodicDBUpdate * 60 * 1000, 'Periodic database update');
     }
 
     joplin.workspace.onNoteSelectionChange(async () => {
@@ -707,5 +707,20 @@ joplin.plugins.register({
       }
       clearObjectReferences(message);
     });
+
+    // Register cleanup function for when plugin is stopped/reloaded
+    getMemoryManager().addCleanupFunction(() => {
+      console.log('Tag Navigator: Performing final cleanup...');
+      // Clear any remaining database references
+      DatabaseManager.clearDatabase();
+      // Clear the search results cache
+      lastSearchResults = [];
+      // Clear the saved note state
+      Object.keys(savedNoteState).forEach(key => delete savedNoteState[key]);
+    });
+
+    // Log initial memory statistics
+    const initialStats = getMemoryManager().getMemoryStats();
+    console.log('Tag Navigator: Plugin initialized with memory stats:', initialStats);
   },
 });

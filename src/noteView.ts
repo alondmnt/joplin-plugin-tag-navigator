@@ -1,10 +1,11 @@
 import joplin from 'api';
 import { getTagSettings, TagSettings, resultsEnd, resultsStart, NoteViewSettings, getNoteViewSettings, getResultSettings, ResultSettings } from './settings';
-import { clearObjectReferences, escapeRegex } from './utils';
+import { escapeRegex } from './utils';
 import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from './searchPanel';
 import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
 import { NoteDatabase } from './db';
 import { processResultsForKanban, buildKanban, sortKanbanItems } from './kanban';
+import { clearObjectReferences } from './memory';
 
 export const viewList = ['list', 'table', 'kanban'];
 

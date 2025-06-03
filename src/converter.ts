@@ -1,7 +1,8 @@
 import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
-import { clearObjectReferences, sortTags } from './utils';
+import { sortTags } from './utils';
 import { ConversionSettings, TagSettings, getTagSettings } from './settings';
+import { clearObjectReferences } from './memory';
 import { 
   saveTagConversionData, 
   getTagConversionData, 

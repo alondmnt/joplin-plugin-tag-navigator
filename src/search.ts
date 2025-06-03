@@ -2,7 +2,8 @@ import joplin from 'api';
 import { getResultSettings, getTagSettings, TagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
-import { clearObjectReferences, compareTagValues, sortTags } from './utils';
+import { compareTagValues, sortTags } from './utils';
+import { clearObjectReferences } from './memory';
 
 /**
  * Represents a search query component

@@ -1,8 +1,8 @@
 import joplin from 'api';
 import { parseLinkLines, parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
-import { clearObjectReferences } from './utils';
 import { TagSettings, getTagSettings } from './settings';
+import { clearObjectReferences } from './memory';
 
 /**
  * Manages the singleton instance of the NoteDatabase

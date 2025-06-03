@@ -3,11 +3,12 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardSortKeys, getStandardOrderKeys, getStandardGroupingKeys } from './settings';
-import { clearObjectReferences, escapeRegex } from './utils';
+import { escapeRegex } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 import { validatePanelMessage, ValidationError } from './validation';
+import { clearObjectReferences, createManagedTimeout } from './memory';
 
 // Cached markdown-it instance
 const md = new MarkdownIt({ 
@@ -654,7 +655,7 @@ export async function updatePanelResults(
   }
 
   // Just render the HTML and pass along the sorting options that were used
-  const intervalID = setInterval(
+  createManagedTimeout(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
@@ -670,9 +671,9 @@ export async function updatePanelResults(
       } else {
         console.debug('Panel not visible, skipping updateResults message');
       }
-      clearInterval(intervalID);
-    }
-    , 100
+    },
+    100,
+    'Panel results update'
   );
 }
 
@@ -726,7 +727,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     resultColorProperty: joplinSettings['itags.resultColorProperty'] as string,
     resultGrouping: resultGrouping,
   };
-  const intervalID = setInterval(
+  createManagedTimeout(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
         joplin.views.panels.postMessage(panel, {
@@ -734,9 +735,9 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
           settings: JSON.stringify(settings),
         });
       }
-      clearInterval(intervalID);
-    }
-    , 200
+    },
+    200,
+    'Panel settings update'
   );
 }
 
