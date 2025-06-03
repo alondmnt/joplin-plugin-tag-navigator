@@ -318,14 +318,19 @@ function updatePanelSettings(message) {
     resultToggle.innerHTML = settings.resultToggle ? 
         '>' : 'v';  // Button shows the current state (collapse / expand)
 
-    // Only update resultSort if it's not a custom value (preserve custom sort options)
-    const currentValue = resultSort.value;
-    if (!currentValue || STANDARD_SORT_VALUES.includes(currentValue)) {
-        resultSort.value = settings.resultSort;
-        // Initialize the data-prev-value attribute with the current value
-        resultSort.setAttribute('data-prev-value', settings.resultSort);
+    // Clean up custom dropdown options when setting to a standard value
+    if (STANDARD_SORT_VALUES.includes(settings.resultSort)) {
+        for (let i = resultSort.options.length - 1; i >= 0; i--) {
+            const option = resultSort.options[i];
+            if (!STANDARD_SORT_VALUES.includes(option.value)) {
+                resultSort.removeChild(option);
+            }
+        }
     }
-    // If current value is custom, keep it and don't update data-prev-value
+
+    // Always update resultSort to match the settings - updateResults will handle custom values if needed
+    resultSort.value = settings.resultSort;
+    resultSort.setAttribute('data-prev-value', settings.resultSort);
 
     // Handle string resultOrder format
     updateResultOrderDisplay(settings.resultOrder);
@@ -1992,22 +1997,22 @@ addEventListenerWithTracking(resultSort, 'change', (event) => {
 });
 
 addEventListenerWithTracking(resultOrder, 'click', () => {
-    // Check if we have a custom sort order (string with commas) from the last message
-    const currentSortOrder = lastMessage?.message?.sortOrder;
+    // Check if we have a custom sort order by looking at the button's current display
+    const buttonContent = resultOrder.innerHTML.replace(/<\/?b>/g, ''); // Remove <b> tags
+    const isCustomSort = buttonContent.length > 1; // Multiple arrows = custom sort
     
-    if (currentSortOrder && currentSortOrder.includes(',')) {
-        // For custom sort orders, toggle each element between asc/desc
-        const orderArray = currentSortOrder.split(',').map(s => s.trim());
+    if (isCustomSort) {
+        // For custom sort orders, get the current order from the title and toggle each element
+        const currentOrder = resultOrder.title; // Title contains the full sort order string
+        const orderArray = currentOrder.split(',').map(s => s.trim());
         const toggledArray = orderArray.map(order => {
             return order.toLowerCase().startsWith('a') ? 'desc' : 'asc';
         });
         
         const toggledOrder = toggledArray.join(',');
         
-        // Update display using the new function
+        // Update display and send to backend
         updateResultOrderDisplay(toggledOrder);
-        
-        // Send the toggled string to the backend
         sendSetting('resultOrder', toggledOrder);
     } else {
         // Handle simple string sort orders
