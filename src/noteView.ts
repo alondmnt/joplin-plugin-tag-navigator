@@ -393,10 +393,8 @@ async function processResultForTable(
   // Get the tags for each line in the results from the database
   const tagInfo: TagViewInfo[] = [];
   result.lineNumbers.forEach((lines, i) => {
-    // All lines in each result section are consecutive
-    const startLine = lines[0];
-    const endLine = lines[lines.length - 1];
-    for (let line = startLine; line <= endLine; line++) {
+    // Process only the actual lines in this group, not all lines between start and end
+    for (const line of lines) {
       const lineTags = note.getTagsAtLine(line);
       for (const tag of lineTags) {
         if (tag === tagSettings.tagPrefix + 'frontmatter') {
