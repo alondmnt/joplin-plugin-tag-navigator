@@ -175,7 +175,7 @@ export function validateExternalId(externalId: any): string {
   const sanitized = validateString(externalId, 'externalId', VALIDATION_LIMITS.MAX_NOTE_ID_LENGTH);
   
   // External IDs should only contain alphanumeric characters, hyphens, and colons
-  if (sanitized && !/^[a-zA-Z0-9:/-]+$/.test(sanitized)) {
+  if (sanitized && !/^[a-zA-Z0-9.%:/-]+$/.test(sanitized)) {
     throw new ValidationError('Invalid external ID format', 'externalId', externalId);
   }
   
@@ -190,7 +190,7 @@ export function validateExternalId(externalId: any): string {
 export function validateLineNumber(line: any): number {
   const num = Number(line);
   
-  if (!Number.isInteger(num) || num < 0 || num > 1000000) {
+  if (!Number.isInteger(num) || num < -1 || num > 1000000) {
     throw new ValidationError('Invalid line number', 'line', line);
   }
   
