@@ -654,10 +654,9 @@ export async function buildKanban(
       
       // Add tags right after the heading (comma separated)
       if (group.tags.length > 0) {
-        // Flatten the 2D tags array to work with the filtering logic
+        // Tags are already filtered (no parent tags, no color tags) in processTagsForKanbanItem
         const flatTags = group.tags.flat();
-        const noParentTags = flatTags.filter(tag => !flatTags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim)) && !tag.startsWith(tagSettings.colorTag));
-        kanbanString += `${noParentTags.join(', ')}\n`;
+        kanbanString += `${flatTags.join(', ')}\n`;
       }
       
       // Add link to the note
@@ -773,8 +772,14 @@ function processTagsForKanbanItem(
     tag.replace(tagSettings.tagPrefix, '').toLowerCase()
   );
   
+  // Filter out parent tags (tags that have children) - same logic as search.ts extractTagsPerGroup
+  const leafTags = formattedTags.filter(tag => 
+    !formattedTags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim)) && 
+    !tag.startsWith(tagSettings.colorTag)
+  );
+  
   // Sort tags using proper tag hierarchy sorting (same as GroupedResult)
-  const sortedTags = sortTags(formattedTags, tagSettings.valueDelim);
+  const sortedTags = sortTags(leafTags, tagSettings.valueDelim);
   
   return {
     processedHeading,

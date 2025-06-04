@@ -508,7 +508,14 @@ function extractTagsPerGroup(
         uniqueTags.add(formattedTag);
       }
     }
-    return sortTags(Array.from(uniqueTags), tagSettings.valueDelim);
+    const allTags = Array.from(uniqueTags);
+
+    // Filter out parent tags (tags that have children) - same logic as kanban.ts
+    const leafTags = allTags.filter(tag => 
+      !allTags.some(t => t.startsWith(tag + '/') || t.startsWith(tag + tagSettings.valueDelim))
+    );
+
+    return sortTags(leafTags, tagSettings.valueDelim);
   });
 }
 
@@ -608,14 +615,13 @@ function compareTagArrays(
   tagSettings: TagSettings
 ): number {
   // Find matching tags for sorting
-  // For ascending order, use the first (smallest) tag; for descending, use the last (largest) tag
   const aMatchingTags = aTags.filter(tag => 
     tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
   );
   const bMatchingTags = bTags.filter(tag => 
     tag.startsWith(sortBy + '/') || tag.startsWith(sortBy + tagSettings.valueDelim)
   );
-
+  // For ascending order, use the first (smallest) tag; for descending, use the last (largest) tag
   const aTagValue = aMatchingTags.length > 0 
     ? (sortOrder === 1 ? aMatchingTags[0] : aMatchingTags[aMatchingTags.length - 1])
     : undefined;
