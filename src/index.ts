@@ -263,11 +263,12 @@ joplin.plugins.register({
         if (!note) { return; }
         const query = await loadQuery(DatabaseManager.getDatabase(), note);
         // toggle display
-        const i = viewList.findIndex(x => x === query.displayInNote);
+        const extendedViewList = [...viewList, 'false'];
+        const i = extendedViewList.findIndex(x => x === query.displayInNote);
         if (i === -1) {
           query.displayInNote = 'list';
         } else {
-          query.displayInNote = viewList[(i + 1) % viewList.length];
+          query.displayInNote = extendedViewList[(i + 1) % extendedViewList.length];
         }
 
         note.body = await saveQuery(query);
