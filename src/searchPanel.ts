@@ -39,7 +39,6 @@ export const REGEX = {
   codeBlock: /(```[^`]*```)/g,
   backtickContent: /(`[^`]*`)/,
   heading: /^(#{1,6})\s+(.*)$/,
-  leadingWhitespace: /^\s*/,
   checkboxPrefix: /^\s*- \[[x\s@\?!~]\]\s*/,
   checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g
 };

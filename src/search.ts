@@ -41,7 +41,9 @@ export interface GroupedResult extends SortableItem {
 
 /** Cached regex patterns */
 export const REGEX = {
-  leadingWhitespace: /^\s*/,
+  leadingWhitespace: /^(\s*)/,
+  codeBlockStart: /^\s*```/,
+  codeBlockEnd: /^\s*```\s*$/,
 };
 
 /**
@@ -447,16 +449,49 @@ async function groupLines(lines: string[], result: GroupedResult, groupingMode: 
 
   } else if (groupingMode === 'item') {
     // Group by indentation - group lines that are indented under the first line
-    const indentRegex = /^(\s*)/;
+    // Special handling to keep code blocks intact and prevent splitting them across items
+
     let currentGroup: number[] = [];
     let baseIndent = -1;
     let lastLine = -1;
+    let inCodeBlock = false;
+    let codeBlockStartLine = -1;
 
     for (const lineNumber of result.lineNumbers[0]) {
       const line = lines[lineNumber];
-      const match = indentRegex.exec(line);
+      const match = REGEX.leadingWhitespace.exec(line);
       const indent = match ? match[1].length : 0;
 
+      // Check for code block boundaries
+      const isCodeBlockStart = REGEX.codeBlockStart.test(line);
+      const isCodeBlockEnd = REGEX.codeBlockEnd.test(line);
+
+      // Handle code block transitions
+      if (isCodeBlockStart && !inCodeBlock) {
+        inCodeBlock = true;
+        codeBlockStartLine = lineNumber;
+      } else if (isCodeBlockEnd && inCodeBlock) {
+        inCodeBlock = false;
+        // Force this line to be included in the current group to keep code block intact
+        currentGroup.push(lineNumber);
+        lastLine = lineNumber;
+        continue;
+      }
+
+      // If we're inside a code block, always add to current group
+      if (inCodeBlock) {
+        // If this is the first line and we're starting a new group, set up the group
+        if (currentGroup.length === 0) {
+          currentGroup = [lineNumber];
+          baseIndent = indent;
+        } else {
+          currentGroup.push(lineNumber);
+        }
+        lastLine = lineNumber;
+        continue;
+      }
+
+      // Normal grouping logic for non-code-block lines
       // Start a new group if:
       // - This is the first line
       // - Current indent is less than or equal to base indent
