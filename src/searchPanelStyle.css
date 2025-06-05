@@ -380,16 +380,16 @@ hr {
 
 .itags-search-renderedFilter {
     background-color: #eeee88;
-    padding: 0.1em 0.2em;
-    border-radius: 3px;
+	padding: 0em 2px;
+	border-radius: 5px;
     display: inline;
 }
 
 /* Support for both class and mark element highlighting */
 mark.itags-search-renderedFilter {
     background-color: #eeee88;
-    padding: 0.1em 0.2em;
-    border-radius: 3px;
+	padding: 0em 2px;
+	border-radius: 5px;
     display: inline;
 }
 
