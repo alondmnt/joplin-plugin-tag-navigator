@@ -77,13 +77,19 @@ function highlightText(text, searchTerms, className = 'itags-search-renderedFilt
         return escapeHtml(text);
     }
     
+    // Validate and sanitize className to prevent XSS
+    const safeClassName = (className || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safeClassName) {
+        return escapeHtml(text);
+    }
+    
     // Escape HTML in the text first
     let escapedText = escapeHtml(text);
     
     // Create a safe regex pattern for highlighting
-    const safeTerms = searchTerms.map(term => 
-        term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape regex special characters
-    );
+    const safeTerms = searchTerms
+        .filter(term => term && typeof term === 'string' && term.length > 0)
+        .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape regex special characters
     
     if (safeTerms.length === 0) {
         return escapedText;
@@ -91,7 +97,44 @@ function highlightText(text, searchTerms, className = 'itags-search-renderedFilt
     
     // Apply highlighting with properly escaped terms
     const highlightRegex = new RegExp(`(${safeTerms.join('|')})`, 'gi');
-    return escapedText.replace(highlightRegex, `<mark class="${className}">$1</mark>`);
+    return escapedText.replace(highlightRegex, `<mark class="${safeClassName}">$1</mark>`);
+}
+
+function highlightTextInHTML(htmlContent, searchTerms, className = 'itags-search-renderedFilter') {
+    if (!searchTerms || searchTerms.length === 0 || !htmlContent) {
+        return htmlContent;
+    }
+    
+    // Validate and sanitize className to prevent XSS
+    const safeClassName = (className || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safeClassName) {
+        return htmlContent;
+    }
+    
+    // Validate and filter search terms
+    const safeTerms = searchTerms
+        .filter(term => term && typeof term === 'string' && term.length > 0 && term.length <= 100) // Limit term length
+        .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape regex special characters
+    
+    if (safeTerms.length === 0) {
+        return htmlContent;
+    }
+    
+    try {
+        // Use negative lookbehind and lookahead to avoid highlighting inside HTML tags
+        // This regex matches the terms only when they're not inside HTML tag attributes or tag names
+        const highlightRegex = new RegExp(`(?<!<[^>]*)(${safeTerms.join('|')})(?![^<]*>)`, 'gi');
+        
+        // Additional safety: escape any captured content to prevent XSS
+        return htmlContent.replace(highlightRegex, (match, capturedTerm) => {
+            const escapedTerm = escapeHtml(capturedTerm);
+            return `<mark class="${safeClassName}">${escapedTerm}</mark>`;
+        });
+    } catch (error) {
+        // If regex fails (e.g., due to lookbehind not being supported), fall back to safe mode
+        console.warn('Advanced regex highlighting failed, falling back to simple mode:', error);
+        return htmlContent;
+    }
 }
 
 // Listen for messages from the main process
@@ -559,8 +602,8 @@ function updateResultsArea() {
 
             let entry = result.html[index];
             if (resultMarker && (parsedFilter.length > 0)) {
-                // SECURITY FIX: Use safe highlighting instead of direct string replacement
-                entry = highlightText(result.text[index], parsedFilter, 'itags-search-renderedFilter');
+                // Apply highlighting to already rendered HTML while preserving structure
+                entry = highlightTextInHTML(result.html[index], parsedFilter, 'itags-search-renderedFilter');
                 
                 // SECURITY FIX: Safe title highlighting
                 const highlightedTitle = highlightText(result.title, parsedFilter, 'itags-search-renderedFilter');

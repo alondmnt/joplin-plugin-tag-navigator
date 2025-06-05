@@ -378,10 +378,18 @@ hr {
 }
 .itags-search-renderedTag:hover { background-color: #7aaab8; }
 
-#itags-search-renderedFilter {
+.itags-search-renderedFilter {
     background-color: #eeee88;
-    padding: 0.3px, 0.3px;
-    border-radius: 5px;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+    display: inline;
+}
+
+/* Support for both class and mark element highlighting */
+mark.itags-search-renderedFilter {
+    background-color: #eeee88;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
     display: inline;
 }
 
