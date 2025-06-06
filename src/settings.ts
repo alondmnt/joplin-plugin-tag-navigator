@@ -87,6 +87,7 @@ export interface ConversionSettings {
   spaceReplace: string;        // Character to replace spaces in converted Joplin tags
   listPrefix: string;          // Prefix for converted Joplin tags
   location: string;            // Location for converted Joplin tags
+  enableTagTracking: boolean;  // Whether to enable tag tracking
 }
 
 /**
@@ -261,12 +262,14 @@ export async function getConversionSettings(): Promise<ConversionSettings> {
     'itags.spaceReplace',
     'itags.listPrefix',
     'itags.location',
+    'itags.enableTagTracking',
   ]);
   return {
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
     spaceReplace: settings['itags.spaceReplace'] as string || '_',
     listPrefix: settings['itags.listPrefix'] as string || 'tags: ',
     location: settings['itags.location'] as string || 'top',
+    enableTagTracking: settings['itags.enableTagTracking'] as boolean || false,
   };
 }
 
@@ -626,7 +629,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Tag conversion tracking',
-      description: 'Track converted tags for intelligent cleanup when removing / modifying inline tags.',
+      description: 'Track converted tags for intelligent cleanup when removing / modifying joplin and inline tags.',
     },
     'itags.tagRegex': {
       value: '',

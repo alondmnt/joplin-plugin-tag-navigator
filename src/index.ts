@@ -10,7 +10,7 @@ import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
 import { parseDateTag } from './parser';
-import { clearAllTagConversionData } from './tagTracker';
+import { clearAllTagConversionData } from './tracker';
 import { clearObjectReferences, createManagedInterval, getMemoryManager } from './memory';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
@@ -326,7 +326,8 @@ joplin.plugins.register({
         if (!note) { return; }
 
         const tagSettings = await getTagSettings();
-        await convertNoteToJoplinTags(note, tagSettings);
+        const conversionSettings = await getConversionSettings();
+        await convertNoteToJoplinTags(note, tagSettings, conversionSettings);
         note = clearObjectReferences(note);
       },
     });

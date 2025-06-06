@@ -1,5 +1,6 @@
 import joplin from 'api';
 import { ModelType } from '../api/types';
+import { sortTags, escapeRegex } from './utils';
 
 /**
  * Interface for tracking tag conversions per note
@@ -7,6 +8,8 @@ import { ModelType } from '../api/types';
 export interface TagConversionData {
   /** Tags that were converted from inline to Joplin tags in the last conversion */
   joplinTags: string[];
+  /** Tags that were converted from Joplin to inline tags in the last conversion */
+  inlineTags: string[];
   /** Timestamp of the last conversion */
   lastUpdated: number;
 }
@@ -155,4 +158,116 @@ export async function clearAllTagConversionData(): Promise<void> {
     console.error('Failed to clear tag conversion data:', error);
     throw error;
   }
+}
+
+/**
+ * Removes specified inline tags from the note body
+ * @param noteBody - The note body content
+ * @param tagsToRemove - Array of tag names to remove
+ * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
+ * @param tagPrefix - The prefix used for individual tags (e.g., "#")
+ * @param spaceReplace - The character used to replace spaces in tags
+ * @returns The updated note body
+ */
+export function removeInlineTags(
+  noteBody: string, 
+  tagsToRemove: string[], 
+  listPrefix: string,
+  tagPrefix: string,
+  spaceReplace: string
+): string {
+  if (tagsToRemove.length === 0) return noteBody;
+  
+  const lines = noteBody.split('\n');
+  const updatedLines = [];
+  
+  for (const line of lines) {
+    if (line.startsWith(listPrefix)) {
+      // This is a tag line, remove specified tags
+      let updatedLine = line;
+      
+      for (const tagToRemove of tagsToRemove) {
+        const tagWithPrefix = tagPrefix + tagToRemove.replace(/\s/g, spaceReplace);
+        // Remove the tag and any trailing/leading spaces
+        updatedLine = updatedLine.replace(new RegExp(`\\s*${escapeRegex(tagWithPrefix)}\\s*`, 'g'), ' ');
+      }
+      
+      // Clean up the line - remove extra spaces and ensure proper formatting
+      updatedLine = updatedLine.replace(/\s+/g, ' ').trim();
+      
+      // Only keep the line if it still has content after the prefix
+      if (updatedLine.length > listPrefix.length) {
+        updatedLines.push(updatedLine);
+      }
+    } else {
+      updatedLines.push(line);
+    }
+  }
+  
+  return updatedLines.join('\n');
+}
+
+/**
+ * Adds inline tags to the note body
+ * @param noteBody - The note body content
+ * @param tagsToAdd - Array of tag names to add
+ * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
+ * @param tagPrefix - The prefix used for individual tags (e.g., "#")
+ * @param spaceReplace - The character used to replace spaces in tags
+ * @param location - Where to add the tags ('top' or 'bottom')
+ * @param valueDelim - Delimiter for sorting tags
+ * @returns The updated note body
+ */
+export function addInlineTags(
+  noteBody: string,
+  tagsToAdd: string[],
+  listPrefix: string,
+  tagPrefix: string,
+  spaceReplace: string,
+  location: 'top' | 'bottom',
+  valueDelim: string
+): string {
+  if (tagsToAdd.length === 0) return noteBody;
+  
+  const lines = noteBody.split('\n');
+  let existingTagLineIndex = -1;
+  
+  // Find existing tag line
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith(listPrefix)) {
+      existingTagLineIndex = i;
+      break;
+    }
+  }
+  
+  const sortedTags = sortTags(tagsToAdd, valueDelim);
+  const newTagsString = sortedTags
+    .map(tag => tagPrefix + tag.replace(/\s/g, spaceReplace)).join(' ');
+  
+  if (existingTagLineIndex !== -1) {
+    // Add to existing tag line
+    const existingLine = lines[existingTagLineIndex];
+    lines[existingTagLineIndex] = existingLine + ' ' + newTagsString;
+  } else {
+    // Create new tag line
+    const newTagLine = listPrefix + newTagsString;
+    if (location === 'top') {
+      lines.unshift(newTagLine);
+    } else {
+      lines.push(newTagLine);
+    }
+  }
+  
+  return lines.join('\n');
+}
+
+/**
+ * Checks if the note body contains any existing tag lines
+ * @param noteBody - The note body content
+ * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
+ * @returns true if tag lines exist, false otherwise
+ */
+export function hasExistingTagLines(noteBody: string, listPrefix: string): boolean {
+  const lines = noteBody.split('\n');
+  return lines.some(line => line.startsWith(listPrefix));
 }

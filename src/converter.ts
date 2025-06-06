@@ -1,15 +1,18 @@
 import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { sortTags } from './utils';
-import { ConversionSettings, TagSettings, getTagSettings } from './settings';
+import { ConversionSettings, TagSettings, getConversionSettings, getTagSettings } from './settings';
 import { clearObjectReferences } from './memory';
 import { 
   saveTagConversionData, 
   getTagConversionData, 
   computeTagDiff, 
   removeJoplinTags,
-  getAllTags
-} from './tagTracker';
+  getAllTags,
+  removeInlineTags,
+  addInlineTags,
+  hasExistingTagLines
+} from './tracker';
 
 /**
  * Extracts inline tags from a note's content
@@ -35,6 +38,7 @@ export function extractInlineTags(noteBody: string, tagSettings: TagSettings): s
  */
 export async function convertAllNotesToJoplinTags(): Promise<void> {
   const tagSettings = await getTagSettings();
+  const conversionSettings = await getConversionSettings();
 
   let allTags = await getAllTags();
 
@@ -56,7 +60,7 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
         continue;
       }
       try {
-        await convertNoteToJoplinTags(note, tagSettings, allTags);
+        await convertNoteToJoplinTags(note, tagSettings, conversionSettings, allTags);
       } catch (error) {
         console.error(`Error converting note ${note.id} to tags: ${error}`);
       }
@@ -107,32 +111,33 @@ export async function convertAllNotesToInlineTags(
  * Converts inline tags in a single note to Joplin tags
  * @param note - The note to process
  * @param tagSettings - Settings for tag processing
+ * @param conversionSettings - Settings for conversion
+ * @param allTags - All tags in the database
  */
 export async function convertNoteToJoplinTags(
   note: { id: string; body: string; markup_language: number }, 
   tagSettings: TagSettings,
+  conversionSettings: ConversionSettings,
   allTags?: { id: string; title: string }[]
 ): Promise<void> {
 
-  // Check if tag tracking is enabled
-  const enableTagTracking = await joplin.settings.value('itags.enableTagTracking') as boolean;
-  
   // Parse all inline tags from the note
   const currentInlineTags = extractInlineTags(note.body, tagSettings);
-  
+
   let tagsToAdd = currentInlineTags;
   let tagsToRemove: string[] = [];
-  
-  if (enableTagTracking) {
+
+  if (conversionSettings.enableTagTracking) {
     // Get previous conversion data
     const previousData = await getTagConversionData(note.id);
-    
+
     if (currentInlineTags.length === 0) {
       // If no inline tags, only clean up previously converted tags if any
       if (previousData && previousData.joplinTags.length > 0) {
         await removeJoplinTags(note.id, previousData.joplinTags);
         await saveTagConversionData(note.id, {
           joplinTags: [], // No more inline tags to track
+          inlineTags: [], // Initialize inline tags tracking
           lastUpdated: Date.now()
         });
       }
@@ -142,22 +147,24 @@ export async function convertNoteToJoplinTags(
     // Get current Joplin tags
     let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
     const noteTagNames = noteTags.items.map(tag => tag.title);
-    
-    // Determine which tags to add and remove
-    tagsToAdd = currentInlineTags.filter(tag => !noteTagNames.includes(tag));
-    
+
     if (previousData) {
       // Compute diff based on previous conversion
       const diff = computeTagDiff(currentInlineTags, previousData.joplinTags);
       tagsToAdd = diff.toAdd.filter(tag => !noteTagNames.includes(tag));
       tagsToRemove = diff.toRemove;
+
+    } else {
+      // No previous data - add all current inline tags (except those already in Joplin)
+      tagsToAdd = currentInlineTags.filter(tag => !noteTagNames.includes(tag));
+      tagsToRemove = [];
     }
 
     // Remove old Joplin tags that are no longer in inline tags
     if (tagsToRemove.length > 0) {
       await removeJoplinTags(note.id, tagsToRemove);
     }
-    
+
     noteTags = clearObjectReferences(noteTags);
   } else {
     // Simple mode: just get current Joplin tags and filter out existing ones
@@ -199,9 +206,12 @@ export async function convertNoteToJoplinTags(
   }
 
   // Save conversion data
-  if (enableTagTracking) {
+  if (conversionSettings.enableTagTracking) {
+    // Get existing data to preserve inlineTags if they exist
+    const existingData = await getTagConversionData(note.id);
     await saveTagConversionData(note.id, {
       joplinTags: currentInlineTags, // Tags we just converted from inline to Joplin
+      inlineTags: existingData?.inlineTags || [], // Preserve existing inline tags tracking
       lastUpdated: Date.now()
     });
   }
@@ -218,44 +228,113 @@ export async function convertNoteToInlineTags(
   conversionSettings: ConversionSettings,
   tagSettings?: TagSettings
 ): Promise<void> {
-  
+
   let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const currentJoplinTags = noteTags.items.map((tag: any) => tag.title);
-  
+
   // Get tag settings if not provided
   if (!tagSettings) {
     tagSettings = await getTagSettings();
   }
-  
-  const sortedTags = sortTags(currentJoplinTags, tagSettings.valueDelim);
-  const tagList = conversionSettings.listPrefix + sortedTags
-    .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
-  
-  if (note.body.includes(tagList + '\n')) { 
-    // No change needed
-    return; 
-  }
 
-  // Remove all existing tag list lines and create new ones
-  const lines = note.body.split('\n');
-  let filteredLines = lines;
-  if (conversionSettings.listPrefix.length > 2) {
-    filteredLines = lines.filter(line => !line.startsWith(conversionSettings.listPrefix));
-  }
+  let tagsToAdd = currentJoplinTags;
+  let tagsToRemove: string[] = [];
+  let updatedBody = note.body;
 
-  if (currentJoplinTags.length > 0) {
-    // Add the new tag list
-    if (conversionSettings.location === 'top') {
-      note.body = tagList + '\n' + filteredLines.join('\n');
+    // Check if tag tracking is enabled
+  if (conversionSettings.enableTagTracking) {
+    // Get previous conversion data
+    const previousData = await getTagConversionData(note.id);
+    const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix);
+
+    if (!hasTagLines && currentJoplinTags.length > 0) {
+      // No tag lines exist but we have Joplin tags - create from scratch
+      // This handles both first-time conversion and accidental tag line deletion
+      tagsToAdd = currentJoplinTags;
+      tagsToRemove = [];
+
+    } else if (previousData) {
+      // Tag lines exist - use diff-based approach to modify incrementally
+      const diff = computeTagDiff(currentJoplinTags, previousData.inlineTags);
+      tagsToAdd = diff.toAdd;
+      tagsToRemove = diff.toRemove;
+
     } else {
-      note.body = filteredLines.join('\n') + '\n' + tagList;
+      // First time with existing tag lines - add all current Joplin tags
+      tagsToAdd = currentJoplinTags;
+      tagsToRemove = [];
     }
-  } else {
-    // No tags, just remove existing tag lists
-    note.body = filteredLines.join('\n');
-  }
 
-  await joplin.data.put(['notes', note.id], null, { body: note.body });
+    // Remove old inline tags that are no longer in Joplin tags
+    if (tagsToRemove.length > 0) {
+      updatedBody = removeInlineTags(
+        updatedBody,
+        tagsToRemove,
+        conversionSettings.listPrefix,
+        conversionSettings.tagPrefix,
+        conversionSettings.spaceReplace
+      );
+    }
+
+    // Add new inline tags
+    if (tagsToAdd.length > 0) {
+      updatedBody = addInlineTags(
+        updatedBody,
+        tagsToAdd,
+        conversionSettings.listPrefix,
+        conversionSettings.tagPrefix,
+        conversionSettings.spaceReplace,
+        conversionSettings.location as 'top' | 'bottom',
+        tagSettings.valueDelim
+      );
+    }
+
+    // Only update the note if the body changed
+    if (updatedBody !== note.body) {
+      await joplin.data.put(['notes', note.id], null, { body: updatedBody });
+    }
+
+    // Save conversion data
+    // Get existing data to preserve joplinTags if they exist
+    const existingData = await getTagConversionData(note.id);
+    await saveTagConversionData(note.id, {
+      joplinTags: existingData?.joplinTags || [], // Preserve existing Joplin tags tracking
+      inlineTags: currentJoplinTags, // Tags we just converted from Joplin to inline
+      lastUpdated: Date.now()
+    });
+
+  } else {
+    // Simple mode: replace all tag lines with current Joplin tags
+    const sortedTags = sortTags(currentJoplinTags, tagSettings.valueDelim);
+    const tagList = conversionSettings.listPrefix + sortedTags
+      .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
+    
+    if (note.body.includes(tagList + '\n')) { 
+      // No change needed
+      return; 
+    }
+
+    // Remove all existing tag list lines and create new ones
+    const lines = note.body.split('\n');
+    let filteredLines = lines;
+    if (conversionSettings.listPrefix.length > 2) {
+      filteredLines = lines.filter(line => !line.startsWith(conversionSettings.listPrefix));
+    }
+
+    if (currentJoplinTags.length > 0) {
+      // Add the new tag list
+      if (conversionSettings.location === 'top') {
+        updatedBody = tagList + '\n' + filteredLines.join('\n');
+      } else {
+        updatedBody = filteredLines.join('\n') + '\n' + tagList;
+      }
+    } else {
+      // No tags, just remove existing tag lists
+      updatedBody = filteredLines.join('\n');
+    }
+
+    await joplin.data.put(['notes', note.id], null, { body: updatedBody });
+  }
 
   noteTags = clearObjectReferences(noteTags);
 }
