@@ -247,7 +247,8 @@ These tags will be accessible in the search panel / notes / tables like standard
     - HTML colour names are supported.
 - You may customise the colour tag in the plugin settings.
     - Example: Set it to be `#priority/`, and then tag by `#priority/red`.
-- You may select whether to paint the background or the border of the results with the selected colour.
+- You may select whether to paint the background, the border of the results with the selected colour, or note titles in note views.
+    - See the settings: `Search: Use color to set result: Border / Background`, `Note view: Display colors`.
 - Set the colour of an entire note by tagging one of its first 2 lines with the colour tag.
 - Different sections of the same note may be tagged with different colours. They will be displayed separately in the panel (see an example below).
 
