@@ -2,12 +2,10 @@
 
 [![DOI](https://zenodo.org/badge/753598497.svg)](https://zenodo.org/doi/10.5281/zenodo.10701718) ![downloads](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=downloads&query=%24.totalDownloads&url=https%3A%2F%2Fjoplin-plugin-downloads.vercel.app%2Fapi%3Fplugin%3Djoplin.plugin.alondmnt.tag-navigator)
 
-Type inline #tags or front matter in the note editor. View your tagged paragraphs and tasks / TODOs in a search panel, or in a generated note. Build a table view / database from notes and tags. Convert between Obsidian tags and Joplin tags.
+Type inline tags or frontmatter in the note editor. View your tagged paragraphs and tasks / TODOs in a search panel, or in a generated note / kanban. Build a table view / database from notes and tags. Convert between Obsidian tags and Joplin tags.
 
-[Community discussion thread](https://discourse.joplinapp.org/t/plugin-inline-tag-navigator-v0-8-0-2024-06-26/35726)
-
-[Release notes](CHANGELOG.md)
-
+- [Community discussion thread](https://discourse.joplinapp.org/t/plugin-inline-tag-navigator-v0-8-0-2024-06-26/35726)
+- [Release notes](CHANGELOG.md)
 - [Features](#features)
 - [Demos](#demos)
 - [Tips](#tips)
@@ -35,7 +33,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
     - Display results:
-        - In a sections (similarly to the the panel).
+        - In sections (similarly to the the panel).
         - In a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
         - In a kanban board. ([tips](#kanban-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
