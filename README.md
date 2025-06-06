@@ -19,7 +19,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
     - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path.
-    - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
+    - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
@@ -30,7 +30,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Tag ranges**: Search for a range of tags, according to their lexicographic order. Example: #2024/07 -> #2024/08. ([tips](#tag-ranges))
     - **Today's date**: Search tags by today's date. Examples: #today, #today+1 (tomorrow), #today-10 (ten days ago). ([tips](#tag-ranges))
     - **Colour tags**: Use colour tags to highlight results in the search panel. Example: #color=red. ([tips](#colour-tags))
-2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0))
+2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
     - Display results:
         - In sections (similarly to the the panel).
@@ -74,6 +74,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Tag ranges](#tag-ranges)
 - [Tag values](#tag-values)
 - [Front matter tags](#front-matter-tags)
+- [Saved queries](#saved-queries)
 - [Table views](#table-views)
 - [Kanban views](#kanban-views)
 - [Filtering results](#filtering-results)
@@ -154,26 +155,66 @@ will be converted to the following inline tags and values:
 
 These tags will be accessible in the search panel / notes / tables like standard inline tags. The last tag is `#frontmatter` and is used to indicate that the tags were extracted from the front matter section of the note.
 
-### Table views
+### Saved queries
 
-- To enable table view, start by [saving a query](#saved-search-queries). Next, select `Tools --> Tag Navigator --> Toggle search results display in note` (or the corresponding toolbar button) until the saved query shows the property `"displayInNote": "table"` and a table appears.
-- Quickly add new entries to the table by clicking on `New table entry note` in the context menu, toolbar, or Tag Navigator menu.
-    - The new note will contain a [front matter](#front-matter-tags) template with properties for each column.
-- Tables can be customised using the following settings:
-    - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
-    - `Search: Extract the full notebook path`: Enable this to display the notebook path in the table view, and to allow [filtering results](#filtering-results) by this path.
-    - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
-- Tables can be customised per note using the saved query, by adding an `options` field with any of the following properties:
-    - `includeCols`
-        - a comma-separated list of columns (tags / properties) to display in the table view
-        - can be used to slice the table columns, sort them, or add "modified" / "created" timestamps
-    - `excludeCols`
-        - a comma-separated list of columns to remove from the table view (even though these properties exist in the listed notes)
-    - `sortBy`
-        - a comma-separated list of columns to sort the table by
-    - `sortOrder`
-        - a comma-separated list of the words "ascending" / "descending" (or "desc", "descend", etc.) corresponding to the columns in the `sortBy` field
-    - Example for a saved query:
+Saved queries allow you to store search configurations in notes and reuse them across devices. They are JSON objects that define search parameters and display options. The easiest way to save a query in the current note is to press the `Save` button on the panel (see the [demo](#saved-search-queries)), but they can also be edited manually.
+
+#### Basic structure
+
+```json
+{
+  "query": [
+    [
+      {
+        "tag": "#tag-name",
+        "negated": false
+      }
+    ]
+  ],
+  "filter": "",
+  "displayInNote": "false"
+}
+```
+
+#### Core properties
+
+- **`query`**: Array of search terms (tags, notes, ranges)
+  - Outer array represents OR groups
+  - Inner arrays represent AND groups within each OR group
+  - Each tag term has:
+    - `tag`: The search term (tag, note link, or text)
+    - `negated`: Boolean indicating whether to exclude this term
+  - Each note term has:
+    - `title`
+    - `externalId`: The note's Joplin ID
+    - `negated`
+  - Each range term has:
+    - `minValue`
+    - `maxValue`
+- **`filter`**: String for additional text filtering within results
+- **`displayInNote`**: Display mode when viewing in notes
+  - `"false"`: Do not show results
+  - `"list"`: List results, similarly to panel
+  - `"table"`: Display as a table/database view
+  - `"kanban"`: Display as a kanban board for tasks
+
+#### Advanced options
+
+- **`sortBy`**: Comma-separated list of parent / value tags to sort by
+- **`sortOrder`**: Comma-separated list of sort directions
+  - Use "a" / "asc" / "ascend" or "d" / "desc" / "descend"
+  - Must correspond to columns in `sortBy`
+- **`resultGrouping`**: (List / no view only) How to group the search results
+  - `"heading"`: Group by heading
+  - `"consecutive"`: Group adjacent lines
+  - `"item"`: Split by item
+- **`includeCols`**: (Table view only) Comma-separated list of columns to display
+  - Can include: note properties, tags, "modified", "created" timestamps
+  - Use to slice, sort, or add specific columns
+- **`excludeCols`**: (Table view only) Comma-separated list of columns to hide
+  - Removes columns even if they exist in the data
+
+#### Complete example
 
 ```json
 {
@@ -182,19 +223,42 @@ These tags will be accessible in the search panel / notes / tables like standard
       {
         "tag": "#artist",
         "negated": false
+      },
+      {
+        "tag": "#album",
+        "negated": false
+      }
+    ],
+    [
+      {
+        "tag": "#single",
+        "negated": false
       }
     ]
   ],
-  "filter": "",
+  "filter": "rock",
   "displayInNote": "table",
   "options": {
     "includeCols": "title, artist, country, year, modified",
     "excludeCols": "notebook, line",
-    "sortBy": "year",
-    "sortOrder": "asc"
+    "sortBy": "year, artist",
+    "sortOrder": "asc, desc"
   }
 }
 ```
+
+This example searches for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending).
+
+### Table views
+
+- To enable table view, start by [saving a query](#saved-queries). Next, select `Tools --> Tag Navigator --> Toggle search results display in note` (or the corresponding toolbar button) until the saved query shows the property `"displayInNote": "table"` and a table appears.
+- Quickly add new entries to the table by clicking on `New table entry note` in the context menu, toolbar, or Tag Navigator menu.
+    - The new note will contain a [front matter](#front-matter-tags) template with properties for each column.
+- Tables can be customised using the following settings:
+    - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
+    - `Search: Extract the full notebook path`: Enable this to display the notebook path in the table view, and to allow [filtering results](#filtering-results) by this path.
+    - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
+- Tables can be customised per note using with table-specific options. See the [saved queries](#saved-queries) section for complete specifications and examples.
 
 ### Kanban views
 
@@ -224,6 +288,7 @@ These tags will be accessible in the search panel / notes / tables like standard
 ### Inline TODOs
 
 - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
+- Sort results by tags to reflect their priority (see [custom sorting options](#advanced-options)).
 - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@+'",.()\[\]:;\?\\]+)`.
 - Supported additional checkbox styles (inspired by `[x]it!`).
     - Set any of them to done by clicking the checkbox in the search panel.
