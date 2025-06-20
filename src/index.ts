@@ -222,6 +222,7 @@ joplin.plugins.register({
         if (!panelState) {
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
+          await updatePanelSettings(searchPanel, searchParams);
         }
       },
     });

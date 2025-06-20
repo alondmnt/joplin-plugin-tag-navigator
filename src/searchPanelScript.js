@@ -35,7 +35,7 @@ const resultCount = document.createElement('div');
 resultCount.classList.add('itags-search-resultCount');
 resultCount.style.display = 'none';
 resultFilterArea.appendChild(resultCount);
-let resultToggleState = 'expand';
+let resultToggleState = null; // Will be set when settings are received
 const resultSort = document.getElementById('itags-search-resultSort');
 const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
@@ -200,6 +200,15 @@ webviewApi.onMessage((message) => {
         // Set sort order if provided
         if (message.message.sortOrder) {
             updateResultOrderDisplay(message.message.sortOrder);
+        }
+
+        // Ensure resultToggleState is initialized before updating results
+        if (resultToggleState === null) {
+            // If settings haven't been received yet, request them
+            webviewApi.postMessage({
+                name: 'initPanel'
+            });
+            return; // Don't update results until settings are received
         }
 
         updateResultsArea();
@@ -635,9 +644,12 @@ function updateResultsArea() {
             contentContainer.style.display = noteState[stateKey] ? 'block' : 'none';
         } else {
             // Default based on global setting
-            contentContainer.style.display = (resultToggleState === 'expand') ? 'block': 'none';
-            // Initialize state for this note (resultToggleState='expand' means expanded/visible)
-            noteState[stateKey] = resultToggleState === 'expand';
+            let defaultExpanded = true; // Safe fallback if settings not received yet
+            if (resultToggleState !== null) {
+                defaultExpanded = resultToggleState === 'expand';
+            }
+            contentContainer.style.display = defaultExpanded ? 'block' : 'none';
+            noteState[stateKey] = defaultExpanded;
         }
 
         const parsedFilter = parseFilter(filter, min_chars=3);
