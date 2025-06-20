@@ -172,6 +172,9 @@ webviewApi.onMessage((message) => {
             console.error('Failed to parse results:', message.message.results, e);
         }
 
+        // Clear note state for results that are no longer present
+        clearNoteStateForNewResults();
+
         // Always clean up dropdown first, then set sort value if provided
         // Remove any custom options that are not in the standard list
         for (let i = resultSort.options.length - 1; i >= 0; i--) {
@@ -222,6 +225,9 @@ function updateNoteState(externalId, color, isExpanded) {
     // Update the state (true = expanded/visible, false = collapsed/hidden)
     noteState[key] = isExpanded;
     
+    // Prune old entries to prevent unlimited growth
+    pruneNoteState(100);
+    
     // Send the updated state to the main process
     webviewApi.postMessage({
         name: 'updateNoteState',
@@ -235,6 +241,50 @@ function clearNoteState() {
         name: 'updateNoteState',
         noteState: JSON.stringify(noteState)
     });
+}
+
+// Add function to prune old note state entries
+function pruneNoteState(maxEntries = 100) {
+    const entries = Object.entries(noteState);
+    if (entries.length <= maxEntries) {
+        return; // No pruning needed
+    }
+    
+    // Keep only the most recent entries (simple strategy: keep first N entries)
+    // In a real scenario, we might want to keep the most recently accessed ones
+    const prunedEntries = entries.slice(0, maxEntries);
+    noteState = Object.fromEntries(prunedEntries);
+    
+    // Send the pruned state to main process
+    webviewApi.postMessage({
+        name: 'updateNoteState',
+        noteState: JSON.stringify(noteState)
+    });
+}
+
+// Clear note state when new results are loaded
+function clearNoteStateForNewResults() {
+    // Clear state that doesn't match current results
+    const currentKeys = new Set();
+    
+    for (const result of results) {
+        const stateKey = `${result.externalId}|${result.color || 'default'}`;
+        currentKeys.add(stateKey);
+    }
+    
+    // Remove entries that don't match current results
+    const keysToRemove = Object.keys(noteState).filter(key => !currentKeys.has(key));
+    keysToRemove.forEach(key => {
+        delete noteState[key];
+    });
+    
+    // If we removed entries, send updated state to main process
+    if (keysToRemove.length > 0) {
+        webviewApi.postMessage({
+            name: 'updateNoteState',
+            noteState: JSON.stringify(noteState)
+        });
+    }
 }
 
 // Update areas
@@ -1754,6 +1804,7 @@ addEventListenerWithTracking(tagClear, 'click', () => {
     sendSetting('filter', '');
     sendClearQuery(); // Clear the main process query and filter
     results = []; // Clear the results array before resetToGlobalSettings
+    clearNoteState(); // Clear note state when clearing everything
     resetToGlobalSettings(); // Reset to global settings for new searches
     updateTagList();
 });
