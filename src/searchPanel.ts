@@ -278,9 +278,13 @@ async function processValidatedMessage(
 
   } else if (message.name === 'showSortDialog') {
     // Show a dialog to configure custom sort options
+    // Use the current custom sort values from searchParams if available, otherwise use message values
+    const currentSortBy = searchParams.options?.sortBy || message.currentSortBy || '';
+    const currentSortOrder = searchParams.options?.sortOrder || message.currentSortOrder || '';
+    
     await showCustomSortDialog(
-      message.currentSortBy || '',
-      message.currentSortOrder || '',
+      currentSortBy,
+      currentSortOrder,
       searchPanel, searchParams, tagSettings, lastSearchResults);
 
   } else if (message.name === 'insertTag') {
