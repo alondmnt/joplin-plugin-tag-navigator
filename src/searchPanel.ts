@@ -544,16 +544,11 @@ async function processValidatedMessage(
     }
 
   } else if (message.name === 'resetToGlobalSettings') {
-    // Reset query options to global settings
-    if (searchParams.options) {
-      delete searchParams.options.sortBy;
-      delete searchParams.options.sortOrder; 
-      delete searchParams.options.resultGrouping;
-      // Clean up options object if it becomes empty
-      if (Object.keys(searchParams.options).length === 0) {
-        searchParams.options = undefined;
-      }
-    }
+    // Reset all query options to global settings
+    searchParams.options = undefined;
+    
+    // Reset displayInNote to default value
+    searchParams.displayInNote = 'false';
     
     // Update panel to reflect global settings
     await updatePanelSettings(searchPanel, searchParams);
