@@ -20,6 +20,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
     - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path.
     - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
+    - **Sort results by tags** such as priorities, dates, colors, or any other tag. ([video](https://www.youtube.com/watch?v=HvunHOc2zlM), [tips](#saved-queries))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
@@ -35,7 +36,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Display results:
         - In sections (similarly to the the panel).
         - In a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
-        - In a kanban board. ([tips](#kanban-views))
+        - In a kanban board. ([video](https://www.youtube.com/watch?v=e7HhQJjpEJg), [tips](#kanban-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
