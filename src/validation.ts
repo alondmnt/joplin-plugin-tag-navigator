@@ -12,7 +12,7 @@ export const VALIDATION_LIMITS = {
   MAX_QUERY_LENGTH: 10000,
   MAX_FILTER_LENGTH: 1000,
   MAX_SETTING_VALUE_LENGTH: 500,
-  MAX_NOTE_ID_LENGTH: 50,
+  MAX_NOTE_ID_LENGTH: 100,  // Can also be a note title
   MAX_FIELD_NAME_LENGTH: 50,
   
   // Array limits
@@ -450,7 +450,11 @@ export function validatePanelMessage(message: any): any {
   }
   
   if ('externalId' in message) {
-    validated.externalId = validateExternalId(message.externalId);
+    if (message.externalId.startsWith('http')) {
+      validated.externalId = message.externalId;
+    } else {
+      validated.externalId = validateExternalId(message.externalId);
+    }
   }
   
   if ('line' in message) {
