@@ -395,6 +395,7 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
     - Converted inline tags will have the prefix # depending on the `Tag prefix` advanced setting.
     - The list of converted inline tags will begin with the text 'tags: ' depending on the `List prefix` advanced setting.
     - Spaces in Joplin tags will be converted to inline tags depending on the `Space replacement` advanced setting. When converting inline tags back to Joplin spaces will be introduced back to tags. For example: [Joplin: `tag with space`] -> [inline: `#tag_with_space`] -> [Joplin: `tag with space`]
+    - Enable the `Tag conversion tracking` setting to intelligently track converted tags for automatic cleanup when removing or modifying Joplin and inline tags. This helps maintain consistency between your Joplin tags and inline tags when you make changes to either system.
 4. After the conversion all Joplin tags remain assigned to their notes. They are not deleted, and only a single line of text is added to each note.
 
 ## Companion plugins
