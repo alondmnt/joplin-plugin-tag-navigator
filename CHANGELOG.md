@@ -1,18 +1,28 @@
+# [v2.5.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.1)
+*Released on 2025-07-04T05:40:59Z*
+
+- fixed: regression: open links with >50 chars URLs
+- improved: convert note to inline tags skips existing inline tags in body
+- improved: settings labels
+
+---
+
 # [v2.5.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.0)
 *Released on 2025-06-22T14:21:54Z*
 
 - added: kanban view for all tasks in the search results based on checkbox state
+    - including [YesYouKan](https://github.com/joplin/plugin-yesyoukan) support
 - added: sort by tags now works across all note views and the panel display, with an interactive sort dialog
 - added: repeating customisable date tags #week and #month for recurring scheduling
-- added: command to replace relative dates with absolute dates in current / selected line. #today -> #2025-06-01
+- added: command to replace relative dates with absolute dates in current / selected line. `#today -> #2025-06-22`
 - added: syntax highlighting for code blocks and frontmatter in the panel
-- added: setting: 'Tag conversion tracking' to maintain consistency between Joplin tags and inline tags during conversions (#18)
+- added: setting: `Tag conversion tracking` to maintain consistency between Joplin tags and inline tags during conversions (#18)
 - added: settings to control which toolbar commands are visible
-- improved: saved queries are hidden in the markdown preview
+- improved: saved queries are hidden in the markdown preview (#9)
 - improved: result grouping can be defined in queries and selected in the panel context menu (click on note titles)
 - improved: panel state preservation
 - improved: memory management and security
-- fixed: legacy checkbox interaction behavior
+- fixed: legacy checkbox interaction behaviour
 
 [Tag sorting demo](https://www.youtube.com/watch?v=HvunHOc2zlM)
 
