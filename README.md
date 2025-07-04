@@ -71,6 +71,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
+- [Tag inheritance](#tag-inheritance)
 - [Date tags](#date-tags)
 - [Tag insertion](#tag-insertion)
 - [Tag ranges](#tag-ranges)
@@ -95,6 +96,18 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - You may also define an exclusion rule to ignore certain tags (see the advanced setting `Exclude regex`).
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+### Tag inheritance
+
+- Tag inheritance allows tags to be automatically applied to related content based on document structure, making it easier to organize and find information without manually tagging every line.
+- When the `Tag inheritance` setting is enabled (by default), tags are automatically inherited in three ways:
+    1. **Outline/indentation inheritance**: Tags are inherited from parent items to their children based on indentation levels.
+        - Example: If `#project/website` appears on a parent line, all indented child lines will also be tagged with `#project/website`
+    2. **Heading inheritance**: Tags are inherited from headings to all content under that heading.
+        - Example: If `## Meeting Notes #urgent` appears as a heading, all other *tagged lines* under that heading will also be tagged with `#urgent`
+    3. **Top of the note inheritance**: Tags are inherited from the first 2 lines of the note.
+        - Example: If the first line in the note has `tags: #project/website #urgent`, all other *tagged lines* in the note will also be tagged with both tags.
+        - Example: If a tag appears in the YAML [front matter](#front-matter-tags) of the note, all other *tagged lines* in the note will have front matter tags.
 
 ### Date tags
 
