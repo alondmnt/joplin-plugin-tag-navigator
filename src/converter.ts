@@ -241,29 +241,22 @@ export async function convertNoteToInlineTags(
   let tagsToRemove: string[] = [];
   let updatedBody = note.body;
 
-    // Check if tag tracking is enabled
+  // Get all current inline tags from the entire note body
+  const currentInlineTagsInBody = extractInlineTags(note.body, tagSettings);
+  // Only add Joplin tags that don't already exist as inline tags anywhere in the body
+  tagsToAdd = currentJoplinTags.filter(tag => !currentInlineTagsInBody.includes(tag));
+
+  // Check if tag tracking is enabled
   if (conversionSettings.enableTagTracking) {
     // Get previous conversion data
     const previousData = await getTagConversionData(note.id);
     const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix);
 
-    if (!hasTagLines && currentJoplinTags.length > 0) {
-      // No tag lines exist but we have Joplin tags - create from scratch
-      // This handles both first-time conversion and accidental tag line deletion
-      tagsToAdd = currentJoplinTags;
-      tagsToRemove = [];
-
-    } else if (previousData) {
-      // Tag lines exist - use diff-based approach to modify incrementally
-      const diff = computeTagDiff(currentJoplinTags, previousData.inlineTags);
-      tagsToAdd = diff.toAdd;
-      tagsToRemove = diff.toRemove;
-
-    } else {
-      // First time with existing tag lines - add all current Joplin tags
-      tagsToAdd = currentJoplinTags;
-      tagsToRemove = [];
-    }
+    // Only remove previously tracked tags that are no longer Joplin tags
+    // But only if tag lines exist (if no tag lines, there's nothing to remove from)
+    tagsToRemove = (hasTagLines && previousData) 
+      ? previousData.inlineTags.filter(tag => !currentJoplinTags.includes(tag))
+      : [];
 
     // Remove old inline tags that are no longer in Joplin tags
     if (tagsToRemove.length > 0) {
@@ -304,8 +297,8 @@ export async function convertNoteToInlineTags(
     });
 
   } else {
-    // Simple mode: replace all tag lines with current Joplin tags
-    const sortedTags = sortTags(currentJoplinTags, tagSettings.valueDelim);
+    // Simple mode: replace tag lines with Joplin tags that don't already exist inline
+    const sortedTags = sortTags(tagsToAdd, tagSettings.valueDelim);
     const tagList = conversionSettings.listPrefix + sortedTags
       .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
     
@@ -321,7 +314,7 @@ export async function convertNoteToInlineTags(
       filteredLines = lines.filter(line => !line.startsWith(conversionSettings.listPrefix));
     }
 
-    if (currentJoplinTags.length > 0) {
+    if (tagsToAdd.length > 0) {
       // Add the new tag list
       if (conversionSettings.location === 'top') {
         updatedBody = tagList + '\n' + filteredLines.join('\n');
