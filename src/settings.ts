@@ -348,14 +348,14 @@ export async function registerSettings(): Promise<void> {
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Database: Update inline tags DB after sync',
+      label: 'Database / Note view: Update after sync',
     },
     'itags.periodicNoteUpdate': {
       value: true,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Database: Periodic update of tag search view in notes',
+      label: 'Note view: Periodic update of tag search view in notes',
       description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
     },
     'itags.navPanelScope': {
