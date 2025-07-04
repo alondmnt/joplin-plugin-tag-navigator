@@ -71,6 +71,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 - [Troubleshooting](#troubleshooting)
 - [Custom tag definitions](#custom-tag-definitions)
+- [Date tags](#date-tags)
 - [Tag insertion](#tag-insertion)
 - [Tag ranges](#tag-ranges)
 - [Tag values](#tag-values)
@@ -94,6 +95,42 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
     - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - You may also define an exclusion rule to ignore certain tags (see the advanced setting `Exclude regex`).
     - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+### Date tags
+
+Date tags provide flexible ways to work with dates in your notes, supporting both relative dates that update automatically and absolute dates that remain fixed.
+
+#### Relative date tags
+
+- **Today tags**: Use `#today` for the current date, or add arithmetic like `#today+7` (one week from today) or `#today-10` (ten days ago).
+    - Example: `#today` becomes `#2025-01-15` (if today is January 15, 2025)
+    - Example: `#today+20` becomes `#2025-02-04` (twenty days from today)
+- **Month tags**: Use `#month/01` for the 1st of the current month, `#month/15` for the 15th, etc.
+    - Example: `#month/01` becomes `#2025-07-01` (if the current month is July 2025)
+    - Useful for recurring monthly deadlines like reports or reviews
+- **Week tags**: Use `#week` for the start of the current week, or add arithmetic like `#week+7` (next week).
+    - Example: `#week` becomes `#2025-01-13` (if the current week starts on January 13, 2025)
+    - The start day of the week can be configured in settings
+
+#### Converting relative to absolute dates
+
+- Use the **Replace date tags command** (`Ctrl+Alt+D`) to convert relative date tags to absolute ones in the current lines.
+    - Example: `#today+20` becomes `#2025-02-04` (fixed date that won't change)
+    - Useful when you need permanent deadlines for project planning
+    - Found in `Tools --> Tag Navigator --> Replace date tags in current lines`
+
+#### Customising date tag settings
+
+- **Tag patterns**: You can customise the date tag patterns in the advanced settings:
+    - `Date tags: Today` - Change from `#today` to your preferred pattern (e.g., `#today`, `#now`, `#date`)
+    - `Date tags: Month` - Change from `#month` to your preferred pattern (e.g., `#month`, `#monthly`)
+    - `Date tags: Week` - Change from `#week` to your preferred pattern (e.g., `#week`, `#weekly`)
+- **Date formats**: Customise how dates are formatted using [date-fns format strings](https://date-fns.org/docs/format):
+    - `Date tags: Date format` - Default: `#yyyy-MM-dd` (e.g., `#2025-01-15`)
+    - `Date tags: Month format` - Default: `#yyyy-MM` (e.g., `#2025-01`)
+    - `Date tags: Week format` - Default: `#yyyy-MM-dd` (e.g., `#2025-01-13`)
+    - Tip: Use a nested date structure to make dates hierarchical and sortable, such as `#yyyy/MM/dd`
+- **Week start day**: Configure which day starts the week (Sunday through Saturday) in `Date tags: Week start day`
 
 ### Tag insertion
 
@@ -329,6 +366,7 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 | Ctrl + Shift + I | Focus on search panel (search tag / insert tag) |
 | Ctrl + Shift + R | Refresh the current note view |
 | Ctrl + Shift + D | Update tag database |
+| Ctrl + Alt + D   | Replace date tags in current lines |
 | Ctrl + Shift + L | Load search query from current note |
 
 - Tag / note filter (search panel) shortcuts
