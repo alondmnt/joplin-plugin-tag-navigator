@@ -1,8 +1,15 @@
+# [v.2.5.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.2)
+*Released on 2025-07-10T13:04:47Z*
+
+- fixed: regex safety check (closes #19)
+
+---
+
 # [v2.5.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.1)
 *Released on 2025-07-04T05:40:59Z*
 
 - fixed: regression: open links with >50 chars URLs
-- improved: convert note to inline tags skips existing inline tags in body
+- improved: convert joplin tags to inline tags skips existing inline tags in body
 - improved: settings labels
 
 ---
