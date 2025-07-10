@@ -108,8 +108,8 @@ function isRegexSafe(pattern: string): boolean {
     /.{200,}/,
     // Catastrophic backtracking patterns like (.*)*
     /\(\.\*\)[+*]/,
-    // Multiple consecutive quantifiers
-    /[+*?]{2,}/,
+    // Multiple consecutive quantifiers (but allow legitimate non-greedy patterns like *?, +?, ??)
+    /[+*]{2,}|[+*?]\?[+*]|\?[+*]/,
   ];
 
   return !dangerousPatterns.some(dangerous => dangerous.test(pattern));
