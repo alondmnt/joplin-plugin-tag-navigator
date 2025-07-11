@@ -1178,7 +1178,7 @@ export async function saveQuery(
   let newBody = '';
   const decoration = [
     `${queryStart}<span style="display: none">`,
-    `</span>${queryEnd}`
+    `</span>\n${queryEnd}`
   ];
   if (REGEX.findQuery.test(note.body)) {
     if (query.query.length === 0) {
