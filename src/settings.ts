@@ -63,6 +63,7 @@ export interface TagSettings {
   inheritTags: boolean;        // Whether to inherit tags from parent items
   nestedTags: boolean;         // Whether to support nested tag hierarchy
   fullNotebookPath: boolean;  // Whether to extract the full notebook path
+  middleMatter: boolean;      // Whether to use middle matter instead of front matter
 }
 
 export interface ResultSettings {
@@ -174,6 +175,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.inheritTags',
     'itags.nestedTags',
     'itags.tableNotebookPath',
+    'itags.middleMatter',
   ]);
   const tagRegex = settings['itags.tagRegex'] ? createSafeRegex(settings['itags.tagRegex'] as string, 'g', defTagRegex) : defTagRegex;
   const excludeRegex = settings['itags.excludeRegex'] ? createSafeRegex(settings['itags.excludeRegex'] as string, 'g', null) : null;
@@ -217,6 +219,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     inheritTags: settings['itags.inheritTags'] as boolean,
     nestedTags: settings['itags.nestedTags'] as boolean,
     fullNotebookPath: settings['itags.tableNotebookPath'] as boolean,
+    middleMatter: settings['itags.middleMatter'] as boolean,
   };
 }
 
@@ -315,6 +318,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Ignore front matter',
       description: 'Front matter fields are treated as tags by default.',
+    },
+    'itags.middleMatter': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Use middle matter instead of front matter',
+      description: 'Middle matter is YAML front matter that is not at the beginning of the note.',
     },
     'itags.inheritTags': {
       value: true,

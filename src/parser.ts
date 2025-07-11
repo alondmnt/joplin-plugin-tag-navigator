@@ -9,6 +9,8 @@ export const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g; // Matches mu
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
+const frontMatterRegex = /^---\n([\s\S]*?)\n---/; // Matches front matter
+const middleMatterRegex = /---\n([\s\S]*?)\n---/; // Matches middle matter
 
 /**
  * Represents extracted link information
@@ -489,9 +491,15 @@ interface FrontMatterResult {
  * @param text The text content to parse
  * @returns Parsed front matter data, line count, and any parsing errors
  */
-export function parseFrontMatter(text: string): FrontMatterResult {
+export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontMatterResult {
   // Validate front matter format
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  let match: RegExpMatchArray | null = null;
+  if (tagSettings.middleMatter) {
+    match = text.match(middleMatterRegex);
+  } else {
+    match = text.match(frontMatterRegex);
+  }
+
   if (!match) {
     return {
       data: null,
@@ -512,20 +520,26 @@ export function parseFrontMatter(text: string): FrontMatterResult {
     };
   } catch (e) {
     // Use the in-house parser as fallback
-    return parseFrontMatterFallback(text);
+    return parseFrontMatterFallback(text, tagSettings);
   }
 }
 
 /**
  * Fallback in-house parser for front matter
  * @param text The text content to parse
+ * @param tagSettings Configuration for tag processing
  * @returns Parsed front matter data, line count, and any parsing errors
  */
-function parseFrontMatterFallback(text: string): FrontMatterResult {
+function parseFrontMatterFallback(text: string, tagSettings: TagSettings): FrontMatterResult {
   const errors: ParseError[] = [];
   
   // Validate front matter format
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  let match: RegExpMatchArray | null = null;
+  if (tagSettings.middleMatter) {
+    match = text.match(middleMatterRegex);
+  } else {
+    match = text.match(frontMatterRegex);
+  }
   if (!match) {
     return {
       data: null,
@@ -648,7 +662,7 @@ export function parseTagsFromFrontMatter(
   text: string, 
   tagSettings: TagSettings
 ): TagLineInfo[] {
-  const frontMatter = parseFrontMatter(text);
+  const frontMatter = parseFrontMatter(text, tagSettings);
   if (frontMatter.errors) {
     console.warn('Frontmatter: ', frontMatter.data, '\nParsed with warnings:', frontMatter.errors);
   }

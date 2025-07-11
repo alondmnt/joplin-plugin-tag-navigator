@@ -640,6 +640,7 @@ joplin.plugins.register({
           event.keys.includes('itags.ignoreHtmlNotes') ||
           event.keys.includes('itags.ignoreCodeBlocks') ||
           event.keys.includes('itags.ignoreFrontMatter') ||
+          event.keys.includes('itags.middleMatter') ||
           event.keys.includes('itags.inheritTags') ||
           event.keys.includes('itags.nestedTags')) {
         DatabaseManager.clearDatabase();
