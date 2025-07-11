@@ -1,7 +1,14 @@
+# [v2.5.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.4)
+*Released on 2025-07-11T12:51:00Z*
+
+- fixed: hide query but not the following text (#21)
+
+---
+
 # [v2.5.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.3)
 *Released on 2025-07-11T12:28:16Z*
 
-- added: setting: middle matter support
+- added: setting: middle matter support (#20)
 
 ---
 
