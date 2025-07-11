@@ -1,3 +1,10 @@
+# [v2.5.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.3)
+*Released on 2025-07-11T12:28:16Z*
+
+- added: setting: middle matter support
+
+---
+
 # [v.2.5.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.2)
 *Released on 2025-07-10T13:04:47Z*
 
