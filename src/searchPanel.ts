@@ -382,7 +382,11 @@ async function processValidatedMessage(
     // update the search panel
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
-    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    
+    // Apply sorting to maintain current sort order
+    const resultSettings = await getResultSettings();
+    const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+    await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
   } else if (message.name === 'removeTag') {
     const tagRegex = new RegExp(`\\s*${escapeRegex(message.tag)}`, 'ig');  // Case insensitive
@@ -395,7 +399,11 @@ async function processValidatedMessage(
     await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
-    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    
+    // Apply sorting to maintain current sort order
+    const resultSettings = await getResultSettings();
+    const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+    await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
   } else if (message.name === 'removeAll') {
     lastSearchResults = await removeTagAll(message, db, tagSettings, searchPanel, searchParams);
@@ -411,7 +419,11 @@ async function processValidatedMessage(
     await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
-    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    
+    // Apply sorting to maintain current sort order
+    const resultSettings = await getResultSettings();
+    const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+    await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
   } else if (message.name === 'replaceAll') {
     lastSearchResults = await replaceTagAll(message, db, tagSettings, searchPanel, searchParams);
@@ -422,7 +434,11 @@ async function processValidatedMessage(
     // update the search panel
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
     lastSearchResults = results; // Cache the results
-    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    
+    // Apply sorting to maintain current sort order
+    const resultSettings = await getResultSettings();
+    const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+    await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
   } else if (message.name === 'updateSetting') {
 
@@ -976,9 +992,13 @@ async function replaceTagAll(
     await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
     await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
-    await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    
+    // Apply sorting to maintain current sort order
+    const resultSettings = await getResultSettings();
+    const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+    await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
-    return results;
+    return sortedResults;
 }
 
 /**
@@ -1013,9 +1033,13 @@ async function removeTagAll(
   // update the search panel
   await updatePanelTagData(searchPanel, db);
   const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
-  await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+  
+  // Apply sorting to maintain current sort order
+  const resultSettings = await getResultSettings();
+  const sortedResults = sortResults(results, searchParams.options, tagSettings, resultSettings);
+  await updatePanelResults(searchPanel, sortedResults, searchParams.query, searchParams.options);
 
-  return results;
+  return sortedResults;
 }
 
 /**
