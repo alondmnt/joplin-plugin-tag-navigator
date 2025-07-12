@@ -1,3 +1,11 @@
+# [v2.5.5](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.5)
+*Released on 2025-07-12T00:55:28Z*
+
+- fixed: improve JSON query loading with enhanced format handling
+- fixed: apply sorting after note edits
+
+---
+
 # [v2.5.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.4)
 *Released on 2025-07-11T12:51:00Z*
 
