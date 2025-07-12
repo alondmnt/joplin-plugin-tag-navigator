@@ -311,7 +311,6 @@ async function processValidatedMessage(
     // Save the query into the current note
     let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
-    const currentQuery = await loadQuery(db, currentNote);
     clearObjectReferences(currentNote);
 
     await saveQuery({
@@ -1245,10 +1244,33 @@ export async function loadQuery(
   if (record) {
     try {
       // Strip the code block delimiters, and remove decorations
-      const queryString = record[1]
-        .split('\n').slice(1, -1).join('\n')
-        .replace(/^```json\n/, '').replace(/\n```$/, '');
-      const savedQuery = await testQuery(db, JSON.parse(queryString));
+      if (!record[1]) {
+        throw new Error('Query record is empty');
+      }
+      
+      let jsonContent = record[1].trim();
+      
+      // Handle markdown code block format: ```json\n...content...\n```
+      const jsonBlockMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
+      if (jsonBlockMatch) {
+        jsonContent = jsonBlockMatch[1].trim();
+      } else {
+        // Try alternative format without language specifier: ```\n...content...\n```  
+        const genericBlockMatch = jsonContent.match(/```\s*\n([\s\S]*?)\n```/);
+        if (genericBlockMatch) {
+          jsonContent = genericBlockMatch[1].trim();
+        } else {
+          // Backward compatibility: Handle raw JSON or mixed format
+          // Remove any trailing ``` markers (legacy format support)
+          jsonContent = jsonContent.split('```')[0].trim();
+        }
+      }
+      
+      if (!jsonContent) {
+        throw new Error('No JSON content found in query');
+      }
+      
+      const savedQuery = await testQuery(db, JSON.parse(jsonContent));
       if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
         loadedQuery = savedQuery;
       }
