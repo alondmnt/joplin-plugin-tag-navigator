@@ -366,9 +366,22 @@ function diffSets(setA: Set<number>, setB: Set<number>): Set<number> {
   return new Set([...setA].filter(x => !setB.has(x)));
 }
 
+/**
+ * Checks if the date has changed since last processing to require date tag eval
+ */
+function needsDailyUpdate(lastProcessedTime: number, currentDateString: string): boolean {
+  const lastProcessed = new Date(lastProcessedTime);
+  
+  // Compare just the date parts (year, month, day) - ignore time
+  return currentDateString !== lastProcessed.toDateString();
+}
+
 export async function processAllNotes() {
   const db = DatabaseManager.getDatabase();
   const tagSettings = await getTagSettings();
+
+  // Cache current date string to avoid creating Date objects repeatedly
+  const currentDateString = new Date().toDateString();
 
   // First loop: collect IDs of notes that need updating
   db.clearNoteExists();  // We will use the exist flag to remove deleted notes
@@ -389,10 +402,18 @@ export async function processAllNotes() {
     for (const note of notes.items) {
       db.setNoteExists(note.id);
       const noteUpdatedTime = db.getNoteUpdatedTime(note.id);
-      if (noteUpdatedTime && note.updated_time <= noteUpdatedTime) {
+
+      // Check if note content has changed
+      const contentChanged = !noteUpdatedTime || note.updated_time > noteUpdatedTime;
+
+      // Check if enough time has passed for daily re-evaluation (handles date tags)
+      const needsUpdate = contentChanged || (noteUpdatedTime && needsDailyUpdate(noteUpdatedTime, currentDateString));
+
+      if (!needsUpdate) {
         clearObjectReferences(note);
         continue;
       }
+
       notesToUpdate.add(note.id);
       clearObjectReferences(note);
     }
