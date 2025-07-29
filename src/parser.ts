@@ -685,11 +685,13 @@ export function parseTagsFromFrontMatter(
     // Process based on key
     if (key.toLowerCase() === 'tags') {
       // For "tags" key, simply prefix each item and replace spaces
-      tags.push(...valueArray.map(tag =>
-        tagSettings.tagRegex.test(String(tag)) 
+      tags.push(...valueArray.map(tag => {
+        // Reset regex state to avoid issues with global flag
+        tagSettings.tagRegex.lastIndex = 0;
+        return tagSettings.tagRegex.test(String(tag)) 
           ? String(tag).toLowerCase() 
-          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
-      ));
+          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`;
+      }));
     } else {
       // For other keys, create nested tags and replace spaces in both key and value
       const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace).toLowerCase();
