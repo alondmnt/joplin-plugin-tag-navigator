@@ -39,6 +39,7 @@ export interface TagLineInfo {
  */
 export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
   let inCodeBlock = false;
+  let inFrontMatter = false;
   let isResultBlock = false;
   let isQueryBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
@@ -50,6 +51,10 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     // Toggle code block status
     if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
+    }
+    // Toggle front matter status (always skip, regardless of settings)
+    if (/^\s*---\s*$/.test(line)) {
+      inFrontMatter = !inFrontMatter;
     }
     if (line.match(resultsStart)) {
       isResultBlock = true;
@@ -64,8 +69,8 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
       isQueryBlock = false;
     }
     const isEmptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
-    // Skip code blocks if needed
-    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isResultBlock || isQueryBlock || isEmptyLine) {
+    // Skip code blocks, front matter, result blocks, query blocks, and empty lines
+    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || inFrontMatter || isResultBlock || isQueryBlock || isEmptyLine) {
       return;
     }
 
