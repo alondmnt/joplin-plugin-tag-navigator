@@ -683,7 +683,7 @@ export function parseTagsFromFrontMatter(
     const valueArray = Array.isArray(value) ? value : [value];
 
     // Process based on key
-    if (key.toLowerCase() === 'tags') {
+    if ((key.toLowerCase() === 'tags') || (key.toLowerCase() === 'keywords')) {
       // For "tags" key, simply prefix each item and replace spaces
       tags.push(...valueArray.map(tag => {
         // Reset regex state to avoid issues with global flag
