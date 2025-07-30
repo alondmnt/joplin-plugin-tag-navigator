@@ -1,3 +1,13 @@
+# [v2.5.6](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.6)
+*Released on 2025-07-30T14:19:16Z*
+
+- fixed: ensure that date tags are evaluated at least at daily frequency
+- fixed: reset regex state during front matter tag parsing
+- fixed: skip front matter blocks during inline tag parsing
+- improved: use the `keywords` front matter field for inline tags
+
+---
+
 # [v2.5.5](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.5)
 *Released on 2025-07-12T00:55:28Z*
 
@@ -23,7 +33,7 @@
 # [v.2.5.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.2)
 *Released on 2025-07-10T13:04:47Z*
 
-- fixed: regex safety check (closes #19)
+- fixed: regex safety check (#19)
 
 ---
 
