@@ -529,6 +529,7 @@ joplin.plugins.register({
     await joplin.views.menus.create('itags.menu', 'Tag Navigator', [
       {
         commandName: 'itags.toggleNav',
+        accelerator: 'Ctrl+Alt+N',
       },
       {
         commandName: 'itags.refreshPanel',
