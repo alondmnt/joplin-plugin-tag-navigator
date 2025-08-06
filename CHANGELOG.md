@@ -1,3 +1,10 @@
+# [v2.5.7](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.7)
+*Released on 2025-08-06T20:19:42Z*
+
+- added: toggle navigation panel keyboard shortcut
+
+---
+
 # [v2.5.6](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.6)
 *Released on 2025-07-30T14:19:16Z*
 
