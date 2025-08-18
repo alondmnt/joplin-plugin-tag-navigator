@@ -391,7 +391,7 @@ export async function processAllNotes() {
 
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'updated_time'],
+      fields: ['id', 'updated_time', 'parent_id'],
       order_by: 'updated_time',
       order_dir: 'DESC',
       limit: 50,
@@ -400,6 +400,12 @@ export async function processAllNotes() {
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
+      // Skip notes in excluded notebooks
+      if (tagSettings.excludeNotebooks.includes(note.parent_id)) {
+        clearObjectReferences(note);
+        continue;
+      }
+
       db.setNoteExists(note.id);
       const noteUpdatedTime = db.getNoteUpdatedTime(note.id);
 
@@ -426,8 +432,14 @@ export async function processAllNotes() {
   // Second loop: fetch full details only for notes that need updating
   for (const noteId of notesToUpdate) {
     let note = await joplin.data.get(['notes', noteId], {
-      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time'],
+      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'],
     });
+
+    // Double-check notebook exclusion (in case settings changed during processing)
+    if (tagSettings.excludeNotebooks.includes(note.parent_id)) {
+      note = clearObjectReferences(note);
+      continue;
+    }
 
     if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
       note = clearObjectReferences(note);
@@ -460,10 +472,16 @@ export async function processNote(
     markup_language: number;
     is_conflict: number;
     updated_time: number;
+    parent_id?: string;
   }, 
   tagSettings: TagSettings
 ): Promise<void> {
   try {
+    // Check if note's notebook is excluded
+    if (note.parent_id && tagSettings.excludeNotebooks.includes(note.parent_id)) {
+      return; // Skip processing this note
+    }
+
     const noteRecord = new Note(note.id, note.title, note.updated_time);
 
     // Process front matter tags

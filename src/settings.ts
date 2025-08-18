@@ -64,6 +64,7 @@ export interface TagSettings {
   nestedTags: boolean;         // Whether to support nested tag hierarchy
   fullNotebookPath: boolean;  // Whether to extract the full notebook path
   middleMatter: boolean;      // Whether to use middle matter instead of front matter
+  excludeNotebooks: string[];  // List of notebook IDs to exclude from database
 }
 
 export interface ResultSettings {
@@ -176,6 +177,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.nestedTags',
     'itags.tableNotebookPath',
     'itags.middleMatter',
+    'itags.excludeNotebooks',
   ]);
   const tagRegex = settings['itags.tagRegex'] ? createSafeRegex(settings['itags.tagRegex'] as string, 'g', defTagRegex) : defTagRegex;
   const excludeRegex = settings['itags.excludeRegex'] ? createSafeRegex(settings['itags.excludeRegex'] as string, 'g', null) : null;
@@ -197,6 +199,13 @@ export async function getTagSettings(): Promise<TagSettings> {
     weekTag = '#week';  // Ensure default value
   }
   const weekTagRegex = new RegExp(`(${escapeRegex(weekTag)})([+-]?\\d*)`, 'g');
+
+  // Parse the excludeNotebooks setting (comma-separated list)
+  const excludeNotebooksString = settings['itags.excludeNotebooks'] as string || '';
+  const excludeNotebooks = excludeNotebooksString
+    .split(',')
+    .map(id => id.trim())
+    .filter(id => id.length > 0);
 
   return {
     tagRegex,
@@ -220,6 +229,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     nestedTags: settings['itags.nestedTags'] as boolean,
     fullNotebookPath: settings['itags.tableNotebookPath'] as boolean,
     middleMatter: settings['itags.middleMatter'] as boolean,
+    excludeNotebooks: excludeNotebooks,
   };
 }
 
@@ -353,6 +363,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Database: Periodic inline tags DB update (minutes)',
       description: 'Periodically update the inline tags database. Set to 0 to disable periodic updates. (Requires restart)',
+    },
+    'itags.excludeNotebooks': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Database: Exclude notebooks',
+      description: 'Comma-separated list of notebook IDs to exclude from the database. Notes in these notebooks will not be processed for tags.',
     },
     'itags.updateAfterSync': {
       value: true,

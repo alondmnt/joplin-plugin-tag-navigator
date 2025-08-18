@@ -1151,7 +1151,7 @@ async function updateNote(
   tagSettings: TagSettings
 ): Promise<void> {
   let selectedNote = await joplin.workspace.selectedNote();
-  let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body'] });
+  let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'] });
 
   if (newBody !== targetNote.body) {
     await joplin.data.put(['notes', message.externalId], null, { body: newBody });

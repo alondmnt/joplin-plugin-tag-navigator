@@ -643,7 +643,8 @@ joplin.plugins.register({
           event.keys.includes('itags.ignoreFrontMatter') ||
           event.keys.includes('itags.middleMatter') ||
           event.keys.includes('itags.inheritTags') ||
-          event.keys.includes('itags.nestedTags')) {
+          event.keys.includes('itags.nestedTags') ||
+          event.keys.includes('itags.excludeNotebooks')) {
         DatabaseManager.clearDatabase();
         await updateDB();
       }
