@@ -382,10 +382,37 @@ function updateNoteList() {
 function containsFilter(target, filter, min_chars=1, otherTarget='') {
     const lowerTarget = (target + otherTarget).toLowerCase();
     const words = parseFilter(filter, min_chars);
+    
     if (searchWithRegex) {
-        return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
+        return words.every(word => {
+            const isExclusion = word.startsWith('!');
+            const pattern = isExclusion ? word.slice(1) : word;
+            
+            // Handle empty pattern after !
+            if (!pattern) return !isExclusion;
+            
+            try {
+                const matches = lowerTarget.match(new RegExp(`(${pattern})`, 'gi'));
+                return isExclusion ? !matches : !!matches;
+            } catch (error) {
+                console.warn('Tag Navigator: Invalid regex pattern:', pattern, error);
+                // Fall back to simple text search for invalid patterns
+                const found = lowerTarget.includes(pattern.toLowerCase());
+                return isExclusion ? !found : found;
+            }
+        });
     } else {
-        return words.every(word => lowerTarget.includes(word));
+        return words.every(word => {
+            const isExclusion = word.startsWith('!');
+            const searchTerm = isExclusion ? word.slice(1) : word;
+            
+            // Handle empty search term after !
+            if (!searchTerm) return !isExclusion;
+            
+            const found = lowerTarget.includes(searchTerm);
+            
+            return isExclusion ? !found : found;
+        });
     }
 }
 
@@ -652,8 +679,24 @@ function updateResultsArea() {
             noteState[stateKey] = defaultExpanded;
         }
 
-        const parsedFilter = parseFilter(filter, min_chars=3);
-        const filterRegExp = new RegExp(`(?<!<[^>]*)(${parsedFilter.join('|')})(?![^<]*>)`, 'gi');
+        const parsedFilter = parseFilter(filter, min_chars=2);
+        // Filter out exclusion patterns for highlighting
+        const inclusionPatterns = parsedFilter.filter(pattern => !pattern.startsWith('!'));
+        let filterRegExp = null;
+        if (inclusionPatterns.length > 0) {
+            try {
+                filterRegExp = new RegExp(`(?<!<[^>]*)(${inclusionPatterns.join('|')})(?![^<]*>)`, 'gi');
+            } catch (error) {
+                console.warn('Tag Navigator: Invalid regex for highlighting:', inclusionPatterns, error);
+                // Fall back to simple regex without lookbehind/lookahead
+                try {
+                    filterRegExp = new RegExp(`(${inclusionPatterns.join('|')})`, 'gi');
+                } catch (fallbackError) {
+                    console.warn('Tag Navigator: Fallback regex also failed, disabling highlighting:', fallbackError);
+                    filterRegExp = null;
+                }
+            }
+        }
 
         let hasContent = false;
         for (let index = 0; index < result.html.length; index++) {
@@ -663,12 +706,12 @@ function updateResultsArea() {
             hasContent = true;
 
             let entry = result.html[index];
-            if (resultMarker && (parsedFilter.length > 0)) {
+            if (resultMarker && (inclusionPatterns.length > 0)) {
                 // Apply highlighting to already rendered HTML while preserving structure
-                entry = highlightTextInHTML(result.html[index], parsedFilter, 'itags-search-renderedFilter');
+                entry = highlightTextInHTML(result.html[index], inclusionPatterns, 'itags-search-renderedFilter');
                 
                 // SECURITY FIX: Safe title highlighting
-                const highlightedTitle = highlightText(result.title, parsedFilter, 'itags-search-renderedFilter');
+                const highlightedTitle = highlightText(result.title, inclusionPatterns, 'itags-search-renderedFilter');
                 titleEl.innerHTML = highlightedTitle;
             }
 
@@ -676,7 +719,7 @@ function updateResultsArea() {
             entryEl.classList.add('itags-search-resultSection');
             
             // SECURITY FIX: Use safe innerHTML setter instead of direct assignment
-            if (resultMarker && (parsedFilter.length > 0)) {
+            if (resultMarker && (inclusionPatterns.length > 0)) {
                 // Entry is already safely processed above
                 entryEl.innerHTML = entry;
             } else {

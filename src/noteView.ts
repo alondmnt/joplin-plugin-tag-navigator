@@ -228,8 +228,18 @@ async function filterResults(
 ): Promise<GroupedResult[]> {
   if (!filter) { return results; }
 
-  const parsedFilter = parseFilter(filter, 3, !viewSettings.searchWithRegex);
-  const filterRegExp = new RegExp(`(${parsedFilter.join('|')})`, 'gi');
+  const parsedFilter = parseFilter(filter, 2, !viewSettings.searchWithRegex);
+  // Filter out exclusion patterns for highlighting
+  const inclusionPatterns = parsedFilter.filter(pattern => !pattern.startsWith('!'));
+  let filterRegExp: RegExp | null = null;
+  if (inclusionPatterns.length > 0) {
+    try {
+      filterRegExp = new RegExp(`(${inclusionPatterns.join('|')})`, 'gi');
+    } catch (error) {
+      console.warn('Tag Navigator: Invalid regex for highlighting:', inclusionPatterns, error);
+      filterRegExp = null;
+    }
+  }
 
   let filteredResults = [...results]; // Create a copy to avoid modifying the original
 
@@ -242,7 +252,7 @@ async function filterResults(
     note.text = note.text.filter((_, i) => filteredIndices.includes(i));
     note.lineNumbers = note.lineNumbers.filter((_, i) => filteredIndices.includes(i));
 
-    if ((parsedFilter.length > 0 && viewSettings.resultMarkerInNote)) {
+    if ((inclusionPatterns.length > 0 && viewSettings.resultMarkerInNote && filterRegExp)) {
       note.text = note.text.map(text => text.replace(filterRegExp, '==$1=='));
       note.title = note.title.replace(filterRegExp, '==$1==');
     }
@@ -270,10 +280,36 @@ function containsFilter(
   const words = parseFilter(filter, min_chars);
 
   if (searchWithRegex) {
-    return words.every(word => lowerTarget.match(new RegExp(`(${word})`, 'gi')));
-} else {
-    return words.every(word => lowerTarget.includes(word));
-}
+    return words.every(word => {
+      const isExclusion = word.startsWith('!');
+      const pattern = isExclusion ? word.slice(1) : word;
+      
+      // Handle empty pattern after !
+      if (!pattern) return !isExclusion;
+      
+      try {
+        const matches = lowerTarget.match(new RegExp(`(${pattern})`, 'gi'));
+        return isExclusion ? !matches : !!matches;
+      } catch (error) {
+        console.warn('Tag Navigator: Invalid regex pattern:', pattern, error);
+        // Fall back to simple text search for invalid patterns
+        const found = lowerTarget.includes(pattern.toLowerCase());
+        return isExclusion ? !found : found;
+      }
+    });
+  } else {
+    return words.every(word => {
+      const isExclusion = word.startsWith('!');
+      const searchTerm = isExclusion ? word.slice(1) : word;
+      
+      // Handle empty search term after !
+      if (!searchTerm) return !isExclusion;
+      
+      const found = lowerTarget.includes(searchTerm);
+      
+      return isExclusion ? !found : found;
+    });
+  }
 }
 
 /**
