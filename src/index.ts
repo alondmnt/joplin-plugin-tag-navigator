@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
-import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings } from './settings';
+import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings, excludeNotebook, includeNotebook } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { DatabaseManager, processAllNotes, processNote } from './db';
@@ -513,6 +513,60 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'itags.excludeNotebook',
+      label: 'Inline-tags: Exclude notebook',
+      execute: async () => {
+        try {
+          const selectedFolder = await joplin.workspace.selectedFolder();
+          if (!selectedFolder || !selectedFolder.id) {
+            await joplin.views.dialogs.showMessageBox('No notebook selected.');
+            return;
+          }
+
+
+
+          const folderInfo = await joplin.data.get(['folders', selectedFolder.id], { fields: ['id', 'title'] });
+          const confirm = await joplin.views.dialogs.showMessageBox(
+            `Exclude "${folderInfo.title}" and all its sub-notebooks from Tag Navigator?`
+          );
+          
+          if (confirm === 0) {
+            await excludeNotebook(selectedFolder.id);
+          }
+        } catch (error) {
+          await joplin.views.dialogs.showMessageBox(`Error excluding notebook: ${error.message}`);
+        }
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'itags.includeNotebook',
+      label: 'Inline-tags: Include notebook',
+      execute: async () => {
+        try {
+          const selectedFolder = await joplin.workspace.selectedFolder();
+          if (!selectedFolder || !selectedFolder.id) {
+            await joplin.views.dialogs.showMessageBox('No notebook selected.');
+            return;
+          }
+
+
+
+          const folderInfo = await joplin.data.get(['folders', selectedFolder.id], { fields: ['id', 'title'] });
+          const confirm = await joplin.views.dialogs.showMessageBox(
+            `Include "${folderInfo.title}" and all its sub-notebooks back in Tag Navigator?`
+          );
+          
+          if (confirm === 0) {
+            await includeNotebook(selectedFolder.id);
+          }
+        } catch (error) {
+          await joplin.views.dialogs.showMessageBox(`Error including notebook: ${error.message}`);
+        }
+      },
+    });
+
     await joplin.workspace.filterEditorContextMenu(async (object: any) => {
       if (currentTableColumns.length > 0) {
         object.items.push({
@@ -590,6 +644,10 @@ joplin.plugins.register({
         commandName: 'itags.clearTagTracking',
       }
     ], MenuItemLocation.Note);
+
+    // Add individual menu items to the folder context menu
+    await joplin.views.menuItems.create('itags.excludeNotebook', 'itags.excludeNotebook', MenuItemLocation.FolderContextMenu);
+    await joplin.views.menuItems.create('itags.includeNotebook', 'itags.includeNotebook', MenuItemLocation.FolderContextMenu);
 
     // Conditionally register toolbar buttons based on settings
     if (await joplin.settings.value('itags.toolbarToggleNoteView')) {

@@ -868,3 +868,114 @@ export async function registerSettings(): Promise<void> {
     },
   });
 }
+
+/**
+ * Gets all sub-notebook IDs recursively for a given notebook ID
+ * @param notebookId - The parent notebook ID
+ * @returns Array of all sub-notebook IDs (including the parent)
+ */
+export async function getAllSubNotebookIds(notebookId: string): Promise<string[]> {
+  const allIds: string[] = [notebookId];
+  
+  try {
+    // First, get all folders
+    const allFolders: { id: string; parent_id: string | null }[] = [];
+    let hasMore = true;
+    let page = 1;
+    
+    while (hasMore) {
+      const folders = await joplin.data.get(['folders'], {
+        fields: ['id', 'parent_id'],
+        limit: 100,
+        page: page++,
+      });
+      hasMore = folders.has_more;
+      allFolders.push(...folders.items);
+    }
+    
+    // Now iteratively find all children, handling deep nesting and any order
+    let foundNew = true;
+    while (foundNew) {
+      foundNew = false;
+      for (const folder of allFolders) {
+        if (folder.parent_id && allIds.includes(folder.parent_id)) {
+          if (!allIds.includes(folder.id)) {
+            allIds.push(folder.id);
+            foundNew = true;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error getting sub-notebook IDs:', error);
+  }
+  
+  return allIds;
+}
+
+/**
+ * Adds a notebook and all its sub-notebooks to the exclusion list
+ * @param notebookId - The notebook ID to exclude
+ */
+export async function excludeNotebook(notebookId: string): Promise<void> {
+  try {
+    // Get current excluded notebooks
+    const currentExcluded = await joplin.settings.value('itags.excludeNotebooks') as string || '';
+    const excludedIds = currentExcluded
+      .split(',')
+      .map(id => id.trim())
+      .filter(id => id.length > 0);
+    
+    // Get all sub-notebook IDs
+    const allIds = await getAllSubNotebookIds(notebookId);
+    
+    // Add new IDs that aren't already excluded
+    for (const id of allIds) {
+      if (!excludedIds.includes(id)) {
+        excludedIds.push(id);
+      }
+    }
+    
+    // Update the setting
+    const newExcludedString = excludedIds.join(', ');
+    await joplin.settings.setValue('itags.excludeNotebooks', newExcludedString);
+    
+    // Note: The database will be refreshed automatically due to settings change event
+    
+  } catch (error) {
+    console.error('Error excluding notebook:', error);
+    throw error;
+  }
+}
+
+/**
+ * Removes a notebook and all its sub-notebooks from the exclusion list
+ * @param notebookId - The notebook ID to include back
+ */
+export async function includeNotebook(notebookId: string): Promise<void> {
+  try {
+    // Get current excluded notebooks
+    const currentExcluded = await joplin.settings.value('itags.excludeNotebooks') as string || '';
+    const excludedIds = currentExcluded
+      .split(',')
+      .map(id => id.trim())
+      .filter(id => id.length > 0);
+    
+    // Get all sub-notebook IDs
+    const allIds = await getAllSubNotebookIds(notebookId);
+    
+    // Remove all these IDs from the excluded list
+    const newExcludedIds = excludedIds.filter(id => !allIds.includes(id));
+    
+    // Update the setting
+    const newExcludedString = newExcludedIds.join(', ');
+    await joplin.settings.setValue('itags.excludeNotebooks', newExcludedString);
+    
+    // Note: The database will be refreshed automatically due to settings change event
+    
+  } catch (error) {
+    console.error('Error including notebook:', error);
+    throw error;
+  }
+}
+
