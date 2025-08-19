@@ -1,3 +1,13 @@
+# [v2.5.8](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.8)
+*Released on 2025-08-19T21:46:29Z*
+
+- added: setting: `Database: Exclude notebooks` by notebook ID (#22)
+- added: commands: Exclude / Include notebook (#22)
+- improved: search results filter with exclusion patterns, beginning with `!` (#22)
+- fixed: show quick open arrow when highlighting note titles
+
+---
+
 # [v2.5.7](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.7)
 *Released on 2025-08-06T20:19:42Z*
 
