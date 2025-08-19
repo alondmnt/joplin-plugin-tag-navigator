@@ -698,6 +698,13 @@ function updateResultsArea() {
             }
         }
 
+        // Apply title highlighting once before processing content sections
+        if (resultMarker && (inclusionPatterns.length > 0)) {
+            const highlightedTitle = highlightText(result.title, inclusionPatterns, 'itags-search-renderedFilter');
+            titleEl.innerHTML = highlightedTitle;
+            titleEl.insertBefore(openLink, titleEl.firstChild);
+        }
+
         let hasContent = false;
         for (let index = 0; index < result.html.length; index++) {
             if (!containsFilter(result.text[index], filter, min_chars=2, otherTarget='|' + result.title + '|' + result.notebook)) {
@@ -709,10 +716,6 @@ function updateResultsArea() {
             if (resultMarker && (inclusionPatterns.length > 0)) {
                 // Apply highlighting to already rendered HTML while preserving structure
                 entry = highlightTextInHTML(result.html[index], inclusionPatterns, 'itags-search-renderedFilter');
-                
-                // SECURITY FIX: Safe title highlighting
-                const highlightedTitle = highlightText(result.title, inclusionPatterns, 'itags-search-renderedFilter');
-                titleEl.innerHTML = highlightedTitle;
             }
 
             const entryEl = document.createElement('div');
