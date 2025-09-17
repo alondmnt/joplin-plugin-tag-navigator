@@ -376,6 +376,22 @@ function needsDailyUpdate(lastProcessedTime: number, currentDateString: string):
   return currentDateString !== lastProcessed.toDateString();
 }
 
+function isNotebookAllowed(parentId: string | undefined, tagSettings: TagSettings): boolean {
+  if (parentId && tagSettings.excludeNotebooks.includes(parentId)) {
+    return false;
+  }
+
+  if (tagSettings.includeNotebooks.length === 0) {
+    return true;
+  }
+
+  if (!parentId) {
+    return false;
+  }
+
+  return tagSettings.includeNotebooks.includes(parentId);
+}
+
 export async function processAllNotes() {
   const db = DatabaseManager.getDatabase();
   const tagSettings = await getTagSettings();
@@ -400,8 +416,8 @@ export async function processAllNotes() {
     hasMore = notes.has_more;
 
     for (const note of notes.items) {
-      // Skip notes in excluded notebooks
-      if (tagSettings.excludeNotebooks.includes(note.parent_id)) {
+      // Skip notes not allowed by include/exclude settings
+      if (!isNotebookAllowed(note.parent_id, tagSettings)) {
         clearObjectReferences(note);
         continue;
       }
@@ -436,7 +452,7 @@ export async function processAllNotes() {
     });
 
     // Double-check notebook exclusion (in case settings changed during processing)
-    if (tagSettings.excludeNotebooks.includes(note.parent_id)) {
+    if (!isNotebookAllowed(note.parent_id, tagSettings)) {
       note = clearObjectReferences(note);
       continue;
     }
@@ -477,8 +493,8 @@ export async function processNote(
   tagSettings: TagSettings
 ): Promise<void> {
   try {
-    // Check if note's notebook is excluded
-    if (note.parent_id && tagSettings.excludeNotebooks.includes(note.parent_id)) {
+    // Check if note's notebook is allowed based on include/exclude settings
+    if (!isNotebookAllowed(note.parent_id, tagSettings)) {
       return; // Skip processing this note
     }
 

@@ -337,7 +337,7 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 - To gain more control over filtering by notebook, you may enable the setting `Search: Extract the full notebook path`.
     - Example: Limit results to a notebook that appears in the top level by searching for `|/topNotebook`.
     - Example: Search for `topNotebook/childNotebook` to show only results from childNotebook.
-- You may exclude entire notebooks (and their sub-notebooks) from the tag database by right-clicking on a notebook and selecting "Exclude notebook" or "Include notebook", or by manually editing the setting `Database: Exclude notebooks`.
+- You may exclude entire notebooks (and their sub-notebooks) from the tag database by right-clicking on a notebook and selecting "Exclude notebook" or "Un-exclude notebook", or by manually editing the setting `Database: Exclude notebooks`. To process only specific notebooks, configure the `Database: Include notebooks` setting with a comma-separated list of notebook IDs.
 - Use the `!` prefix to exclude terms from filter results.
     - Example: `project !archive` includes results containing "project" but excludes those containing "archive".
     - Example: `"!references/"` excludes notebooks containing "references" in their path.

@@ -64,6 +64,7 @@ export interface TagSettings {
   nestedTags: boolean;         // Whether to support nested tag hierarchy
   fullNotebookPath: boolean;  // Whether to extract the full notebook path
   middleMatter: boolean;      // Whether to use middle matter instead of front matter
+  includeNotebooks: string[]; // List of notebook IDs to include in database (if empty, include all)
   excludeNotebooks: string[];  // List of notebook IDs to exclude from database
 }
 
@@ -177,6 +178,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.nestedTags',
     'itags.tableNotebookPath',
     'itags.middleMatter',
+    'itags.includeNotebooks',
     'itags.excludeNotebooks',
   ]);
   const tagRegex = settings['itags.tagRegex'] ? createSafeRegex(settings['itags.tagRegex'] as string, 'g', defTagRegex) : defTagRegex;
@@ -200,7 +202,13 @@ export async function getTagSettings(): Promise<TagSettings> {
   }
   const weekTagRegex = new RegExp(`(${escapeRegex(weekTag)})([+-]?\\d*)`, 'g');
 
-  // Parse the excludeNotebooks setting (comma-separated list)
+  // Parse the includeNotebooks and excludeNotebooks settings (comma-separated lists)
+  const includeNotebooksString = settings['itags.includeNotebooks'] as string || '';
+  const includeNotebooks = includeNotebooksString
+    .split(',')
+    .map(id => id.trim())
+    .filter(id => id.length > 0);
+
   const excludeNotebooksString = settings['itags.excludeNotebooks'] as string || '';
   const excludeNotebooks = excludeNotebooksString
     .split(',')
@@ -229,7 +237,8 @@ export async function getTagSettings(): Promise<TagSettings> {
     nestedTags: settings['itags.nestedTags'] as boolean,
     fullNotebookPath: settings['itags.tableNotebookPath'] as boolean,
     middleMatter: settings['itags.middleMatter'] as boolean,
-    excludeNotebooks: excludeNotebooks,
+    includeNotebooks,
+    excludeNotebooks,
   };
 }
 
@@ -363,6 +372,14 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Database: Periodic inline tags DB update (minutes)',
       description: 'Periodically update the inline tags database. Set to 0 to disable periodic updates. (Requires restart)',
+    },
+    'itags.includeNotebooks': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      label: 'Database: Include notebooks',
+      description: 'Comma-separated list of notebook IDs to include in the database. Only notes in these notebooks will be processed (leave empty for all).',
     },
     'itags.excludeNotebooks': {
       value: '',
@@ -978,4 +995,3 @@ export async function includeNotebook(notebookId: string): Promise<void> {
     throw error;
   }
 }
-

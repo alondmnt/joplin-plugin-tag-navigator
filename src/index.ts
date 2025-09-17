@@ -542,7 +542,7 @@ joplin.plugins.register({
 
     await joplin.commands.register({
       name: 'itags.includeNotebook',
-      label: 'Inline-tags: Include notebook',
+      label: 'Inline-tags: Un-exclude notebook',
       execute: async () => {
         try {
           const selectedFolder = await joplin.workspace.selectedFolder();
@@ -555,14 +555,14 @@ joplin.plugins.register({
 
           const folderInfo = await joplin.data.get(['folders', selectedFolder.id], { fields: ['id', 'title'] });
           const confirm = await joplin.views.dialogs.showMessageBox(
-            `Include "${folderInfo.title}" and all its sub-notebooks back in Tag Navigator?`
+            `Un-exclude "${folderInfo.title}" and all its sub-notebooks in Tag Navigator?`
           );
           
           if (confirm === 0) {
             await includeNotebook(selectedFolder.id);
           }
         } catch (error) {
-          await joplin.views.dialogs.showMessageBox(`Error including notebook: ${error.message}`);
+          await joplin.views.dialogs.showMessageBox(`Error un-excluding notebook: ${error.message}`);
         }
       },
     });
@@ -702,6 +702,7 @@ joplin.plugins.register({
           event.keys.includes('itags.middleMatter') ||
           event.keys.includes('itags.inheritTags') ||
           event.keys.includes('itags.nestedTags') ||
+          event.keys.includes('itags.includeNotebooks') ||
           event.keys.includes('itags.excludeNotebooks')) {
         DatabaseManager.clearDatabase();
         await updateDB();
