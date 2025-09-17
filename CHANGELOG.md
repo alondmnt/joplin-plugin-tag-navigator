@@ -1,3 +1,10 @@
+# [v2.5.9](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.9)
+*Released on 2025-09-17T13:18:37Z*
+
+- added: setting: notebook inclusion in database
+
+---
+
 # [v2.5.8](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.8)
 *Released on 2025-08-19T21:46:29Z*
 
