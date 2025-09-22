@@ -31,5 +31,6 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         return output;
       };
     },
+    assets: () => [{ name: 'tagMarkdown.css' }],
   };
 }

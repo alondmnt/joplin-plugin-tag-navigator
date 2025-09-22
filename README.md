@@ -378,20 +378,14 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 
 ### Styling inline tags in the Markdown preview
 
-The Markdown preview pane wraps every match in `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, or `//`, adds `itags-search-renderedTag--hash`, `--at`, `--plus`, or `--slash`. Define their appearance in `userstyle.css`, e.g.:
+The Markdown preview pane wraps every match in `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, or `//`, adds `itags-search-renderedTag--hash`, `--at`, `--plus`, or `--slash`. You may define their appearance in `userstyle.css`, e.g.:
 
 ```css
+/* optional: specify different sub-styles for each type of tag */
 .itags-search-renderedTag {
-	background-color: #7698b3;
-	color: white;
-	padding: 0em 2px;
-	border-radius: 5px;
-	display: inline-block;
-	margin-bottom: 2px;
-	margin-top: 2px;
+	background-color: #a576b3ff;
 }
 
-/* optional: specify different sub-styles for each type of tag */
 .itags-search-renderedTag--at {
 	background-color: #6fae4a;
 }
