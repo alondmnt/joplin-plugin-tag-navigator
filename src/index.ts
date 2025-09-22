@@ -73,6 +73,11 @@ joplin.plugins.register({
       'replaceText',
       './replaceText.js',
     );
+    await joplin.contentScripts.register(
+      ContentScriptType.MarkdownItPlugin,
+      'itagsTagRenderer',
+      './tagMarkdownItPlugin.js',
+    );
 
     // Search panel
     await processAllNotes();

@@ -83,6 +83,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Filtering results](#filtering-results)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
+- [Styling inline tags](#styling-inline-tags)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
 
@@ -374,6 +375,37 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 - Different sections of the same note may be tagged with different colours. They will be displayed separately in the panel (see an example below).
 
 ![colour tags](img/tag-navigator-colours.png)
+
+### Styling inline tags in the Markdown preview
+
+The Markdown preview pane wraps every match in `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, or `//`, adds `itags-search-renderedTag--hash`, `--at`, `--plus`, or `--slash`. Define their appearance in `userstyle.css`, e.g.:
+
+```css
+.itags-search-renderedTag {
+	background-color: #7698b3;
+	color: white;
+	padding: 0em 2px;
+	border-radius: 5px;
+	display: inline-block;
+	margin-bottom: 2px;
+	margin-top: 2px;
+}
+
+/* optional: specify different sub-styles for each type of tag */
+.itags-search-renderedTag--at {
+	background-color: #6fae4a;
+}
+
+.itags-search-renderedTag--plus {
+	background-color: #ae4a6f;
+}
+
+.itags-search-renderedTag--slash {
+	background-color: #4a6fae;
+}
+```
+
+For the Markdown editor see Rich Markdown in the [Companion plugins](#companion-plugins) section.
 
 ### Keyboard shortcuts
 
