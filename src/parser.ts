@@ -9,8 +9,59 @@ export const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g; // Matches mu
 const linkRegex = /\[([^\]]+)\]\(:\/([^\)]+)\)/g; // Matches [title](:/noteId)
 export const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 const wikiLinkRegex = /\[\[([^\]]+)\]\]/g; // Matches [[name of note]]
-const frontMatterRegex = /^---\n([\s\S]*?)\n---/; // Matches front matter
-const middleMatterRegex = /---\n([\s\S]*?)\n---/; // Matches middle matter
+interface MatterRange {
+  startLine: number;
+  endLine: number;
+}
+
+interface MatterRangeOptions {
+  force?: boolean;
+}
+
+function getMatterRange(lines: string[], tagSettings: TagSettings, options: MatterRangeOptions = {}): MatterRange | null {
+  if (!options.force && tagSettings.ignoreFrontMatter) {
+    return null;
+  }
+
+  const clean = (line: string): string => line.replace(/^\ufeff/, '').trim();
+
+  let startLine = -1;
+
+  if (tagSettings.middleMatter) {
+    // Use the first YAML block encountered anywhere in the note
+    for (let i = 0; i < lines.length; i++) {
+      if (clean(lines[i]) === '---') {
+        startLine = i;
+        break;
+      }
+    }
+  } else {
+    // Front matter must be the first non-empty line (ignoring whitespace)
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = clean(lines[i]);
+      if (!trimmed) continue;
+      if (trimmed === '---') {
+        startLine = i;
+      }
+      break;
+    }
+  }
+
+  if (startLine === -1) {
+    return null;
+  }
+
+  for (let i = startLine + 1; i < lines.length; i++) {
+    if (clean(lines[i]) === '---') {
+      return {
+        startLine,
+        endLine: i,
+      };
+    }
+  }
+
+  return null;
+}
 
 /**
  * Represents extracted link information
@@ -39,22 +90,19 @@ export interface TagLineInfo {
  */
 export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
   let inCodeBlock = false;
-  let inFrontMatter = false;
   let isResultBlock = false;
   let isQueryBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
   let tagsLevel = new Map<string, number>();
   let tagsHeading = new Map<string, number>();
-  const lines = text.toLocaleLowerCase().split('\n');
+  const rawLines = text.split('\n');
+  const matterRange = getMatterRange(rawLines, tagSettings);
+  const lines = rawLines.map((line) => line.toLocaleLowerCase());
 
   lines.forEach((line, lineIndex) => {
     // Toggle code block status
     if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
-    }
-    // Toggle front matter status (always skip, regardless of settings)
-    if (/^\s*---\s*$/.test(line)) {
-      inFrontMatter = !inFrontMatter;
     }
     if (line.match(resultsStart)) {
       isResultBlock = true;
@@ -70,7 +118,8 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     }
     const isEmptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks, front matter, result blocks, query blocks, and empty lines
-    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || inFrontMatter || isResultBlock || isQueryBlock || isEmptyLine) {
+    const isMatterBlock = matterRange && lineIndex >= matterRange.startLine && lineIndex <= matterRange.endLine;
+    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isMatterBlock || isResultBlock || isQueryBlock || isEmptyLine) {
       return;
     }
 
@@ -497,15 +546,10 @@ interface FrontMatterResult {
  * @returns Parsed front matter data, line count, and any parsing errors
  */
 export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontMatterResult {
-  // Validate front matter format
-  let match: RegExpMatchArray | null = null;
-  if (tagSettings.middleMatter) {
-    match = text.match(middleMatterRegex);
-  } else {
-    match = text.match(frontMatterRegex);
-  }
+  const rawLines = text.split('\n');
+  const matterRange = getMatterRange(rawLines, tagSettings, { force: true });
 
-  if (!match) {
+  if (!matterRange) {
     return {
       data: null,
       lineCount: 0,
@@ -513,19 +557,33 @@ export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontM
     };
   }
 
-  const yamlContent = "!!str\n" + match[1];
+  const contentLines = rawLines
+    .slice(matterRange.startLine + 1, matterRange.endLine)
+    .map(line => line.replace(/\r$/, ''));
+  const matterContent = contentLines.join('\n');
+  const lineCount = contentLines.length + 2;
+
+  if (!matterContent.trim()) {
+    return {
+      data: null,
+      lineCount,
+      errors: undefined,
+    };
+  }
+
+  const yamlContent = `!!str\n${matterContent}`;
 
   try {
     // Try parsing with js-yaml first
     const data = yamlLoad(yamlContent) as FrontMatter;
     return {
       data: data || null,
-      lineCount: yamlContent.split('\n').length + 2,
+      lineCount,
       errors: undefined
     };
   } catch (e) {
     // Use the in-house parser as fallback
-    return parseFrontMatterFallback(text, tagSettings);
+    return parseFrontMatterFallback(contentLines, lineCount);
   }
 }
 
@@ -535,34 +593,26 @@ export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontM
  * @param tagSettings Configuration for tag processing
  * @returns Parsed front matter data, line count, and any parsing errors
  */
-function parseFrontMatterFallback(text: string, tagSettings: TagSettings): FrontMatterResult {
+function parseFrontMatterFallback(contentLines: string[], lineCount: number): FrontMatterResult {
   const errors: ParseError[] = [];
-  
-  // Validate front matter format
-  let match: RegExpMatchArray | null = null;
-  if (tagSettings.middleMatter) {
-    match = text.match(middleMatterRegex);
-  } else {
-    match = text.match(frontMatterRegex);
-  }
-  if (!match) {
+  if (!contentLines.length) {
     return {
       data: null,
-      lineCount: 0,
-      errors: undefined
+      lineCount,
+      errors: undefined,
     };
   }
 
   const result: FrontMatter = {};
-  const lines = match[1].split('\n');
   let currentKey: string | null = null;
   let currentArray: string[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (let i = 0; i < contentLines.length; i++) {
+    const line = contentLines[i];
+    const trimmedLine = line.trim();
     try {
       // Skip comments and empty lines
-      if (line.trim().startsWith('#') || line.trim().startsWith('!!') || !line.trim()) continue;
+      if (trimmedLine.startsWith('#') || trimmedLine.startsWith('!!') || !trimmedLine) continue;
 
       // Check for invalid indentation
       const indent = line.match(/^\s*/)[0];
@@ -574,9 +624,9 @@ function parseFrontMatterFallback(text: string, tagSettings: TagSettings): Front
       }
 
       // Check if line starts with a dash (list item)
-      if (line.trim().startsWith('- ')) {
+      if (trimmedLine.startsWith('- ')) {
         if (currentKey) {
-          currentArray.push(line.trim().slice(2));
+          currentArray.push(trimmedLine.slice(2));
         }
         continue;
       }
@@ -652,7 +702,7 @@ function parseFrontMatterFallback(text: string, tagSettings: TagSettings): Front
 
   return { 
     data: Object.keys(result).length > 0 ? result : null,
-    lineCount: lines.length + 2,
+    lineCount,
     errors: errors.length > 0 ? errors : undefined
   };
 }
