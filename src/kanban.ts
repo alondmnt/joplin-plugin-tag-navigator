@@ -769,7 +769,7 @@ function processTagsForKanbanItem(
 
   // Now format tags for sorting (remove prefix, lowercase)
   const formattedTags = Array.from(allRawTags).map(tag => 
-    tag.replace(tagSettings.tagPrefix, '').toLowerCase()
+    tag.toLowerCase()
   );
   
   // Filter out parent tags (tags that have children) - same logic as search.ts extractTagsPerGroup
