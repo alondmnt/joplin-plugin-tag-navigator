@@ -1,3 +1,9 @@
 {
-	"extraScripts": ["cm6scroller.ts", "replaceText.ts", "tagMarkdownItPlugin.ts", "fmMarkdownitPlugin.ts"]
+	"extraScripts": [
+		"cm6scroller.ts",
+		"replaceText.ts",
+		"tagMarkdownItPlugin.ts",
+		"fmMarkdownitPlugin.ts",
+		"cm6frontmatter.ts"
+	]
 }

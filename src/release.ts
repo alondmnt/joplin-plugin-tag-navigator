@@ -1,17 +1,16 @@
 export const RELEASE_NOTES = {
-    version: "v2.5.0",
-    notes: `Inline Tag Navigator v2.5.0
+    version: "v2.6.0",
+    notes: `Inline Tag Navigator v2.6.0
 
-- added: kanban view for all tasks in the search results based on checkbox state
-- added: sort by tags now works across all note views and the panel display, with an interactive sort dialog
-- added: repeating customisable date tags #week and #month for recurring scheduling
-- added: command to replace relative dates with absolute dates in current / selected line. #today -> #2025-06-01
-- added: syntax highlighting for code blocks and frontmatter in the panel
-- added: setting: 'Tag conversion tracking' to maintain consistency between Joplin tags and inline tags during conversions
-- added: settings to control which toolbar commands are visible
-- improved: saved queries are hidden in the markdown preview
-- improved: result grouping can be defined in queries and selected in the panel context menu (click on note titles)
-- improved: panel state preservation
-- improved: memory management and security
-- fixed: legacy checkbox interaction behavior
+- added: render tags in the Markdown preview (see settings)
+- added: render front matter in the Markdown preview (see settings)
+- added: highlight front matter in the Markdown editor (see settings)
+- fixed: front matter parsing logic
+
+other features added since v2.5.0:
+- added: search results filter with exclusion patterns, beginning with "!"
+- added: include/exclude notebooks from the tag DB (see settings)
+- added: middle matter support (see settings)
+- added: toggle navigation panel keyboard shortcut
+- improved: joplin tags to inline tags conversion
 `};
