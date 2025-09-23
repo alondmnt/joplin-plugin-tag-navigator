@@ -346,6 +346,20 @@ export async function registerSettings(): Promise<void> {
       label: 'Use middle matter instead of front matter',
       description: 'Middle matter is YAML front matter that is not at the beginning of the note.',
     },
+    'itags.renderFrontMatter': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Front matter: Render in Markdown preview',
+    },
+    'itags.renderFrontMatterDetails': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Front matter: Expand details Markdown preview',
+    },
     'itags.inheritTags': {
       value: true,
       type: SettingItemType.Bool,

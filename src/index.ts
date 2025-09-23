@@ -78,6 +78,13 @@ joplin.plugins.register({
       'itagsTagRenderer',
       './tagMarkdownItPlugin.js',
     );
+    if (await joplin.settings.value('itags.renderFrontMatter')) {
+      await joplin.contentScripts.register(
+        ContentScriptType.MarkdownItPlugin,
+        'fmMarkdownitPlugin',
+        './fmMarkdownitPlugin.js',
+      );
+    }
 
     // Search panel
     await processAllNotes();

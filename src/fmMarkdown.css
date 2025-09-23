@@ -1,0 +1,48 @@
+/* The container */
+.fm-code {
+  border: 1px solid var(--joplin-divider-color);
+  border-radius: 10px;
+  background: var(--joplin-background-color3);
+  margin: 6px 0 8px;             /* tighter spacing */
+  overflow: hidden;
+}
+
+/* Summary line with caret */
+.fm-code > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  background: var(--joplin-background-color);
+  border-bottom: 1px solid var(--joplin-divider-color);
+  font-weight: 600;
+  position: relative;
+  padding-right: 1.4rem;         /* caret space */
+}
+.fm-code > summary::marker { display: none; }
+.fm-code > summary::after {
+  content: '';
+  position: absolute; right: .6rem; top: 50%;
+  width: 6px; height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-50%) rotate(-45deg);
+  opacity: .6; transition: transform .15s ease, opacity .15s ease;
+}
+.fm-code[open] > summary::after {
+  transform: translateY(-50%) rotate(45deg);
+  opacity: .85;
+}
+
+/* Body: let Joplin’s code highlighter do its thing, just trim margins */
+.fm-code pre, .fm-code code {
+  margin: 0;
+}
+.fm-code pre {
+  padding: 8px 10px;
+  border-radius: 0;              /* already inside a rounded card */
+}
+
+/* Optional: make summary tag look like your tag pills */
+.fm-code > summary .itags-search-renderedTag {
+  margin-left: .5rem;
+}
