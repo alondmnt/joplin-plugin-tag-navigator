@@ -83,7 +83,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Filtering results](#filtering-results)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
-- [Styling inline tags](#styling-inline-tags)
+- [Styling inline tags](#styling-inline-tags-in-the-markdown-preview)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
 
