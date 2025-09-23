@@ -404,12 +404,21 @@ export async function registerSettings(): Promise<void> {
       label: 'Note view: Periodic update of tag search view in notes',
       description: 'You may disable this on a Joplin client to avoid conflicts with another client. The same time interval as above applies.'
     },
+    'itags.highlightFrontMatter': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Front matter: Highlight in editor',
+      description: 'Requires restart',
+    },
     'itags.renderFrontMatter': {
       value: true,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
       label: 'Front matter: Render in Markdown preview',
+      description: 'Requires restart',
     },
     'itags.renderFrontMatterDetails': {
       value: false,

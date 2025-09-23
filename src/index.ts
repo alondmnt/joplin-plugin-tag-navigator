@@ -84,6 +84,13 @@ joplin.plugins.register({
         'fmMarkdownitPlugin',
         './fmMarkdownitPlugin.js',
       );
+    };
+    if (await joplin.settings.value('itags.highlightFrontMatter')) {
+      await joplin.contentScripts.register(
+        ContentScriptType.CodeMirrorPlugin,
+        'cm6-yaml-frontmatter',
+        './cm6frontmatter.js',
+      );
     }
 
     // Search panel
