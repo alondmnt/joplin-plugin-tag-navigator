@@ -73,11 +73,13 @@ joplin.plugins.register({
       'replaceText',
       './replaceText.js',
     );
-    await joplin.contentScripts.register(
-      ContentScriptType.MarkdownItPlugin,
-      'itagsTagRenderer',
-      './tagMarkdownItPlugin.js',
-    );
+    if (await joplin.settings.value('itags.renderTags')) {
+      await joplin.contentScripts.register(
+        ContentScriptType.MarkdownItPlugin,
+        'itagsTagRenderer',
+        './tagMarkdownItPlugin.js',
+      );
+    }
     if (await joplin.settings.value('itags.renderFrontMatter')) {
       await joplin.contentScripts.register(
         ContentScriptType.MarkdownItPlugin,
