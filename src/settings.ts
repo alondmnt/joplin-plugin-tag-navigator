@@ -421,7 +421,7 @@ export async function registerSettings(): Promise<void> {
       description: 'Requires restart',
     },
     'itags.renderFrontMatterDetails': {
-      value: false,
+      value: true,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
