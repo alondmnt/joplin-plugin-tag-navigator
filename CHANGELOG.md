@@ -1,3 +1,23 @@
+# [v.2.6.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.0)
+*Released on 2025-09-23T12:21:48Z*
+
+- added: render tags in the Markdown preview (see settings)
+- added: render front matter in the Markdown preview (see settings)
+- added: highlight front matter in the Markdown editor (see settings)
+- fixed: front matter parsing logic
+
+Markdown editor:
+<img width="671" height="298" src="https://github.com/user-attachments/assets/90c00cd4-afa1-43db-a928-7d969c42a770" />
+
+Markdown preview:
+<img width="673" height="286" src="https://github.com/user-attachments/assets/91139881-f73f-4477-b073-8c4f120309c9" />
+
+
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.5.9...v2.6.0
+
+---
+
 # [v2.5.9](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.5.9)
 *Released on 2025-09-17T13:18:37Z*
 
