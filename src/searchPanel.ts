@@ -173,8 +173,10 @@ export async function registerSearchPanel(panel: string): Promise<void> {
   await joplin.views.panels.addScript(panel, 'prism.js');
   await joplin.views.panels.addScript(panel, 'prism.css');
 
-  // Create the sort configuration dialog
-  sortDialogHandle = await joplin.views.dialogs.create('sortConfigDialog');
+  // Create the sort configuration dialog once and reuse the handle across panel reloads
+  if (!sortDialogHandle) {
+    sortDialogHandle = await joplin.views.dialogs.create('sortConfigDialog');
+  }
 }
 
 /**
