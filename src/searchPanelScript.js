@@ -11,37 +11,31 @@ const STANDARD_SORT_VALUES = ['modified', 'created', 'title', 'notebook', 'custo
 
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 
-const tagFilter = document.getElementById('itags-search-tagFilter');
-const tagCount = document.createElement('div');
-tagCount.classList.add('itags-search-resultCount');
-tagCount.style.display = 'none';
-tagFilter.parentNode.appendChild(tagCount);
-const tagInputArea = document.getElementById('itags-search-inputTagArea');
-const tagClear = document.getElementById('itags-search-tagClear');
-const saveQuery = document.getElementById('itags-search-saveQuery');
-const tagSearch = document.getElementById('itags-search-tagSearch');
-const tagList = document.getElementById('itags-search-tagList');
-const tagRangeArea = document.getElementById('itags-search-tagRangeArea');
-const tagRangeMin = document.getElementById('itags-search-tagRangeMin');
-const tagRangeMax = document.getElementById('itags-search-tagRangeMax');
-const tagRangeAdd = document.getElementById('itags-search-tagRangeAdd');
-const noteArea = document.getElementById('itags-search-inputNoteArea');
-const noteList = document.getElementById('itags-search-noteList');
-const noteFilter = document.getElementById('itags-search-noteFilter');
-const queryArea = document.getElementById('itags-search-queryArea');
-const resultFilterArea = document.getElementById('itags-search-inputResultArea');
-const resultFilter = document.getElementById('itags-search-resultFilter');
-const resultCount = document.createElement('div');
-resultCount.classList.add('itags-search-resultCount');
-resultCount.style.display = 'none';
-resultFilterArea.appendChild(resultCount);
+let tagFilter;
+let tagCount;
+let tagInputArea;
+let tagClear;
+let saveQuery;
+let tagSearch;
+let tagList;
+let tagRangeArea;
+let tagRangeMin;
+let tagRangeMax;
+let tagRangeAdd;
+let noteArea;
+let noteList;
+let noteFilter;
+let queryArea;
+let resultFilterArea;
+let resultFilter;
+let resultCount;
+let resultSort;
+let resultOrder;
+let resultToggle;
+let resultsArea;
 let resultToggleState = null; // Will be set when settings are received
-const resultSort = document.getElementById('itags-search-resultSort');
-const resultOrder = document.getElementById('itags-search-resultOrder');
 let resultOrderState = 'desc';
 let lastMessage = null; // Store the last message from the main process
-const resultToggle = document.getElementById('itags-search-resultToggle');
-const resultsArea = document.getElementById('itags-search-resultsArea');
 let resultMarker = true;
 let selectMultiTags = 'first';
 let searchWithRegex = false;
@@ -49,7 +43,120 @@ let spaceReplace = '_';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
+
+let domInitialized = false;
+let initializingDom = false;
+const pendingMessages = [];
+
 const eventListenersMap = new WeakMap();  // Map to store event listeners and clear them later
+
+function isElementAttached(element) {
+    return !!(element && element instanceof Element && document.body.contains(element));
+}
+
+function flushPendingMessages() {
+    if (!pendingMessages.length) {
+        return;
+    }
+    const messages = pendingMessages.splice(0, pendingMessages.length);
+    for (const message of messages) {
+        processPanelMessage(message);
+    }
+}
+
+function ensurePanelReady() {
+    if (domInitialized && isElementAttached(tagFilter) && isElementAttached(resultFilterArea)) {
+        return true;
+    }
+    initPanel(true);
+    return domInitialized && isElementAttached(tagFilter) && isElementAttached(resultFilterArea);
+}
+
+function initPanel(force = false) {
+    if (initializingDom) {
+        return;
+    }
+
+    const needsInit = force || !domInitialized || !isElementAttached(tagFilter) || !isElementAttached(resultFilterArea);
+    if (!needsInit) {
+        return;
+    }
+
+    if (document.readyState === 'loading') {
+        window.addEventListener('DOMContentLoaded', () => initPanel(force), { once: true });
+        return;
+    }
+
+    initializingDom = true;
+
+    tagFilter = document.getElementById('itags-search-tagFilter');
+    tagInputArea = document.getElementById('itags-search-inputTagArea');
+    tagClear = document.getElementById('itags-search-tagClear');
+    saveQuery = document.getElementById('itags-search-saveQuery');
+    tagSearch = document.getElementById('itags-search-tagSearch');
+    tagList = document.getElementById('itags-search-tagList');
+    tagRangeArea = document.getElementById('itags-search-tagRangeArea');
+    tagRangeMin = document.getElementById('itags-search-tagRangeMin');
+    tagRangeMax = document.getElementById('itags-search-tagRangeMax');
+    tagRangeAdd = document.getElementById('itags-search-tagRangeAdd');
+    noteArea = document.getElementById('itags-search-inputNoteArea');
+    noteList = document.getElementById('itags-search-noteList');
+    noteFilter = document.getElementById('itags-search-noteFilter');
+    queryArea = document.getElementById('itags-search-queryArea');
+    resultFilterArea = document.getElementById('itags-search-inputResultArea');
+    resultFilter = document.getElementById('itags-search-resultFilter');
+    resultSort = document.getElementById('itags-search-resultSort');
+    resultOrder = document.getElementById('itags-search-resultOrder');
+    resultToggle = document.getElementById('itags-search-resultToggle');
+    resultsArea = document.getElementById('itags-search-resultsArea');
+
+    if (!tagFilter || !tagInputArea || !tagClear || !saveQuery || !tagSearch || !tagList ||
+        !tagRangeArea || !tagRangeMin || !tagRangeMax || !tagRangeAdd || !noteArea || !noteList ||
+        !noteFilter || !queryArea || !resultFilterArea || !resultFilter || !resultSort ||
+        !resultOrder || !resultToggle || !resultsArea) {
+        initializingDom = false;
+        domInitialized = false;
+        console.warn('Tag Navigator: Search panel DOM not ready for initialization.');
+        return;
+    }
+
+    if (!tagCount) {
+        tagCount = document.createElement('div');
+        tagCount.classList.add('itags-search-resultCount');
+        tagCount.style.display = 'none';
+    }
+    if (tagFilter.parentNode && tagCount.parentNode !== tagFilter.parentNode) {
+        tagFilter.parentNode.appendChild(tagCount);
+    }
+
+    if (!resultCount) {
+        resultCount = document.createElement('div');
+        resultCount.classList.add('itags-search-resultCount');
+        resultCount.style.display = 'none';
+    }
+    if (resultFilterArea && resultCount.parentNode !== resultFilterArea) {
+        resultFilterArea.appendChild(resultCount);
+    }
+
+    resultToggleState = null;
+    resultOrderState = 'desc';
+
+    registerEventHandlers();
+
+    domInitialized = true;
+    initializingDom = false;
+
+    updateTagList();
+    if (tagFilter) {
+        tagFilter.focus();
+    }
+
+    webviewApi.postMessage({
+        name: 'initPanel',
+    });
+
+    flushPendingMessages();
+}
 
 // Add this secure HTML handling function near the top of the file, after the existing helper functions
 function escapeHtml(text) {
@@ -142,6 +249,15 @@ webviewApi.onMessage((message) => {
     // Store the message for later access
     lastMessage = message;
 
+    if (!ensurePanelReady()) {
+        pendingMessages.push(message);
+        return;
+    }
+
+    processPanelMessage(message);
+});
+
+function processPanelMessage(message) {
     if (message.message.name === 'updateTagData') {
         allTags = JSON.parse(message.message.tags);
         updateTagList();
@@ -158,7 +274,9 @@ webviewApi.onMessage((message) => {
             console.error('Failed to parse saved query:', message.message.query, e);
         }
         queryGroups = queryGroupsCand;
-        resultFilter.value = message.message.filter ? message.message.filter : '';
+        if (resultFilter) {
+            resultFilter.value = message.message.filter ? message.message.filter : '';
+        }
         updateQueryArea();
         sendSearchMessage();
 
@@ -213,7 +331,9 @@ webviewApi.onMessage((message) => {
 
         updateResultsArea();
     } else if (message.message.name === 'focusTagFilter') {
-        tagFilter.focus();
+        if (tagFilter) {
+            tagFilter.focus();
+        }
 
     } else if (message.message.name === 'updateNoteState') {
         // Restore saved note state from main process (true = expanded/visible, false = collapsed/hidden)
@@ -224,7 +344,7 @@ webviewApi.onMessage((message) => {
             noteState = {};
         }
     }
-});
+}
 
 // Function to update note state and send to main process
 function updateNoteState(externalId, color, isExpanded) {
@@ -1844,414 +1964,425 @@ function parseRange(rangeStr) {
     return { minValue: min || undefined, maxValue: max || undefined };
 }
 
-updateTagList(); // Initial update
-tagFilter.focus(); // Focus the tag filter input when the panel is loaded
-
-// Event listeners
-addEventListenerWithTracking(tagFilter, 'input', updateTagList);
-addEventListenerWithTracking(noteFilter, 'input', updateNoteList);
-
-addEventListenerWithTracking(tagClear, 'click', () => {
-    clearQueryArea();
-    clearResultsArea();
-    tagFilter.value = '';
-    tagRangeMin.value = '';
-    tagRangeMax.value = '';
-    noteFilter.value = '';
-    resultFilter.value = '';
-    sendSetting('filter', '');
-    sendClearQuery(); // Clear the main process query and filter
-    results = []; // Clear the results array before resetToGlobalSettings
-    clearNoteState(); // Clear note state when clearing everything
-    resetToGlobalSettings(); // Reset to global settings for new searches
-    updateTagList();
-});
-
-addEventListenerWithTracking(saveQuery, 'click', () => {
-    webviewApi.postMessage({
-        name: 'saveQuery',
-        query: JSON.stringify(queryGroups),
-        filter: resultFilter.value,
-    });
-});
-
-addEventListenerWithTracking(tagSearch, 'click', () => {
-    sendSearchMessage();
-    clearNoteState();
-});
-
-addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
-    if (event.key === 'Enter') {
-        if (event.shiftKey) {
-            // Insert the tag
-            const tag = tagList.firstChild.textContent;
-            sendInsertMessage(tag);
-            tagFilter.value = '';
-            updateTagList();
-            return;
-
-        } else if (tagFilter.value === '') {
-            sendSearchMessage();
-            clearNoteState();
-
-        } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
-            // Get the tag name from the only / fist child element of tagList
-            const tag = tagList.firstChild.textContent;
-            handleTagClick(tag);
-
-        } else if (selectMultiTags === 'all') {
-            // Create multiple groups, one for each tag
-            const tags = Array.from(tagList.children).map(tag => tag.textContent);
-            tags.forEach(tag => {
-                if (queryGroups.some(group =>
-                        (group.length === 1) & (group[0].tag === tag) & (group[0].negated === false))) {
-                    return;
-                }
-                queryGroups.push([{ tag: tag, negated: false }]);
-            });
-            updateQueryArea();
-            // Clear the input
-            tagFilter.value = '';
-            // Update the tag list to reflect the current filter or clear it
-            updateTagList();
-
-        } else if (selectMultiTags === 'insert') {
-            // Get the tag name from the only child element of tagList
-            const tag = tagList.firstChild.textContent;
-            sendInsertMessage(tag);
-            // Clear the input
-            tagFilter.value = '';
-            // Update the tag list to reflect the current filter or clear it
-            updateTagList();
-        }
-
-    } else if (event.key === 'Delete') {
-        // Remove last tag from the last group
-        let lastGroup = queryGroups[queryGroups.length - 1];
-        if (lastGroup) {
-            lastGroup.pop();
-            if (lastGroup.length === 0) {
-                // Remove the group if empty
-                queryGroups.pop();
-            }
-            updateQueryArea();
-        }
-    } else if (event.key === 'Escape') {
-        if (tagFilter.value === '') {
-            sendFocusEditorMessage();
-        } else {
-            // Clear the input and update the tag list
-            tagFilter.value = '';
-            updateTagList();
-        }
-    } else if (event.key === 'ArrowUp') {
-        // Change the last operator
-        toggleLastOperator();
-    } else if (event.key === 'ArrowDown') {
-        // Toggle last tag negation
-        toggleLastTagOrNote();
+function registerEventHandlers() {
+    if (!tagFilter || !tagList || !tagClear || !saveQuery || !tagSearch || !tagRangeArea ||
+        !tagRangeMin || !tagRangeMax || !tagRangeAdd || !noteArea || !noteFilter ||
+        !noteList || !resultFilter || !resultSort || !resultOrder || !resultToggle ||
+        !resultFilterArea || !resultCount || !resultsArea) {
+        return;
     }
-});
 
-addEventListenerWithTracking(tagRangeMin, 'keydown', (event) => {
-    if (event.key === 'Enter') {
-        tagRangeMax.focus();
-    } else if (event.key === 'ArrowUp') {
-        // Change the last operator
-        toggleLastOperator();
-    } else if (event.key === 'ArrowDown') {
-        // Toggle last tag negation
-        toggleLastTagOrNote();
-    } else if (event.key === 'Escape') {
-        if (tagRangeMin.value === '' && tagRangeMax.value === '') {
-            tagFilter.focus();
-        } else {
+    // Event listeners
+    addEventListenerWithTracking(tagFilter, 'input', updateTagList);
+    addEventListenerWithTracking(noteFilter, 'input', updateNoteList);
+
+    addEventListenerWithTracking(tagClear, 'click', () => {
+        clearQueryArea();
+        clearResultsArea();
+        tagFilter.value = '';
+        tagRangeMin.value = '';
+        tagRangeMax.value = '';
+        noteFilter.value = '';
+        resultFilter.value = '';
+        sendSetting('filter', '');
+        sendClearQuery(); // Clear the main process query and filter
+        results = []; // Clear the results array before resetToGlobalSettings
+        clearNoteState(); // Clear note state when clearing everything
+        resetToGlobalSettings(); // Reset to global settings for new searches
+        updateTagList();
+    });
+
+    addEventListenerWithTracking(saveQuery, 'click', () => {
+        webviewApi.postMessage({
+            name: 'saveQuery',
+            query: JSON.stringify(queryGroups),
+            filter: resultFilter.value,
+        });
+    });
+
+    addEventListenerWithTracking(tagSearch, 'click', () => {
+        sendSearchMessage();
+        clearNoteState();
+    });
+
+    addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
+        if (event.key === 'Enter') {
+            if (event.shiftKey) {
+                // Insert the tag
+                const tag = tagList.firstChild?.textContent;
+                if (tag) {
+                    sendInsertMessage(tag);
+                }
+                tagFilter.value = '';
+                updateTagList();
+                return;
+
+            } else if (tagFilter.value === '') {
+                sendSearchMessage();
+                clearNoteState();
+
+            } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
+                // Get the tag name from the only / first child element of tagList
+                const tag = tagList.firstChild?.textContent;
+                if (tag) {
+                    handleTagClick(tag);
+                }
+
+            } else if (selectMultiTags === 'all') {
+                // Create multiple groups, one for each tag
+                const tags = Array.from(tagList.children).map(tag => tag.textContent);
+                tags.forEach(tag => {
+                    if (queryGroups.some(group =>
+                            (group.length === 1) & (group[0].tag === tag) & (group[0].negated === false))) {
+                        return;
+                    }
+                    queryGroups.push([{ tag: tag, negated: false }]);
+                });
+                updateQueryArea();
+                // Clear the input
+                tagFilter.value = '';
+                // Update the tag list to reflect the current filter or clear it
+                updateTagList();
+
+            } else if (selectMultiTags === 'insert') {
+                // Get the tag name from the only child element of tagList
+                const tag = tagList.firstChild?.textContent;
+                if (tag) {
+                    sendInsertMessage(tag);
+                }
+                // Clear the input
+                tagFilter.value = '';
+                // Update the tag list to reflect the current filter or clear it
+                updateTagList();
+            }
+
+        } else if (event.key === 'Delete') {
+            // Remove last tag from the last group
+            let lastGroup = queryGroups[queryGroups.length - 1];
+            if (lastGroup) {
+                lastGroup.pop();
+                if (lastGroup.length === 0) {
+                    // Remove the group if empty
+                    queryGroups.pop();
+                }
+                updateQueryArea();
+            }
+        } else if (event.key === 'Escape') {
+            if (tagFilter.value === '') {
+                sendFocusEditorMessage();
+            } else {
+                // Clear the input and update the tag list
+                tagFilter.value = '';
+                updateTagList();
+            }
+        } else if (event.key === 'ArrowUp') {
+            // Change the last operator
+            toggleLastOperator();
+        } else if (event.key === 'ArrowDown') {
+            // Toggle last tag negation
+            toggleLastTagOrNote();
+        }
+    });
+
+    addEventListenerWithTracking(tagRangeMin, 'keydown', (event) => {
+        if (event.key === 'Enter') {
+            tagRangeMax.focus();
+        } else if (event.key === 'ArrowUp') {
+            // Change the last operator
+            toggleLastOperator();
+        } else if (event.key === 'ArrowDown') {
+            // Toggle last tag negation
+            toggleLastTagOrNote();
+        } else if (event.key === 'Escape') {
+            if (tagRangeMin.value === '' && tagRangeMax.value === '') {
+                tagFilter.focus();
+            } else {
+                // Clear the input
+                tagRangeMin.value = '';
+                tagRangeMax.value = '';
+            }
+        }
+    });
+
+    addEventListenerWithTracking(tagRangeMax, 'keydown', (event) => {
+        if (event.key === 'Enter') {
+            if (tagRangeMin.value.length === 0 && tagRangeMax.value.length === 0) {
+                sendSearchMessage();
+                clearNoteState();
+                return;
+            }
+            tagRangeAdd.click();
+        } else if (event.key === 'ArrowUp') {
+            // Change the last operator
+            toggleLastOperator();
+        } else if (event.key === 'ArrowDown') {
+            // Toggle last tag negation
+            toggleLastTagOrNote();
+        } else if (event.key === 'Escape') {
             // Clear the input
             tagRangeMin.value = '';
             tagRangeMax.value = '';
+            tagRangeMin.focus();
         }
-    }
-});
+    });
 
-addEventListenerWithTracking(tagRangeMax, 'keydown', (event) => {
-    if (event.key === 'Enter') {
-        if (tagRangeMin.value.length == 0 && tagRangeMax.value.length == 0) {
-            sendSearchMessage();
-            clearNoteState();
+    addEventListenerWithTracking(tagRangeAdd, 'click', () => {
+        const newRange = {};
+        if (tagRangeMin.value.length === 0 && tagRangeMax.value.length === 0) {
             return;
         }
-        tagRangeAdd.click();
-    } else if (event.key === 'ArrowUp') {
-        // Change the last operator
-        toggleLastOperator();
-    } else if (event.key === 'ArrowDown') {
-        // Toggle last tag negation
-        toggleLastTagOrNote();
-    } else if (event.key === 'Escape') {
-        // Clear the input
+        if (tagRangeMin.value.length > 0) {
+            newRange['minValue'] = tagRangeMin.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
+        }
+        if (tagRangeMax.value.length > 0) {
+            newRange['maxValue'] = tagRangeMax.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
+        }
+
+        handleRangeClick(newRange['minValue'], newRange['maxValue']);
         tagRangeMin.value = '';
         tagRangeMax.value = '';
-        tagRangeMin.focus();
-    }
-});
+    });
 
-addEventListenerWithTracking(tagRangeAdd, 'click', () => {
-    const newRange = {};
-    if (tagRangeMin.value.length == 0 && tagRangeMax.value.length == 0) {
-        return;
-    }
-    if (tagRangeMin.value.length > 0) {
-        newRange['minValue'] = tagRangeMin.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
-    }
-    if (tagRangeMax.value.length > 0) {
-        newRange['maxValue'] = tagRangeMax.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
-    }
-    handleRangeClick(newRange['minValue'], newRange['maxValue']);
-    tagRangeMin.value = '';
-    tagRangeMax.value = '';
-});
-
-addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
-    if (event.key === 'Enter') {
-        // Check if there's exactly one tag in the filtered list
-        if (noteFilter.value === '') {
-            sendSearchMessage();
-            clearNoteState();
-        } else {
-            // Get the tag name from the only child element of tagList
-            const note = {title: noteList.firstChild.textContent, externalId: noteList.firstChild.value};
-            handleNoteClick(note);
-            // Optionally, clear the input
-            noteFilter.value = '';
-            noteList.value = 'default';
-            // Update the tag list to reflect the current filter or clear it
-            updateNoteList();
-        }
-    } else if (event.key === 'Delete') {
-        // Remove last tag from the last group
-        let lastGroup = queryGroups[queryGroups.length - 1];
-        if (lastGroup) {
-            lastGroup.pop();
-            if (lastGroup.length === 0) {
-                // Remove the group if empty
-                queryGroups.pop();
+    addEventListenerWithTracking(noteFilter, 'keydown', (event) => {
+        if (event.key === 'Enter') {
+            // Check if there's exactly one tag in the filtered list
+            if (noteFilter.value === '') {
+                sendSearchMessage();
+                clearNoteState();
+            } else if (noteList.firstChild) {
+                // Get the note from the first child element of noteList
+                const note = { title: noteList.firstChild.textContent, externalId: noteList.firstChild.value };
+                handleNoteClick(note);
+                // Optionally, clear the input
+                noteFilter.value = '';
+                noteList.value = 'default';
+                // Update the note list to reflect the current filter or clear it
+                updateNoteList();
             }
-            updateQueryArea();
-        }
-    } else if (event.key === 'Escape') {
-        if (noteFilter.value === '') {
-            tagFilter.focus();
-        } else {
-            // Clear the input and update the tag list
-            noteFilter.value = '';
-            noteList.value = 'default';
-            updateNoteList();
-        }
-    } else if (event.key === 'ArrowUp') {
-        // Change the last operator
-        toggleLastOperator();
-    } else if (event.key === 'ArrowDown') {
-        // Toggle last tag negation
-        toggleLastTagOrNote();
-    }
-});
-
-addEventListenerWithTracking(noteList, 'change', () => {
-    if (noteList.value === 'current') {
-        handleNoteClick({ title: 'Current note', externalId: 'current' });
-    } else if (noteList.value !== 'default') {
-        const selectedNote = allNotes.find(note => note.externalId === noteList.value);
-        if (selectedNote) {
-            handleNoteClick(selectedNote);
-        }
-    }
-    noteList.value = 'default';
-    noteFilter.value = '';
-    dropdownIsOpen = false;
-    updateNoteList();
-});
-
-addEventListenerWithTracking(noteList, 'focus', () => {
-    // The dropdown might be opening (avoid updates)
-    dropdownIsOpen = true;
-});
-
-addEventListenerWithTracking(noteList, 'blur', () => {
-    // The dropdown is closed (avoid updates)
-    dropdownIsOpen = false;
-    updateNoteList();
-});
-
-addEventListenerWithTracking(resultFilter, 'input', () => {
-    updateResultsArea();
-    sendSetting('filter', resultFilter.value);
-});
-
-addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
-    if (event.key === 'Escape') {
-        if (resultFilter.value === '') {
-            tagFilter.focus();
-        } else {
-            // Clear the input and update the results area
-            resultFilter.value = '';
-            resultCount.style.display = 'none';  // Hide count
-            updateResultsArea();
-            sendSetting('filter', '');
-        }
-    }
-});
-
-// Handle sort option selection
-addEventListenerWithTracking(resultSort, 'change', (event) => {
-    if (resultSort.value === 'custom') {
-        // Get current sortBy and sortOrder values from last message
-        let currentSortBy = '';
-        let currentSortOrder = '';
-
-        if (lastMessage && lastMessage.message && lastMessage.message.sortBy) {
-            currentSortBy = lastMessage.message.sortBy;
-        }
-
-        if (lastMessage && lastMessage.message && lastMessage.message.sortOrder) {
-            currentSortOrder = lastMessage.message.sortOrder;
-        }
-
-        // Send message to show the sort dialog on the server side
-        webviewApi.postMessage({
-            name: 'showSortDialog',
-            currentSortBy: currentSortBy,
-            currentSortOrder: currentSortOrder
-        });
-
-        // Revert dropdown to previous value until dialog is confirmed
-        const prevValue = resultSort.getAttribute('data-prev-value') || 'modified';
-        resultSort.value = prevValue;
-
-    } else {
-        // Handle standard sort options (modified, created, title, notebook)
-        // Store selected value as previous for potential revert
-        resultSort.setAttribute('data-prev-value', resultSort.value);
-
-        // Check if we have a custom sort order and simplify it to first element only
-        const currentSortOrder = lastMessage?.message?.sortOrder;
-        if (currentSortOrder && currentSortOrder.includes(',')) {
-            // Extract first element from comma-separated order
-            const simplifiedOrder = currentSortOrder.toLowerCase().startsWith('a') ? 'asc' : 'desc';
-            
-            // Update the display and send the simplified order
-            updateResultOrderDisplay(simplifiedOrder);
-            sendSetting('resultOrder', simplifiedOrder);
-        }
-
-        // Send setting update to trigger sorting on the backend
-        sendSetting('resultSort', resultSort.value);
-    }
-});
-
-addEventListenerWithTracking(resultOrder, 'click', () => {
-    // Check if we have a custom sort order by looking at the button's current display
-    const buttonContent = resultOrder.innerHTML.replace(/<\/?b>/g, ''); // Remove <b> tags
-    const isCustomSort = buttonContent.length > 1; // Multiple arrows = custom sort
-    
-    if (isCustomSort) {
-        // For custom sort orders, get the current order from the title and toggle each element
-        const currentOrder = resultOrder.title; // Title contains the full sort order string
-        const orderArray = currentOrder.split(',').map(s => s.trim());
-        const toggledArray = orderArray.map(order => {
-            return order.toLowerCase().startsWith('a') ? 'desc' : 'asc';
-        });
-        
-        const toggledOrder = toggledArray.join(',');
-        
-        // Update display and send to backend
-        updateResultOrderDisplay(toggledOrder);
-        sendSetting('resultOrder', toggledOrder);
-    } else {
-        // Handle simple string sort orders
-        if (resultOrderState === 'asc') {
-            resultOrderState = 'desc';
-            resultOrder.innerHTML = '<b>↑</b>';  // Button shows the current state (desc)
-        } else if (resultOrderState === 'desc') {
-            resultOrderState = 'asc';
-            resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
-        }
-        
-        // Update visual indicator for simple sort order
-        resultOrder.title = resultOrderState;
-        
-        // Send setting update to trigger sorting on the backend
-        sendSetting('resultOrder', resultOrderState);
-    }
-});
-
-addEventListenerWithTracking(resultToggle, 'click', () => {
-    if (resultToggleState === 'expand') {
-        collapseResults();
-        resultToggleState = 'collapse';
-        resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
-        sendSetting('resultToggle', true);
-        return;
-
-    } else if (resultToggleState === 'collapse') {
-        expandResults();
-        resultToggleState = 'expand';
-        resultToggle.innerHTML = 'v';  // Button shows the current state (expand)
-        sendSetting('resultToggle', false);
-        return;
-    }
-});
-
-addEventListenerWithTracking(document, 'click', (event) => {
-    const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
-    contextMenu.forEach(menu => {
-        if (!menu.contains(event.target)) {
-            removeContextMenu(menu);
+        } else if (event.key === 'Delete') {
+            // Remove last tag from the last group
+            let lastGroup = queryGroups[queryGroups.length - 1];
+            if (lastGroup) {
+                lastGroup.pop();
+                if (lastGroup.length === 0) {
+                    // Remove the group if empty
+                    queryGroups.pop();
+                }
+                updateQueryArea();
+            }
+        } else if (event.key === 'Escape') {
+            if (noteFilter.value === '') {
+                tagFilter.focus();
+            } else {
+                // Clear the input and update the note list
+                noteFilter.value = '';
+                noteList.value = 'default';
+                updateNoteList();
+            }
+        } else if (event.key === 'ArrowUp') {
+            toggleLastOperator();
+        } else if (event.key === 'ArrowDown') {
+            toggleLastTagOrNote();
         }
     });
-});
 
-addEventListenerWithTracking(document, 'contextmenu', (event) => {
-    if (event.target.matches('.itags-search-renderedTag')) { return; }
-    if (event.target.matches('.itags-search-checkbox')) { return; }
-    if (event.target.matches('.itags-search-contextMenu')) { return; }
-    if (event.target.matches('.itags-search-contextSeparator')) { return; }
-    if (event.target.matches('.itags-search-contextCommand')) {
-        event.target.click();
-        return;
-    }
-    // Check if this is a note title element - if so, let its specific handler deal with it
-    if (event.target.tagName === 'H3' || event.target.closest('h3')) { return; }
-    
-    const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
-    contextMenu.forEach(menu => {
-        if (!menu.contains(event.target)) {
-            removeContextMenu(menu);
+    addEventListenerWithTracking(noteList, 'change', () => {
+        if (noteList.value === 'current') {
+            handleNoteClick({ title: 'Current note', externalId: 'current' });
+        } else if (noteList.value !== 'default') {
+            const selectedNote = allNotes.find(note => note.externalId === noteList.value);
+            if (selectedNote) {
+                handleNoteClick(selectedNote);
+            }
+        }
+        noteList.value = 'default';
+        noteFilter.value = '';
+        dropdownIsOpen = false;
+        updateNoteList();
+    });
+
+    addEventListenerWithTracking(noteList, 'focus', () => {
+        // The dropdown might be opening (avoid updates)
+        dropdownIsOpen = true;
+    });
+
+    addEventListenerWithTracking(noteList, 'blur', () => {
+        // The dropdown is closed (avoid updates)
+        dropdownIsOpen = false;
+        updateNoteList();
+    });
+
+    addEventListenerWithTracking(resultFilter, 'input', () => {
+        updateResultsArea();
+        sendSetting('filter', resultFilter.value);
+    });
+
+    addEventListenerWithTracking(resultFilter, 'keydown', (event) => {
+        if (event.key === 'Escape') {
+            if (resultFilter.value === '') {
+                tagFilter.focus();
+            } else {
+                // Clear the input and update the results area
+                resultFilter.value = '';
+                if (resultCount) {
+                    resultCount.style.display = 'none';
+                }
+                updateResultsArea();
+                sendSetting('filter', '');
+            }
         }
     });
-    // Handle right-click on tags in list
-    if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
-        createContextMenu(event, null, null, ['editQuery']);
-    } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
-        createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
-    } else if (event.target.matches('.itags-search-tag')) {
-        createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
-    } else if (event.target.type !== 'text') {
-        createContextMenu(event, null, null, []);
-    }
-});
 
-addEventListenerWithTracking(document, 'keydown', (event) => {
-    if (event.key === 'Escape') {
+    // Handle sort option selection
+    addEventListenerWithTracking(resultSort, 'change', (event) => {
+        if (resultSort.value === 'custom') {
+            // Get current sortBy and sortOrder values from last message
+            let currentSortBy = '';
+            let currentSortOrder = '';
+
+            if (lastMessage && lastMessage.message && lastMessage.message.sortBy) {
+                currentSortBy = lastMessage.message.sortBy;
+            }
+
+            if (lastMessage && lastMessage.message && lastMessage.message.sortOrder) {
+                currentSortOrder = lastMessage.message.sortOrder;
+            }
+
+            // Send message to show the sort dialog on the server side
+            webviewApi.postMessage({
+                name: 'showSortDialog',
+                currentSortBy: currentSortBy,
+                currentSortOrder: currentSortOrder
+            });
+
+            // Revert dropdown to previous value until dialog is confirmed
+            const prevValue = resultSort.getAttribute('data-prev-value') || 'modified';
+            resultSort.value = prevValue;
+
+        } else {
+            // Handle standard sort options (modified, created, title, notebook)
+            // Store selected value as previous for potential revert
+            resultSort.setAttribute('data-prev-value', resultSort.value);
+
+            // Check if we have a custom sort order and simplify it to first element only
+            const currentSortOrder = lastMessage?.message?.sortOrder;
+            if (currentSortOrder && currentSortOrder.includes(',')) {
+                // Extract first element from comma-separated order
+                const simplifiedOrder = currentSortOrder.toLowerCase().startsWith('a') ? 'asc' : 'desc';
+
+                // Update the display and send the simplified order
+                updateResultOrderDisplay(simplifiedOrder);
+                sendSetting('resultOrder', simplifiedOrder);
+            }
+
+            // Send setting update to trigger sorting on the backend
+            sendSetting('resultSort', resultSort.value);
+        }
+    });
+
+    addEventListenerWithTracking(resultOrder, 'click', () => {
+        // Check if we have a custom sort order by looking at the button's current display
+        const buttonContent = resultOrder.innerHTML.replace(/<\/?b>/g, ''); // Remove <b> tags
+        const isCustomSort = buttonContent.length > 1; // Multiple arrows = custom sort
+
+        if (isCustomSort) {
+            // For custom sort orders, get the current order from the title and toggle each element
+            const currentOrder = resultOrder.title; // Title contains the full sort order string
+            const orderArray = currentOrder.split(',').map(s => s.trim());
+            const toggledArray = orderArray.map(order => {
+                return order.toLowerCase().startsWith('a') ? 'desc' : 'asc';
+            });
+
+            const toggledOrder = toggledArray.join(',');
+
+            // Update display and send to backend
+            updateResultOrderDisplay(toggledOrder);
+            sendSetting('resultOrder', toggledOrder);
+        } else {
+            // Handle simple string sort orders
+            if (resultOrderState === 'asc') {
+                resultOrderState = 'desc';
+                resultOrder.innerHTML = '<b>↑</b>';  // Button shows the current state (desc)
+            } else if (resultOrderState === 'desc') {
+                resultOrderState = 'asc';
+                resultOrder.innerHTML = '<b>↓</b>';  // Button shows the current state (asc)
+            }
+
+            // Update visual indicator for simple sort order
+            resultOrder.title = resultOrderState;
+
+            // Send setting update to trigger sorting on the backend
+            sendSetting('resultOrder', resultOrderState);
+        }
+    });
+
+    addEventListenerWithTracking(resultToggle, 'click', () => {
+        if (resultToggleState === 'expand') {
+            collapseResults();
+            resultToggleState = 'collapse';
+            resultToggle.innerHTML = '>';  // Button shows the current state (collapse)
+            sendSetting('resultToggle', true);
+            return;
+
+        } else if (resultToggleState === 'collapse') {
+            expandResults();
+            resultToggleState = 'expand';
+            resultToggle.innerHTML = 'v';  // Button shows the current state (expand)
+            sendSetting('resultToggle', false);
+            return;
+        }
+    });
+
+    addEventListenerWithTracking(document, 'click', (event) => {
         const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
         contextMenu.forEach(menu => {
-            removeContextMenu(menu);
+            if (!menu.contains(event.target)) {
+                removeContextMenu(menu);
+            }
         });
-    }
-});
+    });
 
-webviewApi.postMessage({
-    name: 'initPanel',
-});
+    addEventListenerWithTracking(document, 'contextmenu', (event) => {
+        if (event.target.matches('.itags-search-renderedTag')) { return; }
+        if (event.target.matches('.itags-search-checkbox')) { return; }
+        if (event.target.matches('.itags-search-contextMenu')) { return; }
+        if (event.target.matches('.itags-search-contextSeparator')) { return; }
+        if (event.target.matches('.itags-search-contextCommand')) {
+            event.target.click();
+            return;
+        }
+        // Check if this is a note title element - if so, let its specific handler deal with it
+        if (event.target.tagName === 'H3' || event.target.closest('h3')) { return; }
+
+        const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+        contextMenu.forEach(menu => {
+            if (!menu.contains(event.target)) {
+                removeContextMenu(menu);
+            }
+        });
+        // Handle right-click on tags in list
+        if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
+            createContextMenu(event, null, null, ['editQuery']);
+        } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
+            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
+        } else if (event.target.matches('.itags-search-tag')) {
+            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+        } else if (event.target.type !== 'text') {
+            createContextMenu(event, null, null, []);
+        }
+    });
+
+    addEventListenerWithTracking(document, 'keydown', (event) => {
+        if (event.key === 'Escape') {
+            const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
+            contextMenu.forEach(menu => {
+                removeContextMenu(menu);
+            });
+        }
+    });
+}
+
+initPanel();
 
 // Add this helper function
 function removeContextMenu(menu) {
