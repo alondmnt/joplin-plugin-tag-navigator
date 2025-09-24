@@ -47,3 +47,29 @@ export function compareTagValues(aValue: string, bValue: string, valueDelim: str
 export function sortTags(tags: string[], valueDelim: string): string[] {
   return tags.sort((a, b) => compareTagValues(a, b, valueDelim));
 }
+
+// Map characters that are awkward in CSS selectors to readable class suffixes.
+const PREFIX_CLASS_MAP: Record<string, string> = {
+  '#': 'hash',
+  '@': 'at',
+  '+': 'plus',
+  '/': 'slash',
+};
+const CLASS_SAFE_CHAR = /^[A-Za-z0-9_-]$/;
+
+export function mapPrefixClass(tag: string): string {
+  if (!tag) return 'unknown';
+  const [prefix] = Array.from(tag);
+  if (!prefix) return 'unknown';
+
+  if (Object.prototype.hasOwnProperty.call(PREFIX_CLASS_MAP, prefix)) {
+    return PREFIX_CLASS_MAP[prefix];
+  }
+
+  if (CLASS_SAFE_CHAR.test(prefix)) {
+    return prefix;
+  }
+
+  const code = prefix.codePointAt(0);
+  return code != null ? `char-${code.toString(16)}` : 'unknown';
+}
