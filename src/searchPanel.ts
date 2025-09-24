@@ -3,7 +3,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardSortKeys, getStandardOrderKeys, getStandardGroupingKeys } from './settings';
-import { escapeRegex } from './utils';
+import { escapeRegex, mapPrefixClass } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
@@ -790,8 +790,12 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         processedSection = blocks.map((block, index) => {
           if (index % 2 === 1) return block;
           const lines = block.split('\n');
-          return lines.map((line, lineNumber) => 
-            replaceOutsideBackticks(line, tagRegex, `<span class="itags-search-renderedTag" data-line-number="${lineNumber}">$&</span>`)
+          return lines.map((line, lineNumber) =>
+            replaceOutsideBackticks(line, tagRegex, (match) => {
+              const normalizedMatch = match.trim();
+              const prefixClass = mapPrefixClass(normalizedMatch || match);
+              return `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}" data-line-number="${lineNumber}">${match}</span>`;
+            })
           ).join('\n');
         }).join('\n');
       }
@@ -827,13 +831,13 @@ function splitCodeBlocks(text: string): string[] {
  * Replaces or processes hashtags outside of backtick code blocks
  * @param text - Text to process
  * @param tagRegex - Regular expression for matching tags
- * @param replaceString - String to replace matches with
+ * @param replaceValue - Replacement string or function applied to matches
  * @returns Processed text with replacements
  */
 function replaceOutsideBackticks(
-  text: string, 
-  tagRegex: RegExp, 
-  replaceString: string
+  text: string,
+  tagRegex: RegExp,
+  replaceValue: string | ((substring: string, ...args: any[]) => string)
 ): string {
   // Split the input by capturing backticks and content within them
   const segments = text.split(REGEX.backtickContent);
@@ -843,7 +847,12 @@ function replaceOutsideBackticks(
     // Even indices are outside backticks; odd indices are content within backticks
     if (index % 2 === 0) {
       // Replace or mark the matches in this segment
-      const processedSegment = segment.replace(tagRegex, replaceString);
+      let processedSegment: string;
+      if (typeof replaceValue === 'function') {
+        processedSegment = segment.replace(tagRegex, replaceValue);
+      } else {
+        processedSegment = segment.replace(tagRegex, replaceValue);
+      }
       processedString += processedSegment;
     } else {
       // Directly concatenate segments within backticks without alteration

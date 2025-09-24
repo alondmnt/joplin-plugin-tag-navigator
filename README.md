@@ -83,7 +83,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Filtering results](#filtering-results)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
-- [Styling inline tags](#styling-inline-tags-in-the-markdown-preview)
+- [Styling inline tags](#styling-inline-tags)
 - [Keyboard shortcuts](#keyboard-shortcuts)
 - [Converting Joplin tags](#converting-joplin-tags)
 
@@ -376,19 +376,19 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 
 ![colour tags](img/tag-navigator-colours.png)
 
-### Styling inline tags in the Markdown preview
+### Styling inline tags
 
-The Markdown preview pane wraps every match in `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, or `//`, adds `itags-search-renderedTag--hash`, `--at`, `--plus`, or `--slash`. You may define their appearance in `userstyle.css`, e.g.:
+The Markdown preview pane and the Tag Navigator search panel wrap every matched tag in the class `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, `//`, or any other character, add `itags-search-renderedTag--hash`, `--at`, `--plus`, `--slash`, `--<other char>`. You may modify their appearance in `userstyle.css` (for Markdown preview), or in the `Search: Panel style` setting (for the plugin's search panel). For example:
 
 ```css
 /* optional: specify different sub-styles for each type of tag */
 .itags-search-renderedTag {
 	background-color: #a576b3ff;
-}
+} /* global style */
 
 .itags-search-renderedTag--at {
 	background-color: #6fae4a;
-}
+} /* type-specific style */
 
 .itags-search-renderedTag--plus {
 	background-color: #ae4a6f;
