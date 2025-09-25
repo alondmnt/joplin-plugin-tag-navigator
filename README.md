@@ -15,7 +15,7 @@ Type inline tags or frontmatter in the note editor. View your tagged paragraphs 
 
 ## Features
 
-This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in five ways:
+This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in six ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
     - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path.
@@ -40,6 +40,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
+6. It renders inline tags and front matter in the Markdown preview, and front matter in the Markdown editor. ([tips](#styling-inline-tags))
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
