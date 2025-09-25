@@ -46,11 +46,13 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Demos
 
+- [All video tutorials](https://www.youtube.com/playlist?list=PLV4DhNiuF20XCdqNEo1a190dkNFo69rd-)
 - [Inline tag search](#inline-tag-search)
 - [Saved search queries](#saved-search-queries)
+- [Sort results by tags, and date tags actions](https://www.youtube.com/watch?v=HvunHOc2zlM)
 - [Table view / database](#table-view--database)
+- [Kanban view](https://www.youtube.com/watch?v=e7HhQJjpEJg)
 - [Navigation panel](#navigation-panel)
-- [Tag insertion](#tag-insertion)
 
 ### Inline tag search
 
