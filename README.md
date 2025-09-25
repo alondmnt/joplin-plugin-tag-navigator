@@ -408,6 +408,7 @@ For the Markdown editor see Rich Markdown in the [Companion plugins](#companion-
 
 | Key | Action |
 | --- | ------ |
+| Ctrl + Alt + N | Toggle navigation panel |
 | Ctrl + Shift + T | Toggle search panel |
 | Ctrl + Shift + I | Focus on search panel (search tag / insert tag) |
 | Ctrl + Shift + R | Refresh the current note view |
