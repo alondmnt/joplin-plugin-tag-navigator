@@ -1,3 +1,14 @@
+# [v2.6.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.1)
+*Released on 2025-09-29T12:08:36Z*
+
+- improved: MD preview tag rendering supports custom regexes
+- improved: search panel tag rendering with separate CSS classes for each tag prefix
+- fixed: search panel toggling
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.0...v2.6.1
+
+---
+
 # [v.2.6.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.0)
 *Released on 2025-09-23T12:21:48Z*
 
@@ -6,10 +17,10 @@
 - added: highlight front matter in the Markdown editor (see settings)
 - fixed: front matter parsing logic
 
-Markdown editor:
+## Markdown editor
 <img width="671" height="298" src="https://github.com/user-attachments/assets/90c00cd4-afa1-43db-a928-7d969c42a770" />
 
-Markdown preview:
+## Markdown preview
 <img width="673" height="286" src="https://github.com/user-attachments/assets/91139881-f73f-4477-b073-8c4f120309c9" />
 
 
