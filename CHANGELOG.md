@@ -1,3 +1,15 @@
+# [v2.6.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.2)
+*Released on 2025-10-08T13:16:33Z*
+
+- fixed: mermaid rendering on mobile
+- improved: tag preview rendering at the token level
+- improved: tag preview rendering skips certain joplin text tokens
+- refactor: inline CSS styles for front matter and tag rendering
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.1...v2.6.2
+
+---
+
 # [v2.6.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.1)
 *Released on 2025-09-29T12:08:36Z*
 
