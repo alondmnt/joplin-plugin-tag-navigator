@@ -1,5 +1,6 @@
 import type { ContentScriptContext, MarkdownItContentScriptModule } from 'api/types';
 import { mapPrefixClass } from './utils';
+import { injectStyleChunk } from './styleInjector';
 
 const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
 const EXCLUDE_REGEX_SETTING_KEY = 'itags.excludeRegex';
@@ -9,35 +10,18 @@ const defTagRegex = /(^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
 
 // Inline default styling because the web app blocks loading plugin CSS assets.
 // Wrapped in a CSS layer so Joplin's userstyle.css can override without !important.
-const TAG_STYLE_CSS = [
-  '@layer itagsDefaults;',
-  '@layer itagsDefaults {',
-  '  .itags-search-renderedTag {',
-  '    background-color: #7698b3;',
-  '    color: #ffffff;',
-  '    padding: 0em 2px;',
-  '    border-radius: 5px;',
-  '    display: inline-block;',
-  '    margin-bottom: 2px;',
-  '    margin-top: 2px;',
-  '  }',
-  '}',
-].join('\n');
-
-function injectTagStyles(state: any, Token: any) {
-  if (!state) return;
-
-  if (!state.env) state.env = {};
-  if (state.env.itagsTagStyleInjected) {
-    return;
+const TAG_STYLE_CSS = `@layer itagsDefaults;
+@layer itagsDefaults {
+  .itags-search-renderedTag {
+    background-color: #7698b3;
+    color: #ffffff;
+    padding: 0em 2px;
+    border-radius: 5px;
+    display: inline-block;
+    margin-bottom: 2px;
+    margin-top: 2px;
   }
-
-  const styleToken = new Token('html_block', '', 0);
-  styleToken.content = `<style>\n${TAG_STYLE_CSS}\n</style>`;
-  state.tokens.unshift(styleToken);
-
-  state.env.itagsTagStyleInjected = true;
-}
+}`;
 
 function cloneRegex(pattern: RegExp | null): RegExp | null {
   if (!pattern) return null;
@@ -187,7 +171,7 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         const excludePattern = cloneRegex(activeExcludeRegex);
         const Token = state.Token;
 
-        injectTagStyles(state, Token);
+        injectStyleChunk(state, Token, TAG_STYLE_CSS);
 
         for (const token of state.tokens as TokenLike[]) {
           if (token.type !== 'inline' || !token.children) {
