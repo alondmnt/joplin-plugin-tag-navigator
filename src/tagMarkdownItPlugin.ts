@@ -12,6 +12,24 @@ function cloneRegex(pattern: RegExp | null): RegExp | null {
   return new RegExp(pattern.source, pattern.flags);
 }
 
+const SKIP_RENDERED_SUBSTRINGS = [
+  'class="mermaid"',
+  'joplin-source',
+  'joplin-editable',
+  'data-joplin-language=',
+  'data-joplin-source-open',
+  'data-joplin-source-close',
+];
+
+function shouldSkipRenderedFragment(rendered: string): boolean {
+  for (const marker of SKIP_RENDERED_SUBSTRINGS) {
+    if (rendered.includes(marker)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function compileTagRegex(value: unknown): RegExp {
   if (typeof value !== 'string' || value.trim() === '') {
     return defTagRegex;
@@ -36,6 +54,62 @@ function compileExcludeRegex(value: unknown): RegExp | null {
     console.warn('Tag Navigator: Invalid exclude regex, ignoring.', error);
     return null;
   }
+}
+
+type TokenLike = {
+  type: string;
+  tag?: string;
+  nesting?: number;
+  children?: TokenLike[];
+  meta?: Record<string, any> | null;
+};
+
+function markSkippableTextTokens(markdownIt: any) {
+  const SKIP_CONTAINER_TAGS = new Set(['code', 'pre', 'kbd', 'samp']);
+
+  markdownIt.core.ruler.after('inline', 'itags_mark_skippable_tokens', (state: any) => {
+    for (const token of state.tokens as TokenLike[]) {
+      if (token.type !== 'inline' || !token.children) {
+        continue;
+      }
+
+      const stack: string[] = [];
+      for (const child of token.children) {
+        const childType = child.type;
+
+        if (childType === 'code_inline' || childType === 'math_inline') {
+          if (!child.meta) child.meta = {};
+          child.meta.itagsSkip = true;
+          continue;
+        }
+
+        if (child.nesting === 1) {
+          const pushTag = child.tag || childType;
+          if (pushTag) stack.push(pushTag);
+          continue;
+        }
+
+        if (child.nesting === -1) {
+          stack.pop();
+          continue;
+        }
+
+        if (childType !== 'text') {
+          continue;
+        }
+
+        if (!stack.length) {
+          continue;
+        }
+
+        const withinSkipContainer = stack.some(tag => SKIP_CONTAINER_TAGS.has(tag));
+        if (withinSkipContainer) {
+          if (!child.meta) child.meta = {};
+          child.meta.itagsSkip = true;
+        }
+      }
+    }
+  });
 }
 
 function readSetting(pluginOptions: any, key: string, apply: (value: any) => void): void {
@@ -87,6 +161,8 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         }
       }
 
+      markSkippableTextTokens(markdownIt);
+
       const defaultRender =
         markdownIt.renderer.rules.text || ((tokens: any, idx: number) => tokens[idx].content);
 
@@ -102,6 +178,15 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         }
 
         const excludePattern = cloneRegex(activeExcludeRegex);
+
+        const token = tokens[idx];
+        if (token && token.meta && token.meta.itagsSkip) {
+          return rendered;
+        }
+
+        if (shouldSkipRenderedFragment(rendered)) {
+          return rendered;
+        }
 
         return rendered.replace(tagPattern, (match: string) => {
           if (!match) {
@@ -120,6 +205,8 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         });
       };
     },
-    assets: () => [{ name: 'tagMarkdown.css' }],
+    assets: () => [
+      { name: 'tagMarkdown.css' },
+    ],
   };
 }
