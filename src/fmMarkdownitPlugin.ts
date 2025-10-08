@@ -67,6 +67,9 @@ export default function(_context: ContentScriptContext): MarkdownItContentScript
     },
 
     // Ship CSS via assets (see CSS below)
-    assets: () => [{ name: 'fmMarkdown.css' }],
+    assets: () => [
+      { name: 'fmMarkdown.css' },
+      { name: 'mobileMermaidFix.js' },
+    ],
   };
 }

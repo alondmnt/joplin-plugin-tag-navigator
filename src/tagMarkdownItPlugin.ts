@@ -255,6 +255,7 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
     },
     assets: () => [
       { name: 'tagMarkdown.css' },
+      { name: 'mobileMermaidFix.js' },
     ],
   };
 }
