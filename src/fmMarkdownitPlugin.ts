@@ -6,6 +6,72 @@ const EXPAND_SETTING_KEY = 'itags.renderFrontMatterDetails';
 // Captures the content between the first and second '---' lines.
 const FM_RE = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/;
 
+// Inline default styling because web builds reject CSS assets from plugin directories.
+// Wrap in the same layer as tag defaults so userstyle.css rules win automatically.
+const FM_STYLE_CSS = [
+  '@layer itagsDefaults {',
+  '  .fm-code {',
+  '    border: 1px solid var(--joplin-divider-color);',
+  '    border-radius: 10px;',
+  '    background: var(--joplin-background-color3);',
+  '    margin: 6px 0 8px;',
+  '    overflow: hidden;',
+  '  }',
+  '',
+  '  .fm-code > summary {',
+  '    list-style: none;',
+  '    cursor: pointer;',
+  '    padding: 6px 10px;',
+  '    background: var(--joplin-background-color);',
+  '    border-bottom: 1px solid var(--joplin-divider-color);',
+  '    font-weight: 600;',
+  '    position: relative;',
+  '    padding-right: 1.4rem;',
+  '  }',
+  '  .fm-code > summary::marker { display: none; }',
+  '  .fm-code > summary::after {',
+  "    content: '';",
+  '    position: absolute; right: .6rem; top: 50%;',
+  '    width: 6px; height: 6px;',
+  '    border-right: 2px solid currentColor;',
+  '    border-bottom: 2px solid currentColor;',
+  '    transform: translateY(-50%) rotate(-45deg);',
+  '    opacity: .6; transition: transform .15s ease, opacity .15s ease;',
+  '  }',
+  '  .fm-code[open] > summary::after {',
+  '    transform: translateY(-50%) rotate(45deg);',
+  '    opacity: .85;',
+  '  }',
+  '',
+  '  .fm-code pre, .fm-code code {',
+  '    margin: 0;',
+  '  }',
+  '  .fm-code pre {',
+  '    padding: 8px 10px;',
+  '    border-radius: 0;',
+  '  }',
+  '',
+  '  .fm-code > summary .itags-search-renderedTag {',
+  '    margin-left: .5rem;',
+  '  }',
+  '}',
+].join('\n');
+
+function injectFrontMatterStyles(state: any, Token: any) {
+  if (!state) return;
+
+  if (!state.env) state.env = {};
+  if (state.env.itagsFrontMatterStyleInjected) {
+    return;
+  }
+
+  const styleToken = new Token('html_block', '', 0);
+  styleToken.content = `<style>\n${FM_STYLE_CSS}\n</style>`;
+  state.tokens.unshift(styleToken);
+
+  state.env.itagsFrontMatterStyleInjected = true;
+}
+
 function wrapFrontMatterAsCode(src: string, expandDetails: boolean): string | null {
   const m = FM_RE.exec(src);
   if (!m) return null;
@@ -64,11 +130,15 @@ export default function(_context: ContentScriptContext): MarkdownItContentScript
         const replaced = wrapFrontMatterAsCode(state.src, expandDetailsSetting);
         if (replaced != null) state.src = replaced;
       });
+
+      md.core.ruler.after('block', 'fm_code_details_style', (state: any) => {
+        const Token = state.Token;
+        injectFrontMatterStyles(state, Token);
+      });
     },
 
-    // Ship CSS via assets (see CSS below)
+    // Keep the Mermaid helper around for mobile rendering quirks.
     assets: () => [
-      { name: 'fmMarkdown.css' },
       { name: 'mobileMermaidFix.js' },
     ],
   };
