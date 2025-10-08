@@ -5,29 +5,11 @@ const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
 const EXCLUDE_REGEX_SETTING_KEY = 'itags.excludeRegex';
 
 // Default fallback regex for matching inline tags.
-const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
+const defTagRegex = /(^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
 
 function cloneRegex(pattern: RegExp | null): RegExp | null {
   if (!pattern) return null;
   return new RegExp(pattern.source, pattern.flags);
-}
-
-const SKIP_RENDERED_SUBSTRINGS = [
-  'class="mermaid"',
-  'joplin-source',
-  'joplin-editable',
-  'data-joplin-language=',
-  'data-joplin-source-open',
-  'data-joplin-source-close',
-];
-
-function shouldSkipRenderedFragment(rendered: string): boolean {
-  for (const marker of SKIP_RENDERED_SUBSTRINGS) {
-    if (rendered.includes(marker)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function compileTagRegex(value: unknown): RegExp {
@@ -62,6 +44,7 @@ type TokenLike = {
   nesting?: number;
   children?: TokenLike[];
   meta?: Record<string, any> | null;
+  content?: string;
 };
 
 function markSkippableTextTokens(markdownIt: any) {
@@ -163,47 +146,112 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
 
       markSkippableTextTokens(markdownIt);
 
-      const defaultRender =
-        markdownIt.renderer.rules.text || ((tokens: any, idx: number) => tokens[idx].content);
-
-      markdownIt.renderer.rules.text = (tokens: any, idx: number, options: any, env: any, self: any) => {
-        const rendered = defaultRender(tokens, idx, options, env, self);
-        if (typeof rendered !== 'string' || !rendered) {
-          return rendered;
-        }
-
-        const tagPattern = cloneRegex(activeTagRegex);
-        if (!tagPattern) {
-          return rendered;
+      markdownIt.core.ruler.after('itags_mark_skippable_tokens', 'itags_wrap_tags', (state: any) => {
+        const basePattern = cloneRegex(activeTagRegex);
+        if (!basePattern) {
+          return;
         }
 
         const excludePattern = cloneRegex(activeExcludeRegex);
+        const Token = state.Token;
 
-        const token = tokens[idx];
-        if (token && token.meta && token.meta.itagsSkip) {
-          return rendered;
-        }
-
-        if (shouldSkipRenderedFragment(rendered)) {
-          return rendered;
-        }
-
-        return rendered.replace(tagPattern, (match: string) => {
-          if (!match) {
-            return match;
+        for (const token of state.tokens as TokenLike[]) {
+          if (token.type !== 'inline' || !token.children) {
+            continue;
           }
 
-          if (excludePattern) {
-            excludePattern.lastIndex = 0;
-            if (excludePattern.test(match)) {
-              return match;
+          const newChildren: TokenLike[] = [];
+
+          for (const child of token.children) {
+            if (child.type !== 'text' || (child.meta && child.meta.itagsSkip)) {
+              newChildren.push(child);
+              continue;
+            }
+
+            const text = child.content;
+            const pattern = cloneRegex(basePattern);
+            if (!pattern) {
+              newChildren.push(child);
+              continue;
+            }
+
+            let cursor = 0;
+            let matched = false;
+            let match: RegExpExecArray | null;
+
+            while ((match = pattern.exec(text)) !== null) {
+              if (pattern.lastIndex === match.index) {
+                pattern.lastIndex += 1;
+              }
+
+              const fullMatch = match[0];
+              const hashIndexInMatch = fullMatch.indexOf('#');
+              const prefixPart = hashIndexInMatch > 0 ? fullMatch.slice(0, hashIndexInMatch) : '';
+              const tagPart = hashIndexInMatch >= 0 ? fullMatch.slice(hashIndexInMatch) : fullMatch;
+
+              const matchStart = match.index;
+              const matchEnd = matchStart + fullMatch.length;
+
+              if (matchStart > cursor) {
+                const leadingText = text.slice(cursor, matchStart);
+                if (leadingText) {
+                  const leadingToken = new Token('text', '', 0);
+                  leadingToken.content = leadingText;
+                  newChildren.push(leadingToken);
+                }
+              }
+
+              if (prefixPart) {
+                const prefixToken = new Token('text', '', 0);
+                prefixToken.content = prefixPart;
+                newChildren.push(prefixToken);
+              }
+
+              let handled = false;
+              if (tagPart) {
+                if (excludePattern) {
+                  excludePattern.lastIndex = 0;
+                  if (excludePattern.test(tagPart)) {
+                    const textToken = new Token('text', '', 0);
+                    textToken.content = tagPart;
+                    newChildren.push(textToken);
+                    handled = true;
+                  }
+                }
+
+                if (!handled) {
+                  const open = new Token('html_inline', '', 0);
+                  const prefixClass = mapPrefixClass(tagPart);
+                  open.content = `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}">`;
+                  const textToken = new Token('text', '', 0);
+                  textToken.content = tagPart;
+                  const close = new Token('html_inline', '', 0);
+                  close.content = '</span>';
+                  newChildren.push(open, textToken, close);
+                  handled = true;
+                }
+              }
+
+              const consumed = matchEnd;
+              cursor = consumed;
+              matched = true;
+            }
+
+            if (!matched) {
+              newChildren.push(child);
+            } else if (cursor < text.length) {
+              const trailing = text.slice(cursor);
+              if (trailing) {
+                const trailingToken = new Token('text', '', 0);
+                trailingToken.content = trailing;
+                newChildren.push(trailingToken);
+              }
             }
           }
 
-          const prefixClass = mapPrefixClass(match);
-          return `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}">${match}</span>`;
-        });
-      };
+          token.children = newChildren;
+        }
+      });
     },
     assets: () => [
       { name: 'tagMarkdown.css' },
