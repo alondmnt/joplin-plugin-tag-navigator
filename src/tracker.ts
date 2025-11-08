@@ -1,5 +1,6 @@
 import joplin from 'api';
 import { ModelType } from '../api/types';
+import { clearApiResponse } from './memory';
 import { sortTags, escapeRegex } from './utils';
 
 /**
@@ -39,8 +40,20 @@ export async function saveTagConversionData(
  */
 export async function getTagConversionData(noteId: string): Promise<TagConversionData | null> {
   try {
-    const data = await joplin.data.userDataGet<TagConversionData>(ModelType.Note, noteId, USER_DATA_KEY);
-    return data || null;
+    let data = await joplin.data.userDataGet<TagConversionData>(ModelType.Note, noteId, USER_DATA_KEY);
+    // Create a copy to avoid holding reference to original userData object
+    const result = data ? { ...data } : null;
+    // Clear the original userData object if it exists
+    if (data && typeof data === 'object') {
+      try {
+        for (const key of Object.keys(data)) {
+          delete (data as any)[key];
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+    return result;
   } catch (error) {
     console.debug(`No tag conversion data found for note ${noteId}:`, error);
     return null;
@@ -123,6 +136,7 @@ export async function getAllTags(): Promise<{ id: string; title: string }[]> {
     });
     allTags.push(...tags.items);
     hasMore = tags.has_more;
+    clearApiResponse(tags); // Clear API response
   }
   return allTags;
 }
@@ -153,6 +167,7 @@ export async function clearAllTagConversionData(): Promise<void> {
           console.debug(`Failed to clear tag conversion data for note ${note.id}:`, error);
         }
       }
+      clearApiResponse(notes); // Clear API response
     }
   } catch (error) {
     console.error('Failed to clear tag conversion data:', error);

@@ -2,7 +2,7 @@ import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { sortTags } from './utils';
 import { ConversionSettings, TagSettings, getConversionSettings, getTagSettings } from './settings';
-import { clearObjectReferences } from './memory';
+import { clearObjectReferences, clearApiResponse } from './memory';
 import { 
   saveTagConversionData, 
   getTagConversionData, 
@@ -66,8 +66,8 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
       }
       note = clearObjectReferences(note);
     }
-    // Remove the reference to the notes to avoid memory leaks
-    notes.items = null;
+    // Clear the API response to prevent memory leaks
+    clearApiResponse(notes);
   }
   allTags = clearObjectReferences(allTags);
 }
@@ -102,8 +102,8 @@ export async function convertAllNotesToInlineTags(
       await convertNoteToInlineTags(note, conversionSettings, tagSettings);
       note = clearObjectReferences(note);
     }
-    // Remove the reference to the notes to avoid memory leaks
-    notes.items = null;
+    // Clear the API response to prevent memory leaks
+    clearApiResponse(notes);
   }
 }
 
@@ -147,6 +147,7 @@ export async function convertNoteToJoplinTags(
     // Get current Joplin tags
     let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
     const noteTagNames = noteTags.items.map(tag => tag.title);
+    clearApiResponse(noteTags); // Clear immediately after extracting data
 
     if (previousData) {
       // Compute diff based on previous conversion
@@ -165,13 +166,12 @@ export async function convertNoteToJoplinTags(
       await removeJoplinTags(note.id, tagsToRemove);
     }
 
-    noteTags = clearObjectReferences(noteTags);
   } else {
     // Simple mode: just get current Joplin tags and filter out existing ones
     let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
     const noteTagNames = noteTags.items.map(tag => tag.title);
     tagsToAdd = currentInlineTags.filter(tag => !noteTagNames.includes(tag));
-    noteTags = clearObjectReferences(noteTags);
+    clearApiResponse(noteTags); // Clear API response
   }
 
   // Add new Joplin tags
@@ -231,6 +231,7 @@ export async function convertNoteToInlineTags(
 
   let noteTags = await joplin.data.get(['notes', note.id, 'tags'], { fields: ['id', 'title'] });
   const currentJoplinTags = noteTags.items.map((tag: any) => tag.title);
+  clearApiResponse(noteTags); // Clear API response immediately
 
   // Get tag settings if not provided
   if (!tagSettings) {

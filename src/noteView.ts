@@ -5,7 +5,7 @@ import { formatFrontMatter, loadQuery, QueryRecord, REGEX as REGEX_SEARCH } from
 import { GroupedResult, runSearch, normalizeIndentation, sortResults } from './search';
 import { NoteDatabase } from './db';
 import { processResultsForKanban, buildKanban, sortKanbanItems } from './kanban';
-import { clearObjectReferences } from './memory';
+import { clearObjectReferences, clearApiResponse } from './memory';
 
 export const viewList = ['list', 'table', 'kanban'];
 

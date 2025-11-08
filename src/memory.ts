@@ -1,6 +1,14 @@
 /**
- * Simplified memory management for the Tag Navigator plugin
- * Handles cleanup of timers and provides basic cleanup functionality
+ * Memory management for the Tag Navigator plugin
+ * 
+ * This module provides memory leak prevention utilities specifically designed
+ * for Joplin plugins that use the Data API extensively. It implements the
+ * patterns from the Memory Leak Prevention Guide to ensure stable memory usage.
+ * 
+ * Key functions:
+ * - clearApiResponse(): Clears joplin.data.get() response objects
+ * - clearObjectReferences(): Enhanced object cleanup with circular reference handling
+ * - MemoryManager: Timer and resource management with automatic cleanup
  */
 
 /**
@@ -127,33 +135,67 @@ export function getMemoryManager(): MemoryManager {
 }
 
 /**
- * Basic object reference cleaner (keeps it simple - let GC handle most cases)
+ * Clears API response objects to prevent memory leaks from Joplin's Data API
+ * Use this immediately after extracting data from joplin.data.get() responses
  */
-export function clearObjectReferences<T extends Record<string, any>>(
-  obj: T | null, 
-  visited: Set<any> = new Set()
-): null {
-  if (!obj || typeof obj !== 'object' || visited.has(obj)) {
+export function clearApiResponse(response: any): null {
+  if (!response || typeof response !== 'object') {
     return null;
   }
+  
+  try {
+    // Clear items array if present (common in paginated responses)
+    if (Array.isArray(response.items)) {
+      response.items.length = 0;
+    }
+    // Clear common pagination fields
+    delete response.items;
+    delete response.has_more;
+    delete response.page;
+    delete response.limit;
+  } catch {
+    // Ignore errors
+  }
+  
+  return null;
+}
 
+/**
+ * Enhanced object reference cleaner that handles circular references and various data types
+ * Use this after processing large objects like note bodies, search results, or userData
+ */
+export function clearObjectReferences<T extends Record<string, any>>(
+  obj: T | null | undefined,
+  visited: WeakSet<object> = new WeakSet()
+): null {
+  if (!obj || typeof obj !== 'object') {
+    return null;
+  }
+  if (visited.has(obj)) {
+    return null;
+  }
   visited.add(obj);
 
   try {
     if (Array.isArray(obj)) {
-      obj.length = 0; // Clear array
+      obj.length = 0;  // Clear all elements
+    } else if (obj instanceof Map) {
+      obj.clear();
+    } else if (obj instanceof Set) {
+      obj.clear();
     } else {
       // Clear object properties
-      for (const prop in obj) {
-        if (obj.hasOwnProperty(prop)) {
-          delete obj[prop];
+      for (const key of Object.keys(obj)) {
+        try {
+          delete obj[key];
+        } catch {
+          // Ignore readonly properties
         }
       }
     }
   } catch (error) {
-    // Ignore errors - GC will handle it
+    // Silently ignore errors
   }
-
   return null;
 }
 

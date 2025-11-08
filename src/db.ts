@@ -2,7 +2,7 @@ import joplin from 'api';
 import { parseLinkLines, parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { loadQuery } from './searchPanel';
 import { TagSettings, getTagSettings } from './settings';
-import { clearObjectReferences } from './memory';
+import { clearObjectReferences, clearApiResponse } from './memory';
 
 /**
  * Manages the singleton instance of the NoteDatabase
@@ -439,8 +439,8 @@ export async function processAllNotes() {
       notesToUpdate.add(note.id);
       clearObjectReferences(note);
     }
-    // Clear the entire notes object
-    clearObjectReferences(notes);
+    // Clear the API response to prevent memory leaks
+    clearApiResponse(notes);
   }
 
   db.removeNonExistingNotes();

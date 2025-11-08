@@ -11,7 +11,7 @@ import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults,
 import { RELEASE_NOTES } from './release';
 import { parseDateTag } from './parser';
 import { clearAllTagConversionData } from './tracker';
-import { clearObjectReferences, createManagedInterval, getMemoryManager } from './memory';
+import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemoryManager } from './memory';
 
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
@@ -548,8 +548,11 @@ joplin.plugins.register({
 
 
           const folderInfo = await joplin.data.get(['folders', selectedFolder.id], { fields: ['id', 'title'] });
+          const folderTitle = folderInfo.title; // Extract title before clearing
+          clearApiResponse(folderInfo); // Clear API response
+          
           const confirm = await joplin.views.dialogs.showMessageBox(
-            `Exclude "${folderInfo.title}" and all its sub-notebooks from Tag Navigator?`
+            `Exclude "${folderTitle}" and all its sub-notebooks from Tag Navigator?`
           );
           
           if (confirm === 0) {
@@ -575,8 +578,11 @@ joplin.plugins.register({
 
 
           const folderInfo = await joplin.data.get(['folders', selectedFolder.id], { fields: ['id', 'title'] });
+          const folderTitle = folderInfo.title; // Extract title before clearing
+          clearApiResponse(folderInfo); // Clear API response
+          
           const confirm = await joplin.views.dialogs.showMessageBox(
-            `Un-exclude "${folderInfo.title}" and all its sub-notebooks in Tag Navigator?`
+            `Un-exclude "${folderTitle}" and all its sub-notebooks in Tag Navigator?`
           );
           
           if (confirm === 0) {

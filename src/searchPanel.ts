@@ -8,7 +8,7 @@ import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 import { validatePanelMessage, ValidationError } from './validation';
-import { clearObjectReferences, createManagedTimeout } from './memory';
+import { clearObjectReferences, clearApiResponse, createManagedTimeout } from './memory';
 
 // Cached markdown-it instance
 const md = new MarkdownIt({ 
@@ -938,6 +938,7 @@ export async function setCheckboxState(
   // checked: A boolean indicating the desired state of the checkbox (true for checked, false for unchecked)
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
+  clearApiResponse(note); // Clear API response after extracting data
   const line = lines[message.line];
 
   // Remove the leading checkbox from the text
@@ -1103,6 +1104,7 @@ export async function replaceTagInText(
   }
   let note = await joplin.data.get(['notes', externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
+  clearApiResponse(note); // Clear API response after extracting data
 
   for (let i = 0; i < lineNumbers.length; i++) {
     const line = lines[lineNumbers[i]];
@@ -1133,6 +1135,7 @@ export async function addTagToText(
 ): Promise<void> {
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
   const lines: string[] = note.body.split('\n');
+  clearApiResponse(note); // Clear API response after extracting data
   const line = lines[message.line];
 
   // Check the line to see if it contains the text
@@ -1163,6 +1166,7 @@ async function updateNote(
 ): Promise<void> {
   let selectedNote = await joplin.workspace.selectedNote();
   let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'] });
+  clearApiResponse(targetNote); // Clear API response after getting note
 
   if (newBody !== targetNote.body) {
     await joplin.data.put(['notes', message.externalId], null, { body: newBody });
@@ -1202,6 +1206,7 @@ export async function saveQuery(
   let note:any = null;
   if (noteId) {
     note = await joplin.data.get(['notes', noteId], { fields: ['title', 'body', 'id'] });
+    clearApiResponse(note); // Clear API response after getting note
   } else {
     note = await joplin.workspace.selectedNote();
   }

@@ -3,7 +3,7 @@ import { getResultSettings, getTagSettings, TagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
 import { compareTagValues, sortTags } from './utils';
-import { clearObjectReferences } from './memory';
+import { clearObjectReferences, clearApiResponse } from './memory';
 
 /**
  * Represents a search query component
@@ -341,11 +341,14 @@ async function getTextAndTitleByGroup(
   let notebook = folder.title + '/';
   if (fullPath) {
     while (folder.parent_id) {
-      folder = await joplin.data.get(['folders', folder.parent_id], { fields: ['title', 'parent_id'] });
-      notebook = folder.title + '/' + notebook;
+      const parentFolder = await joplin.data.get(['folders', folder.parent_id], { fields: ['title', 'parent_id'] });
+      notebook = parentFolder.title + '/' + notebook;
+      clearObjectReferences(folder); // Clear previous folder
+      folder = parentFolder;
     }
     notebook = '/' + notebook;
   }
+  clearObjectReferences(folder); // Clear final folder reference
   const lines: string[] = note.body.split('\n');
   const [groupedLines, groupTitleLine] = await groupLines(lines, result, groupingMode);
 

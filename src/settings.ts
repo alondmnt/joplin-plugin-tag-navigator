@@ -1,5 +1,6 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
+import { clearApiResponse } from './memory';
 import { defTagRegex } from './parser';
 import { escapeRegex } from './utils';
 
@@ -939,6 +940,7 @@ export async function getAllSubNotebookIds(notebookId: string): Promise<string[]
       });
       hasMore = folders.has_more;
       allFolders.push(...folders.items);
+      clearApiResponse(folders); // Clear API response
     }
     
     // Now iteratively find all children, handling deep nesting and any order
