@@ -48,6 +48,9 @@ export interface TagSettings {
   excludeRegex: RegExp;    // Regular expression for excluding tags
   minCount: number;        // Minimum number of occurrences for a tag to be included
   colorTag: string;        // Tag for coloring the results in the search panel
+  todayTag: string;        // Today tag pattern (e.g., '#today' or '//today')
+  monthTag: string;        // Month tag pattern (e.g., '#month' or '//month')
+  weekTag: string;         // Week tag pattern (e.g., '#week' or '//week')
   todayTagRegex: RegExp;   // Regex for today's date
   monthTagRegex: RegExp;   // Regex for month's date
   weekTagRegex: RegExp;    // Regex for week's date
@@ -221,6 +224,9 @@ export async function getTagSettings(): Promise<TagSettings> {
     excludeRegex,
     minCount: settings['itags.minCount'] as number || 1,
     colorTag: settings['itags.colorTag'] as string || '#color=',
+    todayTag,
+    monthTag,
+    weekTag,
     todayTagRegex,
     monthTagRegex,
     weekTagRegex,

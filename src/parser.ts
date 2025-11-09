@@ -364,27 +364,19 @@ function getWeekStartWithIncrement(date: Date, dayIncrement: number, weekStartDa
 }
 
 /**
- * Processes a date tag according to settings
- * @param tag The tag to process
+ * Helper function to apply date arithmetic to a single tag part
+ * @param part The tag part to process
  * @param tagSettings Configuration for tag processing
- * @returns Processed tag string with date calculations applied
+ * @param now Current date
+ * @param keepPrefix Whether to keep the tag prefix in the result (true for root tag, false for nested parts)
+ * @returns Processed tag part with date calculations applied
  */
-export function parseDateTag(tag: string, tagSettings: TagSettings): string {
-  // Early return for empty tags
-  if (!tag) return tag;
-  
-  // Validate required settings
-  if (!tagSettings?.todayTagRegex || !tagSettings?.monthTagRegex || !tagSettings?.weekTagRegex) {
-    console.warn('Missing required regex patterns in tagSettings');
-    return tag;
-  }
-
-  // Cache the current date to avoid creating multiple Date objects
-  const now = new Date();
+function processDateTagPart(part: string, tagSettings: TagSettings, now: Date, keepPrefix: boolean = true): string {
+  console.log('[processDateTagPart] Input:', part, 'keepPrefix:', keepPrefix);
   
   // Process today tags with day arithmetic using full date format
-  let processedTag = processDateTagPattern(
-    tag,
+  let processed = processDateTagPattern(
+    part,
     tagSettings.todayTagRegex,
     (date, days) => {
       date.setDate(date.getDate() + days);
@@ -395,9 +387,11 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
     tagSettings.dateFormat
   );
 
+  console.log('[processDateTagPart] After todayTagRegex:', processed);
+
   // Process month tags with month arithmetic using dedicated month format
-  processedTag = processDateTagPattern(
-    processedTag,
+  processed = processDateTagPattern(
+    processed,
     tagSettings.monthTagRegex,
     getMonthWithIncrement,
     tagSettings,
@@ -406,8 +400,8 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
   );
 
   // Process week tags with day arithmetic using dedicated week format
-  processedTag = processDateTagPattern(
-    processedTag,
+  processed = processDateTagPattern(
+    processed,
     tagSettings.weekTagRegex,
     (date, days) => getWeekStartWithIncrement(date, days, tagSettings.weekStartDay),
     tagSettings,
@@ -415,7 +409,114 @@ export function parseDateTag(tag: string, tagSettings: TagSettings): string {
     tagSettings.weekFormat
   );
 
-  return processedTag;
+  // Strip tag prefix from nested parts (e.g., #deadline/#today+30 → #deadline/2025-12-09)
+  // Note: This assumes date patterns use the same prefix as tagPrefix.
+  // If users customize date patterns with different prefixes, they should adjust dateFormat accordingly.
+  if (!keepPrefix && processed.startsWith(tagSettings.tagPrefix)) {
+    console.log('[processDateTagPart] Stripping prefix from:', processed);
+    processed = processed.substring(tagSettings.tagPrefix.length);
+  }
+
+  console.log('[processDateTagPart] Final result:', processed);
+  return processed;
+}
+
+/**
+ * Processes a path segment (could be basePath or valuePart) by splitting on '/' and processing each part
+ * @param pathSegment The path segment to process (e.g., "deadline/today" or "today/child")
+ * @param tagSettings Configuration for tag processing
+ * @param now Current date
+ * @param isRoot Whether this is the root path (true) or a value part (false)
+ * @returns Processed path segment
+ */
+function processPathSegment(pathSegment: string, tagSettings: TagSettings, now: Date, isRoot: boolean = true): string {
+  if (!pathSegment) return pathSegment;
+  
+  if (pathSegment.includes('/')) {
+    // Split by '/', process each part, then rejoin
+    return pathSegment
+      .split('/')
+      .map((part, index) => {
+        // Keep prefix only for the first part of a root path
+        const keepPrefix = isRoot && index === 0;
+        return processDateTagPart(part, tagSettings, now, keepPrefix);
+      })
+      .join('/');
+  }
+  
+  // Single part, process directly
+  // Keep prefix only if this is the root path
+  return processDateTagPart(pathSegment, tagSettings, now, isRoot);
+}
+
+/**
+ * Processes a date tag according to settings, supporting date arithmetic in nested tag paths
+ * @param tag The tag to process (can be nested like #deadline/#today+30)
+ * @param tagSettings Configuration for tag processing
+ * @returns Processed tag string with date calculations applied
+ * 
+ * Examples:
+ * - #today → #2025-11-09
+ * - #deadline/#today+30 → #deadline/2025-12-09
+ * - #parent/child=#today → #parent/child=2025-11-09
+ * - #parent=#today/child → #parent=2025-11-09/child
+ */
+export function parseDateTag(tag: string, tagSettings: TagSettings): string {
+  // Early return for empty tags
+  if (!tag) return tag;
+  
+  // Validate required settings
+  if (!tagSettings?.todayTagRegex || !tagSettings?.monthTagRegex || !tagSettings?.weekTagRegex) {
+    console.warn('Missing required date patterns in tagSettings');
+    return tag;
+  }
+
+  // Cache the current date to avoid creating multiple Date objects
+  const now = new Date();
+  
+  console.log('[parseDateTag] Input:', tag);
+  
+  // Handle nested tags or tags with values by processing each part separately
+  // Note: If any date tag patterns contain '/', we should not treat '/' as a nesting delimiter
+  // This allows using date prefixes like '//' without breaking nesting for regular tags
+  const dateTagsContainSlash = tagSettings.todayTag.includes('/') || 
+                                 tagSettings.monthTag.includes('/') || 
+                                 tagSettings.weekTag.includes('/');
+  const hasNesting = tagSettings.nestedTags && tag.includes('/') && !dateTagsContainSlash;
+  const valueDelimIndex = tag.indexOf(tagSettings.valueDelim);
+  const hasValue = valueDelimIndex !== -1;
+  
+  console.log('[parseDateTag] hasNesting:', hasNesting, 'hasValue:', hasValue, 'dateTagsContainSlash:', dateTagsContainSlash);
+  
+  if (hasNesting || hasValue) {
+    if (hasValue) {
+      // Split by value delimiter (e.g., "parent/child=value" or "parent=value")
+      const basePath = tag.substring(0, valueDelimIndex);
+      const valuePart = tag.substring(valueDelimIndex + 1);
+      
+      console.log('[parseDateTag] Value case - basePath:', basePath, 'valuePart:', valuePart);
+      
+      // Process both parts (basePath keeps prefix, valuePart strips it)
+      const processedBase = processPathSegment(basePath, tagSettings, now, true);
+      const processedValue = processPathSegment(valuePart, tagSettings, now, false);
+      
+      const result = processedBase + tagSettings.valueDelim + processedValue;
+      console.log('[parseDateTag] Value result:', result);
+      return result;
+    }
+    
+    // Has nesting but no value: process entire tag as a nested path
+    console.log('[parseDateTag] Nested path case');
+    const result = processPathSegment(tag, tagSettings, now, true);
+    console.log('[parseDateTag] Nested result:', result);
+    return result;
+  }
+  
+  // Flat tag (no nesting, no value) - process directly, keeping prefix
+  console.log('[parseDateTag] Flat tag case');
+  const result = processDateTagPart(tag, tagSettings, now, true);
+  console.log('[parseDateTag] Flat result:', result);
+  return result;
 }
 
 /**
