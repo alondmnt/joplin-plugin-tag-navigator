@@ -414,6 +414,10 @@ function clearNoteStateForNewResults() {
             noteState: JSON.stringify(noteState)
         });
     }
+    
+    // Clear temporary data structures
+    currentKeys.clear();
+    keysToRemove.length = 0;
 }
 
 // Update areas
@@ -548,6 +552,10 @@ function parseFilter(filter, min_chars=1) {
     const words = filter.replace('"', '').toLowerCase()
         .split(' ').filter(word => word.length >= min_chars)
         .concat(quotes);
+    
+    // Clear quotes array to help GC
+    quotes.length = 0;
+    
     return words;
 }
 

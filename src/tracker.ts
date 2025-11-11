@@ -85,10 +85,16 @@ export function computeTagDiff(currentTags: string[], previousTags: string[]): {
   const currentSet = new Set(currentTags);
   const previousSet = new Set(previousTags);
   
-  return {
+  const result = {
     toAdd: currentTags.filter(tag => !previousSet.has(tag)),
     toRemove: previousTags.filter(tag => !currentSet.has(tag))
   };
+  
+  // Clear Sets
+  currentSet.clear();
+  previousSet.clear();
+  
+  return result;
 }
 
 /**
@@ -115,6 +121,9 @@ export async function removeJoplinTags(noteId: string, tagsToRemove: string[]): 
         }
       }
     }
+    
+    // Clear the Map
+    tagMap.clear();
   } catch (error) {
     console.error(`Failed to remove Joplin tags from note ${noteId}:`, error);
   }

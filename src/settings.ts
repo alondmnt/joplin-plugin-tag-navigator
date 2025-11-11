@@ -962,6 +962,9 @@ export async function getAllSubNotebookIds(notebookId: string): Promise<string[]
         }
       }
     }
+    
+    // Clear the temporary array
+    allFolders.length = 0;
   } catch (error) {
     console.error('Error getting sub-notebook IDs:', error);
   }

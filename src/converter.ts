@@ -203,6 +203,10 @@ export async function convertNoteToJoplinTags(
         id: note.id
       });
     }
+    
+    // Clear Sets
+    allTagNamesSet.clear();
+    tagsToAddSet.clear();
   }
 
   // Save conversion data
@@ -328,6 +332,12 @@ export async function convertNoteToInlineTags(
     }
 
     await joplin.data.put(['notes', note.id], null, { body: updatedBody });
+    
+    // Clear arrays
+    lines.length = 0;
+    if (filteredLines !== lines) {
+      filteredLines.length = 0;
+    }
   }
 
   noteTags = clearObjectReferences(noteTags);

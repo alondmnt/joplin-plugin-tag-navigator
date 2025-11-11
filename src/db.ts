@@ -470,6 +470,9 @@ export async function processAllNotes() {
     note = clearObjectReferences(note);
   }
 
+  // Clear the Set
+  notesToUpdate.clear();
+
   db.filterTags(tagSettings.minCount);
 }
 
@@ -531,6 +534,9 @@ export async function processNote(
         }
         noteRecord.addTagLines(tag, allLines);
       }
+      
+      // Clear the Set
+      topNoteTags.clear();
     }
 
     // Process links
