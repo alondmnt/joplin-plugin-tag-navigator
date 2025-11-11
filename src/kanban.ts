@@ -120,6 +120,9 @@ export async function processResultsForKanban(
     }
   }
 
+  // Clear map to prevent memory leaks
+  processedContent.clear();
+
   return result;
 }
 

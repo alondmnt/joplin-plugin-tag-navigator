@@ -798,6 +798,8 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
             })
           ).join('\n');
         }).join('\n');
+        // Clear blocks array to prevent memory leaks
+        blocks.length = 0;
       }
 
       processedSection = processedSection
@@ -987,6 +989,9 @@ async function replaceTagAll(
         tagRegex, message.newTag,
         db, tagSettings);
     }
+    // Clear ResultSet to prevent memory leaks
+    clearObjectReferences(notes);
+    
     // update the current query
     replaceTagInQuery(searchParams, message.oldTag, message.newTag);
     // update all saved queries
@@ -1041,6 +1046,9 @@ async function removeTagAll(
       tagRegex, '',
       db, tagSettings);
   }
+  // Clear ResultSet to prevent memory leaks
+  clearObjectReferences(notes);
+  
   // update the search panel
   await updatePanelTagData(searchPanel, db);
   const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);

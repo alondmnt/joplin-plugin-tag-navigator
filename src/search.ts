@@ -311,6 +311,9 @@ async function processQueryResults(
 
       groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings));
     }
+
+    // Clear map to prevent memory leaks
+    colorMap.clear();
   }
 
   return groupedResults;

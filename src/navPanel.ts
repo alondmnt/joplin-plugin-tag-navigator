@@ -66,6 +66,10 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
   // Build the tree of all tags
   const tagTree = buildTagTree(tagCount);
   const tagTreeHTML = buildTreeHTML(tagTree.children, '', tagSort);
+  
+  // Clear tree to prevent memory leaks (import clearObjectReferences at top)
+  const { clearObjectReferences } = await import('./memory');
+  clearObjectReferences(tagTree);
 
   let strGlobalDisplay = 'block';
   let strNoteDisplay = 'none';

@@ -251,6 +251,11 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
   // Sort the result as needed
   tagsLines.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 
+  // Clear maps to prevent memory leaks
+  tagsMap.clear();
+  tagsLevel.clear();
+  tagsHeading.clear();
+
   return tagsLines;
 }
 
@@ -592,6 +597,9 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
     // Resetting lastIndex for the same reason
     wikiLinkRegex.lastIndex = 0;
   });
+
+  // Clear map to prevent memory leaks
+  linkLevel.clear();
 
   return results;
 }
