@@ -258,7 +258,13 @@ async function filterResults(
     }
   }
   
-  return filteredResults.filter(note => note.text.length > 0);
+  const result = filteredResults.filter(note => note.text.length > 0);
+  
+  // Clear temporary arrays to prevent memory leaks
+  parsedFilter.length = 0;
+  inclusionPatterns.length = 0;
+  
+  return result;
 }
 
 /**
@@ -393,6 +399,9 @@ async function processResultsForTable(
       }
     });
 
+    // Clear tagInfo array to prevent memory leaks
+    clearObjectReferences(tagInfo);
+
     return tableResult;
   }));
 
@@ -407,6 +416,9 @@ async function processResultsForTable(
       a < b ? a : b  // If counts are equal, take alphabetically first
     );
   }
+
+  // Clear temporary count objects to prevent memory leaks
+  clearObjectReferences(valueCount);
 
   return [tableResults, columnCount, mostCommonValue];
 }
@@ -582,6 +594,11 @@ async function buildTable(
     resultsString += row + '\n';
   }
   tableColumns = tableColumns.filter(col => !metaCols.includes(col));
+  
+  // Clear temporary arrays to prevent memory leaks
+  if (includeCols) includeCols.length = 0;
+  if (excludeCols) excludeCols.length = 0;
+  
   return [resultsString, tableColumns];
 }
 
@@ -644,6 +661,10 @@ export async function createTableEntryNote(
     console.debug('itags.createTableEntryNote: error', error);
   }
   note = clearObjectReferences(note);
+  
+  // Clear temporary arrays to prevent memory leaks
+  frontmatter.length = 0;
+  tagList.length = 0;
 }
 
 /**

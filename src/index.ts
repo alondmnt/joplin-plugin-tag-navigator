@@ -805,10 +805,23 @@ joplin.plugins.register({
       console.log('Tag Navigator: Performing final cleanup...');
       // Clear any remaining database references
       DatabaseManager.clearDatabase();
+      
+      // Clear search params
+      clearObjectReferences(searchParams);
+      searchParams = { query: [[]], filter: '', displayInNote: 'false' };
+      
+      // Clear table columns and default values
+      currentTableColumns.length = 0;
+      clearObjectReferences(currentTableDefaultValues);
+      currentTableDefaultValues = {};
+      
       // Clear the search results cache
+      clearObjectReferences(lastSearchResults);
       lastSearchResults = [];
+      
       // Clear the saved note state
-      Object.keys(savedNoteState).forEach(key => delete savedNoteState[key]);
+      clearObjectReferences(savedNoteState);
+      savedNoteState = {};
     });
 
     // Log initial memory statistics
