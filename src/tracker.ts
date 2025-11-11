@@ -228,7 +228,13 @@ export function removeInlineTags(
     }
   }
   
-  return updatedLines.join('\n');
+  const result = updatedLines.join('\n');
+  
+  // Clear arrays to prevent memory leaks
+  lines.length = 0;
+  updatedLines.length = 0;
+  
+  return result;
 }
 
 /**
@@ -282,7 +288,12 @@ export function addInlineTags(
     }
   }
   
-  return lines.join('\n');
+  const result = lines.join('\n');
+  
+  // Clear arrays to prevent memory leaks
+  lines.length = 0;
+  
+  return result;
 }
 
 /**
@@ -293,5 +304,10 @@ export function addInlineTags(
  */
 export function hasExistingTagLines(noteBody: string, listPrefix: string): boolean {
   const lines = noteBody.split('\n');
-  return lines.some(line => line.startsWith(listPrefix));
+  const result = lines.some(line => line.startsWith(listPrefix));
+  
+  // Clear array to prevent memory leaks
+  lines.length = 0;
+  
+  return result;
 }

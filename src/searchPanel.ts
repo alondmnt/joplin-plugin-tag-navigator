@@ -957,6 +957,9 @@ export async function setCheckboxState(
 
   const newBody = lines.join('\n');
   updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
+  
+  // Clear arrays to prevent memory leaks
+  lines.length = 0;
   note = clearObjectReferences(note);
 }
 
@@ -1127,6 +1130,9 @@ export async function replaceTagInText(
 
   const newBody = lines.join('\n');
   await updateNote({externalId: externalId, line: lineNumbers[0]}, newBody, db, tagSettings);
+  
+  // Clear arrays to prevent memory leaks
+  lines.length = 0;
   note = clearObjectReferences(note);
 }
 
@@ -1156,6 +1162,9 @@ export async function addTagToText(
   lines[message.line] = `${line} ${message.tag}`;
   const newBody = lines.join('\n');
   await updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
+  
+  // Clear arrays to prevent memory leaks
+  lines.length = 0;
   note = clearObjectReferences(note);
 }
 

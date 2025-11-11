@@ -312,8 +312,9 @@ async function processQueryResults(
       groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings));
     }
 
-    // Clear map to prevent memory leaks
+    // Clear map and lineNumbers array to prevent memory leaks
     colorMap.clear();
+    lineNumbers.length = 0;
   }
 
   return groupedResults;
@@ -371,6 +372,9 @@ async function getTextAndTitleByGroup(
   result.notebook = notebook;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
+
+  // Clear the lines array to prevent memory leaks
+  lines.length = 0;
 
   note = clearObjectReferences(note);
 
@@ -550,6 +554,9 @@ function extractTagsPerGroup(
       }
     }
     const allTags = Array.from(uniqueTags);
+    
+    // Clear the Set after converting to array
+    uniqueTags.clear();
 
     // Filter out parent tags (tags that have children) - same logic as kanban.ts
     const leafTags = allTags.filter(tag => 
@@ -636,7 +643,15 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
       }
     }
 
-    return groupText.join('\n');
+    const result = groupText.join('\n');
+    
+    // Clear temporary arrays to prevent memory leaks
+    groupText.length = 0;
+    parentLines.length = 0;
+    parentIndent.length = 0;
+    normalizedIndent.length = 0;
+    
+    return result;
 }
 
 /**

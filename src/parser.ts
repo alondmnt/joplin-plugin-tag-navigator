@@ -251,10 +251,12 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
   // Sort the result as needed
   tagsLines.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 
-  // Clear maps to prevent memory leaks
+  // Clear maps and arrays to prevent memory leaks
   tagsMap.clear();
   tagsLevel.clear();
   tagsHeading.clear();
+  rawLines.length = 0;
+  lines.length = 0;
 
   return tagsLines;
 }
@@ -598,8 +600,9 @@ export async function parseLinkLines(text: string, ignoreCodeBlocks: boolean, in
     wikiLinkRegex.lastIndex = 0;
   });
 
-  // Clear map to prevent memory leaks
+  // Clear map and array to prevent memory leaks
   linkLevel.clear();
+  lines.length = 0;
 
   return results;
 }
@@ -665,12 +668,17 @@ export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontM
   try {
     // Try parsing with js-yaml first
     const data = yamlLoad(yamlContent) as FrontMatter;
+    // Clear arrays before returning
+    rawLines.length = 0;
+    contentLines.length = 0;
     return {
       data: data || null,
       lineCount,
       errors: undefined
     };
   } catch (e) {
+    // Clear arrays before fallback
+    rawLines.length = 0;
     // Use the in-house parser as fallback
     return parseFrontMatterFallback(contentLines, lineCount);
   }
