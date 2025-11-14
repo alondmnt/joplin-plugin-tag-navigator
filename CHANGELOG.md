@@ -1,3 +1,13 @@
+# [v2.6.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.3)
+*Released on 2025-11-14T01:07:54Z*
+
+- added: nested tag support for date tags
+- improved: memory management
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.2...v2.6.3
+
+---
+
 # [v2.6.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.2)
 *Released on 2025-10-08T13:16:33Z*
 
