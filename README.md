@@ -133,7 +133,7 @@ Date tags provide flexible ways to work with dates in your notes, supporting bot
     - Results like: `#deadline/2025-11-09`, `#deadline/2025-12-09` (date prefix is stripped from nested parts)
     - Example query: `#project/milestone/#week -> #project/milestone/#week+14` finds project milestones in the coming two weeks
     - In notes, write absolute dates directly: `#deadline/2025-12-09`
-    - **Note**: To use date arithmetic in nested tags directly in notes (e.g., `#deadline/#today+30`), customize the tag pattern in Settings → Tag Navigator → Tag regex by removing `#` from the exclusion list: `/(?<=^|\s)#([^\s'",.()\[\]:;\?\\]+)/g`
+    - **Note**: To use date arithmetic in nested tags directly in notes (e.g., `#deadline/#today+30`), customize the tag pattern in Settings → Tag Navigator → Tag regex by removing `#` from the exclusion list: `(?<=^|\s)#([^\s'",.()\[\]:;\?\\]+)`
 
 #### Converting relative to absolute dates
 
