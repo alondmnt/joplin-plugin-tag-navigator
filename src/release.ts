@@ -1,7 +1,6 @@
 export const RELEASE_NOTES = {
     version: "v2.6.3",
     notes: `v2.6.3:
-v2.6.3:
 - added: nested tag support for date tags
 - improved: memory management
 
