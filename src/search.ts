@@ -798,13 +798,29 @@ function sortSectionsWithinResult(
   const originalText = [...result.text];
   const originalHtml = [...result.html];
   const originalTags = [...result.tags];
+  const originalTextExpanded = result.textExpanded ? [...result.textExpanded] : null;
+  const originalHtmlExpanded = result.htmlExpanded ? [...result.htmlExpanded] : null;
+  const originalExpandLevels = result.expandLevels ? [...result.expandLevels] : null;
 
   indices.forEach((originalIndex, newIndex) => {
     result.lineNumbers[newIndex] = originalLineNumbers[originalIndex];
     result.text[newIndex] = originalText[originalIndex];
     result.html[newIndex] = originalHtml[originalIndex];
     result.tags[newIndex] = originalTags[originalIndex];
+    if (originalTextExpanded) result.textExpanded[newIndex] = originalTextExpanded[originalIndex];
+    if (originalHtmlExpanded) result.htmlExpanded[newIndex] = originalHtmlExpanded[originalIndex];
+    if (originalExpandLevels) result.expandLevels[newIndex] = originalExpandLevels[originalIndex];
   });
+
+  // Clear temporary arrays to prevent memory leaks
+  indices.length = 0;
+  originalLineNumbers.length = 0;
+  originalText.length = 0;
+  originalHtml.length = 0;
+  originalTags.length = 0;
+  if (originalTextExpanded) originalTextExpanded.length = 0;
+  if (originalHtmlExpanded) originalHtmlExpanded.length = 0;
+  if (originalExpandLevels) originalExpandLevels.length = 0;
 }
 
 /**
