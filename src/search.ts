@@ -37,6 +37,10 @@ export interface SortableItem {
 export interface GroupedResult extends SortableItem {
   text: string[];        // Text content of matched lines
   html: string[];        // HTML content of matched lines
+  // Context expansion fields
+  textExpanded?: string[][];   // textExpanded[groupIndex][level] - text with context (levels 1-3)
+  htmlExpanded?: string[][];   // htmlExpanded[groupIndex][level] - rendered HTML with context
+  expandLevels?: number[];     // Max expansion level per group (0 = no expansion available, 3 = full)
 }
 
 /** Cached regex patterns */
@@ -74,7 +78,8 @@ export async function runSearch(
     db,
     queryResults,
     groupingMode,
-    settings
+    settings,
+    resultSettings.contextExpansionStep
   );
 
   // Sort results using options with fallbacks to global settings
@@ -252,13 +257,15 @@ function unionResults(
  * @param queryResults Raw query results
  * @param colorTag The color tag to use
  * @param groupingMode The grouping mode to use
+ * @param contextExpansionStep Lines to expand per level (0 = disabled)
  * @returns Array of grouped results with note content
  */
 async function processQueryResults(
   db: NoteDatabase,
   queryResults: ResultSet,
   groupingMode: string,
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  contextExpansionStep: number = 0
 ): Promise<GroupedResult[]> {
   const groupedResults: GroupedResult[] = [];
   if (!queryResults) return groupedResults;
@@ -309,7 +316,7 @@ async function processQueryResults(
         tags: [], // Will be populated after grouping
       };
 
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings));
+      groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings, contextExpansionStep));
     }
 
     // Clear map and lineNumbers array to prevent memory leaks
@@ -325,14 +332,16 @@ async function processQueryResults(
  * @param result Result to populate with content
  * @param fullPath Whether to include full notebook path
  * @param groupingMode The grouping mode to use
+ * @param contextExpansionStep Lines to expand per level (0 = disabled)
  * @returns Updated result with content
  */
 async function getTextAndTitleByGroup(
-  result: GroupedResult, 
+  result: GroupedResult,
   fullPath: boolean,
   groupingMode: string,
   db: NoteDatabase,
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  contextExpansionStep: number = 0
 ): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
     { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
@@ -372,6 +381,48 @@ async function getTextAndTitleByGroup(
   result.notebook = notebook;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
+
+  // Context expansion - generate expanded text at each level
+  if (contextExpansionStep > 0) {
+    const CONTEXT_MULTIPLIERS = [1, 2, 3];  // levels 1, 2, 3
+
+    result.textExpanded = groupedLines.map((group, index) => {
+      // Guard: skip empty groups
+      if (group.length === 0) return [];
+
+      const minLine = Math.min(...group);
+      const maxLine = Math.max(...group);
+      const levels: string[] = [];
+
+      for (const multiplier of CONTEXT_MULTIPLIERS) {
+        const contextSize = contextExpansionStep * multiplier;
+        const expandedStart = Math.max(0, minLine - contextSize);
+        const expandedEnd = Math.min(lines.length - 1, maxLine + contextSize);
+
+        // Build expanded line array
+        const expandedLines: number[] = [];
+        for (let i = expandedStart; i <= expandedEnd; i++) {
+          expandedLines.push(i);
+        }
+
+        // Include group title line if applicable (same logic as core)
+        if (groupTitleLine[index] >= 0 && !expandedLines.includes(groupTitleLine[index])) {
+          expandedLines.unshift(groupTitleLine[index]);
+        }
+
+        levels.push(normalizeIndentation(lines, expandedLines));
+      }
+      return levels;
+    });
+
+    // Track whether expansion is available
+    result.expandLevels = groupedLines.map((group) => {
+      if (group.length === 0) return 0;
+      const minLine = Math.min(...group);
+      const maxLine = Math.max(...group);
+      return (minLine > 0 || maxLine < lines.length - 1) ? 3 : 0;
+    });
+  }
 
   // Clear the lines array to prevent memory leaks
   lines.length = 0;
