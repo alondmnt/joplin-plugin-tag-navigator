@@ -43,6 +43,7 @@ let spaceReplace = '_';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
+let sectionExpandLevel = {};  // Maps "noteId|color|sectionIndex" -> level (0-3)
 
 let domInitialized = false;
 let initializingDom = false;
@@ -292,6 +293,9 @@ function processPanelMessage(message) {
 
         // Clear note state for results that are no longer present
         clearNoteStateForNewResults();
+
+        // Reset context expansion state for new results
+        sectionExpandLevel = {};
 
         // Always clean up dropdown first, then set sort value if provided
         // Remove any custom options that are not in the standard list
@@ -840,15 +844,28 @@ function updateResultsArea() {
             }
             hasContent = true;
 
-            let entry = result.html[index];
+            // Context expansion: determine current level and select appropriate HTML
+            const stateKey = `${result.externalId}|${result.color || 'default'}|${index}`;
+            const currentLevel = sectionExpandLevel[stateKey] || 0;
+            const maxLevel = result.expandLevels?.[index] || 0;
+
+            // Select HTML based on current expansion level
+            let entry;
+            if (currentLevel === 0 || !result.htmlExpanded?.[index]) {
+                entry = result.html[index];
+            } else {
+                // htmlExpanded[sectionIndex][levelIndex] where levelIndex is 0-based (level 1 = index 0)
+                entry = result.htmlExpanded[index][currentLevel - 1] || result.html[index];
+            }
+
             if (resultMarker && (inclusionPatterns.length > 0)) {
                 // Apply highlighting to already rendered HTML while preserving structure
-                entry = highlightTextInHTML(result.html[index], inclusionPatterns, 'itags-search-renderedFilter');
+                entry = highlightTextInHTML(entry, inclusionPatterns, 'itags-search-renderedFilter');
             }
 
             const entryEl = document.createElement('div');
             entryEl.classList.add('itags-search-resultSection');
-            
+
             // SECURITY FIX: Use safe innerHTML setter instead of direct assignment
             if (resultMarker && (inclusionPatterns.length > 0)) {
                 // Entry is already safely processed above
@@ -865,6 +882,22 @@ function updateResultsArea() {
                 item.style.position = 'relative';
                 item.style.left = '-15px';
             });
+
+            // Add expand control if context expansion is available
+            if (maxLevel > 0) {
+                const expandEl = document.createElement('div');
+                expandEl.className = 'itags-search-expandContext';
+                // Show ↑ when can expand more (reveal context above), ↓ when at max (collapse)
+                expandEl.textContent = currentLevel < maxLevel ? '↑' : '↓';
+                expandEl.title = currentLevel < maxLevel ? 'Show more context' : 'Show less context';
+                addEventListenerWithTracking(expandEl, 'click', (e) => {
+                    e.stopPropagation();  // Prevent triggering section click
+                    // Cycle through levels: 0 -> 1 -> 2 -> 3 -> 0
+                    sectionExpandLevel[stateKey] = (currentLevel + 1) % (maxLevel + 1);
+                    updateResultsArea();  // Re-render
+                });
+                entryEl.appendChild(expandEl);
+            }
 
             // Add click handlers
             addEventListenerWithTracking(entryEl, 'click', createClickHandler(result, index));

@@ -352,7 +352,29 @@ body {
     word-wrap: break-word;
 }
 
+.itags-search-resultSection {
+    position: relative;
+}
+
 .itags-search-resultSection:hover {
+    background-color: var(--joplin-background-color-hover3);
+}
+
+/* Context expansion control */
+.itags-search-expandContext {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    opacity: 0.25;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 0 4px;
+    line-height: 1;
+    border-radius: 3px;
+}
+
+.itags-search-expandContext:hover {
+    opacity: 0.8;
     background-color: var(--joplin-background-color-hover3);
 }
 
