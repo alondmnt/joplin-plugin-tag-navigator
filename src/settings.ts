@@ -76,6 +76,7 @@ export interface ResultSettings {
   resultSort: string;
   resultOrder: string;
   resultGrouping: string;
+  contextExpansionStep: number;
 }
 
 export interface NoteViewSettings {
@@ -254,11 +255,13 @@ export async function getResultSettings(): Promise<ResultSettings> {
     'itags.resultSort',
     'itags.resultOrder',
     'itags.resultGrouping',
+    'itags.contextExpansionStep',
   ]);
   return {
     resultSort: settings['itags.resultSort'] as string || 'modified',
     resultOrder: settings['itags.resultOrder'] as string || 'desc',
     resultGrouping: settings['itags.resultGrouping'] as string || 'heading',
+    contextExpansionStep: settings['itags.contextExpansionStep'] as number ?? 5,
   };
 }
 
@@ -581,6 +584,17 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: Result grouping',
       description: 'Each group is shown as a section within a note in the search results. Groups can be filtered and sorted.',
       options: STANDARD_GROUPING_OPTIONS
+    },
+    'itags.contextExpansionStep': {
+      value: 5,
+      public: true,
+      type: SettingItemType.Int,
+      section: 'itags',
+      label: 'Search: Context expansion step',
+      description: 'Number of lines to reveal per expansion click (0 to disable)',
+      minimum: 0,
+      maximum: 100,
+      step: 1,
     },
     'itags.resultSort': {
       value: 'modified',
