@@ -671,6 +671,8 @@ export async function updatePanelResults(
   }
 
   // Just render the HTML and pass along the sorting options that were used
+  // Note: results are intentionally NOT cleared here - they're cached in lastSearchResults
+  // for re-sorting without re-fetching. The cache is replaced on new searches.
   createManagedTimeout(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
@@ -680,7 +682,7 @@ export async function updatePanelResults(
             results, tagSettings.tagRegex,
             panelSettings['itags.resultMarker'] as boolean,
             panelSettings['itags.colorTodos'] as boolean,
-            panelSettings['itags.contextExpansionStep'] as number ?? 5)),
+            panelSettings['itags.contextExpansionStep'] as number ?? 2)),
           query: JSON.stringify(query),
           sortBy: sortBy,
           sortOrder: sortOrder,

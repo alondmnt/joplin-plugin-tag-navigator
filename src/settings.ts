@@ -261,7 +261,7 @@ export async function getResultSettings(): Promise<ResultSettings> {
     resultSort: settings['itags.resultSort'] as string || 'modified',
     resultOrder: settings['itags.resultOrder'] as string || 'desc',
     resultGrouping: settings['itags.resultGrouping'] as string || 'heading',
-    contextExpansionStep: settings['itags.contextExpansionStep'] as number ?? 5,
+    contextExpansionStep: settings['itags.contextExpansionStep'] as number ?? 2,
   };
 }
 
@@ -586,7 +586,7 @@ export async function registerSettings(): Promise<void> {
       options: STANDARD_GROUPING_OPTIONS
     },
     'itags.contextExpansionStep': {
-      value: 5,
+      value: 2,
       public: true,
       type: SettingItemType.Int,
       section: 'itags',
