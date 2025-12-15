@@ -654,6 +654,7 @@ export async function updatePanelResults(
     'itags.colorTodos',
     'itags.resultSort',
     'itags.resultOrder',
+    'itags.contextExpansionStep',
   ]);
   const tagSettings = await getTagSettings();
 
@@ -678,7 +679,8 @@ export async function updatePanelResults(
           results: JSON.stringify(renderHTML(
             results, tagSettings.tagRegex,
             panelSettings['itags.resultMarker'] as boolean,
-            panelSettings['itags.colorTodos'] as boolean)),
+            panelSettings['itags.colorTodos'] as boolean,
+            panelSettings['itags.contextExpansionStep'] as number ?? 5)),
           query: JSON.stringify(query),
           sortBy: sortBy,
           sortOrder: sortOrder,
@@ -776,44 +778,55 @@ export async function updatePanelNoteState(panel: string, savedNoteState: { [key
  * @param tagRegex - Regular expression for matching tags
  * @param resultMarker - Whether to highlight tags in results
  * @param colorTodos - Whether to apply colors to todo items
+ * @param contextExpansionStep - Lines per expansion level (0 = disabled)
  * @returns Processed results with HTML content
  */
-function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean): GroupedResult[] {
-  for (const group of groupedResults) {
-    group.html = [];
-    for (const section of group.text) {
-      let processedSection = normalizeHeadingLevel(section);
-      processedSection = formatFrontMatter(processedSection);
+function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMarker: boolean, colorTodos: boolean, contextExpansionStep: number = 0): GroupedResult[] {
+  // Helper function to process a single section of text into HTML
+  const processSection = (section: string): string => {
+    let processedSection = normalizeHeadingLevel(section);
+    processedSection = formatFrontMatter(processedSection);
 
-      if (resultMarker) {
-        const blocks = splitCodeBlocks(processedSection);
-        processedSection = blocks.map((block, index) => {
-          if (index % 2 === 1) return block;
-          const lines = block.split('\n');
-          return lines.map((line, lineNumber) =>
-            replaceOutsideBackticks(line, tagRegex, (match) => {
-              const normalizedMatch = match.trim();
-              const prefixClass = mapPrefixClass(normalizedMatch || match);
-              return `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}" data-line-number="${lineNumber}">${match}</span>`;
-            })
-          ).join('\n');
-        }).join('\n');
-        // Clear blocks array to prevent memory leaks
-        blocks.length = 0;
-      }
+    if (resultMarker) {
+      const blocks = splitCodeBlocks(processedSection);
+      processedSection = blocks.map((block, index) => {
+        if (index % 2 === 1) return block;
+        const lines = block.split('\n');
+        return lines.map((line, lineNumber) =>
+          replaceOutsideBackticks(line, tagRegex, (match) => {
+            const normalizedMatch = match.trim();
+            const prefixClass = mapPrefixClass(normalizedMatch || match);
+            return `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}" data-line-number="${lineNumber}">${match}</span>`;
+          })
+        ).join('\n');
+      }).join('\n');
+      // Clear blocks array to prevent memory leaks
+      blocks.length = 0;
+    }
 
+    processedSection = processedSection
+      .replace(REGEX.wikiLink, '<a href="$1">$1</a>');
+    if (colorTodos) {
       processedSection = processedSection
-        .replace(REGEX.wikiLink, '<a href="$1">$1</a>');
-      if (colorTodos) {
-        processedSection = processedSection
-          .replace(REGEX.xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
-          .replace(REGEX.xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
-          .replace(REGEX.xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
-          .replace(REGEX.xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
-          .replace(REGEX.xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
-          .replace(REGEX.xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
-      }
-      group.html.push(md.render(processedSection));
+        .replace(REGEX.xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
+        .replace(REGEX.xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
+        .replace(REGEX.xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
+        .replace(REGEX.xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
+        .replace(REGEX.xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
+        .replace(REGEX.xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
+    }
+    return md.render(processedSection);
+  };
+
+  for (const group of groupedResults) {
+    // Render core text
+    group.html = group.text.map(processSection);
+
+    // Render expanded levels if context expansion is enabled
+    if (contextExpansionStep > 0 && group.textExpanded) {
+      group.htmlExpanded = group.textExpanded.map((sectionLevels: string[]) =>
+        sectionLevels.map(processSection)
+      );
     }
   }
   return groupedResults;
