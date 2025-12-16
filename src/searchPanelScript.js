@@ -865,6 +865,7 @@ function updateResultsArea() {
 
             const entryEl = document.createElement('div');
             entryEl.classList.add('itags-search-resultSection');
+            entryEl.dataset.expandLevel = currentLevel;  // Store for click handlers
 
             // SECURITY FIX: Use safe innerHTML setter instead of direct assignment
             if (resultMarker && (inclusionPatterns.length > 0)) {
@@ -874,7 +875,11 @@ function updateResultsArea() {
                 // Use the safe method for unprocessed HTML content
                 safeSetInnerHTML(entryEl, entry);
             }
-            addLineNumberToCheckboxes(entryEl, result.text[index]);
+            // Use correct text based on expansion level
+            const textForLineNumbers = (currentLevel === 0 || !result.textExpanded?.[index]?.[currentLevel - 1])
+                ? result.text[index]
+                : result.textExpanded[index][currentLevel - 1];
+            addLineNumberToCheckboxes(entryEl, textForLineNumbers);
             entryEl.style.cursor = 'pointer';
 
             // Adjust task list item positioning
@@ -952,13 +957,32 @@ function updateResultsArea() {
 // Helper function to create click handler
 function createClickHandler(result, index) {
     return (event) => {
+        // Get expansion level to use correct line mapping
+        const expandLevel = parseInt(event.currentTarget.dataset.expandLevel) || 0;
+
+        // Helper to get correct file line number based on expansion level
+        const getFileLine = (localLine) => {
+            if (expandLevel === 0 || !result.lineNumbersExpanded?.[index]?.[expandLevel - 1]) {
+                return result.lineNumbers[index][localLine];
+            }
+            return result.lineNumbersExpanded[index][expandLevel - 1][localLine];
+        };
+
+        // Helper to get correct text based on expansion level
+        const getText = () => {
+            if (expandLevel === 0 || !result.textExpanded?.[index]?.[expandLevel - 1]) {
+                return result.text[index];
+            }
+            return result.textExpanded[index][expandLevel - 1];
+        };
+
         if (event.target.matches('.task-list-item-checkbox')) {
             const line = parseInt(event.target.getAttribute('data-line-number'));
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: event.target.checked ? ' ' : '[xX]',
                 target: event.target.checked ? 'x' : ' ',
             });
@@ -967,8 +991,8 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(event.target),
                 target: event.target.getAttribute('data-checked') === 'true' ? ' ' : 'x',
             });
@@ -997,7 +1021,7 @@ function createClickHandler(result, index) {
                 }, '');
 
             // Get the source text and split into lines
-            const sourceText = result.text[index];
+            const sourceText = getText();
             const lines = sourceText.split('\n');
 
             // Find the line containing the clicked text
@@ -1012,7 +1036,7 @@ function createClickHandler(result, index) {
             webviewApi.postMessage({
                 name: 'openNote',
                 externalId: ':/' + result.externalId,
-                line: result.lineNumbers[index][foundLine] || result.lineNumbers[index][0],
+                line: getFileLine(foundLine) || getFileLine(0),
             });
         }
     };
@@ -1027,11 +1051,13 @@ function createContextMenuHandler(result, index) {
                 menu.remove();
             }
         });
+        // Get expansion level from the section element
+        const expandLevel = parseInt(event.currentTarget.dataset.expandLevel) || 0;
         if (event.target.matches('.itags-search-renderedTag')) {
-            createContextMenu(event, result, index);
+            createContextMenu(event, result, index, undefined, expandLevel);
         }
         if (event.target.matches('.itags-search-checkbox')) {
-            createContextMenu(event, result, index, ['checkboxState']);
+            createContextMenu(event, result, index, ['checkboxState'], expandLevel);
         }
     };
 }
@@ -1399,7 +1425,7 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll']) {
+function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
@@ -1413,6 +1439,22 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
         currentTag = currentTag.slice(2, -1);
     }
     const line = parseInt(target.getAttribute('data-line-number'));
+
+    // Helper to get correct file line number based on expansion level
+    const getFileLine = (localLine) => {
+        if (expandLevel === 0 || !result?.lineNumbersExpanded?.[index]?.[expandLevel - 1]) {
+            return result?.lineNumbers?.[index]?.[localLine];
+        }
+        return result.lineNumbersExpanded[index][expandLevel - 1][localLine];
+    };
+
+    // Helper to get correct text based on expansion level
+    const getText = () => {
+        if (expandLevel === 0 || !result?.textExpanded?.[index]?.[expandLevel - 1]) {
+            return result?.text?.[index];
+        }
+        return result.textExpanded[index][expandLevel - 1];
+    };
 
     // Create the custom context menu container and position off-screen immediately
     const contextMenu = document.createElement('div');
@@ -1438,8 +1480,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: ' ',
             });
@@ -1459,8 +1501,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '?',
             });
@@ -1480,8 +1522,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '@',
             });
@@ -1501,8 +1543,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '!',
             });
@@ -1522,8 +1564,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: '~',
             });
@@ -1543,8 +1585,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'setCheckBox',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 source: getCheckboxState(target),
                 target: 'x',
             });
@@ -1679,8 +1721,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
                     webviewApi.postMessage({
                         name: 'addTag',
                         externalId: result.externalId,
-                        line: result.lineNumbers[index][line],
-                        text: result.text[index].split('\n')[line].trim(),
+                        line: getFileLine(line),
+                        text: getText().split('\n')[line].trim(),
                         tag: newTag,
                     });
                 }
@@ -1704,8 +1746,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
                     webviewApi.postMessage({
                         name: 'replaceTag',
                         externalId: result.externalId,
-                        line: result.lineNumbers[index][line],
-                        text: result.text[index].split('\n')[line].trim(),
+                        line: getFileLine(line),
+                        text: getText().split('\n')[line].trim(),
                         oldTag: currentTag,
                         newTag: newTag,
                     });
@@ -1749,8 +1791,8 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             webviewApi.postMessage({
                 name: 'removeTag',
                 externalId: result.externalId,
-                line: result.lineNumbers[index][line],
-                text: result.text[index].split('\n')[line].trim(),
+                line: getFileLine(line),
+                text: getText().split('\n')[line].trim(),
                 tag: currentTag,
             });
             removeContextMenu(contextMenu);

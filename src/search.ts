@@ -41,6 +41,7 @@ export interface GroupedResult extends SortableItem {
   textExpanded?: string[][];   // textExpanded[groupIndex][level] - text with context (levels 1-3)
   htmlExpanded?: string[][];   // htmlExpanded[groupIndex][level] - rendered HTML with context
   expandLevels?: number[];     // Max expansion level per group (0 = no expansion available, 3 = full)
+  lineNumbersExpanded?: number[][][];  // [section][level][localLine] → actual file line number
 }
 
 /** Cached regex patterns */
@@ -385,14 +386,19 @@ async function getTextAndTitleByGroup(
   // Context expansion - generate expanded text at each level
   if (contextExpansionStep > 0) {
     const CONTEXT_MULTIPLIERS = [1, 2, 3];  // levels 1, 2, 3
+    result.lineNumbersExpanded = [];  // Store file line numbers for expanded content
 
     result.textExpanded = groupedLines.map((group, index) => {
       // Guard: skip empty groups
-      if (group.length === 0) return [];
+      if (group.length === 0) {
+        result.lineNumbersExpanded.push([]);
+        return [];
+      }
 
       const minLine = Math.min(...group);
       const maxLine = Math.max(...group);
       const levels: string[] = [];
+      const levelLineNumbers: number[][] = [];  // Track line numbers per level
 
       for (const multiplier of CONTEXT_MULTIPLIERS) {
         const contextSize = contextExpansionStep * multiplier;
@@ -411,7 +417,11 @@ async function getTextAndTitleByGroup(
         }
 
         levels.push(normalizeIndentation(lines, expandedLines));
+        levelLineNumbers.push([...expandedLines]);  // Store actual file line numbers
+        expandedLines.length = 0;  // Clear to prevent memory leaks
       }
+      result.lineNumbersExpanded.push([...levelLineNumbers]);  // Push copy to avoid reference issues
+      levelLineNumbers.length = 0;  // Clear after pushing
       return levels;
     });
 
@@ -801,6 +811,7 @@ function sortSectionsWithinResult(
   const originalTextExpanded = result.textExpanded ? [...result.textExpanded] : null;
   const originalHtmlExpanded = result.htmlExpanded ? [...result.htmlExpanded] : null;
   const originalExpandLevels = result.expandLevels ? [...result.expandLevels] : null;
+  const originalLineNumbersExpanded = result.lineNumbersExpanded ? [...result.lineNumbersExpanded] : null;
 
   indices.forEach((originalIndex, newIndex) => {
     result.lineNumbers[newIndex] = originalLineNumbers[originalIndex];
@@ -810,6 +821,7 @@ function sortSectionsWithinResult(
     if (originalTextExpanded) result.textExpanded[newIndex] = originalTextExpanded[originalIndex];
     if (originalHtmlExpanded) result.htmlExpanded[newIndex] = originalHtmlExpanded[originalIndex];
     if (originalExpandLevels) result.expandLevels[newIndex] = originalExpandLevels[originalIndex];
+    if (originalLineNumbersExpanded) result.lineNumbersExpanded[newIndex] = originalLineNumbersExpanded[originalIndex];
   });
 
   // Clear temporary arrays to prevent memory leaks
@@ -821,6 +833,7 @@ function sortSectionsWithinResult(
   if (originalTextExpanded) originalTextExpanded.length = 0;
   if (originalHtmlExpanded) originalHtmlExpanded.length = 0;
   if (originalExpandLevels) originalExpandLevels.length = 0;
+  if (originalLineNumbersExpanded) originalLineNumbersExpanded.length = 0;
 }
 
 /**
