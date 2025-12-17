@@ -945,11 +945,23 @@ function updateResultsArea() {
         resultsArea.appendChild(resultSpace);
     }
 
+    // Show helpful message when no results
+    if (displayedNoteCount === 0 && queryGroups.some(group => group.length > 0)) {
+        const noResultsMsg = document.createElement('div');
+        noResultsMsg.className = 'itags-search-statusMessage';
+        if (results.length === 0) {
+            noResultsMsg.innerHTML = 'No results found.<br><span class="itags-search-statusHint">Try different tags or use OR to broaden your search.</span>';
+        } else {
+            noResultsMsg.innerHTML = 'No results match filter.<br><span class="itags-search-statusHint">Try adjusting your filter text.</span>';
+        }
+        resultsArea.appendChild(noResultsMsg);
+    }
+
     // Update result count display
     updateResultCount(displayedNoteCount, filter);
 
     // Remove last spacing
-    if (resultsArea.lastElementChild) {
+    if (resultsArea.lastElementChild && resultsArea.lastElementChild.classList.contains('itags-search-resultSpace')) {
         resultsArea.removeChild(resultsArea.lastElementChild);
     }
 }
@@ -1310,6 +1322,14 @@ function clearResultsArea() {
 // Helper functions for search
 function sendSearchMessage() {
     const searchQuery = JSON.stringify(queryGroups);
+
+    // Show "Searching..." message while waiting for results
+    clearNode(resultsArea);
+    const searchingMsg = document.createElement('div');
+    searchingMsg.className = 'itags-search-statusMessage';
+    searchingMsg.textContent = 'Searching...';
+    resultsArea.appendChild(searchingMsg);
+
     // Use webviewApi.postMessage to send the search query back to the plugin
     webviewApi.postMessage({
         name: 'searchQuery',

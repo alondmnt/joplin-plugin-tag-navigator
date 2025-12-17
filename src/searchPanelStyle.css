@@ -389,6 +389,21 @@ hr {
     margin-bottom: 5px;
 }
 
+/* Status messages (Searching..., No results) */
+.itags-search-statusMessage {
+    padding: 15px;
+    text-align: center;
+    color: var(--joplin-color);
+    font-size: var(--joplin-font-size);
+    opacity: var(--itags-context-opacity);
+}
+
+.itags-search-statusHint {
+    font-size: 0.9em;
+    display: block;
+    margin-top: 5px;
+}
+
 .itags-search-renderedTag {
 	background-color: #7698b3;
 	color: white;
