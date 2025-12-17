@@ -415,6 +415,39 @@ mark.itags-search-renderedFilter {
     display: inline;
 }
 
+/* Context dimming for expanded search results */
+:root {
+    --itags-context-opacity: 0.75;
+}
+
+.itags-context-marker,
+.itags-core-marker {
+    display: none;
+}
+
+.itags-search-resultSection p:has(.itags-context-marker),
+.itags-search-resultSection li:has(.itags-context-marker),
+.itags-search-resultSection h1:has(.itags-context-marker),
+.itags-search-resultSection h2:has(.itags-context-marker),
+.itags-search-resultSection h3:has(.itags-context-marker),
+.itags-search-resultSection h4:has(.itags-context-marker),
+.itags-search-resultSection h5:has(.itags-context-marker),
+.itags-search-resultSection h6:has(.itags-context-marker) {
+    opacity: var(--itags-context-opacity);
+}
+
+/* Core lines override inherited dimming */
+.itags-search-resultSection p:has(.itags-core-marker),
+.itags-search-resultSection li:has(.itags-core-marker),
+.itags-search-resultSection h1:has(.itags-core-marker),
+.itags-search-resultSection h2:has(.itags-core-marker),
+.itags-search-resultSection h3:has(.itags-core-marker),
+.itags-search-resultSection h4:has(.itags-core-marker),
+.itags-search-resultSection h5:has(.itags-core-marker),
+.itags-search-resultSection h6:has(.itags-core-marker) {
+    opacity: 1;
+}
+
 ::-webkit-scrollbar {
 	width: 7px;
 	height: 7px;

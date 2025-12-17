@@ -434,7 +434,14 @@ async function getTextAndTitleByGroup(
           expandedLines.unshift(headingLine);
         }
 
-        levels.push(normalizeIndentation(lines, expandedLines));
+        // Mark core vs context lines for CSS styling
+        const markLine = (text: string, lineNum: number): string => {
+          if (contentLines.includes(lineNum)) {
+            return text + '\u200B\u2061';  // Core marker
+          }
+          return text + '\u200B\u2060';  // Context marker
+        };
+        levels.push(normalizeIndentation(lines, expandedLines, markLine));
         levelLineNumbers.push([...expandedLines]);  // Store actual file line numbers
         expandedLines.length = 0;  // Clear to prevent memory leaks
       }
@@ -659,9 +666,15 @@ function extractTagsPerGroup(
  * and some may be nested under parents that are not in the group.
  * @param noteText The text of the note.
  * @param groupLines The lines to normalize.
+ * @param lineTransformer Optional callback to transform each line before output.
+ *                        Receives the normalized text and original line number.
  * @returns The normalized text.
 */
-export function normalizeIndentation(noteText: string[], groupLines: number[]): string {
+export function normalizeIndentation(
+  noteText: string[],
+  groupLines: number[],
+  lineTransformer?: (text: string, lineNum: number) => string
+): string {
     if (groupLines.length === 0) return '';
 
     let groupText: string[] = [];
@@ -726,7 +739,11 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
       }
 
       const sliceIndex = Math.max(0, lineIndentation - normalizedIndent[normalizedIndent.length - 1]);
-      const text = noteText[i].slice(sliceIndex);
+      let text = noteText[i].slice(sliceIndex);
+      // Apply optional line transformer
+      if (lineTransformer) {
+        text = lineTransformer(text, i);
+      }
       groupText.push(text);
     }
 

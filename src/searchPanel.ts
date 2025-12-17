@@ -40,7 +40,9 @@ export const REGEX = {
   backtickContent: /(`[^`]*`)/,
   heading: /^(#{1,6})\s+(.*)$/,
   checkboxPrefix: /^\s*- \[[x\s@\?!~]\]\s*/,
-  checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g
+  checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g,
+  contextMarker: /\u200B\u2060/g,
+  coreMarker: /\u200B\u2061/g,
 };
 
 /**
@@ -817,7 +819,11 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         .replace(REGEX.xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
         .replace(REGEX.xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
     }
-    return md.render(processedSection);
+    let html = md.render(processedSection);
+    // Replace markers (Unicode) with HTML spans for CSS styling
+    html = html.replace(REGEX.contextMarker, '<span class="itags-context-marker"></span>');
+    html = html.replace(REGEX.coreMarker, '<span class="itags-core-marker"></span>');
+    return html;
   };
 
   for (const group of groupedResults) {
