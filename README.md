@@ -6,12 +6,25 @@ Type inline tags or frontmatter in the note editor. View your tagged paragraphs 
 
 - [Community discussion thread](https://discourse.joplinapp.org/t/plugin-inline-tag-navigator-v0-8-0-2024-06-26/35726)
 - [Release notes](CHANGELOG.md)
+- [Quick Start](#quick-start)
 - [Features](#features)
 - [Demos](#demos)
 - [Tips](#tips)
 - [Companion plugins](#companion-plugins)
 - [Motivation](#motivation)
 - [Objectives](#objectives)
+
+## Quick Start
+
+Get started in 3 steps:
+
+1. **Add tags to your notes**: Type `#project`, `#todo`, `#idea`, or any `#tag-name` in your note text.
+2. **Update the database**: Press `Ctrl+Shift+D` (or `Tools → Tag Navigator → Update tag database`).
+3. **Search your tags**: In the search panel, click a tag to add it to your query, then press Enter to search. Results show all matching paragraphs across your notes.
+
+**Tip:** Right-click on tags, results, and panel sections for more options (edit tags, toggle checkboxes, show/hide sections).
+
+For video tutorials, see the [Demos](#demos) section or the [full playlist](https://www.youtube.com/playlist?list=PLV4DhNiuF20XCdqNEo1a190dkNFo69rd-).
 
 ## Features
 
@@ -31,6 +44,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Tag ranges**: Search for a range of tags, according to their lexicographic order. Example: #2024/07 -> #2024/08. ([tips](#tag-ranges))
     - **Date tags**: Search tags by today's date, this month, or a day in the current week. Examples: #today, #today+1 (tomorrow), #week+1 (Monday). ([tips](#date-tags))
     - **Colour tags**: Use colour tags to highlight results in the search panel. Example: #color=red. ([tips](#colour-tags))
+    - **Context expansion**: Reveal surrounding lines around search results to see more context. ([tips](#context-expansion))
 2. It can generate a note with all tagged paragaraphs that match a saved query (dynamically updated). ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
     - Save a query in a note, and switch note view on: `Tools --> Tag Navigator --> Toggle search results display in note` .
     - Display results:
@@ -84,6 +98,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Table views](#table-views)
 - [Kanban views](#kanban-views)
 - [Filtering results](#filtering-results)
+- [Context expansion](#context-expansion)
 - [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
 - [Styling inline tags](#styling-inline-tags)
@@ -352,6 +367,16 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
     - Example: `project !archive` includes results containing "project" but excludes those containing "archive".
     - Example: `"!references/"` excludes notebooks containing "references" in their path.
 - You may also enable `Search: Use regex for tag / note / content filtering` to filter using regular expressions.
+
+### Context expansion
+
+Context expansion lets you reveal surrounding lines around search results to see more context without opening the note.
+
+- Click the **↑** arrow on any search result section to show more lines above and below the matched content.
+- Click again to expand further (up to 3 levels).
+- When fully expanded, click **↓** to collapse back to the original view.
+- The expanded context is dimmed to help distinguish it from the core matched lines.
+- Configure the number of lines revealed per click in the setting `Search: Context expansion (show surrounding lines)`. Set to 0 to disable.
 
 ### Inline TODOs
 
