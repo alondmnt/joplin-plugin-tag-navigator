@@ -411,21 +411,23 @@ async function getTextAndTitleByGroup(
         result.lineNumbersExpanded.push([]);
         return [];
       }
-      const minLine = Math.min(...contentLines);
-      const maxLine = Math.max(...contentLines);
       const levels: string[] = [];
       const levelLineNumbers: number[][] = [];  // Track line numbers per level
 
       for (const multiplier of CONTEXT_MULTIPLIERS) {
         const contextSize = contextExpansionStep * multiplier;
-        const expandedStart = Math.max(0, minLine - contextSize);
-        const expandedEnd = Math.min(lines.length - 1, maxLine + contextSize);
 
-        // Build expanded line array
-        const expandedLines: number[] = [];
-        for (let i = expandedStart; i <= expandedEnd; i++) {
-          expandedLines.push(i);
+        // Expand around each line individually - close lines naturally overlap
+        const expandedSet = new Set<number>();
+        for (const line of contentLines) {
+          const start = Math.max(0, line - contextSize);
+          const end = Math.min(lines.length - 1, line + contextSize);
+          for (let i = start; i <= end; i++) {
+            expandedSet.add(i);
+          }
         }
+        const expandedLines = [...expandedSet].sort((a, b) => a - b);
+        expandedSet.clear();  // Clear to prevent memory leaks
 
         // Include group title line if applicable (same logic as core)
         if (headingLine !== null && !expandedLines.includes(headingLine)) {
