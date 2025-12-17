@@ -668,7 +668,15 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
     let normalizedIndent: number[] = [];  // This array stores the *normalized* indentation for each parent line
 
     for (let i = Math.min(...groupLines); i <= Math.max(...groupLines); i++) {
-      const lineIndentation = noteText[i]?.match(REGEX.leadingWhitespace)?.[0].length ?? 0;
+      // Blank lines: include in output but don't affect hierarchy tracking
+      if (!noteText[i] || noteText[i].trim() === '') {
+        if (groupLines.includes(i)) {
+          groupText.push('');
+        }
+        continue;
+      }
+
+      const lineIndentation = noteText[i].match(REGEX.leadingWhitespace)?.[0].length ?? 0;
 
       // Update indentation arrays
       while (parentIndent.length > 0 && lineIndentation <= parentIndent[parentIndent.length - 1]) {
@@ -717,12 +725,7 @@ export function normalizeIndentation(noteText: string[], groupLines: number[]): 
 
       const sliceIndex = Math.max(0, lineIndentation - normalizedIndent[normalizedIndent.length - 1]);
       const text = noteText[i].slice(sliceIndex);
-      if (text) {
-        groupText.push(text);
-      } else {
-        console.debug(`normalizeIndentation, noteTextLength: ${noteText.length}, i: ${i}, noteText[${i}]: ${noteText[i]}, lineIndentation: ${lineIndentation}, normalizedIndent: ${normalizedIndent[normalizedIndent.length - 1]}`);
-        groupText.push('');
-      }
+      groupText.push(text);
     }
 
     const result = groupText.join('\n');
