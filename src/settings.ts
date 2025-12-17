@@ -526,7 +526,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Search: Extract the full notebook path',
-      description: 'The full path can be used to filter results, and will also be shown in the table view.'
+      description: 'The full path can be used to filter results, and will also be shown in the table view (useful when you have identically-named notebooks).'
     },
     'itags.showQuery': {
       value: true,
@@ -590,8 +590,8 @@ export async function registerSettings(): Promise<void> {
       public: true,
       type: SettingItemType.Int,
       section: 'itags',
-      label: 'Search: Context expansion step',
-      description: 'Number of lines to reveal per expansion click (0 to disable)',
+      label: 'Search: Context expansion (show surrounding lines)',
+      description: 'Number of lines to reveal per click. Use the ↑/↓ arrows on search results to show more context around matched lines (0 to disable).',
       minimum: 0,
       maximum: 100,
       step: 1,
@@ -736,7 +736,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag regex',
-      description: 'Custom regex to match tags. Leave empty to use the default regex.',
+      description: 'Custom regex to match tags. Leave empty to use the default. Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",.()\[\]:;\\?\\\\]+)',
     },
     'itags.excludeRegex': {
       value: '',
@@ -745,7 +745,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Exclude regex',
-      description: 'Custom regex to exclude tags. Leave empty to not exclude any.',
+      description: 'Custom regex to exclude tags. Leave empty to not exclude any. Example to filter hex colors: #[a-fA-F0-9]{6}$',
     },
     'itags.todayTag': {
       value: '#today',
