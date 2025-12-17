@@ -366,10 +366,17 @@ async function getTextAndTitleByGroup(
   const lines: string[] = note.body.split('\n');
   const [groupedLines, groupTitleLine] = await groupLines(lines, result, groupingMode);
 
+  // Helper to get heading line for a group (returns null if none)
+  const getHeadingLine = (index: number): number | null => {
+    const line = groupTitleLine[index];
+    return line >= 0 ? line : null;
+  };
+
   // Transform grouped line numbers into text blocks
   result.text = groupedLines.map((group, index) => {
-    if (groupTitleLine[index] >= 0 && !group.includes(groupTitleLine[index])) {
-      group.unshift(groupTitleLine[index]);
+    const headingLine = getHeadingLine(index);
+    if (headingLine !== null && !group.includes(headingLine)) {
+      group.unshift(headingLine);
     }
     return normalizeIndentation(lines, group);
   });
@@ -395,8 +402,17 @@ async function getTextAndTitleByGroup(
         return [];
       }
 
-      const minLine = Math.min(...group);
-      const maxLine = Math.max(...group);
+      // Exclude heading line from expansion bounds - expand around actual content
+      const headingLine = getHeadingLine(index);
+      const contentLines = headingLine !== null
+        ? group.filter(line => line !== headingLine)
+        : group;
+      if (contentLines.length === 0) {
+        result.lineNumbersExpanded.push([]);
+        return [];
+      }
+      const minLine = Math.min(...contentLines);
+      const maxLine = Math.max(...contentLines);
       const levels: string[] = [];
       const levelLineNumbers: number[][] = [];  // Track line numbers per level
 
@@ -412,8 +428,8 @@ async function getTextAndTitleByGroup(
         }
 
         // Include group title line if applicable (same logic as core)
-        if (groupTitleLine[index] >= 0 && !expandedLines.includes(groupTitleLine[index])) {
-          expandedLines.unshift(groupTitleLine[index]);
+        if (headingLine !== null && !expandedLines.includes(headingLine)) {
+          expandedLines.unshift(headingLine);
         }
 
         levels.push(normalizeIndentation(lines, expandedLines));
@@ -425,11 +441,16 @@ async function getTextAndTitleByGroup(
       return levels;
     });
 
-    // Track whether expansion is available
-    result.expandLevels = groupedLines.map((group) => {
+    // Track whether expansion is available (based on content lines, not heading)
+    result.expandLevels = groupedLines.map((group, index) => {
       if (group.length === 0) return 0;
-      const minLine = Math.min(...group);
-      const maxLine = Math.max(...group);
+      const headingLine = getHeadingLine(index);
+      const contentLines = headingLine !== null
+        ? group.filter(line => line !== headingLine)
+        : group;
+      if (contentLines.length === 0) return 0;
+      const minLine = Math.min(...contentLines);
+      const maxLine = Math.max(...contentLines);
       return (minLine > 0 || maxLine < lines.length - 1) ? 3 : 0;
     });
   }
