@@ -440,12 +440,14 @@ mark.itags-search-renderedFilter {
     display: none;
 }
 
-.itags-search-resultSection :is(li, h1, h2, h3, h4, h5, h6):has(.itags-context-marker) {
+.itags-search-resultSection :is(li, h1, h2, h3, h4, h5, h6):has(.itags-context-marker),
+.itags-search-resultSection > p:has(.itags-context-marker) {
     opacity: var(--itags-context-opacity);
 }
 
 /* Core lines override inherited dimming */
-.itags-search-resultSection :is(li, h1, h2, h3, h4, h5, h6):has(.itags-core-marker) {
+.itags-search-resultSection :is(li, h1, h2, h3, h4, h5, h6):has(.itags-core-marker),
+.itags-search-resultSection > p:has(.itags-core-marker) {
     opacity: 1;
 }
 
