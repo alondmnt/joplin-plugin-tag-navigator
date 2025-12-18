@@ -19,10 +19,8 @@ Type inline tags or frontmatter in the note editor. View your tagged paragraphs 
 Get started in 3 steps:
 
 1. **Add tags to your notes**: Type `#project`, `#todo`, `#idea`, or any `#tag-name` in your note text.
-2. **Update the database**: Press `Ctrl+Shift+D` (or `Tools → Tag Navigator → Update tag database`).
-3. **Search your tags**: In the search panel, click a tag to add it to your query, then press Enter to search. Results show all matching paragraphs across your notes.
-
-**Tip:** Right-click on tags, results, and panel sections for more options (edit tags, toggle checkboxes, show/hide sections).
+2. **Search your tags**: In the search panel, click a tag to add it to your query, then press Enter to search. Results show all matching paragraphs across your notes.
+3. **Interact with results**: Click checkboxes to toggle task states, or right-click on tags and results for more options (edit tags, switch between 6 task states, show/hide panel sections).
 
 For video tutorials, see the [Demos](#demos) section or the [full playlist](https://www.youtube.com/playlist?list=PLV4DhNiuF20XCdqNEo1a190dkNFo69rd-).
 
