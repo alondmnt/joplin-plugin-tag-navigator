@@ -167,14 +167,61 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// DOMPurify sanitization config - whitelist of allowed tags and attributes
+const SANITIZE_CONFIG = {
+    ALLOWED_TAGS: [
+        // Structure
+        'div', 'span', 'p', 'br', 'hr',
+        // Headings
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        // Text formatting
+        'strong', 'b', 'em', 'i', 'u', 's', 'del', 'mark', 'code', 'pre',
+        // Lists
+        'ul', 'ol', 'li',
+        // Links
+        'a',
+        // Task lists (markdown-it-task-lists)
+        'input',
+        // Tables
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        // Details/summary
+        'details', 'summary',
+        // Buttons
+        'button',
+        // Blockquotes
+        'blockquote'
+    ],
+    ALLOWED_ATTR: [
+        'class', 'href', 'title', 'type', 'checked', 'disabled'
+    ],
+    ALLOW_DATA_ATTR: true,
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
+};
+
+/**
+ * Sanitize HTML content using DOMPurify to prevent XSS attacks.
+ * @param {string} html - The HTML string to sanitize
+ * @returns {string} - Sanitized HTML string
+ */
+function sanitizeHTML(html) {
+    if (typeof DOMPurify === 'undefined') {
+        console.warn('DOMPurify not loaded, skipping sanitization');
+        return html;
+    }
+    return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+}
+
 function safeSetInnerHTML(element, htmlContent) {
+    // Sanitize HTML content before parsing
+    const sanitized = sanitizeHTML(htmlContent);
+
     // Create a temporary container to parse the HTML safely
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
-    
+    tempDiv.innerHTML = sanitized;
+
     // Clear the target element
     element.innerHTML = '';
-    
+
     // Move all nodes from temp container to target element
     while (tempDiv.firstChild) {
         element.appendChild(tempDiv.firstChild);
@@ -874,14 +921,8 @@ function updateResultsArea() {
             entryEl.classList.add('itags-search-resultSection');
             entryEl.dataset.expandLevel = currentLevel;  // Store for click handlers
 
-            // SECURITY FIX: Use safe innerHTML setter instead of direct assignment
-            if (resultMarker && (inclusionPatterns.length > 0)) {
-                // Entry is already safely processed above
-                entryEl.innerHTML = entry;
-            } else {
-                // Use the safe method for unprocessed HTML content
-                safeSetInnerHTML(entryEl, entry);
-            }
+            // SECURITY FIX: Sanitize HTML before DOM insertion
+            entryEl.innerHTML = sanitizeHTML(entry);
             // Use correct text based on expansion level
             const textForLineNumbers = (currentLevel === 0 || !result.textExpanded?.[index]?.[currentLevel - 1])
                 ? result.text[index]

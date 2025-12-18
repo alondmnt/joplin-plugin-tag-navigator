@@ -1,15 +1,9 @@
 export const RELEASE_NOTES = {
-    version: "v2.6.3",
-    notes: `v2.6.3:
-- added: nested tag support for date tags
-- improved: memory management
-
-v2.6.*:
-- improved: MD preview tag rendering supports custom regexes
-- improved: search panel tag rendering with separate CSS classes for each tag prefix
-- fixed: search panel toggling
-- added: render tags in the Markdown preview (see settings)
-- added: render front matter in the Markdown preview (see settings)
-- added: highlight front matter in the Markdown editor (see settings)
-- fixed: front matter parsing logic
+    version: "v2.7.0",
+    notes: `v2.7.0:
+- added: context expansion for search results
+  - click ↑ next to results to view more from the note
+- added: CSS styling for core and context lines
+- added: search status panel messages
+- improved: settings descriptions with examples
 `};

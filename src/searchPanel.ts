@@ -171,6 +171,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
     <div id='itags-search-resultsArea' class="extended8X"></div>
   `);
   await joplin.views.panels.addScript(panel, 'searchPanelStyle.css');
+  await joplin.views.panels.addScript(panel, 'dompurify.min.js');
   await joplin.views.panels.addScript(panel, 'searchPanelScript.js');
   await joplin.views.panels.addScript(panel, 'prism.js');
   await joplin.views.panels.addScript(panel, 'prism.css');
