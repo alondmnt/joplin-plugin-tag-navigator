@@ -44,6 +44,7 @@ let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
 let sectionExpandLevel = {};  // Maps "noteId|color|sectionIndex" -> level (0-3)
+let isSearching = false;  // True while waiting for search results
 
 let domInitialized = false;
 let initializingDom = false;
@@ -285,6 +286,7 @@ function processPanelMessage(message) {
         updatePanelSettings(message);
 
     } else if (message.message.name === 'updateResults') {
+        isSearching = false;
         try {
             results = JSON.parse(message.message.results);
         } catch (e) {
@@ -749,6 +751,11 @@ function createQueryElement(item, groupIndex, tagIndex) {
 }
 
 function updateResultsArea() {
+    // Don't update if we're still waiting for search results
+    if (isSearching) {
+        return;
+    }
+
     // Filter results
     const filter = resultFilter.value;
     // Clear existing results and event listeners
@@ -945,8 +952,8 @@ function updateResultsArea() {
         resultsArea.appendChild(resultSpace);
     }
 
-    // Show helpful message when no results
-    if (displayedNoteCount === 0 && queryGroups.some(group => group.length > 0)) {
+    // Show helpful message when no results (but not while still searching)
+    if (displayedNoteCount === 0 && !isSearching && queryGroups.some(group => group.length > 0)) {
         const noResultsMsg = document.createElement('div');
         noResultsMsg.className = 'itags-search-statusMessage';
         if (results.length === 0) {
@@ -1322,6 +1329,7 @@ function clearResultsArea() {
 // Helper functions for search
 function sendSearchMessage() {
     const searchQuery = JSON.stringify(queryGroups);
+    isSearching = true;
 
     // Show "Searching..." message while waiting for results
     clearNode(resultsArea);
