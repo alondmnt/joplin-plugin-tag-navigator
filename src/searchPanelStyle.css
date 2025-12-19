@@ -577,6 +577,16 @@ mark.itags-search-renderedFilter {
     border-width: 0px;
 }
 
+.itags-search-replaceTag {
+    padding-left: 2px;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
 .itags-search-resultCount {
     position: absolute;
     background-color: var(--joplin-background-color);

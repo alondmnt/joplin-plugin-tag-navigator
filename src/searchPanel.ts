@@ -1499,18 +1499,18 @@ async function showCustomSortDialog(
       <form class="sortConfigForm" name="sort-config-form">
         <div style="margin-bottom: 10px;">
           <label for="sortBy" style="display: block; margin-bottom: 3px; font-weight: bold;">Sort by:</label>
-          <input type="text" id="sortBy" name="sortBy" value="${escapeHtml(validSortBy)}" 
-                 placeholder="tag1,tag2 or modified,title" 
-                 style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
+          <input type="text" id="sortBy" name="sortBy" value="${escapeHtml(validSortBy)}"
+                 placeholder="tag1,tag2 or modified,title"
+                 style="width: 95%; padding: 4px; border: 1px solid rgb(118, 118, 118); border-radius: 3px; color: var(--joplin-color); background-color: var(--joplin-background-color);" />
           <small style="opacity: 0.7; font-size: 10px;">
             Tags or fields (modified, created, title, notebook), comma-separated
           </small>
         </div>
         <div style="margin-bottom: 10px;">
           <label for="sortOrder" style="display: block; margin-bottom: 3px; font-weight: bold;">Order:</label>
-          <input type="text" id="sortOrder" name="sortOrder" value="${escapeHtml(validSortOrder)}" 
-                 placeholder="asc,desc or desc" 
-                 style="width: 100%; padding: 4px; border: 1px solid; border-radius: 3px;" />
+          <input type="text" id="sortOrder" name="sortOrder" value="${escapeHtml(validSortOrder)}"
+                 placeholder="asc,desc or desc"
+                 style="width: 95%; padding: 4px; border: 1px solid rgb(118, 118, 118); border-radius: 3px; color: var(--joplin-color); background-color: var(--joplin-background-color);" />
           <small style="opacity: 0.7; font-size: 10px;">
             asc or desc for each field, comma-separated. Default: asc
           </small>
