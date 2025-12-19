@@ -1516,11 +1516,12 @@ async function showCustomSortDialog(
           </small>
         </div>
       </form>
+      <style onload="document.getElementById('sortBy').focus();" src="#"></style>
     `);
 
     // Add buttons to the dialog
     await joplin.views.dialogs.setButtons(sortDialogHandle, [
-      { id: "apply", title: "Apply" },
+      { id: "ok", title: "OK" },
       { id: "cancel", title: "Cancel" }
     ]);
 
@@ -1529,7 +1530,7 @@ async function showCustomSortDialog(
 
     const result = await joplin.views.dialogs.open(sortDialogHandle);
     
-    if (result.id === 'apply') {
+    if (result.id === 'ok') {
       // Get the form data with proper validation
       const rawSortBy = result.formData?.['sort-config-form']?.sortBy || '';
       const rawSortOrderInput = result.formData?.['sort-config-form']?.sortOrder || '';
