@@ -1,7 +1,22 @@
+# [v2.7.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.0)
+*Released on 2025-12-19T12:18:41Z*
+
+- added: context expansion for search results
+  - click ↑ next to results to view more from the note
+- added: CSS styling for core and context lines
+- added: search status panel messages
+- added: HTML sanitisation for search results
+- improved: settings descriptions with examples
+- improved: panel and dialog styling
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.3...v2.7.0
+
+---
+
 # [v2.6.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.6.3)
 *Released on 2025-11-14T01:07:54Z*
 
-- added: nested tag support for date tags
+- added: nested tag support for date tags (FR #24)
 - improved: memory management
 
 **Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.2...v2.6.3
