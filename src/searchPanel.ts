@@ -1,5 +1,6 @@
 import joplin from 'api';
 import * as MarkdownIt from 'markdown-it';
+import * as markdownItMark from 'markdown-it-mark';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardSortKeys, getStandardOrderKeys, getStandardGroupingKeys } from './settings';
@@ -24,7 +25,7 @@ const md = new MarkdownIt({
     const escaped = md.utils.escapeHtml(code);
     return `<pre class="language-text"><code>${escaped}</code></pre>`;
   },
-}).use(markdownItTaskLists, { enabled: true })
+}).use(markdownItMark).use(markdownItTaskLists, { enabled: true })
 
 /** Cached regex patterns */
 export const REGEX = {
