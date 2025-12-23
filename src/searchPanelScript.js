@@ -175,7 +175,7 @@ const SANITIZE_CONFIG = {
         // Headings
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         // Text formatting
-        'strong', 'b', 'em', 'i', 'u', 's', 'del', 'mark', 'code', 'pre',
+        'strong', 'b', 'em', 'i', 'u', 's', 'del', 'mark', 'code', 'pre', 'font',
         // Lists
         'ul', 'ol', 'li',
         // Links
@@ -192,7 +192,7 @@ const SANITIZE_CONFIG = {
         'blockquote'
     ],
     ALLOWED_ATTR: [
-        'class', 'href', 'title', 'type', 'checked', 'disabled'
+        'class', 'href', 'title', 'type', 'checked', 'disabled', 'color'
     ],
     ALLOW_DATA_ATTR: true,
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
