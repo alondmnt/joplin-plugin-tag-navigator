@@ -1,8 +1,19 @@
+# [v2.7.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.1)
+*Released on 2025-12-23T04:56:49Z*
+
+- improved: render Markdown highlighting
+- improved: allow color and style attributes in HTML sanitization
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.7.0...v2.7.1
+
+---
+
 # [v2.7.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.0)
 *Released on 2025-12-19T12:18:41Z*
 
 - added: context expansion for search results
-  - click ↑ next to results to view more from the note
+  - click ↑ next to results to view more from the note (up to 3 expansion steps)
+  - customise length in the settings
 - added: CSS styling for core and context lines
 - added: search status panel messages
 - added: HTML sanitisation for search results
