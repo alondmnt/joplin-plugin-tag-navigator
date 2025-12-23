@@ -192,7 +192,7 @@ const SANITIZE_CONFIG = {
         'blockquote'
     ],
     ALLOWED_ATTR: [
-        'class', 'href', 'title', 'type', 'checked', 'disabled', 'color'
+        'class', 'href', 'title', 'type', 'checked', 'disabled', 'color', 'style'
     ],
     ALLOW_DATA_ATTR: true,
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
