@@ -343,8 +343,8 @@ function processPanelMessage(message) {
         // Clear note state for results that are no longer present
         clearNoteStateForNewResults();
 
-        // Reset context expansion state for new results
-        sectionExpandLevel = {};
+        // Clear context expansion state for results no longer present
+        clearSectionExpandStateForNewResults();
 
         // Always clean up dropdown first, then set sort value if provided
         // Remove any custom options that are not in the standard list
@@ -471,6 +471,34 @@ function clearNoteStateForNewResults() {
     // Clear temporary data structures
     currentKeys.clear();
     keysToRemove.length = 0;
+}
+
+// Fully clear section expand state (for new searches)
+function clearSectionExpandState() {
+    sectionExpandLevel = {};
+}
+
+// Clear section expand state for results that are no longer present
+// Preserves expansion state for notes that remain in new results (for refreshes)
+function clearSectionExpandStateForNewResults() {
+    // Build set of valid key prefixes from current results
+    const currentPrefixes = new Set();
+    for (const result of results) {
+        currentPrefixes.add(`${result.externalId}|${result.color || 'default'}`);
+    }
+
+    // Remove entries whose prefix doesn't match current results
+    // Key format: "noteId|color|sectionIndex"
+    for (const key of Object.keys(sectionExpandLevel)) {
+        const lastPipe = key.lastIndexOf('|');
+        const prefix = lastPipe > 0 ? key.substring(0, lastPipe) : key;
+        if (!currentPrefixes.has(prefix)) {
+            delete sectionExpandLevel[key];
+        }
+    }
+
+    // Clear temporary data structure (memory leak prevention)
+    currentPrefixes.clear();
 }
 
 // Update areas
@@ -1702,6 +1730,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             updateTagList();
             sendSearchMessage();
             clearNoteState();
+            clearSectionExpandState();
             removeContextMenu(contextMenu);
         });
         fragment.appendChild(searchTag);
@@ -2140,6 +2169,7 @@ function registerEventHandlers() {
         sendClearQuery(); // Clear the main process query and filter
         results = []; // Clear the results array before resetToGlobalSettings
         clearNoteState(); // Clear note state when clearing everything
+        clearSectionExpandState();
         resetToGlobalSettings(); // Reset to global settings for new searches
         updateTagList();
     });
@@ -2155,6 +2185,7 @@ function registerEventHandlers() {
     addEventListenerWithTracking(tagSearch, 'click', () => {
         sendSearchMessage();
         clearNoteState();
+        clearSectionExpandState();
     });
 
     addEventListenerWithTracking(tagFilter, 'keydown', (event) => {
@@ -2172,6 +2203,7 @@ function registerEventHandlers() {
             } else if (tagFilter.value === '') {
                 sendSearchMessage();
                 clearNoteState();
+                clearSectionExpandState();
 
             } else if (selectMultiTags === 'first' || ((selectMultiTags === 'none') && (tagList.childElementCount === 1))) {
                 // Get the tag name from the only / first child element of tagList
@@ -2261,6 +2293,7 @@ function registerEventHandlers() {
             if (tagRangeMin.value.length === 0 && tagRangeMax.value.length === 0) {
                 sendSearchMessage();
                 clearNoteState();
+                clearSectionExpandState();
                 return;
             }
             tagRangeAdd.click();
@@ -2301,6 +2334,7 @@ function registerEventHandlers() {
             if (noteFilter.value === '') {
                 sendSearchMessage();
                 clearNoteState();
+                clearSectionExpandState();
             } else if (noteList.firstChild) {
                 // Get the note from the first child element of noteList
                 const note = { title: noteList.firstChild.textContent, externalId: noteList.firstChild.value };
