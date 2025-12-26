@@ -1,3 +1,12 @@
+# [v2.7.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.2)
+*Released on 2025-12-26T11:04:52Z*
+
+- improved: preserve context expansion state when updating search results
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.7.1...v2.7.2
+
+---
+
 # [v2.7.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.1)
 *Released on 2025-12-23T04:56:49Z*
 
@@ -19,6 +28,12 @@
 - added: HTML sanitisation for search results
 - improved: settings descriptions with examples
 - improved: panel and dialog styling
+
+### standard result display
+<img width="443" alt="core" src="https://github.com/user-attachments/assets/7880e6c6-0a97-4ed9-823b-d7b88ea60739" />
+
+### expanded context display
+<img width="443" alt="expanded" src="https://github.com/user-attachments/assets/899690d0-7bb3-4968-9d5d-a6d126d8f00e" />
 
 **Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.6.3...v2.7.0
 
@@ -65,10 +80,10 @@
 - added: highlight front matter in the Markdown editor (see settings)
 - fixed: front matter parsing logic
 
-## Markdown editor
+### Markdown editor
 <img width="671" height="298" src="https://github.com/user-attachments/assets/90c00cd4-afa1-43db-a928-7d969c42a770" />
 
-## Markdown preview
+### Markdown preview
 <img width="673" height="286" src="https://github.com/user-attachments/assets/91139881-f73f-4477-b073-8c4f120309c9" />
 
 
