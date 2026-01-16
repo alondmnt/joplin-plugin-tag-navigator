@@ -34,6 +34,13 @@ interface TagViewInfo {
 }
 
 /**
+ * Type of tag separator relationship
+ * - 'nested': parent/child path structure (e.g., #2026/01/15)
+ * - 'keyvalue': key=value assignment (e.g., #status=active)
+ */
+export type TagSeparatorType = 'nested' | 'keyvalue';
+
+/**
  * Displays search results in all matching notes
  * @param db The inline tags database
  * @returns Configuration for table columns and default values
@@ -41,7 +48,7 @@ interface TagViewInfo {
 export async function displayInAllNotes(db: NoteDatabase): Promise<{
   tableColumns: string[],
   tableDefaultValues: { [key: string]: string },
-  tableColumnSeparators: { [key: string]: '/' | '=' }
+  tableColumnSeparators: { [key: string]: TagSeparatorType }
 }> {
   // Display results in notes
   const tagSettings = await getTagSettings();
@@ -50,7 +57,7 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
   const noteIds = db.getResultNotes();
   let tableColumns: string[] = [];
   let tableDefaultValues: { [key: string]: string } = {};
-  let tableColumnSeparators: { [key: string]: '/' | '=' } = {};
+  let tableColumnSeparators: { [key: string]: TagSeparatorType } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
     const result = await displayResultsInNote(db, note, tagSettings, viewSettings, resultSettings);
@@ -79,7 +86,7 @@ export async function displayResultsInNote(
   tagSettings: TagSettings,
   viewSettings: NoteViewSettings,
   resultSettings: ResultSettings
-): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string }, tableColumnSeparators: { [key: string]: '/' | '=' } } | null> {
+): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string }, tableColumnSeparators: { [key: string]: TagSeparatorType } } | null> {
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
   if (!savedQuery) { return null; }
@@ -104,7 +111,7 @@ export async function displayResultsInNote(
   let tableColumns: string[] = [];
   let tableString = '';
   let tableDefaultValues: { [key: string]: string } = {};
-  let tableColumnSeparators: { [key: string]: '/' | '=' } = {};
+  let tableColumnSeparators: { [key: string]: TagSeparatorType } = {};
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
@@ -370,11 +377,11 @@ async function processResultsForTable(
   TableResult[],
   { [key: string]: number },
   { [key: string]: string },
-  { [key: string]: '/' | '=' }
+  { [key: string]: TagSeparatorType }
 ]> {
   const columnCount: { [key: string]: number } = {};
   const valueCount: { [key: string]: { [key: string]: number } } = {};
-  const separatorCount: { [key: string]: { '/': number, '=': number } } = {};
+  const separatorCount: { [key: string]: { nested: number, keyvalue: number } } = {};
   const mostCommonValue: { [key: string]: string } = {};
 
   // Process tags for each result
@@ -405,13 +412,13 @@ async function processResultsForTable(
           valueCount[parent.tag] = {};
         }
         if (!separatorCount[parent.tag]) {
-          separatorCount[parent.tag] = { '/': 0, '=': 0 };
+          separatorCount[parent.tag] = { nested: 0, keyvalue: 0 };
         }
         // Track which separator is used for this parent-child relationship
         if (isHierarchical) {
-          separatorCount[parent.tag]['/'] += 1;
+          separatorCount[parent.tag].nested += 1;
         } else if (isKeyValue) {
-          separatorCount[parent.tag]['='] += 1;
+          separatorCount[parent.tag].keyvalue += 1;
         }
         const value = info.tag.replace(RegExp(escapeRegex(parent.tag) + '/|' + escapeRegex(parent.tag + tagSettings.valueDelim), 'g'), '');
         valueCount[parent.tag][value] = (valueCount[parent.tag][value] || 0) + 1;
@@ -437,9 +444,9 @@ async function processResultsForTable(
   }
 
   // Determine the most common separator for each column
-  const columnSeparator: { [key: string]: '/' | '=' } = {};
+  const columnSeparator: { [key: string]: TagSeparatorType } = {};
   for (const key in separatorCount) {
-    columnSeparator[key] = separatorCount[key]['/'] >= separatorCount[key]['='] ? '/' : '=';
+    columnSeparator[key] = separatorCount[key].nested >= separatorCount[key].keyvalue ? 'nested' : 'keyvalue';
   }
 
   // Clear temporary count objects to prevent memory leaks
@@ -647,13 +654,13 @@ function formatTag(tag: string, viewSettings: NoteViewSettings): string {
  * Creates a new note with table entry template
  * @param currentTableColumns Array of current table columns
  * @param currentTableDefaultValues Default values for each column
- * @param currentTableColumnSeparators Separator type ('/' or '=') for each column
+ * @param currentTableColumnSeparators Separator type ('nested' or 'keyvalue') for each column
  * @throws Will show a dialog if no table columns are available
  */
 export async function createTableEntryNote(
   currentTableColumns: string[],
   currentTableDefaultValues: Record<string, string>,
-  currentTableColumnSeparators: Record<string, '/' | '='>
+  currentTableColumnSeparators: Record<string, TagSeparatorType>
 ): Promise<void> {
   if (currentTableColumns.length === 0) {
     await joplin.views.dialogs.showMessageBox('No table columns available. Please ensure you have a table view active in your note.');
@@ -667,8 +674,8 @@ export async function createTableEntryNote(
     if (currentTableDefaultValues[column] === column) {
       // Simple tag (value equals column name)
       tagList.push('  - ' + column);
-    } else if (currentTableColumnSeparators[column] === '/') {
-      // Hierarchical tag - use full path in tags list
+    } else if (currentTableColumnSeparators[column] === 'nested') {
+      // Nested tag - use full path in tags list
       tagList.push('  - ' + column + '/' + currentTableDefaultValues[column]);
     } else {
       // Key-value tag - use YAML key-value format

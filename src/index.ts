@@ -5,7 +5,7 @@ import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSet
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { DatabaseManager, processAllNotes, processNote } from './db';
-import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults, viewList } from './noteView';
+import { createTableEntryNote, displayInAllNotes, displayResultsInNote, removeResults, viewList, TagSeparatorType } from './noteView';
 import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
@@ -16,7 +16,7 @@ import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemo
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
-let currentTableColumnSeparators: { [key: string]: '/' | '=' } = {};
+let currentTableColumnSeparators: { [key: string]: TagSeparatorType } = {};
 let lastSearchResults: GroupedResult[] = []; // Cache for search results
 
 // Store for collapsed/expanded state of note cards in the search panel
