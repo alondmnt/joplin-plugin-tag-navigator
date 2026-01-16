@@ -38,27 +38,30 @@ interface TagViewInfo {
  * @param db The inline tags database
  * @returns Configuration for table columns and default values
  */
-export async function displayInAllNotes(db: NoteDatabase): Promise<{ 
-  tableColumns: string[], 
-  tableDefaultValues: { [key: string]: string } 
+export async function displayInAllNotes(db: NoteDatabase): Promise<{
+  tableColumns: string[],
+  tableDefaultValues: { [key: string]: string },
+  tableColumnSeparators: { [key: string]: '/' | '=' }
 }> {
   // Display results in notes
   const tagSettings = await getTagSettings();
   const viewSettings = await getNoteViewSettings();
   const resultSettings = await getResultSettings();
   const noteIds = db.getResultNotes();
-  let tableColumns: string[] = [];  
+  let tableColumns: string[] = [];
   let tableDefaultValues: { [key: string]: string } = {};
+  let tableColumnSeparators: { [key: string]: '/' | '=' } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
     const result = await displayResultsInNote(db, note, tagSettings, viewSettings, resultSettings);
     if (result) {
       tableColumns = result.tableColumns;
       tableDefaultValues = result.tableDefaultValues;
+      tableColumnSeparators = result.tableColumnSeparators;
     }
     note = clearObjectReferences(note);
   }
-  return { tableColumns, tableDefaultValues };
+  return { tableColumns, tableDefaultValues, tableColumnSeparators };
 }
 
 /**
@@ -76,7 +79,7 @@ export async function displayResultsInNote(
   tagSettings: TagSettings,
   viewSettings: NoteViewSettings,
   resultSettings: ResultSettings
-): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string } } | null> {
+): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string }, tableColumnSeparators: { [key: string]: '/' | '=' } } | null> {
   if (!note.body) { return null; }
   const savedQuery = await loadQuery(db, note);
   if (!savedQuery) { return null; }
@@ -101,6 +104,7 @@ export async function displayResultsInNote(
   let tableColumns: string[] = [];
   let tableString = '';
   let tableDefaultValues: { [key: string]: string } = {};
+  let tableColumnSeparators: { [key: string]: '/' | '=' } = {};
   if (savedQuery.displayInNote === 'list') {
     // Create the results string as a list
     for (const result of filteredResults) {
@@ -123,8 +127,9 @@ export async function displayResultsInNote(
 
   } else if (savedQuery.displayInNote === 'table') {
     // Parse tags from results and accumulate counts
-    const [tableResults, columnCount, mostCommonValue] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery, resultSettings);
+    const [tableResults, columnCount, mostCommonValue, columnSeparator] = await processResultsForTable(filteredResults, db, tagSettings, savedQuery, resultSettings);
     tableDefaultValues = mostCommonValue;
+    tableColumnSeparators = columnSeparator;
     [tableString, tableColumns] = await buildTable(tableResults, columnCount, savedQuery, tagSettings, viewSettings);
     resultsString += tableString;
 
@@ -186,7 +191,7 @@ export async function displayResultsInNote(
   currentNote = clearObjectReferences(currentNote);
 
   if (updatedCurrentNote) {
-    return { tableColumns, tableDefaultValues };
+    return { tableColumns, tableDefaultValues, tableColumnSeparators };
   } else {
     return null;
   }
@@ -362,12 +367,14 @@ async function processResultsForTable(
   savedQuery: QueryRecord,
   resultSettings: ResultSettings
 ): Promise<[
-  TableResult[], 
-  { [key: string]: number }, 
-  { [key: string]: string }
+  TableResult[],
+  { [key: string]: number },
+  { [key: string]: string },
+  { [key: string]: '/' | '=' }
 ]> {
   const columnCount: { [key: string]: number } = {};
   const valueCount: { [key: string]: { [key: string]: number } } = {};
+  const separatorCount: { [key: string]: { '/': number, '=': number } } = {};
   const mostCommonValue: { [key: string]: string } = {};
 
   // Process tags for each result
@@ -382,17 +389,29 @@ async function processResultsForTable(
       }
       if (info.child) {
         // Count the number of notes each child tag appears in
-        let parent = tagInfo.find(
+        const isHierarchical = tagInfo.find(
           parentInfo =>
-            parentInfo.parent &&
-            (info.tag.startsWith(parentInfo.tag + '/') ||
-             info.tag.startsWith(parentInfo.tag + tagSettings.valueDelim))
+            parentInfo.parent && info.tag.startsWith(parentInfo.tag + '/')
         );
+        const isKeyValue = tagInfo.find(
+          parentInfo =>
+            parentInfo.parent && info.tag.startsWith(parentInfo.tag + tagSettings.valueDelim)
+        );
+        let parent = isHierarchical || isKeyValue;
         if (!parent) {
           parent = info;
         }
         if (!valueCount[parent.tag]) {
           valueCount[parent.tag] = {};
+        }
+        if (!separatorCount[parent.tag]) {
+          separatorCount[parent.tag] = { '/': 0, '=': 0 };
+        }
+        // Track which separator is used for this parent-child relationship
+        if (isHierarchical) {
+          separatorCount[parent.tag]['/'] += 1;
+        } else if (isKeyValue) {
+          separatorCount[parent.tag]['='] += 1;
         }
         const value = info.tag.replace(RegExp(escapeRegex(parent.tag) + '/|' + escapeRegex(parent.tag + tagSettings.valueDelim), 'g'), '');
         valueCount[parent.tag][value] = (valueCount[parent.tag][value] || 0) + 1;
@@ -410,17 +429,24 @@ async function processResultsForTable(
 
   // Find the most common value for each column
   for (const key in valueCount) {
-    mostCommonValue[key] = Object.keys(valueCount[key]).reduce((a, b) => 
+    mostCommonValue[key] = Object.keys(valueCount[key]).reduce((a, b) =>
       valueCount[key][a] > valueCount[key][b] ? a :
       valueCount[key][a] < valueCount[key][b] ? b :
       a < b ? a : b  // If counts are equal, take alphabetically first
     );
   }
 
+  // Determine the most common separator for each column
+  const columnSeparator: { [key: string]: '/' | '=' } = {};
+  for (const key in separatorCount) {
+    columnSeparator[key] = separatorCount[key]['/'] >= separatorCount[key]['='] ? '/' : '=';
+  }
+
   // Clear temporary count objects to prevent memory leaks
   clearObjectReferences(valueCount);
+  clearObjectReferences(separatorCount);
 
-  return [tableResults, columnCount, mostCommonValue];
+  return [tableResults, columnCount, mostCommonValue, columnSeparator];
 }
 
 /**
@@ -621,11 +647,13 @@ function formatTag(tag: string, viewSettings: NoteViewSettings): string {
  * Creates a new note with table entry template
  * @param currentTableColumns Array of current table columns
  * @param currentTableDefaultValues Default values for each column
+ * @param currentTableColumnSeparators Separator type ('/' or '=') for each column
  * @throws Will show a dialog if no table columns are available
  */
 export async function createTableEntryNote(
-  currentTableColumns: string[], 
-  currentTableDefaultValues: Record<string, string>
+  currentTableColumns: string[],
+  currentTableDefaultValues: Record<string, string>,
+  currentTableColumnSeparators: Record<string, '/' | '='>
 ): Promise<void> {
   if (currentTableColumns.length === 0) {
     await joplin.views.dialogs.showMessageBox('No table columns available. Please ensure you have a table view active in your note.');
@@ -637,8 +665,13 @@ export async function createTableEntryNote(
   let tagList = [];
   currentTableColumns.forEach(column => {
     if (currentTableDefaultValues[column] === column) {
+      // Simple tag (value equals column name)
       tagList.push('  - ' + column);
+    } else if (currentTableColumnSeparators[column] === '/') {
+      // Hierarchical tag - use full path in tags list
+      tagList.push('  - ' + column + '/' + currentTableDefaultValues[column]);
     } else {
+      // Key-value tag - use YAML key-value format
       frontmatter.push(`${column}: ${currentTableDefaultValues[column]}`);
     }
   });

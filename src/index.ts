@@ -16,6 +16,7 @@ import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemo
 let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
+let currentTableColumnSeparators: { [key: string]: '/' | '=' } = {};
 let lastSearchResults: GroupedResult[] = []; // Cache for search results
 
 // Store for collapsed/expanded state of note cards in the search panel
@@ -136,6 +137,7 @@ joplin.plugins.register({
         if (result) {
           currentTableColumns = result.tableColumns;
           currentTableDefaultValues = result.tableDefaultValues;
+          currentTableColumnSeparators = result.tableColumnSeparators;
         }
       }
 
@@ -162,6 +164,7 @@ joplin.plugins.register({
       // Reset table columns and default values
       currentTableColumns = [];
       currentTableDefaultValues = {};
+      currentTableColumnSeparators = {};
       // Search panel update
       let note = await joplin.workspace.selectedNote();
       if (!note) { return; }
@@ -184,6 +187,7 @@ joplin.plugins.register({
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
+            currentTableColumnSeparators = result.tableColumnSeparators;
           }
         } else {
           await removeResults(note);
@@ -302,11 +306,13 @@ joplin.plugins.register({
           if (result) {
             currentTableColumns = result.tableColumns;
             currentTableDefaultValues = result.tableDefaultValues;
+            currentTableColumnSeparators = result.tableColumnSeparators;
           }
         } else {
           await removeResults(note);
           currentTableColumns = [];
           currentTableDefaultValues = {};
+          currentTableColumnSeparators = {};
         }
         note = clearObjectReferences(note);
       },
@@ -326,6 +332,7 @@ joplin.plugins.register({
         if (result) {
           currentTableColumns = result.tableColumns;
           currentTableDefaultValues = result.tableDefaultValues;
+          currentTableColumnSeparators = result.tableColumnSeparators;
         }
         note = clearObjectReferences(note);
       },
@@ -502,7 +509,7 @@ joplin.plugins.register({
       label: 'Note view: New table entry',
       iconName: 'fas fa-table',
       execute: async () => {
-        await createTableEntryNote(currentTableColumns, currentTableDefaultValues);
+        await createTableEntryNote(currentTableColumns, currentTableDefaultValues, currentTableColumnSeparators);
       },
     });
 
@@ -814,7 +821,9 @@ joplin.plugins.register({
       currentTableColumns.length = 0;
       clearObjectReferences(currentTableDefaultValues);
       currentTableDefaultValues = {};
-      
+      clearObjectReferences(currentTableColumnSeparators);
+      currentTableColumnSeparators = {};
+
       // Clear the search results cache
       clearObjectReferences(lastSearchResults);
       lastSearchResults = [];
