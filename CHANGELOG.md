@@ -1,3 +1,12 @@
+# [v2.7.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.3)
+*Released on 2026-01-17T00:00:25Z*
+
+- fixed: preserve nested tag separator in new table entries (closes #28)
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.7.2...v2.7.3
+
+---
+
 # [v2.7.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.2)
 *Released on 2025-12-26T11:04:52Z*
 
