@@ -380,7 +380,7 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
 - Sort results by tags to reflect their priority (see [custom sorting options](#advanced-options)).
-- Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#confluence-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'",.()\[\]:;\?\\]+)`.
+- Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#metalist-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'",.()\[\]:;\?\\]+)`.
 - Supported additional checkbox styles (inspired by `[x]it!`).
     - Set any of them to done by clicking the checkbox in the search panel.
 
