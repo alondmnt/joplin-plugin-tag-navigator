@@ -178,14 +178,16 @@ Date tags provide flexible ways to work with dates in your notes, supporting bot
 
 - Tag ranges can be used to search for a range of tags, according to their lexicographic order.
     - Example: `#2024/07 -> #2024/08` will search for all tags starting with `#2024/07` and up to `#2024/08` (inclusive, i.e., returning two months).
+    - Note: Non-wildcard ranges require both min and max values to avoid unexpected matches across different tag types.
 - You may also use ranges with the `*` wildcard to search for tags starting with a certain prefix or ending with a suffix.
     - Example: `#prefix* ->` will search for all tags starting with `#prefix`.
-    - Example: `*suffix ->` will search for all tags ending with `suffix`.
+    - Example: `-> *suffix` will search for all tags ending with `suffix`.
+    - Wildcard ranges can be open-ended (only min or max specified).
 - Tag ranges can be inserted using the "Tag range" input boxes, or by right-clicking on a tag in the query area, and selecting `Edit query`.
     - Example: Edit a tag or tag range and type `#prefix* ->` to search for all tags starting with `#prefix`.
     - If you type only `#prefix`, the query will be converted to a standard tag search (matching only the tag `#prefix`).
 - Tag ranges can be used to search for tags by today's date.
-    - Example: `#today ->` will search for all tags starting with `#today`.
+    - Example: `#today -> #today+7` will search for all tags from today up to a week from now (inclusive).
     - Example: `#today -> #today+1` will search for all tags starting with `#today` and up to `#today+1` (inclusive, i.e., returning two days).
 
 ### Tag values
