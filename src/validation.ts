@@ -60,6 +60,7 @@ export const ALLOWED_MESSAGE_NAMES = new Set([
   'clearQuery',
   'focusEditor',
   'showSortDialog',
+  'showWarning',
   'initPanel'
 ]);
 
@@ -505,6 +506,10 @@ export function validatePanelMessage(message: any): any {
   if ('currentSortOrder' in message) {
     validated.currentSortOrder = validateSortOrder(message.currentSortOrder);
   }
-  
+
+  if ('message' in message) {
+    validated.message = validateString(message.message, 'message', VALIDATION_LIMITS.MAX_SETTING_VALUE_LENGTH);
+  }
+
   return validated;
 } 
