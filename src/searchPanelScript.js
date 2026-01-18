@@ -1773,7 +1773,12 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
 
                 if (newTag.includes('->')) {
                     // Convert to range
-                    Object.assign(item, parseRange(newTag));
+                    const parsed = parseRange(newTag);
+                    if (!isValidRange(parsed.minValue, parsed.maxValue)) {
+                        webviewApi.postMessage({ name: 'showWarning', message: 'Ranges require both min and max values. Use wildcards (e.g., prefix*) for open-ended searches.' });
+                        return;
+                    }
+                    Object.assign(item, parsed);
                     delete item.tag;
                     delete item.negated;
                 } else {
@@ -2145,6 +2150,12 @@ function parseRange(rangeStr) {
     return { minValue: min || undefined, maxValue: max || undefined };
 }
 
+function isValidRange(minValue, maxValue) {
+    const hasWildcard = (v) => v && (v.startsWith('*') || v.endsWith('*'));
+    // Wildcards always valid; non-wildcards need both bounds
+    return hasWildcard(minValue) || hasWildcard(maxValue) || (minValue && maxValue);
+}
+
 function registerEventHandlers() {
     if (!tagFilter || !tagList || !tagClear || !saveQuery || !tagSearch || !tagRangeArea ||
         !tagRangeMin || !tagRangeMax || !tagRangeAdd || !noteArea || !noteFilter ||
@@ -2321,6 +2332,11 @@ function registerEventHandlers() {
         }
         if (tagRangeMax.value.length > 0) {
             newRange['maxValue'] = tagRangeMax.value.trim().toLowerCase().replace(RegExp('\\s', 'g'), spaceReplace);
+        }
+
+        if (!isValidRange(newRange['minValue'], newRange['maxValue'])) {
+            webviewApi.postMessage({ name: 'showWarning', message: 'Ranges require both min and max values. Use wildcards (e.g., prefix*) for open-ended searches.' });
+            return;
         }
 
         handleRangeClick(newRange['minValue'], newRange['maxValue']);

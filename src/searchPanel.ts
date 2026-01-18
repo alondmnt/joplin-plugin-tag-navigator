@@ -581,6 +581,9 @@ async function processValidatedMessage(
     // Clear the cached search results
     lastSearchResults = [];
     // Note: Don't reset options here, that's handled by resetToGlobalSettings
+
+  } else if (message.name === 'showWarning') {
+    await joplin.views.dialogs.showMessageBox(message.message);
   }
   return lastSearchResults;
 }
