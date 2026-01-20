@@ -284,6 +284,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - `"heading"`: Group by heading
   - `"consecutive"`: Group adjacent lines
   - `"item"`: Split by item
+  - To change the global grouping, right-click on a note title in the search panel. Saved queries can override this with their own `resultGrouping` property.
 - **`includeCols`**: (Table view only) Comma-separated list of columns to display
   - Can include: note properties, tags, "modified", "created" timestamps
   - Use to slice, sort, or add specific columns
@@ -377,6 +378,7 @@ Context expansion lets you reveal surrounding lines around search results to see
 - When fully expanded, click **↓** to collapse back to the original view.
 - The expanded context is dimmed to help distinguish it from the core matched lines.
 - Configure the number of lines revealed per click in the setting `Search: Context expansion (show surrounding lines)`. Set to 0 to disable.
+- **Panel sections**: Show/hide panel sections (search query, tag list, tag range, note mentions, result filter) by right-clicking anywhere on the panel.
 
 ### Inline TODOs
 
