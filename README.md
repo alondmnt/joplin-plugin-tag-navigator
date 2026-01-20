@@ -84,7 +84,12 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ## Tips
 
+### Getting Started
 - [Troubleshooting](#troubleshooting)
+- [Saved queries](#saved-queries)
+- [Keyboard shortcuts](#keyboard-shortcuts)
+
+### Working with Tags
 - [Custom tag definitions](#custom-tag-definitions)
 - [Tag inheritance](#tag-inheritance)
 - [Date tags](#date-tags)
@@ -92,15 +97,17 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Tag ranges](#tag-ranges)
 - [Tag values](#tag-values)
 - [Front matter tags](#front-matter-tags)
-- [Saved queries](#saved-queries)
+
+### Views & Display
 - [Table views](#table-views)
 - [Kanban views](#kanban-views)
 - [Filtering results](#filtering-results)
 - [Context expansion](#context-expansion)
-- [Inline TODOs](#inline-todos)
 - [Colour tags](#colour-tags)
 - [Styling inline tags](#styling-inline-tags)
-- [Keyboard shortcuts](#keyboard-shortcuts)
+
+### Advanced
+- [Inline TODOs](#inline-todos)
 - [Converting Joplin tags](#converting-joplin-tags)
 
 ### Troubleshooting
@@ -110,9 +117,15 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 ### Custom tag definitions
 
 - The definition of a "tag" can be adjusted with user-defined regular expressions (see the advanced setting `Tag regex`).
-    - Example: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
 - You may also define an exclusion rule to ignore certain tags (see the advanced setting `Exclude regex`).
-    - Example: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+<details>
+<summary>Regex examples</summary>
+
+- **Custom tag regex**: Every word in the text may be defined as a tag using a custom regex such as `[A-Za-z0-9]+[\w]*`.
+- **Exclusion regex**: Numeric (`#123`) or hexanumeric (`#C0FF1E`) tags can be filtered using an exclusion regex such as `#(\d+|[a-fA-F0-9]{6})$`.
+
+</details>
 
 ### Tag inheritance
 
@@ -127,6 +140,8 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
         - Example: If a tag appears in the YAML [front matter](#front-matter-tags) of the note, all other *tagged lines* in the note will have front matter tags.
 
 ### Date tags
+
+> **TL;DR:** Use `#today`, `#week`, `#month` for dynamic dates. Add arithmetic like `#today+7`.
 
 Date tags provide flexible ways to work with dates in your notes, supporting both relative dates that update automatically and absolute dates that remain fixed.
 
@@ -205,6 +220,8 @@ Tag values are a bit similar to nested tags as multiple parts of the tag are tre
 
 ### Front matter tags
 
+> **TL;DR:** YAML front matter fields are converted to inline tags automatically.
+
 For example, the following YAML front matter, when inserted at the top of the note:
 
 ```yaml
@@ -232,6 +249,8 @@ will be converted to the following inline tags and values:
 These tags will be accessible in the search panel / notes / tables like standard inline tags. The last tag is `#frontmatter` and is used to indicate that the tags were extracted from the front matter section of the note.
 
 ### Saved queries
+
+> **TL;DR:** Save search configurations as JSON. Press `Save` on the panel, or edit manually.
 
 Saved queries allow you to store search configurations in notes and reuse them across devices. They are JSON objects that define search parameters and display options. The easiest way to save a query in the current note is to press the `Save` button on the panel (see the [demo](#saved-search-queries)), but they can also be edited manually.
 
@@ -293,6 +312,9 @@ Saved queries allow you to store search configurations in notes and reuse them a
 
 #### Complete example
 
+<details>
+<summary>View complete JSON example</summary>
+
 ```json
 {
   "query": [
@@ -325,6 +347,8 @@ Saved queries allow you to store search configurations in notes and reuse them a
 ```
 
 This example searches for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending).
+
+</details>
 
 ### Table views
 
@@ -414,7 +438,10 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 ### Styling inline tags
 
-The Markdown preview pane and the Tag Navigator search panel wrap every matched tag in the class `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, `//`, or any other character, add `itags-search-renderedTag--hash`, `--at`, `--plus`, `--slash`, `--<other char>`. You may modify their appearance in `userstyle.css` (for Markdown preview), or in the `Search: Panel style` setting (for the plugin's search panel). For example:
+The Markdown preview pane and the Tag Navigator search panel wrap every matched tag in the class `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, `//`, or any other character, add `itags-search-renderedTag--hash`, `--at`, `--plus`, `--slash`, `--<other char>`. You may modify their appearance in `userstyle.css` (for Markdown preview), or in the `Search: Panel style` setting (for the plugin's search panel).
+
+<details>
+<summary>CSS example for tag styling</summary>
 
 ```css
 /* optional: specify different sub-styles for each type of tag */
@@ -434,6 +461,8 @@ The Markdown preview pane and the Tag Navigator search panel wrap every matched 
 	background-color: #4a6fae;
 }
 ```
+
+</details>
 
 For the Markdown editor see Rich Markdown in the [Companion plugins](#companion-plugins) section.
 
@@ -486,21 +515,27 @@ For the Markdown editor see Rich Markdown in the [Companion plugins](#companion-
 - The excellent [Inline Tags](https://github.com/roman-r-m/joplin-inline-tags-plugin) plugin can autocomplete tags while typing.
 - Use [YesYouKan](https://github.com/joplin/plugin-yesyoukan) to visualize kanban views generated by Tag Navigator as interactive kanban boards.
 - You can highlight tags in the Markdown editor using [Rich Markdown](https://github.com/CalebJohn/joplin-rich-markdown) (version ≥ 0.14).
-    - In `Joplin settings --> Rich Markdown --> Advanced Settings --> Custom classes JSON` enter:
-    ```
-    [{"name": "rm-tag", "regex": "(?<=^|\\s)#([^\\s#'\",.()\\[\\]:;\\?\\\\]+)"}]
-    ```
-    - In `Joplin settings --> Appearance --> Custom stylesheet for Joplin-wide app styles` add the following to the style sheet:
-    ```
-    div.CodeMirror .cm-rm-tag {
-        background-color: #7698b3;
-        color: white !important;
-        padding: 0em 2px;
-        border-radius: 5px;
-        display: inline;
-    }
-    ```
-    - On the mobile app, since it is impossible to edit the stylesheet, one could install this [Rich Markdown fork](https://github.com/alondmnt/joplin-rich-markdown/releases/tag/v0.15-mobile-style-v4) (with predefined support for tags and checkboxes) or instead define the name of the tag class to be `"name": "searchMatch"`. This will use the same highlighting style as Joplin search results.
+
+<details>
+<summary>Rich Markdown setup instructions</summary>
+
+- In `Joplin settings --> Rich Markdown --> Advanced Settings --> Custom classes JSON` enter:
+```
+[{"name": "rm-tag", "regex": "(?<=^|\\s)#([^\\s#'\",.()\\[\\]:;\\?\\\\]+)"}]
+```
+- In `Joplin settings --> Appearance --> Custom stylesheet for Joplin-wide app styles` add the following to the style sheet:
+```
+div.CodeMirror .cm-rm-tag {
+    background-color: #7698b3;
+    color: white !important;
+    padding: 0em 2px;
+    border-radius: 5px;
+    display: inline;
+}
+```
+- On the mobile app, since it is impossible to edit the stylesheet, one could install this [Rich Markdown fork](https://github.com/alondmnt/joplin-rich-markdown/releases/tag/v0.15-mobile-style-v4) (with predefined support for tags and checkboxes) or instead define the name of the tag class to be `"name": "searchMatch"`. This will use the same highlighting style as Joplin search results.
+
+</details>
 
 ## Motivation
 
