@@ -129,6 +129,8 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 
 ### Tag inheritance
 
+> **TL;DR:** Tags automatically apply to child content via indentation, headings, or note-level inheritance.
+
 - Tag inheritance allows tags to be automatically applied to related content based on document structure, making it easier to organize and find information without manually tagging every line.
 - When the `Tag inheritance` setting is enabled (by default), tags are automatically inherited in three ways:
     1. **Outline/indentation inheritance**: Tags are inherited from parent items to their children based on indentation levels.
@@ -191,6 +193,8 @@ Date tags provide flexible ways to work with dates in your notes, supporting bot
 
 ### Tag ranges
 
+> **TL;DR:** Search tag ranges with `#min -> #max`. Use `*` wildcard for prefix/suffix matching.
+
 - Tag ranges can be used to search for a range of tags, according to their lexicographic order.
     - Example: `#2024/07 -> #2024/08` will search for all tags starting with `#2024/07` and up to `#2024/08` (inclusive, i.e., returning two months).
     - Note: Non-wildcard ranges require both min and max values to avoid unexpected matches across different tag types.
@@ -206,6 +210,8 @@ Date tags provide flexible ways to work with dates in your notes, supporting bot
     - Example: `#today -> #today+1` will search for all tags starting with `#today` and up to `#today+1` (inclusive, i.e., returning two days).
 
 ### Tag values
+
+> **TL;DR:** Use `#tag=value` to assign values. Unlike nested tags, values don't clutter the tag list.
 
 Tag values are a bit similar to nested tags as multiple parts of the tag are treated separately, but are distinct from them as explained below.
 
@@ -223,6 +229,9 @@ Tag values are a bit similar to nested tags as multiple parts of the tag are tre
 > **TL;DR:** YAML front matter fields are converted to inline tags automatically.
 
 For example, the following YAML front matter, when inserted at the top of the note:
+
+<details>
+<summary>View YAML front matter example</summary>
 
 ```yaml
 ---
@@ -245,6 +254,8 @@ will be converted to the following inline tags and values:
 #tag2
 #frontmatter
 ```
+
+</details>
 
 These tags will be accessible in the search panel / notes / tables like standard inline tags. The last tag is `#frontmatter` and is used to indicate that the tags were extracted from the front matter section of the note.
 
@@ -408,7 +419,12 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 - Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
 - Sort results by tags to reflect their priority (see [custom sorting options](#advanced-options)).
+<details>
+<summary>Custom regex for @mentions, +projects, //due-dates</summary>
+
 - Add support for [additional tags](https://github.com/CalebJohn/joplin-inline-todo?tab=readme-ov-file#metalist-style) for @mentions, +projects and //due-dates using a custom tag regex such as `(?<=^|\s)([#@+]|\/\/)([^\s#@'",.()\[\]:;\?\\]+)`.
+
+</details>
 - Supported additional checkbox styles (inspired by `[x]it!`).
     - Set any of them to done by clicking the checkbox in the search panel.
 
@@ -419,8 +435,13 @@ Context expansion lets you reveal surrounding lines around search results to see
 ![checkbox commands](img/checkboxes-commands.png)
 
 - You may increase the checkbox size on smaller screens by setting `Search: Panel style` with the CSS `.itags-search-checkbox { width: 18px; height: 18px; font-size: 18px }` (adjust as needed).
-- Furthermore, every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)(#([^\s#'",.()\[\]:;\?\\]+)|(\-\s\[[x\s@\?!~]\]))`.
+<details>
+<summary>Custom regex for treating checkboxes as tags</summary>
+
+- Every checkbox in the text (even ones that are not tagged by any inline #tag) may be defined as a tag using a custom regex such as `(?<=^|\s)(#([^\s#'",.()\[\]:;\?\\]+)|(\-\s\[[x\s@\?!~]\]))`.
     - You may then use queries to search for tag-tasks based on their state (`- [ ]`, `- [x]`, `- [@]`, ...).
+
+</details>
 
 ### Colour tags
 
