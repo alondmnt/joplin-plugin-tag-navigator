@@ -1,3 +1,12 @@
+# [v2.7.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.4)
+*Released on 2026-02-02T23:42:16Z*
+
+- fixed: escape square brackets in Tag regex setting example (fixes #30)
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.7.3...v2.7.4
+
+---
+
 # [v2.7.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.3)
 *Released on 2026-01-17T00:00:25Z*
 
