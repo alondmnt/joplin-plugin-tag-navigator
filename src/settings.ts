@@ -736,7 +736,7 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag regex',
-      description: 'Custom regex to match tags. Leave empty to use the default. Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",.()\[\]:;\\?\\\\]+)',
+      description: 'Custom regex to match tags. Leave empty to use the default. Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",()\\[\\]:;\\?\\\\]+)',
     },
     'itags.excludeRegex': {
       value: '',
