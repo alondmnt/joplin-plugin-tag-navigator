@@ -395,6 +395,9 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 ### Filtering results
 
 - Text entered in the results filter (on the panel or in a saved query) can be used to search within title of the notes, their notebook name / path, or the content of the displayed results.
+- Filtering behaviour depends on the result grouping mode (right-click a note title on the panel to change):
+    - **Group by heading** (default): Shows/hides entire sections based on whether they contain matching content.
+    - **Split by item**: Shows/hides individual items, useful for filtering specific tasks like `"- [ ]"`.
 - To gain more control over filtering by notebook, you may enable the setting `Search: Extract the full notebook path`.
     - Example: Limit results to a notebook that appears in the top level by searching for `|/topNotebook`.
     - Example: Search for `topNotebook/childNotebook` to show only results from childNotebook.
@@ -417,7 +420,7 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 ### Inline TODOs
 
-- Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`).
+- Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`). For individual task filtering, use "Split by item" grouping (right-click a note title on the panel).
 - Sort results by tags to reflect their priority (see [custom sorting options](#advanced-options)).
 <details>
 <summary>Custom regex for @mentions, +projects, //due-dates</summary>
