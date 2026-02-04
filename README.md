@@ -261,9 +261,15 @@ These tags will be accessible in the search panel / notes / tables like standard
 
 ### Saved queries
 
-> **TL;DR:** Save search configurations as JSON. Press `Save` on the panel, or edit manually.
+> **TL;DR:** Save search configurations as JSON. Press `Save` on the panel, or edit manually. Switch between queries using the dropdown.
 
 Saved queries allow you to store search configurations in notes and reuse them across devices. They are JSON objects that define search parameters and display options. The easiest way to save a query in the current note is to press the `Save` button on the panel (see the [demo](#saved-search-queries)), but they can also be edited manually.
+
+#### Loading saved queries
+
+- A dropdown in the search panel lists all notes containing saved queries, allowing you to quickly switch between them.
+- When you navigate to a note with a saved query, it is automatically loaded into the search panel.
+- To disable automatic loading (for a static panel that only updates via explicit query selection), turn off the setting `Search: Auto-load saved queries from notes`.
 
 #### Basic structure
 
