@@ -322,15 +322,24 @@ async function processValidatedMessage(
     // Save the query into the current note
     let currentNote = await joplin.workspace.selectedNote();
     if (!currentNote) { return; }
+    const noteId = currentNote.id;
     clearObjectReferences(currentNote);
 
     await saveQuery({
-      query: message.query, 
-      filter: message.filter, 
+      query: message.query,
+      filter: message.filter,
       displayInNote: searchParams.displayInNote,
       options: searchParams.options
     });
     await joplin.commands.execute('itags.refreshNoteView');
+
+    // Re-process the note to update savedQuery status and refresh dropdown
+    let updatedNote = await joplin.data.get(['notes', noteId], {
+      fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'],
+    });
+    await processNote(db, updatedNote, tagSettings);
+    updatedNote = clearObjectReferences(updatedNote);
+    await updatePanelNoteData(searchPanel, db);
 
   } else if (message.name === 'openNote') {
     try {
