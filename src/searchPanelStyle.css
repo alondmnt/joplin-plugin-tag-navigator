@@ -134,9 +134,15 @@ body {
     border-style: solid;
 }
 
-#itags-search-queryArea {
-    height: 38px;
+#itags-search-queryContainer {
+    display: flex;
+    gap: 4px;
     margin-bottom: 5px;
+}
+
+#itags-search-queryArea {
+    flex: 1;
+    height: 38px;
     border-color: rgb(118, 118, 118);
     border-width: 1px;
     border-style: solid;
@@ -147,6 +153,19 @@ body {
     overflow-x: auto;
     font-size: var(--joplin-font-size);
     box-sizing: border-box;
+}
+
+#itags-search-savedQueries {
+    flex-shrink: 0;
+    max-width: 32px;
+    min-height: 23px;
+    color: var(--joplin-color);
+    background-color: var(--joplin-background-color);
+    border-color: rgb(118, 118, 118);
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+    cursor: pointer;
 }
 
 .itags-search-tag {

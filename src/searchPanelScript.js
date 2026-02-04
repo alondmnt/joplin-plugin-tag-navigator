@@ -25,7 +25,10 @@ let tagRangeAdd;
 let noteArea;
 let noteList;
 let noteFilter;
+let queryContainer;
 let queryArea;
+let savedQueriesDropdown;
+let allSavedQueries = [];
 let resultFilterArea;
 let resultFilter;
 let resultCount;
@@ -104,7 +107,9 @@ function initPanel(force = false) {
     noteArea = document.getElementById('itags-search-inputNoteArea');
     noteList = document.getElementById('itags-search-noteList');
     noteFilter = document.getElementById('itags-search-noteFilter');
+    queryContainer = document.getElementById('itags-search-queryContainer');
     queryArea = document.getElementById('itags-search-queryArea');
+    savedQueriesDropdown = document.getElementById('itags-search-savedQueries');
     resultFilterArea = document.getElementById('itags-search-inputResultArea');
     resultFilter = document.getElementById('itags-search-resultFilter');
     resultSort = document.getElementById('itags-search-resultSort');
@@ -114,7 +119,7 @@ function initPanel(force = false) {
 
     if (!tagFilter || !tagInputArea || !tagClear || !saveQuery || !tagSearch || !tagList ||
         !tagRangeArea || !tagRangeMin || !tagRangeMax || !tagRangeAdd || !noteArea || !noteList ||
-        !noteFilter || !queryArea || !resultFilterArea || !resultFilter || !resultSort ||
+        !noteFilter || !queryContainer || !queryArea || !savedQueriesDropdown || !resultFilterArea || !resultFilter || !resultSort ||
         !resultOrder || !resultToggle || !resultsArea) {
         initializingDom = false;
         domInitialized = false;
@@ -314,6 +319,11 @@ function processPanelMessage(message) {
     } else if (message.message.name === 'updateNoteData') {
         allNotes = JSON.parse(message.message.notes);
         updateNoteList();
+        // Update saved queries dropdown if data is provided
+        if (message.message.savedQueries) {
+            allSavedQueries = JSON.parse(message.message.savedQueries);
+            updateSavedQueriesDropdown();
+        }
 
     } else if (message.message.name === 'updateQuery') {
         let queryGroupsCand = [];
@@ -530,6 +540,35 @@ function updateTagList() {
     updateTagCount(filteredTags.length, tagFilter.value);
 }
 
+// Update saved queries dropdown
+function updateSavedQueriesDropdown() {
+    if (!savedQueriesDropdown) { return; }
+
+    // Preserve the current value
+    const currentValue = savedQueriesDropdown.value;
+
+    // Clear existing options except the placeholder
+    while (savedQueriesDropdown.options.length > 1) {
+        savedQueriesDropdown.remove(1);
+    }
+
+    // Add saved query notes
+    for (const query of allSavedQueries) {
+        const option = document.createElement('option');
+        option.value = query.externalId;
+        option.textContent = query.title;
+        option.title = query.title; // Show full title on hover
+        savedQueriesDropdown.appendChild(option);
+    }
+
+    // Restore selection if it still exists
+    if (currentValue && Array.from(savedQueriesDropdown.options).some(opt => opt.value === currentValue)) {
+        savedQueriesDropdown.value = currentValue;
+    } else {
+        savedQueriesDropdown.value = '';
+    }
+}
+
 // Update note dropdown with the current list of notes
 function updateNoteList() {
     if (dropdownIsOpen) { return; }
@@ -727,7 +766,9 @@ function hideElements(settings) {
         saveQuery.classList.remove('hidden');
         tagSearch.classList.remove('hidden');
         tagList.classList.remove('hidden');
+        queryContainer.classList.remove('hidden');
         queryArea.classList.remove('hidden');
+        savedQueriesDropdown.classList.remove('hidden');
     } else {
         tagInputArea.classList.add('hidden');
         tagFilter.classList.add('hidden');
@@ -736,7 +777,9 @@ function hideElements(settings) {
         saveQuery.classList.add('hidden');
         tagSearch.classList.add('hidden');
         tagList.classList.add('hidden');
+        queryContainer.classList.add('hidden');
         queryArea.classList.add('hidden');
+        savedQueriesDropdown.classList.add('hidden');
         hiddenCount += 6;
     }
     if (settings.expandedTagList) {
@@ -1965,7 +2008,7 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
     }
 
     const sectionState = {
-        showQuery: !queryArea.classList.contains('hidden'),
+        showQuery: !queryContainer.classList.contains('hidden'),
         expandedTagList: tagList.classList.contains('expandedTagList'),
         showNotes: !noteArea.classList.contains('hidden'),
         showResultFilter: !resultFilterArea.classList.contains('hidden'),
@@ -2159,7 +2202,7 @@ function isValidRange(minValue, maxValue) {
 function registerEventHandlers() {
     if (!tagFilter || !tagList || !tagClear || !saveQuery || !tagSearch || !tagRangeArea ||
         !tagRangeMin || !tagRangeMax || !tagRangeAdd || !noteArea || !noteFilter ||
-        !noteList || !resultFilter || !resultSort || !resultOrder || !resultToggle ||
+        !noteList || !savedQueriesDropdown || !resultFilter || !resultSort || !resultOrder || !resultToggle ||
         !resultFilterArea || !resultCount || !resultsArea) {
         return;
     }
@@ -2412,6 +2455,23 @@ function registerEventHandlers() {
         // The dropdown is closed (avoid updates)
         dropdownIsOpen = false;
         updateNoteList();
+    });
+
+    // Saved queries dropdown handler
+    addEventListenerWithTracking(savedQueriesDropdown, 'change', () => {
+        const selectedId = savedQueriesDropdown.value;
+        if (selectedId) {
+            // Send message to load the saved query from the selected note
+            webviewApi.postMessage({
+                name: 'loadSavedQuery',
+                externalId: selectedId,
+            });
+            // Reset dropdown to placeholder after selection
+            savedQueriesDropdown.value = '';
+            // Clear note state for new query
+            clearNoteState();
+            clearSectionExpandState();
+        }
     });
 
     addEventListenerWithTracking(resultFilter, 'input', () => {

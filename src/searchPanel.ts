@@ -156,7 +156,12 @@ export async function registerSearchPanel(panel: string): Promise<void> {
       <input type="text" id="itags-search-noteFilter" class="hidden" placeholder="Filter notes..." />
       <select id="itags-search-noteList" class="hidden" title="Note mentions"></select>
     </div>
-    <div id="itags-search-queryArea" class="hidden"></div>
+    <div id="itags-search-queryContainer" class="hidden">
+      <div id="itags-search-queryArea" class="hidden"></div>
+      <select id="itags-search-savedQueries" class="hidden" title="Load saved query">
+        <option value="">☰</option>
+      </select>
+    </div>
     <div id="itags-search-inputResultArea" class="hidden">
       <input type="text" id="itags-search-resultFilter" class="hidden" placeholder="Filter results..." />
       <select id="itags-search-resultSort" class="hidden" title="Sort by">
@@ -582,6 +587,33 @@ async function processValidatedMessage(
     lastSearchResults = [];
     // Note: Don't reset options here, that's handled by resetToGlobalSettings
 
+  } else if (message.name === 'loadSavedQuery') {
+    // Load a saved query from a specific note
+    const noteId = message.externalId;
+    if (noteId) {
+      let note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title', 'body'] });
+      if (note) {
+        const savedQuery = await loadQuery(db, note);
+        if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
+          // Update searchParams with loaded query
+          searchParams.query = savedQuery.query;
+          searchParams.filter = savedQuery.filter;
+          searchParams.displayInNote = savedQuery.displayInNote;
+          searchParams.options = savedQuery.options;
+
+          // Update panel UI with the loaded query
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelSettings(searchPanel, searchParams);
+
+          // Run search with the loaded query
+          const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          lastSearchResults = results;
+          await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+        }
+        note = clearObjectReferences(note);
+      }
+    }
+
   } else if (message.name === 'showWarning') {
     await joplin.views.dialogs.showMessageBox(message.message);
   }
@@ -633,10 +665,11 @@ export async function updatePanelTagData(panel: string, db: NoteDatabase): Promi
  */
 export async function updatePanelNoteData(panel: string, db: NoteDatabase): Promise<void> {
   if (!await joplin.views.panels.visible(panel)) { return; }
-  
+
   await joplin.views.panels.postMessage(panel, {
     name: 'updateNoteData',
     notes: JSON.stringify(db.getNotes()),
+    savedQueries: JSON.stringify(db.getQueryNotesWithTitles()),
   });
 }
 

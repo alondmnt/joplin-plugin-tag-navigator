@@ -55,6 +55,7 @@ export const ALLOWED_MESSAGE_NAMES = new Set([
   'removeAll',
   'updateSetting',
   'saveQuery',
+  'loadSavedQuery',
   'updateNoteState',
   'resetToGlobalSettings',
   'clearQuery',

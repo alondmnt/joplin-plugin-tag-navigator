@@ -304,6 +304,14 @@ export class NoteDatabase {
     return Object.values(this.notes).filter(note => note.savedQuery).map(note => note.id);
   }
 
+  getQueryNotesWithTitles(): { title: string, externalId: string }[] {
+    // Return a list of notes with saved queries, including their titles
+    return Object.values(this.notes)
+      .filter(note => note.savedQuery)
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map(note => ({ title: note.title, externalId: note.id }));
+  }
+
   getResultNotes(): string[] {
     // Return a list of note ids that should display results
     return Object.values(this.notes).filter(note => (note.displayResults !== 'false')).map(note => note.id);
