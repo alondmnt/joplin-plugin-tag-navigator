@@ -169,7 +169,8 @@ joplin.plugins.register({
       let note = await joplin.workspace.selectedNote();
       if (!note) { return; }
       const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
-      if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
+      const autoLoadQuery = await joplin.settings.value('itags.autoLoadQuery');
+      if (autoLoadQuery && savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
         searchParams = savedQuery;
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);

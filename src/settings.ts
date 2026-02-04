@@ -498,6 +498,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: (Mobile app) Open notes in edit mode',
       description: 'Editor is required for scrolling to the correct line in the note.',
     },
+    'itags.autoLoadQuery': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Auto-load saved queries from notes',
+      description: 'When enabled, navigating to a note with a saved query automatically loads it into the search panel. Disable for a static panel that only updates via explicit query selection.',
+    },
     'itags.selectMultiTags': {
       value: 'first',
       type: SettingItemType.String,
