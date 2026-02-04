@@ -1,3 +1,17 @@
+# [v2.8.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.8.0)
+*Released on 2026-02-04T22:40:59Z*
+
+- added: saved queries dropdown to search pane (see screenshot)
+- added: auto-load saved queries setting
+
+<p><img width="447" height="92" alt="image" src="https://github.com/user-attachments/assets/849d068e-def7-4444-8f5c-9ecfffd1a424" /></p>
+
+<p><img width="447" height="100" alt="image" src="https://github.com/user-attachments/assets/fb76fcae-44fa-4b94-9293-76e5a1e3f87a" /></p>
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.7.4...v2.8.0
+
+---
+
 # [v2.7.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.7.4)
 *Released on 2026-02-02T23:42:16Z*
 
