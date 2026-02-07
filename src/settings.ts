@@ -470,6 +470,13 @@ export async function registerSettings(): Promise<void> {
         count: 'Count',
       }
     },
+    'itags.navPanelHideHash': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Hide hash symbol in tag name',
+    },
     'itags.navPanelStyle': {
       value: '',
       type: SettingItemType.String,
