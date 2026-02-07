@@ -88,7 +88,7 @@ export async function displayResultsInNote(
   resultSettings: ResultSettings
 ): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string }, tableColumnSeparators: { [key: string]: TagSeparatorType } } | null> {
   if (!note.body) { return null; }
-  const savedQuery = await loadQuery(db, note);
+  const savedQuery = loadQuery(note);
   if (!savedQuery) { return null; }
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 

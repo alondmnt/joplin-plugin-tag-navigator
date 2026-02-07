@@ -602,7 +602,7 @@ async function processValidatedMessage(
     if (noteId) {
       let note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title', 'body'] });
       if (note) {
-        const savedQuery = await loadQuery(db, note);
+        const savedQuery = loadQuery(note);
         if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
           // Update searchParams with loaded query
           searchParams.query = savedQuery.query;
@@ -1069,7 +1069,7 @@ async function replaceTagAll(
     const queryNotes = db.getQueryNotes();
     for (const externalId of queryNotes) {
       let note = await joplin.data.get(['notes', externalId], { fields: ['id', 'body'] });
-      const savedQuery = await loadQuery(db, note);
+      const savedQuery = loadQuery(note);
       if (replaceTagInQuery(savedQuery, message.oldTag, message.newTag)) {
         await saveQuery(savedQuery, externalId);
       };
@@ -1331,15 +1331,13 @@ export async function saveQuery(
 }
 
 /**
- * Loads a query configuration from a note
- * @param db - Note database instance
+ * Loads a query configuration from a note.
+ * Pure parse + structural validation — no DB lookups, no async I/O.
+ * Stale note/tag references are handled downstream by runSearch.
  * @param note - Note containing query
  * @returns Loaded query configuration
  */
-export async function loadQuery(
-  db: NoteDatabase, 
-  note: any
-): Promise<QueryRecord> {
+export function loadQuery(note: any): QueryRecord {
   const record = note.body.match(REGEX.findQuery);
   let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
   if (record) {
@@ -1348,15 +1346,15 @@ export async function loadQuery(
       if (!record[1]) {
         throw new Error('Query record is empty');
       }
-      
+
       let jsonContent = record[1].trim();
-      
+
       // Handle markdown code block format: ```json\n...content...\n```
       const jsonBlockMatch = jsonContent.match(/```json\s*\n([\s\S]*?)\n```/);
       if (jsonBlockMatch) {
         jsonContent = jsonBlockMatch[1].trim();
       } else {
-        // Try alternative format without language specifier: ```\n...content...\n```  
+        // Try alternative format without language specifier: ```\n...content...\n```
         const genericBlockMatch = jsonContent.match(/```\s*\n([\s\S]*?)\n```/);
         if (genericBlockMatch) {
           jsonContent = genericBlockMatch[1].trim();
@@ -1366,12 +1364,12 @@ export async function loadQuery(
           jsonContent = jsonContent.split('```')[0].trim();
         }
       }
-      
+
       if (!jsonContent) {
         throw new Error('No JSON content found in query');
       }
-      
-      const savedQuery = await testQuery(db, JSON.parse(jsonContent));
+
+      const savedQuery = validateQuery(JSON.parse(jsonContent));
       if (savedQuery.query && (savedQuery.filter !== null) && (savedQuery.displayInNote !== null)) {
         loadedQuery = savedQuery;
       }
@@ -1383,16 +1381,13 @@ export async function loadQuery(
 }
 
 /**
- * Tests if a query configuration is valid
- * @param db - Note database instance
- * @param query - Query configuration to test
- * @returns Validated query configuration
+ * Validates the structure and options of a parsed query.
+ * No DB lookups — conditions referencing deleted notes are kept as-is;
+ * runSearch handles them gracefully at query time.
+ * @param query - Raw parsed query configuration
+ * @returns Structurally validated query configuration
  */
-async function testQuery(
-  db: NoteDatabase, 
-  query: QueryRecord
-): Promise<QueryRecord> {
-  // Test if the query is valid
+function validateQuery(query: QueryRecord): QueryRecord {
   if (!query.query) {
     return query;
   }
@@ -1403,69 +1398,53 @@ async function testQuery(
     query.displayInNote = query.displayInNote ? 'list' : 'false';
   }
 
+  // Validate condition format and filter out malformed entries
   let queryGroups = query.query;
   for (let [ig, group] of queryGroups.entries()) {
     for (let [ic, condition] of group.entries()) {
-
-      // Check if the format is correct
       const format = ((typeof condition.negated == 'boolean') &&
         ((typeof condition.tag == 'string') ||
          ((typeof condition.title == 'string') && (typeof condition.externalId == 'string')))) ||
          ((typeof condition.minValue == 'string') || (typeof condition.maxValue == 'string'));
       if (!format) {
+        console.warn('validateQuery: skipping malformed condition:', JSON.stringify(condition));
         group[ic] = null;
       }
-
-      if (condition.tag) {
-        // TODO: maybe check if the tag exists
-
-      } else if (condition.externalId) {
-        if (condition.externalId === 'current') { continue; }
-
-        // Try to update externalId in case it changed
-        const newExternalId = db.getNoteId(condition.title);
-        if (newExternalId) {
-          condition.externalId = newExternalId;
-        } else {
-          group[ic] = null;
-        }
-      }
     }
-    // filter null conditions
     queryGroups[ig] = group.filter((condition: any) => (condition));
   }
-  // filter null groups
+  // Filter empty groups
   query.query = queryGroups.filter((group: any) => group.length > 0);
 
-  // Normalize sort order if it exists
-  if (query.options?.sortOrder) {
-    // Ensure sortOrder is a valid string first
-    query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);
+  // Postcondition: ensure query is never bare [] (must be [[]])
+  if (query.query.length === 0) {
+    console.debug('validateQuery: all conditions filtered out, resetting to [[]]');
+    query.query = [[]];
+  }
 
+  // Normalise sort order if present
+  if (query.options?.sortOrder) {
+    query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);
     const normalizedSortOrder = normalizeSortOrder(query.options.sortOrder);
     if (normalizedSortOrder) {
       query.options.sortOrder = normalizedSortOrder.join(',');
     } else {
-      // If normalization fails, use default
       query.options.sortOrder = 'desc';
     }
   }
 
-  // Ensure sortBy is a valid string if it exists
+  // Normalise sortBy if present
   if (query.options?.sortBy) {
     query.options.sortBy = ensureSortByString(query.options.sortBy);
   }
 
-  // Ensure resultGrouping is a valid string if it exists
+  // Validate resultGrouping — delete if invalid instead of falling back to settings
   if (query.options?.resultGrouping) {
     const validGroupingModes = getStandardGroupingKeys();
-    if (typeof query.options.resultGrouping === 'string' && 
-        validGroupingModes.includes(query.options.resultGrouping)) {
-      // Keep the valid value
-    } else {
-      // Set to default from settings if invalid
-      const resultSettings = await getResultSettings();
-      query.options.resultGrouping = resultSettings.resultGrouping;
+    if (!(typeof query.options.resultGrouping === 'string' &&
+        validGroupingModes.includes(query.options.resultGrouping))) {
+      console.warn('validateQuery: invalid resultGrouping:', query.options.resultGrouping);
+      delete query.options.resultGrouping;
     }
   }
 

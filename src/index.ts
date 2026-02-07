@@ -168,7 +168,7 @@ joplin.plugins.register({
       // Search panel update
       let note = await joplin.workspace.selectedNote();
       if (!note) { return; }
-      const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
+      const savedQuery = loadQuery(note);
       const autoLoadQuery = await joplin.settings.value('itags.autoLoadQuery');
       if (autoLoadQuery && savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
@@ -269,7 +269,7 @@ joplin.plugins.register({
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
-        const savedQuery = await loadQuery(DatabaseManager.getDatabase(), note);
+        const savedQuery = loadQuery(note);
         if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
           // Updating this variable will ensure it's sent to the panel on initPanel
           searchParams = savedQuery;
@@ -288,7 +288,7 @@ joplin.plugins.register({
       execute: async () => {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
-        const query = await loadQuery(DatabaseManager.getDatabase(), note);
+        const query = loadQuery(note);
         // toggle display
         const extendedViewList = [...viewList, 'false'];
         const i = extendedViewList.findIndex(x => x === query.displayInNote);
