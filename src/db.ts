@@ -555,7 +555,7 @@ export async function processNote(
 
     // Insert into Results table if results should be displayed
     const searchQuery = await loadQuery(db, note);
-    if (searchQuery.query[0].length > 0) {
+    if (searchQuery.query[0]?.length > 0) {
       noteRecord.setSavedQuery(true);
     }
     noteRecord.setDisplay(searchQuery.displayInNote);
