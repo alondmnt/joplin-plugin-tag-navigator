@@ -558,7 +558,18 @@ async function buildTable(
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
-  const includeCols = savedQuery?.options?.includeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+  // Parse includeCols with optional rename syntax: "col:Display Name"
+  const renameMap = new Map<string, string>();
+  const includeCols = savedQuery?.options?.includeCols?.split(',').map(entry => {
+    const sepIndex = entry.indexOf(':');
+    if (sepIndex >= 0) {
+      const internal = entry.slice(0, sepIndex).trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' ');
+      const display = entry.slice(sepIndex + 1).trim();
+      if (internal && display) { renameMap.set(internal, display.replace(/\|/g, '\\|')); }
+      return internal;
+    }
+    return entry.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' ');
+  });
   const excludeCols = savedQuery?.options?.excludeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
   if (includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
@@ -588,7 +599,7 @@ async function buildTable(
     tableColumns = tableColumns.filter(col => !excludeCols.includes(col));
   }
 
-  let resultsString = `\n| ${tableColumns.map(col => formatTag(col, viewSettings)).join(' | ')} |\n`;
+  let resultsString = `\n| ${tableColumns.map(col => renameMap.get(col) ?? formatTag(col, viewSettings)).join(' | ')} |\n`;
   resultsString += `|${tableColumns.map((col) => col === 'title' ? '---' : ':---:').join('|')}|\n`;
   for (const result of tableResults) {
     if (Object.keys(result.columns).length === 0) { continue; }
@@ -631,9 +642,10 @@ async function buildTable(
   }
   tableColumns = tableColumns.filter(col => !metaCols.includes(col));
   
-  // Clear temporary arrays to prevent memory leaks
+  // Clear temporary collections to prevent memory leaks
   if (includeCols) includeCols.length = 0;
   if (excludeCols) excludeCols.length = 0;
+  renameMap.clear();
   
   return [resultsString, tableColumns];
 }
