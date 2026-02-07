@@ -146,7 +146,7 @@ async function getQueryResults(
             } else if (minValue.endsWith('*')) {
               // Combined prefix + range check
               if (!tag.startsWith(minValue.slice(0, -1))) { continue; }
-            } else if (!isTagInRange(tag, minValue, maxValue)) {
+            } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
             }
           }
@@ -157,7 +157,7 @@ async function getQueryResults(
             } else if (maxValue.endsWith('*')) {
               // Combined prefix + range check
               if (!tag.startsWith(maxValue.slice(0, -1))) { continue; }
-            } else if (!isTagInRange(tag, minValue, maxValue)) {
+            } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
             }
           }
@@ -179,15 +179,18 @@ async function getQueryResults(
 }
 
 /**
- * Checks if a tag is within a range, properly handling nested tags
+ * Checks if a tag is within a range, properly handling nested tags.
+ * Uses numeric comparison when both operands are numeric, otherwise
+ * falls back to lexicographic comparison.
  * @param tag Tag to check
  * @param minValue Minimum value of range
  * @param maxValue Maximum value of range
+ * @param valueDelim Delimiter between tag key and value (e.g., '=')
  * @returns True if tag is within range, false otherwise
  */
-function isTagInRange(tag: string, minValue: string, maxValue: string): boolean {
+function isTagInRange(tag: string, minValue: string, maxValue: string, valueDelim: string): boolean {
   // If both min and max exist, ensure min is not greater than max
-  if (minValue && maxValue && minValue.localeCompare(maxValue) > 0) {
+  if (minValue && maxValue && compareTagValues(minValue, maxValue, valueDelim) > 0) {
     return false;
   }
 
@@ -197,16 +200,16 @@ function isTagInRange(tag: string, minValue: string, maxValue: string): boolean 
   }
 
   // Check if tag is a parent of minValue or maxValue
-  if (minValue && minValue.startsWith(tag + '/') || 
+  if (minValue && minValue.startsWith(tag + '/') ||
       maxValue && maxValue.startsWith(tag + '/')) {
     return false;
   }
 
-  // For non-exact matches, use lexicographic comparison
-  if (minValue && tag.localeCompare(minValue) < 0) {
+  // Numeric-aware comparison (falls back to lexicographic for non-numeric values)
+  if (minValue && compareTagValues(tag, minValue, valueDelim) < 0) {
     return false;
   }
-  if (maxValue && tag.localeCompare(maxValue) > 0) {
+  if (maxValue && compareTagValues(tag, maxValue, valueDelim) > 0) {
     return false;
   }
 
