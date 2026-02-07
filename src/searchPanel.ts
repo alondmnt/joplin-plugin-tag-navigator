@@ -1314,10 +1314,10 @@ export async function saveQuery(
     if (query.query.length === 0) {
       newBody = note.body.replace(REGEX.findQuery, '');
     } else {
-      newBody = note.body.replace(REGEX.findQuery, `\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${decoration[1]}`);
+      newBody = note.body.replace(REGEX.findQuery, `\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query, null, 2)}\n\`\`\`\n${decoration[1]}`);
     }
   } else {
-    newBody = `${note.body.replace(/\s+$/, '')}\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query)}\n\`\`\`\n${decoration[1]}`;
+    newBody = `${note.body.replace(/\s+$/, '')}\n\n${decoration[0]}\n\`\`\`json\n${JSON.stringify(query, null, 2)}\n\`\`\`\n${decoration[1]}`;
     // trimming trailing spaces in note body before insertion
   }
 
