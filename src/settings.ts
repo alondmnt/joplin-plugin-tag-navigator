@@ -470,6 +470,13 @@ export async function registerSettings(): Promise<void> {
         count: 'Count',
       }
     },
+    'itags.navPanelSearchTagByClick': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Ctrl+click search by tag in Joplin',
+    },
     'itags.navPanelStyle': {
       value: '',
       type: SettingItemType.String,

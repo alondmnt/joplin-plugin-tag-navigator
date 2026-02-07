@@ -761,6 +761,9 @@ joplin.plugins.register({
     });
 
     await joplin.views.panels.onMessage(navPanel, async (message: any) => {
+
+        console.log('onMessage:', message);
+
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
@@ -791,19 +794,52 @@ joplin.plugins.register({
       if (message.name === 'updateSetting') {
         await joplin.settings.setValue(message.field, message.value);
       }
-      if (message.name === 'searchTag') {
-        // Reset to global settings for new searches (don't preserve existing options)
-        searchParams = { 
-          query: [[{ tag: message.tag, negated: false }]], 
-          filter: '', 
-          displayInNote: 'false'
-          // Don't preserve existing options - let it use global settings
-        };
-        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-        await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
-        lastSearchResults = results; // Cache the results
-        await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+      if (message.name === "searchTag") {
+        if (message.isModifier && (await joplin.settings.value("itags.navPanelSearchTagByClick"))) {
+          const db = DatabaseManager.getDatabase();
+          const notesIdxs = Object.keys(db.searchBy("tag", message.tag, false));
+
+          const tag = message.tag.substring(1);
+          let tagId;
+
+          for (const id of notesIdxs) {
+            const noteTags = await joplin.data.get(["notes", id, "tags"], { fields: ["id", "title"] });
+
+            tagId = noteTags?.items?.find(({ title }) => title.toLowerCase() === tag)?.id;
+            if (tagId) {
+              break;
+            }
+          }
+
+          if (tagId) {
+            await joplin.commands.execute("openTag", tagId);
+          }
+        } else {
+          // Reset to global settings for new searches (don't preserve existing options)
+          searchParams = {
+            query: [[{ tag: message.tag, negated: false }]],
+            filter: "",
+            displayInNote: "false",
+            // Don't preserve existing options - let it use global settings
+          };
+          const panelState = await joplin.views.panels.visible(searchPanel);
+          if (!panelState) {
+            await joplin.views.panels.show(searchPanel);
+            await registerSearchPanel(searchPanel);
+            await focusSearchPanel(searchPanel);
+          }
+
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
+          const results = await runSearch(
+            DatabaseManager.getDatabase(),
+            searchParams.query,
+            searchParams.options?.resultGrouping,
+            searchParams.options,
+          );
+          lastSearchResults = results; // Cache the results
+          await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+        }
       }
       clearObjectReferences(message);
     });
