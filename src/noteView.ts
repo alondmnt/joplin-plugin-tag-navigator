@@ -99,8 +99,11 @@ export async function displayResultsInNote(
   // Run search with sorting options
   const results = await runSearch(db, savedQuery.query, groupingMode, savedQuery.options);
 
-  // Apply filtering
-  const filteredResults = await filterResults(results, savedQuery.filter, viewSettings);
+  // Apply filtering and limit
+  let filteredResults = await filterResults(results, savedQuery.filter, viewSettings);
+  if (savedQuery.options?.limit > 0) {
+    filteredResults = filteredResults.slice(0, savedQuery.options.limit);
+  }
 
   if (filteredResults.length === 0) {
     await removeResults(note);

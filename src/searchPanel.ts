@@ -63,6 +63,7 @@ export interface QueryRecord {
     sortBy?: string;
     sortOrder?: string;
     resultGrouping?: string;
+    limit?: number;
   };
 }
 
@@ -495,9 +496,9 @@ async function processValidatedMessage(
       } else if (message.field === 'resultOrder') {
         const validSortOrder = ensureSortOrderString(message.value);
         const standardSortOrders = getStandardOrderKeys();
-        
+
         if (standardSortOrders.includes(validSortOrder)) {
-          // Standard option: update global setting, remove query override  
+          // Standard option: update global setting, remove query override
           await joplin.settings.setValue(`itags.${message.field}`, validSortOrder);
           if (searchParams.options?.sortOrder) {
             delete searchParams.options.sortOrder;
@@ -690,12 +691,13 @@ export async function updatePanelNoteData(panel: string, db: NoteDatabase): Prom
  * @param options - Sorting options
  */
 export async function updatePanelResults(
-  panel: string, 
-  results: GroupedResult[], 
+  panel: string,
+  results: GroupedResult[],
   query: Query[][],
   options?: {
     sortBy?: string;
     sortOrder?: string;
+    limit?: number;
   }
 ): Promise<void> {
   const panelSettings = await joplin.settings.values([
@@ -719,6 +721,10 @@ export async function updatePanelResults(
     sortOrder = ensureSortOrderString(panelSettings['itags.resultOrder']) || 'desc';
   }
 
+  // Apply result limit before rendering
+  const limitedResults = (options?.limit > 0)
+    ? results.slice(0, options.limit) : results;
+
   // Just render the HTML and pass along the sorting options that were used
   // Note: results are intentionally NOT cleared here - they're cached in lastSearchResults
   // for re-sorting without re-fetching. The cache is replaced on new searches.
@@ -728,7 +734,7 @@ export async function updatePanelResults(
         joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
           results: JSON.stringify(renderHTML(
-            results, tagSettings.tagRegex,
+            limitedResults, tagSettings.tagRegex,
             panelSettings['itags.resultMarker'] as boolean,
             panelSettings['itags.colorTodos'] as boolean,
             panelSettings['itags.contextExpansionStep'] as number ?? 2)),
@@ -1448,6 +1454,17 @@ function validateQuery(query: QueryRecord): QueryRecord {
     }
   }
 
+  // Validate limit — must be a positive integer
+  if (query.options?.limit != null) {
+    const limit = Number(query.options.limit);
+    if (!Number.isInteger(limit) || limit <= 0) {
+      console.warn('validateQuery: invalid limit:', query.options.limit);
+      delete query.options.limit;
+    } else {
+      query.options.limit = limit;
+    }
+  }
+
   return query;
 }
 
@@ -1567,7 +1584,7 @@ async function showCustomSortDialog(
       if (sortBy && sortBy !== 'modified') { // Only proceed if we have a non-default sortBy
         // Normalize the sort order input
         const normalizedSortOrder = normalizeSortOrder(sortOrderInput);
-        
+
         if (!normalizedSortOrder) {
           // Show error dialog for invalid sort order
           await joplin.views.dialogs.showMessageBox(

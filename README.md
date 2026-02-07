@@ -326,6 +326,8 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - Use to slice, sort, or add specific columns
 - **`excludeCols`**: (Table view only) Comma-separated list of columns to hide
   - Removes columns even if they exist in the data
+- **`limit`**: Maximum number of results to display (positive integer)
+  - Applied after sorting and filtering
 
 #### Complete example
 
@@ -358,7 +360,8 @@ Saved queries allow you to store search configurations in notes and reuse them a
     "includeCols": "title, artist, country, year, modified",
     "excludeCols": "notebook, line",
     "sortBy": "year, artist",
-    "sortOrder": "asc, desc"
+    "sortOrder": "asc, desc",
+    "limit": 20
   }
 }
 ```
