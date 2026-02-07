@@ -13,6 +13,7 @@ document.addEventListener('click', event => {
     webviewApi.postMessage({
       name: 'searchTag',
       tag: element.dataset.tag,
+      isModifier: event.ctrlKey,
     });
   }
 
