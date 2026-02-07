@@ -761,9 +761,6 @@ joplin.plugins.register({
     });
 
     await joplin.views.panels.onMessage(navPanel, async (message: any) => {
-
-        console.log('onMessage:', message);
-
       if (message.name === 'jumpToLine') {
         // Increment the index of the tag
         for (const tag of tagLines) {
