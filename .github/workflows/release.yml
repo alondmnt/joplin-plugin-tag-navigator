@@ -4,7 +4,8 @@ on:
   push:
     tags:
       - 'v*' # Trigger this workflow when a tag starting with 'v' is pushed
-
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
