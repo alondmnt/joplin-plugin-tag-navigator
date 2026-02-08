@@ -470,12 +470,13 @@ export async function registerSettings(): Promise<void> {
         count: 'Count',
       }
     },
-    'itags.navPanelHideHash': {
+    'itags.navPanelHidePrefix': {
       value: false,
       type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      label: 'Navigation: Hide hash symbol in tag name',
+      label: 'Navigation: Hide tag prefix',
+      description: 'Hide the tag prefix (e.g., #) in the navigation panel.',
     },
     'itags.navPanelStyle': {
       value: '',

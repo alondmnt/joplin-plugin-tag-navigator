@@ -39,12 +39,12 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
     'itags.navPanelScope',
     'itags.navPanelStyle',
     'itags.navPanelSort',
-    'itags.navPanelHideHash',
+    'itags.navPanelHidePrefix',
   ]);
   const selectedTab = navSettings['itags.navPanelScope'] as 'global' | 'note';
   const userStyle = navSettings['itags.navPanelStyle'] as string;
   const tagSort = navSettings['itags.navPanelSort'] as 'name' | 'count';
-  const hideHash = navSettings['itags.navPanelHideHash'] as boolean;
+  const hidePrefix = navSettings['itags.navPanelHidePrefix'] as boolean;
 
   // Sort tagsLines by tag name
   if (tagSort === 'count') {
@@ -67,7 +67,7 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
 
   // Build the tree of all tags
   const tagTree = buildTagTree(tagCount);
-  const tagTreeHTML = buildTreeHTML(tagTree.children, '', tagSort, hideHash);
+  const tagTreeHTML = buildTreeHTML(tagTree.children, '', tagSort, hidePrefix);
   
   // Clear tree to prevent memory leaks (import clearObjectReferences at top)
   const { clearObjectReferences } = await import('./memory');
@@ -133,7 +133,7 @@ function buildTreeHTML(
   tagTree: TagNode['children'],
   parentTag: string = '',
   sortBy: 'name' | 'count' = 'name',
-  hideHash = false,
+  hidePrefix = false,
   level: number = 0,
 ): string {
   let html = '';
@@ -153,11 +153,11 @@ function buildTreeHTML(
     if (count === 0) { return; } // Ignore tags with count 0
 
     const fullTag = parentTag ? `${parentTag}/${tag}` : tag;
-    const tagName = hideHash ? fullTag.substring(1) : fullTag;
+    const tagName = hidePrefix ? fullTag.substring(1) : fullTag;
     const indentStyle = `style="padding-left: ${(level +1) * 5}px;"`;
 
     if (Object.keys(children).length > 0) {
-      html += `<details ${indentStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" style="padding-left: 0px;">${tagName} <span>(${count})</span></a></summary>${buildTreeHTML(children, fullTag, sortBy, hideHash, level + 1)}</details>`;
+      html += `<details ${indentStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" style="padding-left: 0px;">${tagName} <span>(${count})</span></a></summary>${buildTreeHTML(children, fullTag, sortBy, hidePrefix, level + 1)}</details>`;
     } else {
       html += `<a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" ${indentStyle}>${tagName} <span>(${count})</span></a><br/>`;
     }
