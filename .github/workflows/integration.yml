@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: zerg-zerg/joplin-plugin-tag-navigator
+        uses: zerg-zerg/joplin-plugin-tag-navigator@v1
 
       - name: Fetch and push tags from upstream
         run: |
