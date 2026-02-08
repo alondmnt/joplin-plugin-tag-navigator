@@ -38,6 +38,7 @@ jobs:
           draft: false
           prerelease: false
           name: Release ${{ env.plugin_version }}
+          commitish: my-release
           body_path: CHANGELOG.md # Optional: Use the content of a CHANGELOG.md file for release notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is automatically provided by GitHub
