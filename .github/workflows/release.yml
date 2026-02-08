@@ -1,0 +1,44 @@
+name: Release Joplin Plugin
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger this workflow when a tag starting with 'v' is pushed
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+  
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the action to create a release and upload assets
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x' # Use a recent, stable Node.js version
+
+      - name: Install dependencies and build plugin
+        run: |
+          npm install
+          npm run dist
+        # The 'npm run build' command should output the .jpl file (e.g., in a 'publish' or 'dist' directory)
+
+      - name: Get version from git tag
+        id: get_version
+        run: echo "plugin_version=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/*.jpl # Adjust this path to wherever your .jpl file is located
+          draft: false
+          prerelease: false
+          name: Release ${{ env.plugin_version }}
+          target_commitish: my-release
+          body_path: CHANGELOG.md # Optional: Use the content of a CHANGELOG.md file for release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is automatically provided by GitHub
