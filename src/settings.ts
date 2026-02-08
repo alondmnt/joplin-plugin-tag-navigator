@@ -476,7 +476,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Navigation: Hide tag prefix',
-      description: 'Hide the tag prefix (e.g., #) in the navigation panel.',
+      description: 'Hides the configured tag prefix (default: #) from tag names in the navigation panel.',
     },
     'itags.navPanelStyle': {
       value: '',

@@ -56,13 +56,14 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
   }
   // Build the list of current note tags
   const noteTagsHTML = tagsLines.map((tag) => {
+    const displayTag = hidePrefix ? tag.tag.replace(tagPrefix, '') : tag.tag;
     let indexText = '';
     if (tag.count > 1) {
-      indexText = `(${tag.index+1}/${tag.count})`;
+      indexText = `<span>(${tag.index+1}/${tag.count})</span>`;
     }
     return `
       <a class="itags-nav-noteTag" href="#" data-tag="${tag.tag}" data-line="${tag.lines[tag.index]}">
-      ${tag.tag} ${indexText}
+      ${displayTag} ${indexText}
       </a><br/>
     `;
   }).join('');
