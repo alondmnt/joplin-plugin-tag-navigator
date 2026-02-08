@@ -470,7 +470,15 @@ export async function registerSettings(): Promise<void> {
         count: 'Count',
       }
     },
-    'itags.navPanelSearchTagByClick': {
+    'itags.navPanelHidePrefix': {
+      value: false,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Hide tag prefix',
+      description: 'Hides the configured tag prefix (default: #) from tag names in the navigation panel.',
+    },
+	'itags.navPanelSearchTagByClick': {
       value: false,
       type: SettingItemType.Bool,
       section: 'itags',
