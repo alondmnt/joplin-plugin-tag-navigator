@@ -1,0 +1,43 @@
+name: Sync Upstream Tags
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+
+jobs:
+  sync_tags:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Fetch and push tags from upstream
+        run: |
+          git remote add upstream https://github.com/alondmnt/joplin-plugin-tag-navigator # Replace with the original repo URL
+          git fetch --tags upstream
+          git push --tags origin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# name: Sync tags on schedule
+# on:
+#   schedule:
+#     - cron: '0 0 * * *'
+# jobs:
+#   hello_tags_sync:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Sync from upstream to fork
+#         uses: https://github.com/zerg-zerg/joplin-plugin-tag-navigator
+#         with:
+#           base-repository: https://github.com/alondmnt/joplin-plugin-tag-navigator
+#           patch-author: chachako
+#           patch-author-email: 58068445+chachako@users.noreply.github.com
+#           scripts-after-sync: |
+#             echo "Hello World!"
+#             git tag -a v1.0 -m "my version 1.0"
+#             git push origin v1.0
+
+#       - name: Open a pull request
+#         uses: examples/auto-create-pull-request@v1
