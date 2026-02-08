@@ -324,8 +324,11 @@ Saved queries allow you to store search configurations in notes and reuse them a
 - **`includeCols`**: (Table view only) Comma-separated list of columns to display
   - Can include: note properties, tags, "modified", "created" timestamps
   - Use to slice, sort, or add specific columns
+  - Supports rename syntax `col:Display Name` to set custom header labels (e.g. `"status:Current Status, priority:Priority Level"`)
 - **`excludeCols`**: (Table view only) Comma-separated list of columns to hide
   - Removes columns even if they exist in the data
+- **`limit`**: Maximum number of results to display (positive integer)
+  - Applied after sorting and filtering
 
 #### Complete example
 
@@ -355,15 +358,16 @@ Saved queries allow you to store search configurations in notes and reuse them a
   "filter": "rock",
   "displayInNote": "table",
   "options": {
-    "includeCols": "title, artist, country, year, modified",
+    "includeCols": "title, artist, country:Country of Origin, year, modified",
     "excludeCols": "notebook, line",
     "sortBy": "year, artist",
-    "sortOrder": "asc, desc"
+    "sortOrder": "asc, desc",
+    "limit": 20
   }
 }
 ```
 
-This example searches for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending).
+This example searches for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending). The `country` column header is renamed to "Country of Origin".
 
 </details>
 

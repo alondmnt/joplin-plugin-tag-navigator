@@ -1,5 +1,5 @@
 {
-  "name": "joplin-plugin-tag-navigator",
+  "name": "joplin-plugin-tag-navigator-2",
   "version": "2.8.0",
   "scripts": {
     "dist": "webpack --env joplin-plugin-config=buildMain && webpack --env joplin-plugin-config=buildExtraScripts && webpack --env joplin-plugin-config=createArchive",

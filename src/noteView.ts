@@ -88,7 +88,7 @@ export async function displayResultsInNote(
   resultSettings: ResultSettings
 ): Promise<{ tableColumns: string[], tableDefaultValues: { [key: string]: string }, tableColumnSeparators: { [key: string]: TagSeparatorType } } | null> {
   if (!note.body) { return null; }
-  const savedQuery = await loadQuery(db, note);
+  const savedQuery = loadQuery(note);
   if (!savedQuery) { return null; }
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
@@ -99,8 +99,11 @@ export async function displayResultsInNote(
   // Run search with sorting options
   const results = await runSearch(db, savedQuery.query, groupingMode, savedQuery.options);
 
-  // Apply filtering
-  const filteredResults = await filterResults(results, savedQuery.filter, viewSettings);
+  // Apply filtering and limit
+  let filteredResults = await filterResults(results, savedQuery.filter, viewSettings);
+  if (savedQuery.options?.limit > 0) {
+    filteredResults = filteredResults.slice(0, savedQuery.options.limit);
+  }
 
   if (filteredResults.length === 0) {
     await removeResults(note);
@@ -555,7 +558,18 @@ async function buildTable(
   // Select the top N tags
   let tableColumns = Object.keys(columnCount).sort((a, b) => columnCount[b] - columnCount[a] || a.localeCompare(b));
   const metaCols = ['line', 'modified', 'created', 'notebook', 'title'];
-  const includeCols = savedQuery?.options?.includeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
+  // Parse includeCols with optional rename syntax: "col:Display Name"
+  const renameMap = new Map<string, string>();
+  const includeCols = savedQuery?.options?.includeCols?.split(',').map(entry => {
+    const sepIndex = entry.indexOf(':');
+    if (sepIndex >= 0) {
+      const internal = entry.slice(0, sepIndex).trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' ');
+      const display = entry.slice(sepIndex + 1).trim();
+      if (internal && display) { renameMap.set(internal, display.replace(/\|/g, '\\|')); }
+      return internal;
+    }
+    return entry.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' ');
+  });
   const excludeCols = savedQuery?.options?.excludeCols?.split(',').map(col => col.trim().replace(RegExp(tagSettings.spaceReplace, 'g'), ' '));
   if (includeCols?.length > 0) {
     // Include columns (ignore missing), respect given order
@@ -585,7 +599,7 @@ async function buildTable(
     tableColumns = tableColumns.filter(col => !excludeCols.includes(col));
   }
 
-  let resultsString = `\n| ${tableColumns.map(col => formatTag(col, viewSettings)).join(' | ')} |\n`;
+  let resultsString = `\n| ${tableColumns.map(col => renameMap.get(col) ?? formatTag(col, viewSettings)).join(' | ')} |\n`;
   resultsString += `|${tableColumns.map((col) => col === 'title' ? '---' : ':---:').join('|')}|\n`;
   for (const result of tableResults) {
     if (Object.keys(result.columns).length === 0) { continue; }
@@ -628,9 +642,10 @@ async function buildTable(
   }
   tableColumns = tableColumns.filter(col => !metaCols.includes(col));
   
-  // Clear temporary arrays to prevent memory leaks
+  // Clear temporary collections to prevent memory leaks
   if (includeCols) includeCols.length = 0;
   if (excludeCols) excludeCols.length = 0;
+  renameMap.clear();
   
   return [resultsString, tableColumns];
 }
