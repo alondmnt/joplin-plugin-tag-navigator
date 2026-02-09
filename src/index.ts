@@ -799,6 +799,12 @@ joplin.plugins.register({
           displayInNote: 'false'
           // Don't preserve existing options - let it use global settings
         };
+        const panelState = await joplin.views.panels.visible(searchPanel);
+        if (!panelState) {
+          await joplin.views.panels.show(searchPanel);
+          await registerSearchPanel(searchPanel);
+          await focusSearchPanel(searchPanel);
+        }
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);

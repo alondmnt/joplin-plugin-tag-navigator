@@ -159,10 +159,11 @@ function buildTreeHTML(
 
     const fullTag = parentTag ? `${parentTag}/${tag}` : tag;
     const tagName = hidePrefix ? fullTag.replace(tagPrefix, '') : fullTag;
-    const indentStyle = `style="padding-left: ${(level +1) * 5}px;"`;
+    const indentStyle = `style="padding-left: ${level > 0 ? 31 : 18}px;"`;
+    const detailsStyle = `style="padding-left: ${level > 0 ? 18 : 5}px;"`;
 
     if (Object.keys(children).length > 0) {
-      html += `<details ${indentStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" style="padding-left: 0px;">${tagName} <span>(${count})</span></a></summary>${buildTreeHTML(children, fullTag, sortBy, hidePrefix, tagPrefix, level + 1)}</details>`;
+      html += `<details ${detailsStyle}><summary><a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" style="padding-left: 0px;">${tagName} <span>(${count})</span></a></summary>${buildTreeHTML(children, fullTag, sortBy, hidePrefix, tagPrefix, level + 1)}</details>`;
     } else {
       html += `<a href="#" class="itags-nav-globalTag" data-tag="${fullTag}" ${indentStyle}>${tagName} <span>(${count})</span></a><br/>`;
     }
