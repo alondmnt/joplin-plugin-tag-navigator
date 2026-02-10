@@ -248,7 +248,11 @@ joplin.plugins.register({
         if (!panelState) {
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
           await updatePanelSettings(searchPanel, searchParams);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          lastSearchResults = results;
+          await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         }
       },
     });
