@@ -106,8 +106,16 @@ joplin.plugins.register({
     });
     await registerSearchPanel(searchPanel);
 
+    // Hide panels on startup if settings say so
+    if (!await joplin.settings.value('itags.searchPanelVisible')) {
+      await joplin.views.panels.hide(searchPanel);
+    }
+
     // Note navigation panel
     const navPanel = await joplin.views.panels.create('itags.navPanel');
+    if (!await joplin.settings.value('itags.navPanelVisible')) {
+      await joplin.views.panels.hide(navPanel);
+    }
     let tagLines: TagLine[] = [];
     let tagCount: TagCount = {};
 
@@ -229,12 +237,14 @@ joplin.plugins.register({
       label: 'Navigation panel: Toggle',
       iconName: 'fas fa-tags',
       execute: async () => {
-        if (await joplin.views.panels.visible(navPanel)) {
-          joplin.views.panels.hide(navPanel)
+        const wasVisible = await joplin.views.panels.visible(navPanel);
+        if (wasVisible) {
+          await joplin.views.panels.hide(navPanel);
         } else {
           await joplin.views.panels.show(navPanel);
           await joplin.commands.execute('itags.refreshPanel');
         }
+        await joplin.settings.setValue('itags.navPanelVisible', !wasVisible);
       },
     });
 
@@ -254,6 +264,7 @@ joplin.plugins.register({
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         }
+        await joplin.settings.setValue('itags.searchPanelVisible', !panelState);
       },
     });
 
@@ -751,6 +762,33 @@ joplin.plugins.register({
           event.keys.includes('itags.navPanelSort')) {
         if (await joplin.views.panels.visible(navPanel)) {
           await updateNavPanel(navPanel, tagLines, tagCount);
+        }
+      }
+      // Panel visibility settings (two-way sync with toggle commands)
+      if (event.keys.includes('itags.navPanelVisible')) {
+        const wantVisible = await joplin.settings.value('itags.navPanelVisible');
+        const isVisible = await joplin.views.panels.visible(navPanel);
+        if (wantVisible && !isVisible) {
+          await joplin.views.panels.show(navPanel);
+          await joplin.commands.execute('itags.refreshPanel');
+        } else if (!wantVisible && isVisible) {
+          await joplin.views.panels.hide(navPanel);
+        }
+      }
+      if (event.keys.includes('itags.searchPanelVisible')) {
+        const wantVisible = await joplin.settings.value('itags.searchPanelVisible');
+        const isVisible = await joplin.views.panels.visible(searchPanel);
+        if (wantVisible && !isVisible) {
+          await joplin.views.panels.show(searchPanel);
+          await registerSearchPanel(searchPanel);
+          await focusSearchPanel(searchPanel);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelSettings(searchPanel, searchParams);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          lastSearchResults = results;
+          await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+        } else if (!wantVisible && isVisible) {
+          await joplin.views.panels.hide(searchPanel);
         }
       }
     });

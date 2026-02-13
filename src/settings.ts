@@ -445,6 +445,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Front matter: Highlight in editor',
       description: 'Requires restart',
     },
+    'itags.navPanelVisible': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Navigation: Panel visible',
+      description: 'Show or hide the navigation panel. Useful on mobile where toggle commands are not accessible.',
+    },
     'itags.navPanelScope': {
       value: 'global',
       type: SettingItemType.String,
@@ -486,6 +494,14 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Navigation: Panel style',
       description: 'Custom CSS for the navigation panel (toggle panel or restart app).',
+    },
+    'itags.searchPanelVisible': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Search: Panel visible',
+      description: 'Show or hide the search panel. Useful on mobile where toggle commands are not accessible.',
     },
     'itags.waitForNote': {
       value: 1000,
