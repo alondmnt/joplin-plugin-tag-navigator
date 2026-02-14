@@ -98,6 +98,20 @@ export function computeTagDiff(currentTags: string[], previousTags: string[]): {
 }
 
 /**
+ * Checks whether two string arrays contain the same elements (order-independent)
+ * @param a - First array
+ * @param b - Second array
+ * @returns true if both arrays contain exactly the same elements
+ */
+export function setsEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  const result = b.every(item => setA.has(item));
+  setA.clear();
+  return result;
+}
+
+/**
  * Removes specified Joplin tags from a note
  * @param noteId - The ID of the note
  * @param tagsToRemove - Array of tag names to remove
