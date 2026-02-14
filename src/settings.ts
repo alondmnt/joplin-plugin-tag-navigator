@@ -70,6 +70,7 @@ export interface TagSettings {
   middleMatter: boolean;      // Whether to use middle matter instead of front matter
   includeNotebooks: string[]; // List of notebook IDs to include in database (if empty, include all)
   excludeNotebooks: string[];  // List of notebook IDs to exclude from database
+  readBatchSize: number;       // Number of notes to fetch concurrently
 }
 
 export interface ResultSettings {
@@ -185,6 +186,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     'itags.middleMatter',
     'itags.includeNotebooks',
     'itags.excludeNotebooks',
+    'itags.readBatchSize',
   ]);
   const tagRegex = settings['itags.tagRegex'] ? createSafeRegex(settings['itags.tagRegex'] as string, 'g', defTagRegex) : defTagRegex;
   const excludeRegex = settings['itags.excludeRegex'] ? createSafeRegex(settings['itags.excludeRegex'] as string, 'g', null) : null;
@@ -247,6 +249,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     middleMatter: settings['itags.middleMatter'] as boolean,
     includeNotebooks,
     excludeNotebooks,
+    readBatchSize: settings['itags.readBatchSize'] as number || 10,
   };
 }
 
@@ -398,6 +401,18 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Database: Exclude notebooks',
       description: 'Comma-separated list of notebook IDs to exclude from the database. Notes in these notebooks will not be processed for tags.',
+    },
+    'itags.readBatchSize': {
+      value: 10,
+      type: SettingItemType.Int,
+      minimum: 1,
+      maximum: 50,
+      step: 1,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Database: Note read batch size',
+      description: 'Higher values are faster but use more memory. Default: 10.',
     },
     'itags.updateAfterSync': {
       value: true,

@@ -3,6 +3,7 @@ import { parseLinkLines, parseTagsFromFrontMatter, parseTagsLines } from './pars
 import { loadQuery } from './searchPanel';
 import { TagSettings, getTagSettings } from './settings';
 import { clearObjectReferences, clearApiResponse } from './memory';
+import { processBatch } from './utils';
 
 /**
  * Manages the singleton instance of the NoteDatabase
@@ -454,7 +455,7 @@ export async function processAllNotes() {
   db.removeNonExistingNotes();
 
   // Second loop: fetch full details only for notes that need updating
-  for (const noteId of notesToUpdate) {
+  await processBatch(Array.from(notesToUpdate), tagSettings.readBatchSize, async (noteId) => {
     let note = await joplin.data.get(['notes', noteId], {
       fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'],
     });
@@ -462,21 +463,21 @@ export async function processAllNotes() {
     // Double-check notebook exclusion (in case settings changed during processing)
     if (!isNotebookAllowed(note.parent_id, tagSettings)) {
       note = clearObjectReferences(note);
-      continue;
+      return;
     }
 
     if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
       note = clearObjectReferences(note);
-      continue;
+      return;
     }
     if (note.is_conflict == 1) {
       note = clearObjectReferences(note);
-      continue;
+      return;
     }
 
     await processNote(db, note, tagSettings);
     note = clearObjectReferences(note);
-  }
+  });
 
   // Clear the Set
   notesToUpdate.clear();

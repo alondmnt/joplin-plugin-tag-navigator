@@ -1,4 +1,18 @@
 /**
+ * Processes items in parallel batches
+ * @param items - Array of items to process
+ * @param batchSize - Number of items to process concurrently
+ * @param fn - Async function to apply to each item
+ */
+export async function processBatch<T>(
+  items: T[], batchSize: number, fn: (item: T) => Promise<void>
+): Promise<void> {
+  for (let i = 0; i < items.length; i += batchSize) {
+    await Promise.all(items.slice(i, i + batchSize).map(fn));
+  }
+}
+
+/**
  * Escapes special characters in a string for use in regular expressions
  * @param string - String to escape
  * @returns Escaped string safe for regex use

@@ -2,7 +2,7 @@ import joplin from 'api';
 import { getResultSettings, getTagSettings, TagSettings } from './settings';
 import { NoteDatabase, ResultSet, intersectSets, unionSets } from './db';
 import { parseDateTag } from './parser';
-import { compareTagValues, sortTags } from './utils';
+import { compareTagValues, sortTags, processBatch } from './utils';
 import { clearObjectReferences, clearApiResponse } from './memory';
 
 /**
@@ -274,6 +274,8 @@ async function processQueryResults(
   const groupedResults: GroupedResult[] = [];
   if (!queryResults) return groupedResults;
 
+  // First pass: build colour-grouped result objects synchronously
+  const pendingResults: GroupedResult[] = [];
   for (const externalId in queryResults) {
     const note = db.notes[externalId];
     const lineNumbers = Array.from(queryResults[externalId]).sort((a, b) => a - b);
@@ -305,28 +307,32 @@ async function processQueryResults(
     }
 
     // Create a separate result for each color
-    for (const [color, lineNumbers] of colorMap.entries()) {
-      if (lineNumbers.length === 0) {
+    for (const [color, lines] of colorMap.entries()) {
+      if (lines.length === 0) {
         continue;
       }
 
-      const colorResult: GroupedResult = {
+      pendingResults.push({
         externalId,
-        lineNumbers: [lineNumbers],
+        lineNumbers: [lines],
         text: [],
         html: [],
         color: color,
         title: '',
         tags: [], // Will be populated after grouping
-      };
-
-      groupedResults.push(await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings, contextExpansionStep));
+      });
     }
 
     // Clear map and lineNumbers array to prevent memory leaks
     colorMap.clear();
     lineNumbers.length = 0;
   }
+
+  // Second pass: fetch note content in parallel batches
+  await processBatch(pendingResults, tagSettings.readBatchSize, async (colorResult) => {
+    const populated = await getTextAndTitleByGroup(colorResult, tagSettings.fullNotebookPath, groupingMode, db, tagSettings, contextExpansionStep);
+    groupedResults.push(populated);
+  });
 
   return groupedResults;
 }
