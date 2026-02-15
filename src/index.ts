@@ -386,6 +386,28 @@ joplin.plugins.register({
     });
 
     await joplin.commands.register({
+      name: 'itags.extendQueryAtCursor',
+      label: 'Add tag to search',
+      iconName: 'fas fa-search-plus',
+      execute: async () => {
+        try {
+          const lineInfo = await joplin.commands.execute('editor.execCommand', {
+            name: 'getCurrentLine'
+          });
+          if (!lineInfo) { return; }
+
+          const tagSettings = await getTagSettings();
+          const tagAtCursor = findTagAtCursor(lineInfo, tagSettings.tagRegex);
+          if (!tagAtCursor) { return; }
+
+          await extendQuery(tagAtCursor);
+        } catch (error) {
+          console.debug('itags.extendQueryAtCursor: error', error);
+        }
+      },
+    });
+
+    await joplin.commands.register({
       name: 'itags.toggleNoteView',
       label: 'Note view: Toggle',
       iconName: 'fas fa-dharmachakra',
@@ -728,6 +750,10 @@ joplin.plugins.register({
         object.items.push({
           label: 'Search tag at cursor',
           commandName: 'itags.searchTagAtCursor',
+        });
+        object.items.push({
+          label: 'Add tag to search',
+          commandName: 'itags.extendQueryAtCursor',
         });
       }
       if (currentTableColumns.length > 0) {
