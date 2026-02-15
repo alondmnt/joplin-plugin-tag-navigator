@@ -23,6 +23,21 @@ let lastSearchResults: GroupedResult[] = []; // Cache for search results
 let savedNoteState: { [key: string]: boolean } = {};
 
 /**
+ * Returns the tag at the cursor position in the given line, or null if none.
+ */
+function findTagAtCursor(lineInfo: { cursorPosition: number, lineStart: number, lineContent: string }, tagRegex: RegExp): string | null {
+  tagRegex.lastIndex = 0;
+  const posInLine = lineInfo.cursorPosition - lineInfo.lineStart;
+  let match: RegExpExecArray | null;
+  while ((match = tagRegex.exec(lineInfo.lineContent)) !== null) {
+    if (match.index <= posInLine && posInLine <= match.index + match[0].length) {
+      return match[0];
+    }
+  }
+  return null;
+}
+
+/**
  * Main plugin registration and initialization
  */
 joplin.plugins.register({
@@ -293,6 +308,45 @@ joplin.plugins.register({
           await updatePanelSettings(searchPanel, searchParams);
         }
         note = clearObjectReferences(note);
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'itags.searchTagAtCursor',
+      label: 'Search tag at cursor',
+      iconName: 'fas fa-search',
+      execute: async () => {
+        try {
+          // Get current line content and cursor position from the editor
+          const lineInfo = await joplin.commands.execute('editor.execCommand', {
+            name: 'getCurrentLine'
+          });
+          if (!lineInfo) { return; }
+
+          const tagSettings = await getTagSettings();
+          const tagAtCursor = findTagAtCursor(lineInfo, tagSettings.tagRegex);
+          if (!tagAtCursor) { return; }
+
+          // Search for the tag (same pattern as navPanel searchTag)
+          searchParams = {
+            query: [[{ tag: tagAtCursor, negated: false }]],
+            filter: '',
+            displayInNote: 'false'
+          };
+          const panelState = await joplin.views.panels.visible(searchPanel);
+          if (!panelState) {
+            await joplin.views.panels.show(searchPanel);
+            await registerSearchPanel(searchPanel);
+            await focusSearchPanel(searchPanel);
+          }
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelSettings(searchPanel, searchParams);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          lastSearchResults = results;
+          await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+        } catch (error) {
+          console.debug('itags.searchTagAtCursor: error', error);
+        }
       },
     });
 
@@ -618,10 +672,30 @@ joplin.plugins.register({
     });
 
     await joplin.workspace.filterEditorContextMenu(async (object: any) => {
-      if (currentTableColumns.length > 0) {
+      // Check whether the cursor is on a tag
+      let showSearchTag = false;
+      try {
+        const lineInfo = await joplin.commands.execute('editor.execCommand', {
+          name: 'getCurrentLine'
+        });
+        if (lineInfo) {
+          const ts = await getTagSettings();
+          showSearchTag = findTagAtCursor(lineInfo, ts.tagRegex) !== null;
+        }
+      } catch (error) {
+        // Editor not available — leave hidden
+      }
+
+      if (showSearchTag || currentTableColumns.length > 0) {
+        object.items.push({ type: 'separator' });
+      }
+      if (showSearchTag) {
         object.items.push({
-          type: 'separator',
-        })
+          label: 'Search tag at cursor',
+          commandName: 'itags.searchTagAtCursor',
+        });
+      }
+      if (currentTableColumns.length > 0) {
         object.items.push({
           label: 'New table entry note',
           commandName: 'itags.createTableEntryNote',
