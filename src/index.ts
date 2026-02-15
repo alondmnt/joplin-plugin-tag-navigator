@@ -127,38 +127,25 @@ joplin.plugins.register({
     }
 
     /**
-     * Extends the current search query by adding a tag as an AND condition.
-     * If the query is empty, starts a fresh single-tag query.
-     * If the tag already exists in the first condition group, does nothing.
-     * Shows the search panel if hidden and updates results.
+     * Extends the current search query by forwarding the tag to the search
+     * panel, which owns the live query state. The panel calls handleTagClick
+     * (add to last group / toggle negation) then sendSearchMessage, which
+     * flows the updated query back to the main process.
+     * Shows the search panel if hidden.
      */
     const extendQuery = async (tag: string) => {
-      if (searchParams.query[0].length === 0) {
-        // Empty query — start fresh
-        searchParams = {
-          query: [[{ tag, negated: false }]],
-          filter: '',
-          displayInNote: 'false',
-        };
-      } else if (searchParams.query[0].some(c => c.tag === tag)) {
-        // Tag already in query — skip
-        return;
-      } else {
-        // Add tag as AND condition
-        searchParams.query[0].push({ tag, negated: false });
-      }
-
       const panelState = await joplin.views.panels.visible(searchPanel);
       if (!panelState) {
         await joplin.views.panels.show(searchPanel);
         await registerSearchPanel(searchPanel);
-        await focusSearchPanel(searchPanel);
+        // Sync current query state so the panel can extend it
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelSettings(searchPanel, searchParams);
       }
-      await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
-      await updatePanelSettings(searchPanel, searchParams);
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
-      lastSearchResults = results;
-      await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+      await joplin.views.panels.postMessage(searchPanel, {
+        name: 'extendQuery',
+        tag: tag,
+      });
     };
 
     // Note navigation panel

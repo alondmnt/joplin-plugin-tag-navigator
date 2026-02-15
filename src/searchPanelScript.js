@@ -398,6 +398,10 @@ function processPanelMessage(message) {
             tagFilter.focus();
         }
 
+    } else if (message.message.name === 'extendQuery') {
+        handleTagClick(message.message.tag);
+        sendSearchMessage();
+
     } else if (message.message.name === 'updateNoteState') {
         // Restore saved note state from main process (true = expanded/visible, false = collapsed/hidden)
         try {
