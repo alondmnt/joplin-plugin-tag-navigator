@@ -126,6 +126,41 @@ joplin.plugins.register({
       await joplin.views.panels.hide(searchPanel);
     }
 
+    /**
+     * Extends the current search query by adding a tag as an AND condition.
+     * If the query is empty, starts a fresh single-tag query.
+     * If the tag already exists in the first condition group, does nothing.
+     * Shows the search panel if hidden and updates results.
+     */
+    const extendQuery = async (tag: string) => {
+      if (searchParams.query[0].length === 0) {
+        // Empty query — start fresh
+        searchParams = {
+          query: [[{ tag, negated: false }]],
+          filter: '',
+          displayInNote: 'false',
+        };
+      } else if (searchParams.query[0].some(c => c.tag === tag)) {
+        // Tag already in query — skip
+        return;
+      } else {
+        // Add tag as AND condition
+        searchParams.query[0].push({ tag, negated: false });
+      }
+
+      const panelState = await joplin.views.panels.visible(searchPanel);
+      if (!panelState) {
+        await joplin.views.panels.show(searchPanel);
+        await registerSearchPanel(searchPanel);
+        await focusSearchPanel(searchPanel);
+      }
+      await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+      await updatePanelSettings(searchPanel, searchParams);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+      lastSearchResults = results;
+      await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+    };
+
     // Note navigation panel
     const navPanel = await joplin.views.panels.create('itags.navPanel');
     if (!await joplin.settings.value('itags.navPanelVisible')) {
@@ -909,9 +944,9 @@ joplin.plugins.register({
       }
       if (message.name === 'searchTag') {
         // Reset to global settings for new searches (don't preserve existing options)
-        searchParams = { 
-          query: [[{ tag: message.tag, negated: false }]], 
-          filter: '', 
+        searchParams = {
+          query: [[{ tag: message.tag, negated: false }]],
+          filter: '',
           displayInNote: 'false'
           // Don't preserve existing options - let it use global settings
         };
@@ -926,6 +961,9 @@ joplin.plugins.register({
         const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
+      }
+      if (message.name === 'extendQuery') {
+        await extendQuery(message.tag);
       }
       clearObjectReferences(message);
     });

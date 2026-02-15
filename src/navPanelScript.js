@@ -10,10 +10,17 @@ document.addEventListener('click', event => {
   }
 
   if (element.classList.contains('itags-nav-globalTag')) {
-    webviewApi.postMessage({
-      name: 'searchTag',
-      tag: element.dataset.tag,
-    });
+    if (event.ctrlKey || event.metaKey) {
+      webviewApi.postMessage({
+        name: 'extendQuery',
+        tag: element.dataset.tag,
+      });
+    } else {
+      webviewApi.postMessage({
+        name: 'searchTag',
+        tag: element.dataset.tag,
+      });
+    }
   }
 
   if (element.id === 'itags-nav-noteButton') {
