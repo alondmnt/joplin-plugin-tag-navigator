@@ -167,6 +167,7 @@ joplin.plugins.register({
       // Update navigation panel
       if (await joplin.views.panels.visible(navPanel)) {
         let note = await joplin.workspace.selectedNote();
+        if (!note) { return; }
         if (note.body) {
           [tagLines, tagCount] = await getNavTagLines(note.body);
         }
@@ -458,6 +459,7 @@ joplin.plugins.register({
         await convertNoteToInlineTags(note, conversionSettings, tagSettings);
         note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
+        if (!note) { return; }
         try {
           await joplin.commands.execute('editor.setText', note.body);
         } catch (error) {

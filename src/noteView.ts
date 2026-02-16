@@ -60,6 +60,7 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
   let tableColumnSeparators: { [key: string]: TagSeparatorType } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
+    if (!note) { continue; }
     const result = await displayResultsInNote(db, note, tagSettings, viewSettings, resultSettings);
     if (result) {
       tableColumns = result.tableColumns;
@@ -188,7 +189,7 @@ export async function displayResultsInNote(
   let currentNote = await joplin.workspace.selectedNote();
   if (newBody !== note.body) {
     await joplin.data.put(['notes', note.id], null, { body: newBody });
-    if (!currentNote) { return; }
+    if (!currentNote) { return null; }
     if (currentNote.id === note.id) {
       try {
         await joplin.commands.execute('editor.setText', newBody);
@@ -197,6 +198,7 @@ export async function displayResultsInNote(
       }
     }
   }
+  if (!currentNote) { return null; }
   const updatedCurrentNote = currentNote.id === note.id;
   currentNote = clearObjectReferences(currentNote);
 
@@ -703,8 +705,10 @@ export async function createTableEntryNote(
   frontmatter.push('---\n');
 
   // Create new note with frontmatter
+  const selectedNote = await joplin.workspace.selectedNote();
+  if (!selectedNote) { return; }
   let note = await joplin.data.post(['notes'], null, {
-    parent_id: (await joplin.workspace.selectedNote()).parent_id,
+    parent_id: selectedNote.parent_id,
     title: 'New table entry',
     body: frontmatter.join('\n'),
   });
