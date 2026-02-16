@@ -458,6 +458,7 @@ joplin.plugins.register({
         await convertNoteToInlineTags(note, conversionSettings, tagSettings);
         note = clearObjectReferences(note);
         note = await joplin.workspace.selectedNote();
+        if (!note) { return; }
         try {
           await joplin.commands.execute('editor.setText', note.body);
         } catch (error) {

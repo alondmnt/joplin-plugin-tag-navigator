@@ -118,7 +118,7 @@ async function getQueryResults(
         partResults = db.searchBy('tag', queryPart.tag, queryPart.negated);
 
       } else if (queryPart.externalId) {
-        if ((queryPart.externalId === 'current') && (currentNote.id)) {
+        if ((queryPart.externalId === 'current') && (currentNote?.id)) {
           partResults = db.searchBy('noteLinkId', currentNote.id, queryPart.negated);
         } else {
           partResults = db.searchBy('noteLinkId', queryPart.externalId, queryPart.negated);

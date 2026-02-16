@@ -704,8 +704,10 @@ export async function createTableEntryNote(
   frontmatter.push('---\n');
 
   // Create new note with frontmatter
+  const selectedNote = await joplin.workspace.selectedNote();
+  if (!selectedNote) { return; }
   let note = await joplin.data.post(['notes'], null, {
-    parent_id: (await joplin.workspace.selectedNote()).parent_id,
+    parent_id: selectedNote.parent_id,
     title: 'New table entry',
     body: frontmatter.join('\n'),
   });

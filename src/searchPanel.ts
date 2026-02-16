@@ -1013,6 +1013,7 @@ export async function setCheckboxState(
   // text: The text of the task list item, in order to ensure that the line matches
   // checked: A boolean indicating the desired state of the checkbox (true for checked, false for unchecked)
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  if (!note?.body) { return; }
   const lines: string[] = note.body.split('\n');
   clearApiResponse(note); // Clear API response after extracting data
   const line = lines[message.line];
@@ -1075,6 +1076,7 @@ async function replaceTagAll(
     const queryNotes = db.getQueryNotes();
     for (const externalId of queryNotes) {
       let note = await joplin.data.get(['notes', externalId], { fields: ['id', 'body'] });
+      if (!note) { continue; }
       const savedQuery = loadQuery(note);
       if (replaceTagInQuery(savedQuery, message.oldTag, message.newTag)) {
         await saveQuery(savedQuery, externalId);
@@ -1188,6 +1190,7 @@ export async function replaceTagInText(
     return;
   }
   let note = await joplin.data.get(['notes', externalId], { fields: ['body'] });
+  if (!note?.body) { return; }
   const lines: string[] = note.body.split('\n');
   clearApiResponse(note); // Clear API response after extracting data
 
@@ -1222,6 +1225,7 @@ export async function addTagToText(
   tagSettings: TagSettings
 ): Promise<void> {
   let note = await joplin.data.get(['notes', message.externalId], { fields: ['body'] });
+  if (!note?.body) { return; }
   const lines: string[] = note.body.split('\n');
   clearApiResponse(note); // Clear API response after extracting data
   const line = lines[message.line];
@@ -1257,6 +1261,7 @@ async function updateNote(
 ): Promise<void> {
   let selectedNote = await joplin.workspace.selectedNote();
   let targetNote = await joplin.data.get(['notes', message.externalId], { fields: ['id', 'title', 'body', 'markup_language', 'is_conflict', 'updated_time', 'parent_id'] });
+  if (!targetNote) { return; }
   clearApiResponse(targetNote); // Clear API response after getting note
 
   if (newBody !== targetNote.body) {
