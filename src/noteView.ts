@@ -188,7 +188,7 @@ export async function displayResultsInNote(
   let currentNote = await joplin.workspace.selectedNote();
   if (newBody !== note.body) {
     await joplin.data.put(['notes', note.id], null, { body: newBody });
-    if (!currentNote) { return; }
+    if (!currentNote) { return null; }
     if (currentNote.id === note.id) {
       try {
         await joplin.commands.execute('editor.setText', newBody);
@@ -197,6 +197,7 @@ export async function displayResultsInNote(
       }
     }
   }
+  if (!currentNote) { return null; }
   const updatedCurrentNote = currentNote.id === note.id;
   currentNote = clearObjectReferences(currentNote);
 
