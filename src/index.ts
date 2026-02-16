@@ -167,7 +167,8 @@ joplin.plugins.register({
       // Update navigation panel
       if (await joplin.views.panels.visible(navPanel)) {
         let note = await joplin.workspace.selectedNote();
-        if (note?.body) {
+        if (!note) { return; }
+        if (note.body) {
           [tagLines, tagCount] = await getNavTagLines(note.body);
         }
         await updateNavPanel(navPanel, tagLines, tagCount);

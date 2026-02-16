@@ -60,6 +60,7 @@ export async function displayInAllNotes(db: NoteDatabase): Promise<{
   let tableColumnSeparators: { [key: string]: TagSeparatorType } = {};
   for (const id of noteIds) {
     let note = await joplin.data.get(['notes', id], { fields: ['title', 'body', 'id'] });
+    if (!note) { continue; }
     const result = await displayResultsInNote(db, note, tagSettings, viewSettings, resultSettings);
     if (result) {
       tableColumns = result.tableColumns;

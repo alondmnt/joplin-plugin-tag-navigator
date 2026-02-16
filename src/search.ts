@@ -68,7 +68,7 @@ export async function runSearch(
     sortOrder?: string
   }
 ): Promise<GroupedResult[]> {
-  let currentNote = (await joplin.workspace.selectedNote());
+  let currentNote = (await joplin.workspace.selectedNote()) || {};
   const settings = await getTagSettings();
   const resultSettings = await getResultSettings();
   if (!groupingMode) {
