@@ -23,6 +23,7 @@ export const STANDARD_GROUPING_OPTIONS = {
   heading: 'Group by heading / section',
   consecutive: 'Group consecutive lines',
   item: 'Split by item / paragraph',
+  none: 'No grouping (flat list)',
 } as const;
 
 /**

@@ -2,6 +2,7 @@
  * Input validation utilities for the Tag Navigator plugin
  * Provides comprehensive validation for user inputs to prevent security vulnerabilities
  */
+import { getStandardGroupingKeys } from './settings';
 
 /**
  * Configuration for validation limits
@@ -85,13 +86,9 @@ export const VALID_ORDER_OPTIONS = new Set([
 ]);
 
 /**
- * Valid result grouping options
+ * Valid result grouping options — derived from settings to stay in sync
  */
-export const VALID_GROUPING_OPTIONS = new Set([
-  'heading',
-  'consecutive',
-  'item'
-]);
+export const VALID_GROUPING_OPTIONS = new Set(getStandardGroupingKeys());
 
 /**
  * Validation error class for input validation failures
