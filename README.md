@@ -35,6 +35,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
+    - **Search / extend query from the editor**: Right-click on a tag in the editor to search for it or add it to the current query.
     - **Insert tags** from the panel into the note editor. ([tips](#tag-insertion))
     - **Toggle checkboxes** / TODOs from the panel, including [[x]it! style](https://xit.jotaen.net) checkboxes (click, or right-click for 6 task states). ([tips](#inline-todos))
     - **Nested tags** hierarchy: Search parent tags to find the locations of their children. Example: #parent/child. ([video](https://www.youtube.com/watch?v=h-HdX7npbIw))
@@ -50,6 +51,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
         - In a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
         - In a kanban board. ([video](https://www.youtube.com/watch?v=e7HhQJjpEJg), [tips](#kanban-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
+    - Click a global tag to search for it, or Cmd/Ctrl+click to add it to the current query.
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
 6. It renders inline tags and front matter in the Markdown preview, and front matter in the Markdown editor. ([tips](#styling-inline-tags))
@@ -320,6 +322,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - `"heading"`: Group by heading
   - `"consecutive"`: Group adjacent lines
   - `"item"`: Split by item
+  - `"none"`: No grouping (flat list) — each paragraph becomes its own card, enabling cross-note sorting by tag
   - To change the global grouping, right-click on a note title in the search panel. Saved queries can override this with their own `resultGrouping` property.
 - **`includeCols`**: (Table view only) Comma-separated list of columns to display
   - Can include: note properties, tags, "modified", "created" timestamps
@@ -408,6 +411,7 @@ This example searches for paragraphs that have both `#artist` AND `#album` tags,
 - Filtering behaviour depends on the result grouping mode (right-click a note title on the panel to change):
     - **Group by heading** (default): Shows/hides entire sections based on whether they contain matching content.
     - **Split by item**: Shows/hides individual items, useful for filtering specific tasks like `"- [ ]"`.
+    - **No grouping**: Each paragraph is a separate card, enabling sorting across notes by tag (e.g., due dates, priorities).
 - To gain more control over filtering by notebook, you may enable the setting `Search: Extract the full notebook path`.
     - Example: Limit results to a notebook that appears in the top level by searching for `|/topNotebook`.
     - Example: Search for `topNotebook/childNotebook` to show only results from childNotebook.
