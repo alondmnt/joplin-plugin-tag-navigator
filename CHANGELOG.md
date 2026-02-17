@@ -1,3 +1,25 @@
+# [v2.9.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.9.0)
+
+- added: 'no grouping' mode for paragraph-level cross-note sorting
+- added: search tag at cursor from editor context menu (FR #35)
+- added: extend query from editor context menu (FR #35)
+- added: cmd/ctrl+click to extend query from nav panel (FR #35)
+- added: saved queries: `limit` option
+- added: saved queries: column rename syntax in `includeCols` (e.g., `col:Display Name`)
+- added: settings: hide tag prefix in navigation panel (by @zerg-zerg, #33)
+- added: settings: auto-open search panel on saved query load (by @zerg-zerg, #34)
+- added: settings: nav/search panel visibility
+- improved: parallelise note content fetching in batches (see settings)
+- improved: numeric-aware comparison in tag range filtering
+- improved: prettify saved query JSON in note body
+- fixed: separate loadQuery parsing from DB reconciliation (thanks to @zerg-zerg, #31)
+- fixed: guard unnecessary writes during periodic tag conversion (#35)
+- fixed: send query and results when toggling search panel visible
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.8.0...v2.9.0
+
+---
+
 # [v2.8.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.8.0)
 *Released on 2026-02-04T22:40:59Z*
 

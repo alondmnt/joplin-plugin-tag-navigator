@@ -3,7 +3,7 @@
 	"id": "joplin.plugin.alondmnt.tag-navigator",
 	"app_min_version": "2.10",
 	"platforms": ["desktop", "mobile"],
-	"version": "2.8.0",
+	"version": "2.9.0",
 	"name": "Inline Tag Navigator",
 	"description": "Type inline tags or frontmatter in the note editor. View your tagged paragraphs and tasks / TODOs in a search panel, or in a generated note / kanban. Build a table view / database from notes and tags. Convert between Obsidian tags and Joplin tags.",
 	"author": "Alon Diament",
