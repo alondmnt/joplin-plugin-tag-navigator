@@ -362,6 +362,8 @@ async function processQueryResults(
           lineNumbersExpanded: result.lineNumbersExpanded ? [result.lineNumbersExpanded[i]] : undefined,
         });
       }
+      // Clear original multi-section container arrays after extraction
+      clearObjectReferences(result);
     }
     groupedResults.length = 0;
     groupedResults.push(...flattened);
