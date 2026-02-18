@@ -491,20 +491,13 @@ async function processValidatedMessage(
         }
 
       } else if (message.field === 'resultGrouping') {
-        // All grouping modes are standard values
+        // Store in per-query options; global setting is the fallback default
         const validGroupingModes = getStandardGroupingKeys();
         if (typeof message.value === 'string' && validGroupingModes.includes(message.value)) {
-          // Standard option: update global setting, remove query override
-          await joplin.settings.setValue(`itags.${message.field}`, message.value);
-          if (searchParams.options?.resultGrouping) {
-            delete searchParams.options.resultGrouping;
-            // Clean up options object if it becomes empty
-            if (Object.keys(searchParams.options).length === 0) {
-              searchParams.options = undefined;
-            }
-          }
+          if (!searchParams.options) { searchParams.options = {}; }
+          searchParams.options.resultGrouping = message.value;
 
-          // Re-run search with new grouping from global setting
+          // Re-run search with new grouping
           if (lastSearchResults && lastSearchResults.length > 0 && searchParams.query && searchParams.query.length > 0) {
             const results = await runSearch(db, searchParams.query, message.value, searchParams.options);
             lastSearchResults = results; // Update cached results
