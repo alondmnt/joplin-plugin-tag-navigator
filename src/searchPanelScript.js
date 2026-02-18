@@ -1598,7 +1598,7 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
+function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'editQuery', 'sortByTag', 'addToSort', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
@@ -1827,6 +1827,68 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
         cmdCount++;
     }
 
+    if (commands.includes('editQuery')) {
+        // Create the "Edit query" command
+        const editQuery = document.createElement('span');
+        editQuery.classList.add('itags-search-contextCommand');
+        editQuery.textContent = `Edit query`;
+        addEventListenerWithTracking(editQuery, 'click', () => {
+            // Create an input field with the tag text
+            const input = createInputField(currentTag, target, (input) => {
+                const groupIndex = parseInt(target.dataset.groupIndex);
+                const tagIndex = parseInt(target.dataset.tagIndex);
+                if (groupIndex === undefined) { return; }
+                if (tagIndex === undefined) { return; }
+
+                const item = queryGroups[groupIndex][tagIndex];
+                const negated = input.value.trim().startsWith('!');
+                const currentNegated = item.negated;
+                const newTag = input.value.trim();
+                if (!newTag) { return; }
+                if (newTag === currentTag && negated === currentNegated) { return; }
+
+                if (newTag.includes('->')) {
+                    // Convert to range
+                    const parsed = parseRange(newTag);
+                    if (!isValidRange(parsed.minValue, parsed.maxValue)) {
+                        webviewApi.postMessage({ name: 'showWarning', message: 'Ranges require both min and max values. Use wildcards (e.g., prefix*) for open-ended searches.' });
+                        return;
+                    }
+                    Object.assign(item, parsed);
+                    delete item.tag;
+                    delete item.negated;
+                } else {
+                    // Convert to regular tag
+                    delete item.minValue;
+                    delete item.maxValue;
+                    if (negated) {
+                        item.tag = newTag.slice(1);
+                        item.negated = true;
+                    } else {
+                        item.tag = newTag;
+                        item.negated = false;
+                    }
+                    item.tag = item.tag
+                        .trim()
+                        .toLowerCase()
+                        .replace(RegExp('\\s', 'g'), spaceReplace);
+                }
+                updateQueryArea();
+                sendSearchMessage();
+            });
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(editQuery);
+        cmdCount++;
+    }
+
+    if ((cmdCount > 0) && (commands.includes('sortByTag') || commands.includes('addToSort'))
+        && extractSortKey(currentTag) !== null) {
+        const separator = document.createElement('hr');
+        separator.classList.add('itags-search-contextSeparator');
+        fragment.appendChild(separator);
+    }
+
     if (commands.includes('sortByTag') && extractSortKey(currentTag) !== null) {
         const sortKey = extractSortKey(currentTag);
         const sortByTag = document.createElement('span');
@@ -1882,61 +1944,6 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             removeContextMenu(contextMenu);
         });
         fragment.appendChild(addToSort);
-        cmdCount++;
-    }
-
-    if (commands.includes('editQuery')) {
-        // Create the "Edit query" command
-        const editQuery = document.createElement('span');
-        editQuery.classList.add('itags-search-contextCommand');
-        editQuery.textContent = `Edit query`;
-        addEventListenerWithTracking(editQuery, 'click', () => {
-            // Create an input field with the tag text
-            const input = createInputField(currentTag, target, (input) => {
-                const groupIndex = parseInt(target.dataset.groupIndex);
-                const tagIndex = parseInt(target.dataset.tagIndex);
-                if (groupIndex === undefined) { return; }
-                if (tagIndex === undefined) { return; }
-
-                const item = queryGroups[groupIndex][tagIndex];
-                const negated = input.value.trim().startsWith('!');
-                const currentNegated = item.negated;
-                const newTag = input.value.trim();
-                if (!newTag) { return; }
-                if (newTag === currentTag && negated === currentNegated) { return; }
-
-                if (newTag.includes('->')) {
-                    // Convert to range
-                    const parsed = parseRange(newTag);
-                    if (!isValidRange(parsed.minValue, parsed.maxValue)) {
-                        webviewApi.postMessage({ name: 'showWarning', message: 'Ranges require both min and max values. Use wildcards (e.g., prefix*) for open-ended searches.' });
-                        return;
-                    }
-                    Object.assign(item, parsed);
-                    delete item.tag;
-                    delete item.negated;
-                } else {
-                    // Convert to regular tag
-                    delete item.minValue;
-                    delete item.maxValue;
-                    if (negated) {
-                        item.tag = newTag.slice(1);
-                        item.negated = true;
-                    } else {
-                        item.tag = newTag;
-                        item.negated = false;
-                    }
-                    item.tag = item.tag
-                        .trim()
-                        .toLowerCase()
-                        .replace(RegExp('\\s', 'g'), spaceReplace);
-                }
-                updateQueryArea();
-                sendSearchMessage();
-            });
-            removeContextMenu(contextMenu);
-        });
-        fragment.appendChild(editQuery);
         cmdCount++;
     }
 
