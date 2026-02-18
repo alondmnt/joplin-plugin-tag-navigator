@@ -1501,7 +1501,9 @@ function resetToGlobalSettings() {
     });
 }
 
-/** Extract sort key from a tag for sorting by its values/children. */
+/** Extract sort key from a tag for sorting by its values/children.
+ *  Uses the first parent segment so that deeply nested tags (e.g., //2025/01/24)
+ *  all share the same sort key and compare correctly across branches. */
 function extractSortKey(tag) {
     // Strip tag prefix (e.g., #)
     const clean = tag.startsWith(tagPrefix) ? tag.slice(tagPrefix.length) : tag;
@@ -1510,9 +1512,18 @@ function extractSortKey(tag) {
         const key = clean.split(valueDelim)[0];
         return key || null;
     }
-    const lastSlash = clean.lastIndexOf('/');
-    if (lastSlash > 0) {
-        return clean.substring(0, lastSlash);
+    const firstSlash = clean.indexOf('/');
+    if (firstSlash > 0 && firstSlash < clean.length - 1) {
+        return clean.substring(0, firstSlash);
+    }
+    // Tag starts with '/' — find the first non-empty parent segment
+    // e.g., //2025/01/25 → '/', /hello/world → '/hello'
+    // Mirrors parser.ts nested tag generation: parts.slice(0, i).join('/')
+    if (firstSlash === 0) {
+        const nextSlash = clean.indexOf('/', 1);
+        if (nextSlash > 0 && nextSlash < clean.length - 1) {
+            return clean.substring(0, nextSlash);
+        }
     }
     return null;
 }
