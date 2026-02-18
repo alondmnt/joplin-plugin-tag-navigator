@@ -31,7 +31,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
     - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path.
     - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
-    - **Sort results by tags** such as priorities, dates, colors, or any other tag. ([video](https://www.youtube.com/watch?v=HvunHOc2zlM), [tips](#saved-queries))
+    - **Sort results by tags** such as priorities, dates, colors, or any other tag. Right-click a tag to sort by it or add it to a multi-key sort. ([video](https://www.youtube.com/watch?v=HvunHOc2zlM), [tips](#saved-queries))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
     - **Tag in front matter:** All Markdown front matter fields can be treated as tags. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#front-matter-tags))
     - **Edit tags:** Add, replace and remove inline tags via the panel context menu (right-click on a tag).
@@ -272,6 +272,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
 - A dropdown in the search panel lists all notes containing saved queries, allowing you to quickly switch between them.
 - When you navigate to a note with a saved query, it is automatically loaded into the search panel.
 - To disable automatic loading (for a static panel that only updates via explicit query selection), turn off the setting `Search: Auto-load saved queries from notes`.
+- When you change sort, grouping, or collapse settings from the search panel while a saved query is loaded, the changes are automatically stored in the query's per-query options (only values that differ from global defaults are saved).
 
 #### Basic structure
 
@@ -314,7 +315,10 @@ Saved queries allow you to store search configurations in notes and reuse them a
 
 #### Advanced options
 
-- **`sortBy`**: Comma-separated list of parent / value tags to sort by
+- **`sortBy`**: Comma-separated list of sort criteria
+  - Standard values: `"modified"`, `"created"`, `"title"`, `"text"`, `"notebook"`
+  - Tag values: any parent / value tag name (e.g., `"priority"`, `"date"`)
+  - Tip: Right-click a tag in the search panel and select `Sort by tag` or `Add to sort` to set sorting interactively. Available for tags with child or value components (e.g., `#priority/high`, `#date=2025-01-15`).
 - **`sortOrder`**: Comma-separated list of sort directions
   - Use "a" / "asc" / "ascend" or "d" / "desc" / "descend"
   - Must correspond to columns in `sortBy`
@@ -324,6 +328,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - `"item"`: Split by item
   - `"none"`: No grouping (flat list) — each paragraph becomes its own card, enabling cross-note sorting by tag
   - To change the global grouping, right-click on a note title in the search panel. Saved queries can override this with their own `resultGrouping` property.
+- **`resultToggle`**: Boolean to collapse (`true`) or expand (`false`) result cards
 - **`includeCols`**: (Table view only) Comma-separated list of columns to display
   - Can include: note properties, tags, "modified", "created" timestamps
   - Use to slice, sort, or add specific columns
