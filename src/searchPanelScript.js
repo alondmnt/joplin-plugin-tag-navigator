@@ -699,13 +699,16 @@ function updatePanelSettings(message) {
     valueDelim = settings.valueDelim || '=';
     resultGrouping = settings.resultGrouping || 'heading'; // Store resultGrouping setting
     
-    // Sync panel state with Joplin settings - don't apply global toggle
-    // Global toggle should only happen when user clicks the toggle button directly
+    // Sync panel state with Joplin settings
     const newResultToggleState = settings.resultToggle ? 'collapse' : 'expand';
-    // Update local state to match Joplin settings (affects future searches only)
+    // When the toggle state changes (e.g., loading a query with a different collapse
+    // setting), clear noteState so existing cards respect the new default.
+    if (resultToggleState !== null && newResultToggleState !== resultToggleState) {
+        noteState = {};
+    }
     resultToggleState = newResultToggleState;
     // Update the toggle button display to match current setting
-    resultToggle.innerHTML = settings.resultToggle ? 
+    resultToggle.innerHTML = settings.resultToggle ?
         '>' : 'v';  // Button shows the current state (collapse / expand)
 
     // Clean up custom dropdown options when setting to a standard value
