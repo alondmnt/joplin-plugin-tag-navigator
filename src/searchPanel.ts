@@ -63,6 +63,7 @@ export interface QueryRecord {
     sortBy?: string;
     sortOrder?: string;
     resultGrouping?: string;
+    resultToggle?: boolean;
     limit?: number;
   };
 }
@@ -507,8 +508,9 @@ async function processValidatedMessage(
           console.error(`Error in updateSetting: Invalid resultGrouping value: ${message.value}`);
         }
       } else if (message.field === 'resultToggle') {
-        // Handle resultToggle setting updates
-        await joplin.settings.setValue(`itags.${message.field}`, message.value);
+        // Store in per-query options; global setting is the fallback default
+        if (!searchParams.options) { searchParams.options = {}; }
+        searchParams.options.resultToggle = !!message.value;
       }
 
     } else if (message.field.startsWith('show')) {
@@ -751,7 +753,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
   const settings: PanelSettings = {
     resultSort: resultSort,
     resultOrder: resultOrder,
-    resultToggle: joplinSettings['itags.resultToggle'] as boolean,
+    resultToggle: searchParams?.options?.resultToggle ?? joplinSettings['itags.resultToggle'] as boolean,
     resultMarker: joplinSettings['itags.resultMarker'] as boolean,
     showQuery: joplinSettings['itags.showQuery'] as boolean,
     expandedTagList: joplinSettings['itags.expandedTagList'] as boolean,
@@ -1432,6 +1434,14 @@ function validateQuery(query: QueryRecord): QueryRecord {
       delete query.options.limit;
     } else {
       query.options.limit = limit;
+    }
+  }
+
+  // Validate resultToggle — must be a boolean
+  if (query.options?.resultToggle != null) {
+    if (typeof query.options.resultToggle !== 'boolean') {
+      console.warn('validateQuery: invalid resultToggle:', query.options.resultToggle);
+      delete query.options.resultToggle;
     }
   }
 
