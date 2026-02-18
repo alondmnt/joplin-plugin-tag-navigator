@@ -486,7 +486,8 @@ async function processResultForTable(
         if (tag === tagSettings.tagPrefix + 'frontmatter') {
           continue;
         }
-        let formattedTag = tag.replace(tagSettings.tagPrefix, '')
+        let formattedTag = (tag.startsWith(tagSettings.tagPrefix)
+            ? tag.slice(tagSettings.tagPrefix.length) : tag)
           .replace(RegExp(tagSettings.spaceReplace, 'g'), ' ')
           .toLowerCase();
         const existingTag = tagInfo.find(t => t.tag === formattedTag);

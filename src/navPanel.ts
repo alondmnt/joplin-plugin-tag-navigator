@@ -56,7 +56,8 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
   }
   // Build the list of current note tags
   const noteTagsHTML = tagsLines.map((tag) => {
-    const displayTag = hidePrefix ? tag.tag.replace(tagPrefix, '') : tag.tag;
+    const displayTag = hidePrefix && tag.tag.startsWith(tagPrefix)
+      ? tag.tag.slice(tagPrefix.length) : tag.tag;
     let indexText = '';
     if (tag.count > 1) {
       indexText = `<span>(${tag.index+1}/${tag.count})</span>`;
@@ -158,7 +159,8 @@ function buildTreeHTML(
     if (count === 0) { return; } // Ignore tags with count 0
 
     const fullTag = parentTag ? `${parentTag}/${tag}` : tag;
-    const tagName = hidePrefix ? fullTag.replace(tagPrefix, '') : fullTag;
+    const tagName = hidePrefix && fullTag.startsWith(tagPrefix)
+      ? fullTag.slice(tagPrefix.length) : fullTag;
     const indentStyle = `style="padding-left: ${level > 0 ? 31 : 18}px;"`;
     const detailsStyle = `style="padding-left: ${level > 0 ? 18 : 5}px;"`;
 

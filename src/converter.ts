@@ -26,7 +26,9 @@ export function extractInlineTags(noteBody: string, tagSettings: TagSettings): s
   const bodyTags = parseTagsLines(noteBody, tagSettings);
   
   const allTags = [...frontMatterTags, ...bodyTags]
-    .map(tag => tag.tag.replace(tagSettings.tagPrefix, '').replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
+    .map(tag => (tag.tag.startsWith(tagSettings.tagPrefix)
+        ? tag.tag.slice(tagSettings.tagPrefix.length) : tag.tag)
+      .replace(RegExp(tagSettings.spaceReplace, 'g'), ' '))
     .filter(tag => tag.length > 0);
   
   // Remove duplicates
