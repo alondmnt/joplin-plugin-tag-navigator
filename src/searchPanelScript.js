@@ -1609,7 +1609,7 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'editQuery', 'sortByTag', 'addToSort', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
+function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
