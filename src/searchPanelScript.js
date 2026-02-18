@@ -43,6 +43,8 @@ let resultMarker = true;
 let selectMultiTags = 'first';
 let searchWithRegex = false;
 let spaceReplace = '_';
+let tagPrefix = '#';
+let valueDelim = '=';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
@@ -693,6 +695,8 @@ function updatePanelSettings(message) {
     searchWithRegex = settings.searchWithRegex;
     selectMultiTags = settings.selectMultiTags;
     spaceReplace = settings.spaceReplace;
+    tagPrefix = settings.tagPrefix || '#';
+    valueDelim = settings.valueDelim || '=';
     resultGrouping = settings.resultGrouping || 'heading'; // Store resultGrouping setting
     
     // Sync panel state with Joplin settings - don't apply global toggle
@@ -1494,6 +1498,22 @@ function resetToGlobalSettings() {
     });
 }
 
+/** Extract sort key from a tag for sorting by its values/children. */
+function extractSortKey(tag) {
+    // Strip tag prefix (e.g., #)
+    const clean = tag.startsWith(tagPrefix) ? tag.slice(tagPrefix.length) : tag;
+    if (!clean) return null;
+    if (clean.includes(valueDelim)) {
+        const key = clean.split(valueDelim)[0];
+        return key || null;
+    }
+    const lastSlash = clean.lastIndexOf('/');
+    if (lastSlash > 0) {
+        return clean.substring(0, lastSlash);
+    }
+    return null;
+}
+
 function sendClearQuery() {
     webviewApi.postMessage({
         name: 'clearQuery'
@@ -1575,7 +1595,7 @@ function addLineNumberToTags(entryEl, text) {
     });
 }
 
-function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
+function createContextMenu(event, result=null, index=null, commands=['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'addTag', 'replaceTag', 'replaceAll', 'removeTag', 'removeAll'], expandLevel=0) {
     // Prevent the default context menu from appearing
     event.preventDefault();
 
@@ -1801,6 +1821,64 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
             removeContextMenu(contextMenu);
         });
         fragment.appendChild(extendQuery);
+        cmdCount++;
+    }
+
+    if (commands.includes('sortByTag') && extractSortKey(currentTag) !== null) {
+        const sortKey = extractSortKey(currentTag);
+        const sortByTag = document.createElement('span');
+        sortByTag.classList.add('itags-search-contextCommand');
+        sortByTag.textContent = `Sort by tag`;
+        addEventListenerWithTracking(sortByTag, 'click', () => {
+            // Add custom option to dropdown if needed
+            if (!Array.from(resultSort.options).some(opt => opt.value === sortKey)) {
+                const option = document.createElement('option');
+                option.value = sortKey;
+                option.text = sortKey;
+                resultSort.add(option);
+            }
+            resultSort.value = sortKey;
+            resultSort.setAttribute('data-prev-value', sortKey);
+            updateResultOrderDisplay('asc');
+            sendSetting('resultSort', sortKey);
+            sendSetting('resultOrder', 'asc');
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(sortByTag);
+        cmdCount++;
+    }
+
+    if (commands.includes('addToSort') && extractSortKey(currentTag) !== null) {
+        const sortKey = extractSortKey(currentTag);
+        const addToSort = document.createElement('span');
+        addToSort.classList.add('itags-search-contextCommand');
+        addToSort.textContent = `Add to sort`;
+        addEventListenerWithTracking(addToSort, 'click', () => {
+            const currentSortKeys = resultSort.value ? resultSort.value.split(',').map(s => s.trim()) : [];
+            // Skip if key already present
+            if (!currentSortKeys.includes(sortKey)) {
+                const newSortBy = currentSortKeys.length > 0
+                    ? currentSortKeys.join(',') + ',' + sortKey
+                    : sortKey;
+                const currentOrder = resultOrder.title || 'desc';
+                const newOrder = currentOrder + ',asc';
+
+                // Update dropdown with combined sort key
+                if (!Array.from(resultSort.options).some(opt => opt.value === newSortBy)) {
+                    const option = document.createElement('option');
+                    option.value = newSortBy;
+                    option.text = newSortBy;
+                    resultSort.add(option);
+                }
+                resultSort.value = newSortBy;
+                resultSort.setAttribute('data-prev-value', newSortBy);
+                updateResultOrderDisplay(newOrder);
+                sendSetting('resultSort', newSortBy);
+                sendSetting('resultOrder', newOrder);
+            }
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(addToSort);
         cmdCount++;
     }
 
@@ -2635,9 +2713,9 @@ function registerEventHandlers() {
         if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
             createContextMenu(event, null, null, ['editQuery']);
         } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
-            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'replaceAll', 'removeAll']);
+            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll']);
         } else if (event.target.matches('.itags-search-tag')) {
-            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'replaceAll', 'removeAll']);
+            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll']);
         } else if (event.target.type !== 'text') {
             createContextMenu(event, null, null, []);
         }

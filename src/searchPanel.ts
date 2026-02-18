@@ -116,6 +116,8 @@ interface PanelSettings {
   spaceReplace: string;
   resultColorProperty: string;
   resultGrouping: string;
+  tagPrefix: string;
+  valueDelim: string;
 }
 
 // Get the version of Joplin
@@ -772,6 +774,8 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     'itags.spaceReplace',
     'itags.resultColorProperty',
     'itags.resultGrouping',
+    'itags.tagPrefix',
+    'itags.valueDelim',
   ]);
   
   // Use query-specific settings if available, otherwise use global settings
@@ -800,6 +804,8 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     spaceReplace: joplinSettings['itags.spaceReplace'] as string,
     resultColorProperty: joplinSettings['itags.resultColorProperty'] as string,
     resultGrouping: resultGrouping,
+    tagPrefix: joplinSettings['itags.tagPrefix'] as string || '#',
+    valueDelim: joplinSettings['itags.valueDelim'] as string || '=',
   };
   createManagedTimeout(
     async () => {
