@@ -3,7 +3,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItMark from 'markdown-it-mark';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
-import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardSortKeys, getStandardOrderKeys, getStandardGroupingKeys } from './settings';
+import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys } from './settings';
 import { escapeRegex, mapPrefixClass } from './utils';
 import { GroupedResult, Query, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
@@ -467,26 +467,9 @@ async function processValidatedMessage(
     if (message.field.startsWith('result')) {
       // Implement linear flow: standard options → settings, custom options → query
       if (message.field === 'resultSort') {
-        const validSortBy = ensureSortByString(message.value);
-        const standardSortValues = getStandardSortKeys();
-        
-        if (standardSortValues.includes(validSortBy)) {
-          // Standard option: update global setting, remove query override
-          await joplin.settings.setValue(`itags.${message.field}`, validSortBy);
-          if (searchParams.options?.sortBy) {
-            delete searchParams.options.sortBy;
-            // Clean up options object if it becomes empty
-            if (Object.keys(searchParams.options).length === 0) {
-              searchParams.options = undefined;
-            }
-          }
-        } else {
-          // Custom option: update query only, don't touch global setting
-          if (!searchParams.options) {
-            searchParams.options = {};
-          }
-          searchParams.options.sortBy = validSortBy;
-        }
+        // Store in per-query options; global setting is the fallback default
+        if (!searchParams.options) { searchParams.options = {}; }
+        searchParams.options.sortBy = ensureSortByString(message.value);
 
         // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
@@ -496,26 +479,9 @@ async function processValidatedMessage(
         }
 
       } else if (message.field === 'resultOrder') {
-        const validSortOrder = ensureSortOrderString(message.value);
-        const standardSortOrders = getStandardOrderKeys();
-
-        if (standardSortOrders.includes(validSortOrder)) {
-          // Standard option: update global setting, remove query override
-          await joplin.settings.setValue(`itags.${message.field}`, validSortOrder);
-          if (searchParams.options?.sortOrder) {
-            delete searchParams.options.sortOrder;
-            // Clean up options object if it becomes empty
-            if (Object.keys(searchParams.options).length === 0) {
-              searchParams.options = undefined;
-            }
-          }
-        } else {
-          // Custom option (comma-separated): update query only
-          if (!searchParams.options) {
-            searchParams.options = {};
-          }
-          searchParams.options.sortOrder = validSortOrder;
-        }
+        // Store in per-query options; global setting is the fallback default
+        if (!searchParams.options) { searchParams.options = {}; }
+        searchParams.options.sortOrder = ensureSortOrderString(message.value);
 
         // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
