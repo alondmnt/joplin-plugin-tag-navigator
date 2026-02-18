@@ -466,11 +466,11 @@ async function processValidatedMessage(
   } else if (message.name === 'updateSetting') {
 
     if (message.field.startsWith('result')) {
-      // Implement linear flow: standard options → settings, custom options → query
+      // Store overrides in per-query options; values matching the global default are cleared
       if (message.field === 'resultSort') {
-        // Store in per-query options; global setting is the fallback default
-        if (!searchParams.options) { searchParams.options = {}; }
-        searchParams.options.sortBy = ensureSortByString(message.value);
+        const validSortBy = ensureSortByString(message.value);
+        const globalDefault = ensureSortByString(await joplin.settings.value('itags.resultSort'));
+        setQueryOption(searchParams, 'sortBy', validSortBy, globalDefault);
 
         // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
@@ -480,9 +480,9 @@ async function processValidatedMessage(
         }
 
       } else if (message.field === 'resultOrder') {
-        // Store in per-query options; global setting is the fallback default
-        if (!searchParams.options) { searchParams.options = {}; }
-        searchParams.options.sortOrder = ensureSortOrderString(message.value);
+        const validSortOrder = ensureSortOrderString(message.value);
+        const globalDefault = ensureSortOrderString(await joplin.settings.value('itags.resultOrder'));
+        setQueryOption(searchParams, 'sortOrder', validSortOrder, globalDefault);
 
         // Sort and update results if available
         if (lastSearchResults && lastSearchResults.length > 0) {
@@ -492,11 +492,10 @@ async function processValidatedMessage(
         }
 
       } else if (message.field === 'resultGrouping') {
-        // Store in per-query options; global setting is the fallback default
         const validGroupingModes = getStandardGroupingKeys();
         if (typeof message.value === 'string' && validGroupingModes.includes(message.value)) {
-          if (!searchParams.options) { searchParams.options = {}; }
-          searchParams.options.resultGrouping = message.value;
+          const globalDefault = await joplin.settings.value('itags.resultGrouping') as string || 'heading';
+          setQueryOption(searchParams, 'resultGrouping', message.value, globalDefault);
 
           // Re-run search with new grouping
           if (lastSearchResults && lastSearchResults.length > 0 && searchParams.query && searchParams.query.length > 0) {
@@ -508,9 +507,9 @@ async function processValidatedMessage(
           console.error(`Error in updateSetting: Invalid resultGrouping value: ${message.value}`);
         }
       } else if (message.field === 'resultToggle') {
-        // Store in per-query options; global setting is the fallback default
-        if (!searchParams.options) { searchParams.options = {}; }
-        searchParams.options.resultToggle = !!message.value;
+        const value = !!message.value;
+        const globalDefault = !!await joplin.settings.value('itags.resultToggle');
+        setQueryOption(searchParams, 'resultToggle', value, globalDefault);
       }
 
     } else if (message.field.startsWith('show')) {
@@ -1602,6 +1601,36 @@ async function showCustomSortDialog(
   } catch (error) {
     console.error('Error in showCustomSortDialog:', error);
     await joplin.views.dialogs.showMessageBox('Failed to open sort configuration dialog: ' + error.message);
+  }
+}
+
+/**
+ * Sets or clears a per-query option based on whether it differs from the
+ * global default. Stores only actual overrides so saved queries stay lean
+ * and continue to inherit changed global defaults.
+ * @param searchParams - Current query record (mutated in place)
+ * @param key - Option key to set or clear
+ * @param value - Normalised value from the panel
+ * @param globalDefault - Current global setting value
+ */
+function setQueryOption(
+  searchParams: QueryRecord,
+  key: string,
+  value: any,
+  globalDefault: any,
+): void {
+  if (value === globalDefault) {
+    // Matches global default — remove override
+    if (searchParams.options) {
+      delete searchParams.options[key];
+      if (Object.keys(searchParams.options).length === 0) {
+        searchParams.options = undefined;
+      }
+    }
+  } else {
+    // Differs from global — store as override
+    if (!searchParams.options) { searchParams.options = {}; }
+    searchParams.options[key] = value;
   }
 }
 
