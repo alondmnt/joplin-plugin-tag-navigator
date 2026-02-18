@@ -684,7 +684,8 @@ function extractTagsPerGroup(
       const lineTags = db.notes[externalId].getTagsAtLine(lineNumber);
       for (const tag of lineTags) {
         // Format tag (remove prefix, keep original format for accurate sorting)
-        const formattedTag = tag.replace(tagSettings.tagPrefix, '')
+        const formattedTag = (tag.startsWith(tagSettings.tagPrefix)
+            ? tag.slice(tagSettings.tagPrefix.length) : tag)
           .toLowerCase();
         uniqueTags.add(formattedTag);
       }
@@ -951,6 +952,8 @@ export function sortResults<T extends SortableItem>(
   const sortByArray = effectiveSortBy?.toLowerCase()
     .split(',')
     .map(s => s.trim())
+    .map(s => s.startsWith(tagSettings.tagPrefix.toLowerCase())
+      ? s.slice(tagSettings.tagPrefix.length) : s)
     .filter(s => s);
 
   const sortOrderArray = effectiveSortOrder?.toLowerCase()
