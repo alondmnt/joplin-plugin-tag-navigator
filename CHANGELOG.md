@@ -1,4 +1,13 @@
+# v2.9.1
+
+- added: "sort by tag" and "add to sort" context menu commands
+- added: "text" standard sort option
+- added: store sort, grouping, and collapse state in per-query options (#35)
+
+---
+
 # [v2.9.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.9.0)
+*Released on 2026-02-17T22:56:43Z*
 
 - added: 'no grouping' mode for paragraph-level cross-note sorting
 - added: search tag at cursor from editor context menu (FR #35)
