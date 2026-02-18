@@ -172,6 +172,7 @@ export async function registerSearchPanel(panel: string): Promise<void> {
         <option value="modified">Modified</option>
         <option value="created">Created</option>
         <option value="title">Title</option>
+        <option value="text">Text</option>
         <option value="notebook">Notebook</option>
         <option value="custom">Custom</option>
       </select>

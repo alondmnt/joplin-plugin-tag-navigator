@@ -7,7 +7,7 @@ let results = [];
 let noteState = {}; // Global state to track collapsed/expanded state of notes
 
 // Standard sort values used throughout the script
-const STANDARD_SORT_VALUES = ['modified', 'created', 'title', 'notebook', 'custom'];
+const STANDARD_SORT_VALUES = ['modified', 'created', 'title', 'text', 'notebook', 'custom'];
 
 const noteIdRegex = /([a-zA-Z0-9]{32})/; // Matches noteId
 

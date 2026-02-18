@@ -11,6 +11,7 @@ export const STANDARD_SORT_OPTIONS = {
   modified: 'Modified',
   created: 'Created',
   title: 'Title',
+  text: 'Text',
   notebook: 'Notebook',
 } as const;
 
