@@ -252,7 +252,7 @@ async function processValidatedMessage(
   if (message.name === 'initPanel') {
     await updatePanelTagData(searchPanel, db);
     await updatePanelNoteData(searchPanel, db);
-    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
     await updatePanelSettings(searchPanel, searchParams);
 
     const results = await runSearch(db, searchParams);
@@ -266,6 +266,9 @@ async function processValidatedMessage(
     } catch (e) {
       console.error('Failed to parse query:', message.query, e);
       searchParams.query = [[]];
+    }
+    if (message.mode && ['dnf', 'cnf'].includes(message.mode)) {
+      searchParams.mode = message.mode;
     }
 
     // Run the search and update results
@@ -315,6 +318,7 @@ async function processValidatedMessage(
       query: message.query,
       filter: message.filter,
       displayInNote: searchParams.displayInNote,
+      mode: message.mode || searchParams.mode || 'dnf',
       options: searchParams.options
     });
     await joplin.commands.execute('itags.refreshNoteView');
@@ -537,6 +541,7 @@ async function processValidatedMessage(
     // Clear the query and filter in the main process
     searchParams.query = [[]];
     searchParams.filter = '';
+    searchParams.mode = 'dnf';
     // Clear the cached search results
     lastSearchResults = [];
     // Note: Don't reset options here, that's handled by resetToGlobalSettings
@@ -553,10 +558,11 @@ async function processValidatedMessage(
           searchParams.query = savedQuery.query;
           searchParams.filter = savedQuery.filter;
           searchParams.displayInNote = savedQuery.displayInNote;
+          searchParams.mode = savedQuery.mode;
           searchParams.options = savedQuery.options;
 
           // Update panel UI with the loaded query
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           await updatePanelSettings(searchPanel, searchParams);
 
           // Run search with the loaded query
@@ -1032,7 +1038,7 @@ async function replaceTagAll(
       note = clearObjectReferences(note);
     }
     // update the search panel
-    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
     await updatePanelTagData(searchPanel, db);
     const results = await runSearch(db, searchParams);
     
@@ -1442,11 +1448,13 @@ function validateQuery(query: QueryRecord): QueryRecord {
  * @param panel - Panel ID to update
  * @param query - Query configuration
  * @param filter - Query filter string
+ * @param mode - Query interpretation mode ('dnf' or 'cnf')
  */
 export async function updatePanelQuery(
   panel: string,
   query: Query[][],
-  filter: string
+  filter: string,
+  mode?: 'dnf' | 'cnf'
 ): Promise<void> {
   // Send the query to the search panel
   if (!query || query.length ===0 || query[0].length === 0) {
@@ -1458,6 +1466,7 @@ export async function updatePanelQuery(
     name: 'updateQuery',
     query: JSON.stringify(query),
     filter: filter,
+    mode: mode || 'dnf',
   });
 }
 
