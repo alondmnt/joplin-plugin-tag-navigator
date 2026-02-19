@@ -48,6 +48,7 @@ let valueDelim = '=';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
+let queryMode = 'dnf'; // Current query mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs)
 let sectionExpandLevel = {};  // Maps "noteId|color|sectionIndex" -> level (0-3)
 let isSearching = false;  // True while waiting for search results
 
@@ -335,6 +336,7 @@ function processPanelMessage(message) {
             console.error('Failed to parse saved query:', message.message.query, e);
         }
         queryGroups = queryGroupsCand;
+        queryMode = message.message.mode || 'dnf';
         if (resultFilter) {
             resultFilter.value = message.message.filter ? message.message.filter : '';
         }
@@ -817,10 +819,12 @@ function hideElements(settings) {
 function updateQueryArea() {
     clearNode(queryArea);
     const fragment = document.createDocumentFragment();
+    const groupOp = queryMode === 'cnf' ? 'AND' : 'OR';
+    const withinOp = queryMode === 'cnf' ? 'OR' : 'AND';
 
     queryGroups.forEach((group, groupIndex) => {
         if (groupIndex > 0) {
-            fragment.appendChild(createOperatorElement('OR', groupIndex - 1, true));
+            fragment.appendChild(createOperatorElement(groupOp, groupIndex - 1, true));
         }
 
         fragment.appendChild(document.createTextNode('(')); // Start group
@@ -830,7 +834,7 @@ function updateQueryArea() {
             fragment.appendChild(newEl);
 
             if (tagIndex < group.length - 1) {
-                fragment.appendChild(createOperatorElement('AND', groupIndex, false, tagIndex));
+                fragment.appendChild(createOperatorElement(withinOp, groupIndex, false, tagIndex));
             }
         });
 
@@ -1445,6 +1449,7 @@ function toggleLastTagOrNote() {
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
+    queryMode = 'dnf'; // Reset to default mode
     lastGroup = queryGroups[0];
     clearNode(queryArea);
     resultFilter.placeholder = "Filter results..."; // Reset placeholder to default
@@ -1471,6 +1476,7 @@ function sendSearchMessage() {
     webviewApi.postMessage({
         name: 'searchQuery',
         query: searchQuery,
+        mode: queryMode,
     });
 }
 
@@ -2110,6 +2116,39 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
         });
     }
 
+    // Query mode toggle (DNF / CNF)
+    if (commands.includes('queryMode')) {
+        if (cmdCount > 0) {
+            const separator = document.createElement('hr');
+            separator.classList.add('itags-search-contextSeparator');
+            fragment.appendChild(separator);
+        }
+
+        const dnfEl = document.createElement('span');
+        dnfEl.classList.add('itags-search-contextCommand');
+        dnfEl.textContent = queryMode === 'dnf' ? '✓ OR (any group)' : 'OR (any group)';
+        addEventListenerWithTracking(dnfEl, 'click', () => {
+            queryMode = 'dnf';
+            updateQueryArea();
+            sendSearchMessage();
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(dnfEl);
+        cmdCount++;
+
+        const cnfEl = document.createElement('span');
+        cnfEl.classList.add('itags-search-contextCommand');
+        cnfEl.textContent = queryMode === 'cnf' ? '✓ AND (all groups)' : 'AND (all groups)';
+        addEventListenerWithTracking(cnfEl, 'click', () => {
+            queryMode = 'cnf';
+            updateQueryArea();
+            sendSearchMessage();
+            removeContextMenu(contextMenu);
+        });
+        fragment.appendChild(cnfEl);
+        cmdCount++;
+    }
+
     // Default commands: show / hide sections
     if (cmdCount > 0) {
         const separator = document.createElement('hr');
@@ -2341,6 +2380,7 @@ function registerEventHandlers() {
             name: 'saveQuery',
             query: JSON.stringify(queryGroups),
             filter: resultFilter.value,
+            mode: queryMode,
         });
     });
 
@@ -2732,13 +2772,13 @@ function registerEventHandlers() {
         });
         // Handle right-click on tags in list
         if (event.target.matches('.itags-search-tag') && event.target.classList.contains('range')) {
-            createContextMenu(event, null, null, ['editQuery']);
+            createContextMenu(event, null, null, ['editQuery', 'queryMode']);
         } else if (event.target.matches('.itags-search-tag') && (event.target.classList.contains('selected') || event.target.classList.contains('negated'))) {
-            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll']);
+            createContextMenu(event, null, null, ['insertTag', 'searchTag', 'editQuery', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll', 'queryMode']);
         } else if (event.target.matches('.itags-search-tag')) {
             createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll']);
         } else if (event.target.type !== 'text') {
-            createContextMenu(event, null, null, []);
+            createContextMenu(event, null, null, ['queryMode']);
         }
     });
 
