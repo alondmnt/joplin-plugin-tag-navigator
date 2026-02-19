@@ -90,7 +90,8 @@ export async function runSearch(
   const settings = await getTagSettings();
   const resultSettings = await getResultSettings();
   const groupingMode = params.options?.resultGrouping || resultSettings.resultGrouping;
-  const queryResults = await getQueryResults(db, query, currentNote);
+  const mode = params.mode || 'dnf';
+  const queryResults = await getQueryResults(db, query, currentNote, mode);
   let groupedResults = await processQueryResults(
     db,
     queryResults,
@@ -109,27 +110,32 @@ export async function runSearch(
 }
 
 /**
- * Processes query and returns matching note locations
+ * Processes query and returns matching note locations.
+ * In DNF mode (default): inner groups are AND, outer combination is OR.
+ * In CNF mode: inner groups are OR, outer combination is AND.
  * @param db Note database to search in
- * @param query 2D array of queries in DNF form
+ * @param query 2D array of queries
  * @param currentNote Currently selected note
+ * @param mode Query interpretation mode ('dnf' or 'cnf')
  * @returns Dictionary of note IDs to sets of line numbers
  */
 async function getQueryResults(
-  db: NoteDatabase, 
-  query: Query[][], 
-  currentNote: { id?: string }
+  db: NoteDatabase,
+  query: Query[][],
+  currentNote: { id?: string },
+  mode: 'dnf' | 'cnf' = 'dnf'
 ): Promise<ResultSet> {
-  let resultsSet: ResultSet = {};
-  
-  // Process each clause (OR)
+  const combineWithinGroup = mode === 'cnf' ? unionResults : intersectResults;
+  const combineBetweenGroups = mode === 'cnf' ? intersectResults : unionResults;
+
+  let resultsSet: ResultSet | null = null;
+
   for (const clause of query) {
     let clauseResultsSet: ResultSet | null = null;
 
-    // Process each part within clause (AND)
     for (const queryPart of clause) {
       let partResults: ResultSet = {};
-      
+
       if (queryPart.tag) {
         partResults = db.searchBy('tag', queryPart.tag, queryPart.negated);
 
@@ -141,7 +147,7 @@ async function getQueryResults(
 
           if (queryPart.title) {
             partResults = unionResults(
-              partResults, 
+              partResults,
               db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated)
             );
           }
@@ -149,18 +155,16 @@ async function getQueryResults(
 
       } else if (queryPart.minValue || queryPart.maxValue) {
         const tagSettings = await getTagSettings();
-        const minValue = queryPart.minValue ? 
+        const minValue = queryPart.minValue ?
           parseDateTag(queryPart.minValue.toLowerCase(), tagSettings) : null;
-        const maxValue = queryPart.maxValue ? 
+        const maxValue = queryPart.maxValue ?
           parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings) : null;
 
         for (const tag of db.getTags()) {
           if (minValue) {
             if (minValue.startsWith('*')) {
-              // Simple suffix check
               if (!tag.endsWith(minValue.slice(1))) { continue; }
             } else if (minValue.endsWith('*')) {
-              // Combined prefix + range check
               if (!tag.startsWith(minValue.slice(0, -1))) { continue; }
             } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
@@ -168,10 +172,8 @@ async function getQueryResults(
           }
           if (maxValue) {
             if (maxValue.startsWith('*')) {
-              // Simple suffix check
               if (!tag.endsWith(maxValue.slice(1))) { continue; }
             } else if (maxValue.endsWith('*')) {
-              // Combined prefix + range check
               if (!tag.startsWith(maxValue.slice(0, -1))) { continue; }
             } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
@@ -181,17 +183,21 @@ async function getQueryResults(
         }
       }
 
-      // Intersect results within clause (AND)
-      clauseResultsSet = clauseResultsSet === null ? 
-        partResults : 
-        intersectResults(clauseResultsSet, partResults);
+      // Combine results within group (AND in DNF, OR in CNF)
+      clauseResultsSet = clauseResultsSet === null ?
+        partResults :
+        combineWithinGroup(clauseResultsSet, partResults);
     }
 
-    // Union results between clauses (OR)
-    resultsSet = unionResults(resultsSet, clauseResultsSet);
+    // Combine results between groups (OR in DNF, AND in CNF)
+    if (clauseResultsSet !== null) {
+      resultsSet = resultsSet === null ?
+        clauseResultsSet :
+        combineBetweenGroups(resultsSet, clauseResultsSet);
+    }
   }
 
-  return resultsSet;
+  return resultsSet ?? {};
 }
 
 /**
