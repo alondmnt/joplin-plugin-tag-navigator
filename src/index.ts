@@ -61,7 +61,7 @@ joplin.plugins.register({
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     }, 1000);
@@ -172,7 +172,7 @@ joplin.plugins.register({
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -251,7 +251,7 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
@@ -298,7 +298,7 @@ joplin.plugins.register({
           await focusSearchPanel(searchPanel);
           await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         }
@@ -364,7 +364,7 @@ joplin.plugins.register({
           }
           await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         } catch (error) {
@@ -908,7 +908,7 @@ joplin.plugins.register({
           await focusSearchPanel(searchPanel);
           await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         } else if (!wantVisible && isVisible) {
@@ -973,7 +973,7 @@ joplin.plugins.register({
         }
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
         await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }

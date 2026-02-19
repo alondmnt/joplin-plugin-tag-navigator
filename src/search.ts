@@ -18,6 +18,28 @@ export interface Query {
 }
 
 /**
+ * Represents a search query configuration
+ */
+export interface QueryRecord {
+  /** Array of query conditions grouped by AND/OR logic */
+  query: Query[][];
+  /** Text filter to apply to results */
+  filter: string;
+  /** How to display results in the note: 'false', 'list', 'table', or 'kanban' */
+  displayInNote: string;
+  /** Optional display settings */
+  options?: {
+    includeCols?: string;
+    excludeCols?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    resultGrouping?: string;
+    resultToggle?: boolean;
+    limit?: number;
+  };
+}
+
+/**
  * Base interface for items that can be sorted
  */
 export interface SortableItem {
@@ -54,26 +76,18 @@ export const REGEX = {
 /**
  * Executes a search query and returns grouped results
  * @param db Note database to search in
- * @param query 2D array of queries representing DNF (Disjunctive Normal Form)
- * @param groupingMode The grouping mode to use, if not provided, the default from settings will be used
- * @param sortOptions Optional sorting configuration (sortBy and sortOrder)
+ * @param params Query configuration containing query conditions, options, and mode
  * @returns Array of grouped search results
  */
 export async function runSearch(
-  db: NoteDatabase, 
-  query: Query[][],
-  groupingMode: string,
-  sortOptions?: {
-    sortBy?: string,
-    sortOrder?: string
-  }
+  db: NoteDatabase,
+  params: QueryRecord
 ): Promise<GroupedResult[]> {
+  const query = params.query;
   let currentNote = (await joplin.workspace.selectedNote()) || {};
   const settings = await getTagSettings();
   const resultSettings = await getResultSettings();
-  if (!groupingMode) {
-    groupingMode = resultSettings.resultGrouping;
-  }
+  const groupingMode = params.options?.resultGrouping || resultSettings.resultGrouping;
   const queryResults = await getQueryResults(db, query, currentNote);
   let groupedResults = await processQueryResults(
     db,
@@ -86,7 +100,7 @@ export async function runSearch(
   // Sort results using options with fallbacks to global settings
   const tagSettings = await getTagSettings();
   groupedResults = sortResults(
-    groupedResults,sortOptions, tagSettings, resultSettings);
+    groupedResults, params.options, tagSettings, resultSettings);
 
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
