@@ -1381,6 +1381,14 @@ function validateQuery(query: QueryRecord): QueryRecord {
     query.query = [[]];
   }
 
+  // Validate and default mode
+  if (query.mode && !['dnf', 'cnf'].includes(query.mode)) {
+    console.warn('validateQuery: invalid mode:', query.mode);
+  }
+  if (!query.mode || !['dnf', 'cnf'].includes(query.mode)) {
+    query.mode = 'dnf';
+  }
+
   // Normalise sort order if present
   if (query.options?.sortOrder) {
     query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);

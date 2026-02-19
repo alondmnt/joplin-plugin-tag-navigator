@@ -27,6 +27,8 @@ export interface QueryRecord {
   filter: string;
   /** How to display results in the note: 'false', 'list', 'table', or 'kanban' */
   displayInNote: string;
+  /** Query interpretation mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs) */
+  mode?: 'dnf' | 'cnf';
   /** Optional display settings */
   options?: {
     includeCols?: string;
