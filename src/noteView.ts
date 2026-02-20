@@ -94,11 +94,10 @@ export async function displayResultsInNote(
   if (!viewList.includes(savedQuery.displayInNote)) { return null; }
 
   const displayColors = viewSettings.noteViewColorTitles;
-  const groupingMode = savedQuery.options?.resultGrouping || resultSettings.resultGrouping;
   const noteViewLocation = viewSettings.noteViewLocation;
 
   // Run search with sorting options
-  const results = await runSearch(db, savedQuery.query, groupingMode, savedQuery.options);
+  const results = await runSearch(db, savedQuery);
 
   // Apply filtering and limit
   let filteredResults = await filterResults(results, savedQuery.filter, viewSettings);

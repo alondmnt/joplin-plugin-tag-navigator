@@ -18,6 +18,30 @@ export interface Query {
 }
 
 /**
+ * Represents a search query configuration
+ */
+export interface QueryRecord {
+  /** Array of query conditions grouped by AND/OR logic */
+  query: Query[][];
+  /** Text filter to apply to results */
+  filter: string;
+  /** How to display results in the note: 'false', 'list', 'table', or 'kanban' */
+  displayInNote: string;
+  /** Query interpretation mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs) */
+  mode?: 'dnf' | 'cnf';
+  /** Optional display settings */
+  options?: {
+    includeCols?: string;
+    excludeCols?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    resultGrouping?: string;
+    resultToggle?: boolean;
+    limit?: number;
+  };
+}
+
+/**
  * Base interface for items that can be sorted
  */
 export interface SortableItem {
@@ -54,27 +78,20 @@ export const REGEX = {
 /**
  * Executes a search query and returns grouped results
  * @param db Note database to search in
- * @param query 2D array of queries representing DNF (Disjunctive Normal Form)
- * @param groupingMode The grouping mode to use, if not provided, the default from settings will be used
- * @param sortOptions Optional sorting configuration (sortBy and sortOrder)
+ * @param params Query configuration containing query conditions, options, and mode
  * @returns Array of grouped search results
  */
 export async function runSearch(
-  db: NoteDatabase, 
-  query: Query[][],
-  groupingMode: string,
-  sortOptions?: {
-    sortBy?: string,
-    sortOrder?: string
-  }
+  db: NoteDatabase,
+  params: QueryRecord
 ): Promise<GroupedResult[]> {
+  const query = params.query;
   let currentNote = (await joplin.workspace.selectedNote()) || {};
   const settings = await getTagSettings();
   const resultSettings = await getResultSettings();
-  if (!groupingMode) {
-    groupingMode = resultSettings.resultGrouping;
-  }
-  const queryResults = await getQueryResults(db, query, currentNote);
+  const groupingMode = params.options?.resultGrouping || resultSettings.resultGrouping;
+  const mode = params.mode || 'dnf';
+  const queryResults = await getQueryResults(db, query, currentNote, mode);
   let groupedResults = await processQueryResults(
     db,
     queryResults,
@@ -86,34 +103,39 @@ export async function runSearch(
   // Sort results using options with fallbacks to global settings
   const tagSettings = await getTagSettings();
   groupedResults = sortResults(
-    groupedResults,sortOptions, tagSettings, resultSettings);
+    groupedResults, params.options, tagSettings, resultSettings);
 
   currentNote = clearObjectReferences(currentNote);
   return groupedResults;
 }
 
 /**
- * Processes query and returns matching note locations
+ * Processes query and returns matching note locations.
+ * In DNF mode (default): inner groups are AND, outer combination is OR.
+ * In CNF mode: inner groups are OR, outer combination is AND.
  * @param db Note database to search in
- * @param query 2D array of queries in DNF form
+ * @param query 2D array of queries
  * @param currentNote Currently selected note
+ * @param mode Query interpretation mode ('dnf' or 'cnf')
  * @returns Dictionary of note IDs to sets of line numbers
  */
 async function getQueryResults(
-  db: NoteDatabase, 
-  query: Query[][], 
-  currentNote: { id?: string }
+  db: NoteDatabase,
+  query: Query[][],
+  currentNote: { id?: string },
+  mode: 'dnf' | 'cnf' = 'dnf'
 ): Promise<ResultSet> {
-  let resultsSet: ResultSet = {};
-  
-  // Process each clause (OR)
+  const combineWithinGroup = mode === 'cnf' ? unionResults : intersectResults;
+  const combineBetweenGroups = mode === 'cnf' ? intersectResults : unionResults;
+
+  let resultsSet: ResultSet | null = null;
+
   for (const clause of query) {
     let clauseResultsSet: ResultSet | null = null;
 
-    // Process each part within clause (AND)
     for (const queryPart of clause) {
       let partResults: ResultSet = {};
-      
+
       if (queryPart.tag) {
         partResults = db.searchBy('tag', queryPart.tag, queryPart.negated);
 
@@ -125,7 +147,7 @@ async function getQueryResults(
 
           if (queryPart.title) {
             partResults = unionResults(
-              partResults, 
+              partResults,
               db.searchBy('noteLinkTitle', queryPart.title, queryPart.negated)
             );
           }
@@ -133,9 +155,9 @@ async function getQueryResults(
 
       } else if (queryPart.minValue || queryPart.maxValue) {
         const tagSettings = await getTagSettings();
-        const minValue = queryPart.minValue ? 
+        const minValue = queryPart.minValue ?
           parseDateTag(queryPart.minValue.toLowerCase(), tagSettings) : null;
-        const maxValue = queryPart.maxValue ? 
+        const maxValue = queryPart.maxValue ?
           parseDateTag(queryPart.maxValue.toLowerCase(), tagSettings) : null;
 
         for (const tag of db.getTags()) {
@@ -165,17 +187,21 @@ async function getQueryResults(
         }
       }
 
-      // Intersect results within clause (AND)
-      clauseResultsSet = clauseResultsSet === null ? 
-        partResults : 
-        intersectResults(clauseResultsSet, partResults);
+      // Combine results within group (AND in DNF, OR in CNF)
+      clauseResultsSet = clauseResultsSet === null ?
+        partResults :
+        combineWithinGroup(clauseResultsSet, partResults);
     }
 
-    // Union results between clauses (OR)
-    resultsSet = unionResults(resultsSet, clauseResultsSet);
+    // Combine results between groups (OR in DNF, AND in CNF)
+    if (clauseResultsSet !== null) {
+      resultsSet = resultsSet === null ?
+        clauseResultsSet :
+        combineBetweenGroups(resultsSet, clauseResultsSet);
+    }
   }
 
-  return resultsSet;
+  return resultsSet ?? {};
 }
 
 /**

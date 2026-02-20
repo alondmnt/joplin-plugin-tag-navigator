@@ -13,7 +13,7 @@ import { parseDateTag } from './parser';
 import { clearAllTagConversionData } from './tracker';
 import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemoryManager } from './memory';
 
-let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
+let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
 let currentTableColumnSeparators: { [key: string]: TagSeparatorType } = {};
@@ -61,7 +61,7 @@ joplin.plugins.register({
       await updatePanelTagData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     }, 1000);
@@ -139,7 +139,7 @@ joplin.plugins.register({
         await joplin.views.panels.show(searchPanel);
         await registerSearchPanel(searchPanel);
         // Sync current query state so the panel can extend it
-        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
         await updatePanelSettings(searchPanel, searchParams);
       }
       await joplin.views.panels.postMessage(searchPanel, {
@@ -172,7 +172,7 @@ joplin.plugins.register({
       await updatePanelNoteData(searchPanel, DatabaseManager.getDatabase());
 
       // Update search results
-      const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+      const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
       lastSearchResults = results; // Cache the results
       await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -219,7 +219,7 @@ joplin.plugins.register({
       if (autoLoadQuery && savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
         // Updating this variable will ensure it's sent to the panel on initPanel
         searchParams = savedQuery;
-        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
         // Update panel settings to reflect the loaded query's options
         await updatePanelSettings(searchPanel, searchParams);
       }
@@ -251,7 +251,7 @@ joplin.plugins.register({
 
       if (searchParams.query.flatMap(x => x).some(x => x.externalId == 'current')) {
         // Update search results
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
@@ -296,9 +296,9 @@ joplin.plugins.register({
         if (!panelState) {
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         }
@@ -326,7 +326,7 @@ joplin.plugins.register({
         if (savedQuery.query && savedQuery.query.length > 0 && savedQuery.query[0].length > 0) {
           // Updating this variable will ensure it's sent to the panel on initPanel
           searchParams = savedQuery;
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           // Update panel settings to reflect the loaded query's options
           await updatePanelSettings(searchPanel, searchParams);
         }
@@ -354,7 +354,8 @@ joplin.plugins.register({
           searchParams = {
             query: [[{ tag: tagAtCursor, negated: false }]],
             filter: '',
-            displayInNote: 'false'
+            displayInNote: 'false',
+            mode: 'dnf',
           };
           const panelState = await joplin.views.panels.visible(searchPanel);
           if (!panelState) {
@@ -362,9 +363,9 @@ joplin.plugins.register({
             await registerSearchPanel(searchPanel);
             await focusSearchPanel(searchPanel);
           }
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         } catch (error) {
@@ -906,9 +907,9 @@ joplin.plugins.register({
           await joplin.views.panels.show(searchPanel);
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           await updatePanelSettings(searchPanel, searchParams);
-          const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         } else if (!wantVisible && isVisible) {
@@ -962,7 +963,8 @@ joplin.plugins.register({
         searchParams = {
           query: [[{ tag: message.tag, negated: false }]],
           filter: '',
-          displayInNote: 'false'
+          displayInNote: 'false',
+          mode: 'dnf',
           // Don't preserve existing options - let it use global settings
         };
         const panelState = await joplin.views.panels.visible(searchPanel);
@@ -971,9 +973,9 @@ joplin.plugins.register({
           await registerSearchPanel(searchPanel);
           await focusSearchPanel(searchPanel);
         }
-        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+        await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
         await updatePanelSettings(searchPanel, searchParams); // Update panel to reflect global settings
-        const results = await runSearch(DatabaseManager.getDatabase(), searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+        const results = await runSearch(DatabaseManager.getDatabase(), searchParams);
         lastSearchResults = results; // Cache the results
         await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
       }
@@ -991,7 +993,7 @@ joplin.plugins.register({
       
       // Clear search params
       clearObjectReferences(searchParams);
-      searchParams = { query: [[]], filter: '', displayInNote: 'false' };
+      searchParams = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
       
       // Clear table columns and default values
       currentTableColumns.length = 0;

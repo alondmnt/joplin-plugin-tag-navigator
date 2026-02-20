@@ -5,7 +5,7 @@ import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys } from './settings';
 import { escapeRegex, mapPrefixClass } from './utils';
-import { GroupedResult, Query, runSearch, sortResults } from './search';
+import { GroupedResult, Query, QueryRecord, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
 import { validatePanelMessage, ValidationError } from './validation';
@@ -46,27 +46,8 @@ export const REGEX = {
   coreMarker: /\u200B\u2061/g,
 };
 
-/**
- * Represents a search query configuration
- */
-export interface QueryRecord {
-  /** Array of query conditions grouped by AND/OR logic */
-  query: Query[][];
-  /** Text filter to apply to results */
-  filter: string;
-  /** How to display results in the note: 'false', 'list', 'table', or 'kanban' */
-  displayInNote: string;
-  /** Optional display settings */
-  options?: {
-    includeCols?: string;
-    excludeCols?: string;
-    sortBy?: string;
-    sortOrder?: string;
-    resultGrouping?: string;
-    resultToggle?: boolean;
-    limit?: number;
-  };
-}
+// QueryRecord is defined in search.ts and re-exported here for backward compatibility
+export { QueryRecord } from './search';
 
 /**
  * Interface for messages received from the search panel UI
@@ -271,10 +252,10 @@ async function processValidatedMessage(
   if (message.name === 'initPanel') {
     await updatePanelTagData(searchPanel, db);
     await updatePanelNoteData(searchPanel, db);
-    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
     await updatePanelSettings(searchPanel, searchParams);
 
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Cache the results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
     await updatePanelNoteState(searchPanel, savedNoteState);
@@ -286,9 +267,12 @@ async function processValidatedMessage(
       console.error('Failed to parse query:', message.query, e);
       searchParams.query = [[]];
     }
+    if (message.mode && ['dnf', 'cnf'].includes(message.mode)) {
+      searchParams.mode = message.mode;
+    }
 
     // Run the search and update results
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Update cached results
     await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
 
@@ -334,6 +318,7 @@ async function processValidatedMessage(
       query: message.query,
       filter: message.filter,
       displayInNote: searchParams.displayInNote,
+      mode: message.mode || searchParams.mode || 'dnf',
       options: searchParams.options
     });
     await joplin.commands.execute('itags.refreshNoteView');
@@ -404,7 +389,7 @@ async function processValidatedMessage(
     await setCheckboxState(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Cache the results
     
     // Apply sorting to maintain current sort order
@@ -421,7 +406,7 @@ async function processValidatedMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Cache the results
     
     // Apply sorting to maintain current sort order
@@ -441,7 +426,7 @@ async function processValidatedMessage(
 
     // update the search panel
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Cache the results
     
     // Apply sorting to maintain current sort order
@@ -456,7 +441,7 @@ async function processValidatedMessage(
     await addTagToText(message, db, tagSettings);
 
     // update the search panel
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     lastSearchResults = results; // Cache the results
     
     // Apply sorting to maintain current sort order
@@ -500,7 +485,7 @@ async function processValidatedMessage(
 
           // Re-run search with new grouping
           if (lastSearchResults && lastSearchResults.length > 0 && searchParams.query && searchParams.query.length > 0) {
-            const results = await runSearch(db, searchParams.query, message.value, searchParams.options);
+            const results = await runSearch(db, searchParams);
             lastSearchResults = results; // Update cached results
             await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
           }
@@ -556,6 +541,7 @@ async function processValidatedMessage(
     // Clear the query and filter in the main process
     searchParams.query = [[]];
     searchParams.filter = '';
+    searchParams.mode = 'dnf';
     // Clear the cached search results
     lastSearchResults = [];
     // Note: Don't reset options here, that's handled by resetToGlobalSettings
@@ -572,14 +558,15 @@ async function processValidatedMessage(
           searchParams.query = savedQuery.query;
           searchParams.filter = savedQuery.filter;
           searchParams.displayInNote = savedQuery.displayInNote;
+          searchParams.mode = savedQuery.mode;
           searchParams.options = savedQuery.options;
 
           // Update panel UI with the loaded query
-          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+          await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
           await updatePanelSettings(searchPanel, searchParams);
 
           // Run search with the loaded query
-          const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+          const results = await runSearch(db, searchParams);
           lastSearchResults = results;
           await updatePanelResults(searchPanel, results, searchParams.query, searchParams.options);
         }
@@ -1051,9 +1038,9 @@ async function replaceTagAll(
       note = clearObjectReferences(note);
     }
     // update the search panel
-    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter);
+    await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
     await updatePanelTagData(searchPanel, db);
-    const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+    const results = await runSearch(db, searchParams);
     
     // Apply sorting to maintain current sort order
     const resultSettings = await getResultSettings();
@@ -1097,7 +1084,7 @@ async function removeTagAll(
   
   // update the search panel
   await updatePanelTagData(searchPanel, db);
-  const results = await runSearch(db, searchParams.query, searchParams.options?.resultGrouping, searchParams.options);
+  const results = await runSearch(db, searchParams);
   
   // Apply sorting to maintain current sort order
   const resultSettings = await getResultSettings();
@@ -1317,7 +1304,7 @@ export async function saveQuery(
  */
 export function loadQuery(note: any): QueryRecord {
   const record = note.body.match(REGEX.findQuery);
-  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
+  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
   if (record) {
     try {
       // Strip the code block delimiters, and remove decorations
@@ -1400,6 +1387,14 @@ function validateQuery(query: QueryRecord): QueryRecord {
     query.query = [[]];
   }
 
+  // Validate and default mode
+  if (!query.mode || !['dnf', 'cnf'].includes(query.mode)) {
+    if (query.mode) {
+      console.warn('validateQuery: invalid mode:', query.mode);
+    }
+    query.mode = 'dnf';
+  }
+
   // Normalise sort order if present
   if (query.options?.sortOrder) {
     query.options.sortOrder = ensureSortOrderString(query.options.sortOrder);
@@ -1453,11 +1448,13 @@ function validateQuery(query: QueryRecord): QueryRecord {
  * @param panel - Panel ID to update
  * @param query - Query configuration
  * @param filter - Query filter string
+ * @param mode - Query interpretation mode ('dnf' or 'cnf')
  */
 export async function updatePanelQuery(
   panel: string,
   query: Query[][],
-  filter: string
+  filter: string,
+  mode?: 'dnf' | 'cnf'
 ): Promise<void> {
   // Send the query to the search panel
   if (!query || query.length ===0 || query[0].length === 0) {
@@ -1469,6 +1466,7 @@ export async function updatePanelQuery(
     name: 'updateQuery',
     query: JSON.stringify(query),
     filter: filter,
+    mode: mode || 'dnf',
   });
 }
 

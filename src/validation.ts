@@ -509,5 +509,12 @@ export function validatePanelMessage(message: any): any {
     validated.message = validateString(message.message, 'message', VALIDATION_LIMITS.MAX_SETTING_VALUE_LENGTH);
   }
 
+  if ('mode' in message) {
+    const mode = validateString(message.mode, 'mode', 10);
+    if (['dnf', 'cnf'].includes(mode)) {
+      validated.mode = mode;
+    }
+  }
+
   return validated;
-} 
+}
