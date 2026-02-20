@@ -982,6 +982,19 @@ joplin.plugins.register({
       if (message.name === 'extendQuery') {
         await extendQuery(message.tag);
       }
+      if (message.name === 'insertTag') {
+        try {
+          await joplin.commands.execute('dismissPluginPanels');
+        } catch {
+          // Ignore errors (not on mobile, or old version)
+        }
+        try {
+          await joplin.commands.execute('insertText', message.tag);
+          await joplin.commands.execute('editor.focus');
+        } catch (error) {
+          console.debug('itags.insertTag (navPanel): error', error);
+        }
+      }
       clearObjectReferences(message);
     });
 
