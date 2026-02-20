@@ -48,7 +48,8 @@ let valueDelim = '=';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
-let queryMode = 'dnf'; // Current query mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs)
+const DEFAULT_QUERY_MODE = 'cnf'; // Must match DEFAULT_QUERY_MODE in settings.ts
+let queryMode = DEFAULT_QUERY_MODE; // Current query mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs)
 let sectionExpandLevel = {};  // Maps "noteId|color|sectionIndex" -> level (0-3)
 let isSearching = false;  // True while waiting for search results
 
@@ -1472,7 +1473,7 @@ function toggleLastTagOrNote() {
 function clearQueryArea() {
     // For example, clear the innerHTML of the query area
     queryGroups = []; // Reset the query groups
-    queryMode = 'dnf'; // Reset to default mode
+    queryMode = DEFAULT_QUERY_MODE; // Reset to default mode
     lastGroup = queryGroups[0];
     clearNode(queryArea);
     resultFilter.placeholder = "Filter results..."; // Reset placeholder to default

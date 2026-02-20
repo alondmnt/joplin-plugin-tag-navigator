@@ -34,6 +34,9 @@ export const getStandardSortKeys = (): string[] => Object.keys(STANDARD_SORT_OPT
 export const getStandardOrderKeys = (): string[] => Object.keys(STANDARD_ORDER_OPTIONS);
 export const getStandardGroupingKeys = (): string[] => Object.keys(STANDARD_GROUPING_OPTIONS);
 
+/** Default query interpretation mode for new/fresh queries. */
+export const DEFAULT_QUERY_MODE: 'dnf' | 'cnf' = 'cnf';
+
 /**
  * HTML comment markers for query sections
  */

@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
-import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings, excludeNotebook, includeNotebook } from './settings';
+import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings, excludeNotebook, includeNotebook, DEFAULT_QUERY_MODE } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { DatabaseManager, processAllNotes, processNote } from './db';
@@ -13,7 +13,7 @@ import { parseDateTag } from './parser';
 import { clearAllTagConversionData } from './tracker';
 import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemoryManager } from './memory';
 
-let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
+let searchParams: QueryRecord = { query: [[]], filter: '', displayInNote: 'false', mode: DEFAULT_QUERY_MODE };
 let currentTableColumns: string[] = [];
 let currentTableDefaultValues: { [key: string]: string } = {};
 let currentTableColumnSeparators: { [key: string]: TagSeparatorType } = {};
@@ -355,7 +355,7 @@ joplin.plugins.register({
             query: [[{ tag: tagAtCursor, negated: false }]],
             filter: '',
             displayInNote: 'false',
-            mode: 'dnf',
+            mode: DEFAULT_QUERY_MODE,
           };
           const panelState = await joplin.views.panels.visible(searchPanel);
           if (!panelState) {
@@ -964,7 +964,7 @@ joplin.plugins.register({
           query: [[{ tag: message.tag, negated: false }]],
           filter: '',
           displayInNote: 'false',
-          mode: 'dnf',
+          mode: DEFAULT_QUERY_MODE,
           // Don't preserve existing options - let it use global settings
         };
         const panelState = await joplin.views.panels.visible(searchPanel);
@@ -993,7 +993,7 @@ joplin.plugins.register({
       
       // Clear search params
       clearObjectReferences(searchParams);
-      searchParams = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
+      searchParams = { query: [[]], filter: '', displayInNote: 'false', mode: DEFAULT_QUERY_MODE };
       
       // Clear table columns and default values
       currentTableColumns.length = 0;

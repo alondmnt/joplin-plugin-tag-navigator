@@ -3,7 +3,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as markdownItMark from 'markdown-it-mark';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
-import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys } from './settings';
+import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys, DEFAULT_QUERY_MODE } from './settings';
 import { escapeRegex, mapPrefixClass } from './utils';
 import { GroupedResult, Query, QueryRecord, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
@@ -541,7 +541,7 @@ async function processValidatedMessage(
     // Clear the query and filter in the main process
     searchParams.query = [[]];
     searchParams.filter = '';
-    searchParams.mode = 'dnf';
+    searchParams.mode = DEFAULT_QUERY_MODE;
     // Clear the cached search results
     lastSearchResults = [];
     // Note: Don't reset options here, that's handled by resetToGlobalSettings
