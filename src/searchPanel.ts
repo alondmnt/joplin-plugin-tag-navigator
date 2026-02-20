@@ -1388,10 +1388,10 @@ function validateQuery(query: QueryRecord): QueryRecord {
   }
 
   // Validate and default mode
-  if (query.mode && !['dnf', 'cnf'].includes(query.mode)) {
-    console.warn('validateQuery: invalid mode:', query.mode);
-  }
   if (!query.mode || !['dnf', 'cnf'].includes(query.mode)) {
+    if (query.mode) {
+      console.warn('validateQuery: invalid mode:', query.mode);
+    }
     query.mode = 'dnf';
   }
 

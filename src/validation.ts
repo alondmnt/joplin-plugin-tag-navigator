@@ -517,4 +517,4 @@ export function validatePanelMessage(message: any): any {
   }
 
   return validated;
-} 
+}

@@ -163,8 +163,10 @@ async function getQueryResults(
         for (const tag of db.getTags()) {
           if (minValue) {
             if (minValue.startsWith('*')) {
+              // Simple suffix check
               if (!tag.endsWith(minValue.slice(1))) { continue; }
             } else if (minValue.endsWith('*')) {
+              // Combined prefix + range check
               if (!tag.startsWith(minValue.slice(0, -1))) { continue; }
             } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
@@ -172,8 +174,10 @@ async function getQueryResults(
           }
           if (maxValue) {
             if (maxValue.startsWith('*')) {
+              // Simple suffix check
               if (!tag.endsWith(maxValue.slice(1))) { continue; }
             } else if (maxValue.endsWith('*')) {
+              // Combined prefix + range check
               if (!tag.startsWith(maxValue.slice(0, -1))) { continue; }
             } else if (!isTagInRange(tag, minValue, maxValue, tagSettings.valueDelim)) {
               continue;
