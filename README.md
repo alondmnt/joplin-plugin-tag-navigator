@@ -51,7 +51,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
         - In a table / database. ([video](https://www.youtube.com/watch?v=L3zHletRk54), [tips](#table-views))
         - In a kanban board. ([video](https://www.youtube.com/watch?v=e7HhQJjpEJg), [tips](#kanban-views))
 3. It adds a panel for quickly navigating between inline tags that appear in the current note, or in all notes ([video](https://www.youtube.com/watch?v=h-HdX7npbIw)).
-    - Click a global tag to search for it, or Cmd/Ctrl+click to add it to the current query.
+    - Click a global tag to search for it, Cmd/Ctrl+click to add it to the current query, or Shift+click to insert it into the editor.
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
 6. It renders inline tags and front matter in the Markdown preview, and front matter in the Markdown editor. ([tips](#styling-inline-tags))
@@ -190,6 +190,7 @@ Date tags provide flexible ways to work with dates in your notes, supporting bot
 ### Tag insertion
 
 - You may insert a tag into the note editor by:
+    - Shift+clicking on a tag in the navigation panel.
     - Starting to type a tag in the search panel, and pressing `Shift+Enter`.
     - Right-clicking on a tag in the search panel, and selecting `Insert tag`.
 
