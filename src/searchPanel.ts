@@ -1304,7 +1304,7 @@ export async function saveQuery(
  */
 export function loadQuery(note: any): QueryRecord {
   const record = note.body.match(REGEX.findQuery);
-  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false' };
+  let loadedQuery: QueryRecord = { query: [[]], filter: '', displayInNote: 'false', mode: 'dnf' };
   if (record) {
     try {
       // Strip the code block delimiters, and remove decorations
