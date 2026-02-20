@@ -305,6 +305,8 @@ joplin.plugins.register({
         const wasVisible = await joplin.views.panels.visible(navPanel);
         if (wasVisible) {
           await joplin.views.panels.hide(navPanel);
+          try { await joplin.commands.execute('editor.focus'); }
+          catch (error) { console.debug('itags.toggleNav: editor.focus error', error); }
         } else {
           await joplin.views.panels.show(navPanel);
           await joplin.commands.execute('itags.refreshPanel');
@@ -321,6 +323,8 @@ joplin.plugins.register({
         if (await joplin.views.panels.visible(searchPanel)) {
           await joplin.views.panels.hide(searchPanel);
           await joplin.settings.setValue('itags.searchPanelVisible', false);
+          try { await joplin.commands.execute('editor.focus'); }
+          catch (error) { console.debug('itags.toggleSearch: editor.focus error', error); }
         } else {
           await ensureSearchPanelVisible(searchPanel);
           await focusSearchPanel(searchPanel);
