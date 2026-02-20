@@ -1363,20 +1363,28 @@ function removeTagFromGroup(groupIndex, tagIndex) {
 }
 
 function handleTagClick(tag) {
-    let lastGroup = queryGroups[queryGroups.length - 1];
-    let tagExistsInLastGroup = lastGroup && lastGroup.some(t => t.tag === tag);
-
-    if (!lastGroup) {
-        // Create a new group if there's no last group
-        lastGroup = [{ tag: tag, negated: false }];
-        queryGroups.push(lastGroup);
-    } else if (!tagExistsInLastGroup) {
-        // Add tag to the last group if it doesn't exist
-        lastGroup.push({ tag: tag, negated: false });
+    if (queryMode === 'cnf') {
+        // CNF: each tag gets its own group (AND semantics between groups)
+        const existing = queryGroups.flat().find(t => t.tag === tag);
+        if (existing) {
+            existing.negated = !existing.negated;
+        } else {
+            queryGroups.push([{ tag: tag, negated: false }]);
+        }
     } else {
-        // Toggle negation if the tag exists in the last group
-        let tagObject = lastGroup.find(t => t.tag === tag);
-        tagObject.negated = !tagObject.negated;
+        // DNF: tags join the last group (AND within group)
+        let lastGroup = queryGroups[queryGroups.length - 1];
+        let tagExistsInLastGroup = lastGroup && lastGroup.some(t => t.tag === tag);
+
+        if (!lastGroup) {
+            lastGroup = [{ tag: tag, negated: false }];
+            queryGroups.push(lastGroup);
+        } else if (!tagExistsInLastGroup) {
+            lastGroup.push({ tag: tag, negated: false });
+        } else {
+            let tagObject = lastGroup.find(t => t.tag === tag);
+            tagObject.negated = !tagObject.negated;
+        }
     }
     updateQueryArea();
     tagFilter.value = '';
@@ -1385,16 +1393,23 @@ function handleTagClick(tag) {
 }
 
 function handleRangeClick(minValue, maxValue) {
-    let lastGroup = queryGroups[queryGroups.length - 1];
-    let tagExistsInLastGroup = lastGroup && lastGroup.some(t => t.minValue === minValue && t.maxValue === maxValue);
+    if (queryMode === 'cnf') {
+        // CNF: each range gets its own group (AND semantics between groups)
+        const existing = queryGroups.flat().find(t => t.minValue === minValue && t.maxValue === maxValue);
+        if (!existing) {
+            queryGroups.push([{ minValue: minValue, maxValue: maxValue }]);
+        }
+    } else {
+        // DNF: ranges join the last group (AND within group)
+        let lastGroup = queryGroups[queryGroups.length - 1];
+        let tagExistsInLastGroup = lastGroup && lastGroup.some(t => t.minValue === minValue && t.maxValue === maxValue);
 
-    if (!lastGroup) {
-        // Create a new group if there's no last group
-        lastGroup = [{ minValue: minValue, maxValue: maxValue }];
-        queryGroups.push(lastGroup);
-    } else if (!tagExistsInLastGroup) {
-        // Add tag to the last group if it doesn't exist
-        lastGroup.push({ minValue: minValue, maxValue: maxValue });
+        if (!lastGroup) {
+            lastGroup = [{ minValue: minValue, maxValue: maxValue }];
+            queryGroups.push(lastGroup);
+        } else if (!tagExistsInLastGroup) {
+            lastGroup.push({ minValue: minValue, maxValue: maxValue });
+        }
     }
     updateQueryArea();
 }
@@ -1403,20 +1418,28 @@ function handleNoteClick(note) {
     if (!note) {
         return;
     }
-    let lastGroup = queryGroups[queryGroups.length - 1];
-    let noteExistsInLastGroup = lastGroup && lastGroup.some(n => n.title === note.title && n.externalId === note.externalId);
-
-    if (!lastGroup) {
-        // Create a new group if there's no last group
-        lastGroup = [{ title: note.title, externalId: note.externalId, negated: false}];
-        queryGroups.push(lastGroup);
-    } else if (!noteExistsInLastGroup) {
-        // Add note to the last group if it doesn't exist
-        lastGroup.push({ title: note.title, externalId: note.externalId, negated: false });
+    if (queryMode === 'cnf') {
+        // CNF: each note gets its own group (AND semantics between groups)
+        const existing = queryGroups.flat().find(n => n.title === note.title && n.externalId === note.externalId);
+        if (existing) {
+            existing.negated = !existing.negated;
+        } else {
+            queryGroups.push([{ title: note.title, externalId: note.externalId, negated: false }]);
+        }
     } else {
-        // Toggle negation if the note exists in the last group
-        let noteObject = lastGroup.find(n => n.title === note.title);
-        noteObject.negated = !noteObject.negated;
+        // DNF: notes join the last group (AND within group)
+        let lastGroup = queryGroups[queryGroups.length - 1];
+        let noteExistsInLastGroup = lastGroup && lastGroup.some(n => n.title === note.title && n.externalId === note.externalId);
+
+        if (!lastGroup) {
+            lastGroup = [{ title: note.title, externalId: note.externalId, negated: false }];
+            queryGroups.push(lastGroup);
+        } else if (!noteExistsInLastGroup) {
+            lastGroup.push({ title: note.title, externalId: note.externalId, negated: false });
+        } else {
+            let noteObject = lastGroup.find(n => n.title === note.title);
+            noteObject.negated = !noteObject.negated;
+        }
     }
     updateQueryArea();
 }
