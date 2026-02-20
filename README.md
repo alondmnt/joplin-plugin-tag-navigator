@@ -29,7 +29,7 @@ For video tutorials, see the [Demos](#demos) section or the [full playlist](http
 This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://joplinapp.org) in six ways:
 
 1. It adds a panel for searching and viewing tagged paragraphs across all your notes. ([video](https://www.youtube.com/watch?v=im0zjQFoXb0))
-    - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path. Right-click in the query area to toggle between OR-of-ANDs (default) and AND-of-ORs modes.
+    - **Search queries**: Search tags using logical operators (AND, OR, NOT), and using free text in the note, title, or notebook name / path. Right-click in the query area to toggle between AND-of-ORs (default) and OR-of-ANDs modes.
     - **Save search queries** in notes and sync them across device. ([video](https://www.youtube.com/watch?v=GuzCwYxyYZ0), [tips](#saved-queries))
     - **Sort results by tags** such as priorities, dates, colors, or any other tag. Right-click a tag to sort by it or add it to a multi-key sort. ([video](https://www.youtube.com/watch?v=HvunHOc2zlM), [tips](#saved-queries))
     - **Tag-by-notes:** Search for links or [[wikilinks]] to notes (including backlinks to the current note).
@@ -294,8 +294,8 @@ Saved queries allow you to store search configurations in notes and reuse them a
 #### Core properties
 
 - **`query`**: Array of search terms (tags, notes, ranges)
-  - In DNF mode (default): outer array represents OR groups, inner arrays represent AND groups
-  - In CNF mode: outer array represents AND groups, inner arrays represent OR groups
+  - In CNF mode (default): outer array represents AND groups, inner arrays represent OR groups
+  - In DNF mode: outer array represents OR groups, inner arrays represent AND groups
   - Each tag term has:
     - `tag`: The search term (tag, note link, or text)
     - `negated`: Boolean indicating whether to exclude this term
@@ -306,9 +306,9 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - Each range term has:
     - `minValue`
     - `maxValue`
-- **`mode`**: Query interpretation mode (optional, defaults to `"dnf"`)
-  - `"dnf"`: OR-of-ANDs — results match any group, where each group requires all its tags (default)
-  - `"cnf"`: AND-of-ORs — results match all groups, where each group requires any of its tags
+- **`mode`**: Query interpretation mode (optional, saved queries without mode default to `"dnf"` for backward compatibility)
+  - `"cnf"`: AND-of-ORs — results match all groups, where each group requires any of its tags (default for new queries)
+  - `"dnf"`: OR-of-ANDs — results match any group, where each group requires all its tags
 - **`filter`**: String for additional text filtering within results
 - **`displayInNote`**: Display mode when viewing in notes
   - `"false"`: Do not show results
@@ -378,7 +378,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
 }
 ```
 
-This example uses the default DNF mode to search for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending). The `country` column header is renamed to "Country of Origin".
+This example uses DNF mode (no `mode` field, so saved queries default to `"dnf"`) to search for paragraphs that have both `#artist` AND `#album` tags, OR paragraphs with `#single` tag, then filters results containing "rock" anywhere in the text, and displays them in a table sorted by year (ascending) then by artist (descending). The `country` column header is renamed to "Country of Origin".
 
 </details>
 
