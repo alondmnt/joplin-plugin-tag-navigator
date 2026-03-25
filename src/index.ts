@@ -143,8 +143,12 @@ joplin.plugins.register({
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
     const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
-      lastSearchResults = await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState, lastSearchResults);
-      clearObjectReferences(message);
+      try {
+        lastSearchResults = await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState, lastSearchResults);
+        clearObjectReferences(message);
+      } catch (error) {
+        console.error('Tag Navigator: search panel message handler error:', error);
+      }
     });
     await registerSearchPanel(searchPanel);
 
@@ -948,65 +952,69 @@ joplin.plugins.register({
     });
 
     await joplin.views.panels.onMessage(navPanel, async (message: any) => {
-      if (message.name === 'jumpToLine') {
-        // Increment the index of the tag
-        for (const tag of tagLines) {
-          if (tag.tag === message.tag) {
-            tag.index = (tag.index + 1) % tag.count;
+      try {
+        if (message.name === 'jumpToLine') {
+          // Increment the index of the tag
+          for (const tag of tagLines) {
+            if (tag.tag === message.tag) {
+              tag.index = (tag.index + 1) % tag.count;
+            }
           }
+          // Navigate to the line
+          const lineIndex = parseInt(message.line);
+          if (lineIndex >= 0) {
+            try {
+              await joplin.commands.execute('dismissPluginPanels');
+            } catch {
+              // Ignore errors (not on mobile, or old version)
+            }
+            try {
+              await joplin.commands.execute('editor.execCommand', {
+                name: 'scrollToTagLine',
+                args: [lineIndex]
+              });
+            } catch (error) {
+              // If the editor is not available, this will fail
+            }
+          }
+          // Update the panel
+          await updateNavPanel(navPanel, tagLines, tagCount);
         }
-        // Navigate to the line
-        const lineIndex = parseInt(message.line);
-        if (lineIndex >= 0) {
+        if (message.name === 'updateSetting') {
+          await joplin.settings.setValue(message.field, message.value);
+        }
+        if (message.name === 'searchTag') {
+          // Reset to global settings for new searches (don't preserve existing options)
+          searchParams = {
+            query: [[{ tag: message.tag, negated: false }]],
+            filter: '',
+            displayInNote: 'false',
+            mode: DEFAULT_QUERY_MODE,
+            // Don't preserve existing options - let it use global settings
+          };
+          await ensureSearchPanelVisible(searchPanel);
+          await refreshSearchPanel(searchPanel, searchParams);
+        }
+        if (message.name === 'extendQuery') {
+          await extendQuery(message.tag);
+        }
+        if (message.name === 'insertTag') {
           try {
             await joplin.commands.execute('dismissPluginPanels');
           } catch {
             // Ignore errors (not on mobile, or old version)
           }
           try {
-            await joplin.commands.execute('editor.execCommand', {
-              name: 'scrollToTagLine',
-              args: [lineIndex]
-            });
+            await joplin.commands.execute('insertText', message.tag);
+            await joplin.commands.execute('editor.focus');
           } catch (error) {
-            // If the editor is not available, this will fail
+            console.debug('itags.insertTag (navPanel): error', error);
           }
         }
-        // Update the panel
-        await updateNavPanel(navPanel, tagLines, tagCount);
+        clearObjectReferences(message);
+      } catch (error) {
+        console.error('Tag Navigator: nav panel message handler error:', error);
       }
-      if (message.name === 'updateSetting') {
-        await joplin.settings.setValue(message.field, message.value);
-      }
-      if (message.name === 'searchTag') {
-        // Reset to global settings for new searches (don't preserve existing options)
-        searchParams = {
-          query: [[{ tag: message.tag, negated: false }]],
-          filter: '',
-          displayInNote: 'false',
-          mode: DEFAULT_QUERY_MODE,
-          // Don't preserve existing options - let it use global settings
-        };
-        await ensureSearchPanelVisible(searchPanel);
-        await refreshSearchPanel(searchPanel, searchParams);
-      }
-      if (message.name === 'extendQuery') {
-        await extendQuery(message.tag);
-      }
-      if (message.name === 'insertTag') {
-        try {
-          await joplin.commands.execute('dismissPluginPanels');
-        } catch {
-          // Ignore errors (not on mobile, or old version)
-        }
-        try {
-          await joplin.commands.execute('insertText', message.tag);
-          await joplin.commands.execute('editor.focus');
-        } catch (error) {
-          console.debug('itags.insertTag (navPanel): error', error);
-        }
-      }
-      clearObjectReferences(message);
     });
 
     // Register cleanup function for when plugin is stopped/reloaded
