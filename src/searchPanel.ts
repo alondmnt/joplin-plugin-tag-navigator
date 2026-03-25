@@ -585,9 +585,9 @@ async function processValidatedMessage(
  * @param panel - Panel ID to focus
  */
 export async function focusSearchPanel(panel: string): Promise<void> {
-  const visible = joplin.views.panels.visible(panel);
+  const visible = await joplin.views.panels.visible(panel);
   if (!visible) { return; }
-  joplin.views.panels.postMessage(panel, {
+  await joplin.views.panels.postMessage(panel, {
     name: 'focusTagFilter',
   });
 }
@@ -681,7 +681,7 @@ export async function updatePanelResults(
   createManagedTimeout(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
-        joplin.views.panels.postMessage(panel, {
+        await joplin.views.panels.postMessage(panel, {
           name: 'updateResults',
           results: JSON.stringify(renderHTML(
             limitedResults, tagSettings.tagRegex,
@@ -758,7 +758,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
   createManagedTimeout(
     async () => {
       if (await joplin.views.panels.visible(panel)) {
-        joplin.views.panels.postMessage(panel, {
+        await joplin.views.panels.postMessage(panel, {
           name: 'updateSettings',
           settings: JSON.stringify(settings),
         });
@@ -1460,9 +1460,9 @@ export async function updatePanelQuery(
   if (!query || query.length ===0 || query[0].length === 0) {
     return;
   }
-  const visible = joplin.views.panels.visible(panel);
+  const visible = await joplin.views.panels.visible(panel);
   if (!visible) { return; }
-  joplin.views.panels.postMessage(panel, {
+  await joplin.views.panels.postMessage(panel, {
     name: 'updateQuery',
     query: JSON.stringify(query),
     filter: filter,
