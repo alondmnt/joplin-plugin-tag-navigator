@@ -1,6 +1,5 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 import { format } from 'date-fns';
-import { load as yamlLoad } from 'js-yaml';
 
 /**
  * Regular expressions for parsing different elements
@@ -652,10 +651,9 @@ export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontM
   const contentLines = rawLines
     .slice(matterRange.startLine + 1, matterRange.endLine)
     .map(line => line.replace(/\r$/, ''));
-  const matterContent = contentLines.join('\n');
   const lineCount = contentLines.length + 2;
 
-  if (!matterContent.trim()) {
+  if (!contentLines.some(line => line.trim())) {
     return {
       data: null,
       lineCount,
@@ -663,34 +661,21 @@ export function parseFrontMatter(text: string, tagSettings: TagSettings): FrontM
     };
   }
 
-  const yamlContent = `!!str\n${matterContent}`;
+  // Clear rawLines early — no longer needed
+  rawLines.length = 0;
 
-  try {
-    // Try parsing with js-yaml first
-    const data = yamlLoad(yamlContent) as FrontMatter;
-    // Clear arrays before returning
-    rawLines.length = 0;
-    contentLines.length = 0;
-    return {
-      data: data || null,
-      lineCount,
-      errors: undefined
-    };
-  } catch (e) {
-    // Clear arrays before fallback
-    rawLines.length = 0;
-    // Use the in-house parser as fallback
-    return parseFrontMatterFallback(contentLines, lineCount);
-  }
+  return parseFrontMatterContent(contentLines, lineCount);
 }
 
 /**
- * Fallback in-house parser for front matter
- * @param text The text content to parse
- * @param tagSettings Configuration for tag processing
+ * Parses front matter content lines into structured data.
+ * Handles flat key-value pairs, YAML lists, flow sequences, and
+ * Joplin-specific syntax (links, @-tags, template markers).
+ * @param contentLines The lines between front matter delimiters
+ * @param lineCount Total line count including delimiters
  * @returns Parsed front matter data, line count, and any parsing errors
  */
-function parseFrontMatterFallback(contentLines: string[], lineCount: number): FrontMatterResult {
+function parseFrontMatterContent(contentLines: string[], lineCount: number): FrontMatterResult {
   const errors: ParseError[] = [];
   if (!contentLines.length) {
     return {
@@ -709,7 +694,7 @@ function parseFrontMatterFallback(contentLines: string[], lineCount: number): Fr
     const trimmedLine = line.trim();
     try {
       // Skip comments and empty lines
-      if (trimmedLine.startsWith('#') || trimmedLine.startsWith('!!') || !trimmedLine) continue;
+      if (trimmedLine.startsWith('#') || !trimmedLine) continue;
 
       // Check for invalid indentation
       const indent = line.match(/^\s*/)[0];
