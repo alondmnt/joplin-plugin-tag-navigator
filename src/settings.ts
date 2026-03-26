@@ -4,6 +4,20 @@ import { clearApiResponse } from './memory';
 import { defTagRegex } from './parser';
 import { escapeRegex } from './utils';
 
+/** Cached settings — invalidated on settings change */
+let _tagSettingsCache: TagSettings | null = null;
+let _resultSettingsCache: ResultSettings | null = null;
+let _noteViewSettingsCache: NoteViewSettings | null = null;
+let _conversionSettingsCache: ConversionSettings | null = null;
+
+/** Clears all cached settings. Call when settings change. */
+export function invalidateSettingsCache(): void {
+  _tagSettingsCache = null;
+  _resultSettingsCache = null;
+  _noteViewSettingsCache = null;
+  _conversionSettingsCache = null;
+}
+
 /**
  * Standard options for search panel settings
  */
@@ -167,6 +181,7 @@ function createSafeRegex(pattern: string, flags: string = 'g', fallback: RegExp 
  * @returns TagSettings object containing all configuration
  */
 export async function getTagSettings(): Promise<TagSettings> {
+  if (_tagSettingsCache) return _tagSettingsCache;
   const settings = await joplin.settings.values([
     'itags.tagRegex',
     'itags.excludeRegex',
@@ -227,7 +242,7 @@ export async function getTagSettings(): Promise<TagSettings> {
     .map(id => id.trim())
     .filter(id => id.length > 0);
 
-  return {
+  _tagSettingsCache = {
     tagRegex,
     excludeRegex,
     minCount: settings['itags.minCount'] as number || 1,
@@ -256,24 +271,28 @@ export async function getTagSettings(): Promise<TagSettings> {
     excludeNotebooks,
     readBatchSize: settings['itags.readBatchSize'] as number || 10,
   };
+  return _tagSettingsCache;
 }
 
 export async function getResultSettings(): Promise<ResultSettings> {
+  if (_resultSettingsCache) return _resultSettingsCache;
   const settings = await joplin.settings.values([
     'itags.resultSort',
     'itags.resultOrder',
     'itags.resultGrouping',
     'itags.contextExpansionStep',
   ]);
-  return {
+  _resultSettingsCache = {
     resultSort: settings['itags.resultSort'] as string || 'modified',
     resultOrder: settings['itags.resultOrder'] as string || 'desc',
     resultGrouping: settings['itags.resultGrouping'] as string || 'heading',
     contextExpansionStep: settings['itags.contextExpansionStep'] as number ?? 2,
   };
+  return _resultSettingsCache;
 }
 
 export async function getNoteViewSettings(): Promise<NoteViewSettings> {
+  if (_noteViewSettingsCache) return _noteViewSettingsCache;
   const settings = await joplin.settings.values([
     'itags.tableCase',
     'itags.tableColumns',
@@ -284,7 +303,7 @@ export async function getNoteViewSettings(): Promise<NoteViewSettings> {
     'itags.updateViewOnOpen',
     'itags.kanbanTagSummary',
   ]);
-  return {
+  _noteViewSettingsCache = {
     tableCase: settings['itags.tableCase'] as string || 'title',
     tableColumns: settings['itags.tableColumns'] as number || 10,
     noteViewLocation: settings['itags.noteViewLocation'] as string || 'before',
@@ -294,9 +313,11 @@ export async function getNoteViewSettings(): Promise<NoteViewSettings> {
     updateViewOnOpen: settings['itags.updateViewOnOpen'] as boolean,
     kanbanTagSummary: settings['itags.kanbanTagSummary'] as boolean,
   };
+  return _noteViewSettingsCache;
 }
 
 export async function getConversionSettings(): Promise<ConversionSettings> {
+  if (_conversionSettingsCache) return _conversionSettingsCache;
   const settings = await joplin.settings.values([
     'itags.tagPrefix',
     'itags.spaceReplace',
@@ -304,13 +325,14 @@ export async function getConversionSettings(): Promise<ConversionSettings> {
     'itags.location',
     'itags.enableTagTracking',
   ]);
-  return {
+  _conversionSettingsCache = {
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
     spaceReplace: settings['itags.spaceReplace'] as string || '_',
     listPrefix: settings['itags.listPrefix'] as string || 'tags: ',
     location: settings['itags.location'] as string || 'top',
     enableTagTracking: settings['itags.enableTagTracking'] as boolean || false,
   };
+  return _conversionSettingsCache;
 }
 
 /**

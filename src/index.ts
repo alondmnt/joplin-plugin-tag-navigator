@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ContentScriptType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import * as debounce from 'lodash.debounce';
-import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings, excludeNotebook, includeNotebook, DEFAULT_QUERY_MODE } from './settings';
+import { getConversionSettings, getNoteViewSettings, getTagSettings, registerSettings, getResultSettings, excludeNotebook, includeNotebook, DEFAULT_QUERY_MODE, invalidateSettingsCache } from './settings';
 import { convertAllNotesToInlineTags, convertAllNotesToJoplinTags, convertNoteToInlineTags, convertNoteToJoplinTags } from './converter';
 import { getNavTagLines, TagCount, TagLine, updateNavPanel } from './navPanel';
 import { DatabaseManager, processAllNotes, processNote } from './db';
@@ -871,7 +871,8 @@ joplin.plugins.register({
     await joplin.views.toolbarButtons.create('itags.loadQuery', 'itags.loadQuery', ToolbarButtonLocation.NoteToolbar);
 
     await joplin.settings.onChange(async (event) => {
-      if (event.keys.includes('itags.resultSort') || 
+      invalidateSettingsCache();
+      if (event.keys.includes('itags.resultSort') ||
           event.keys.includes('itags.resultOrder') || 
           event.keys.includes('itags.resultToggle') || 
           event.keys.includes('itags.resultMarker') ||
