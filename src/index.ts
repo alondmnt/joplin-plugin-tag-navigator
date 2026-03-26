@@ -22,6 +22,10 @@ let lastSearchResults: GroupedResult[] = []; // Cache for search results
 // Store for collapsed/expanded state of note cards in the search panel
 let savedNoteState: { [key: string]: boolean } = {};
 
+// Track panel visibility locally to avoid IPC roundtrips
+let searchPanelVisible = true;
+let navPanelVisible = true;
+
 /**
  * Returns the tag at the cursor position in the given line, or null if none.
  */
@@ -42,8 +46,9 @@ function findTagAtCursor(lineInfo: { cursorPosition: number, lineStart: number, 
  * visible.  Returns true if the panel was newly shown.
  */
 async function ensureSearchPanelVisible(searchPanel: string): Promise<boolean> {
-  if (await joplin.views.panels.visible(searchPanel)) { return false; }
+  if (searchPanelVisible) { return false; }
   await joplin.views.panels.show(searchPanel);
+  searchPanelVisible = true;
   await registerSearchPanel(searchPanel);
   await joplin.settings.setValue('itags.searchPanelVisible', true);
   return true;
@@ -155,6 +160,7 @@ joplin.plugins.register({
     // Hide panels on startup if settings say so
     if (!await joplin.settings.value('itags.searchPanelVisible')) {
       await joplin.views.panels.hide(searchPanel);
+      searchPanelVisible = false;
     }
 
     /**
@@ -165,9 +171,9 @@ joplin.plugins.register({
      * Shows the search panel if hidden.
      */
     const extendQuery = async (tag: string) => {
-      const panelState = await joplin.views.panels.visible(searchPanel);
-      if (!panelState) {
+      if (!searchPanelVisible) {
         await joplin.views.panels.show(searchPanel);
+        searchPanelVisible = true;
         await registerSearchPanel(searchPanel);
         // Sync current query state so the panel can extend it
         await updatePanelQuery(searchPanel, searchParams.query, searchParams.filter, searchParams.mode);
@@ -183,6 +189,7 @@ joplin.plugins.register({
     const navPanel = await joplin.views.panels.create('itags.navPanel');
     if (!await joplin.settings.value('itags.navPanelVisible')) {
       await joplin.views.panels.hide(navPanel);
+      navPanelVisible = false;
     }
     let tagLines: TagLine[] = [];
     let tagCount: TagCount = {};
@@ -218,7 +225,7 @@ joplin.plugins.register({
       }
 
       // Update navigation panel
-      if (await joplin.views.panels.visible(navPanel)) {
+      if (navPanelVisible) {
         let note = await joplin.workspace.selectedNote();
         if (!note) { return; }
         if (note.body) {
@@ -273,7 +280,7 @@ joplin.plugins.register({
       }
 
       // Navigation panel update
-      if (await joplin.views.panels.visible(navPanel)) {
+      if (navPanelVisible) {
         [tagLines, tagCount] = await getNavTagLines(note.body);
         await updateNavPanel(navPanel, tagLines, tagCount);
       }
@@ -306,16 +313,17 @@ joplin.plugins.register({
       label: 'Navigation panel: Toggle',
       iconName: 'fas fa-tags',
       execute: async () => {
-        const wasVisible = await joplin.views.panels.visible(navPanel);
-        if (wasVisible) {
+        if (navPanelVisible) {
           await joplin.views.panels.hide(navPanel);
+          navPanelVisible = false;
           try { await joplin.commands.execute('editor.focus'); }
           catch (error) { console.debug('itags.toggleNav: editor.focus error', error); }
         } else {
           await joplin.views.panels.show(navPanel);
+          navPanelVisible = true;
           await joplin.commands.execute('itags.refreshPanel');
         }
-        await joplin.settings.setValue('itags.navPanelVisible', !wasVisible);
+        await joplin.settings.setValue('itags.navPanelVisible', navPanelVisible);
       },
     });
 
@@ -324,8 +332,9 @@ joplin.plugins.register({
       label: 'Search panel: Toggle',
       iconName: 'fas fa-tags',
       execute: async () => {
-        if (await joplin.views.panels.visible(searchPanel)) {
+        if (searchPanelVisible) {
           await joplin.views.panels.hide(searchPanel);
+          searchPanelVisible = false;
           await joplin.settings.setValue('itags.searchPanelVisible', false);
           try { await joplin.commands.execute('editor.focus'); }
           catch (error) { console.debug('itags.toggleSearch: editor.focus error', error); }
@@ -915,19 +924,20 @@ joplin.plugins.register({
       if (event.keys.includes('itags.navPanelScope') ||
           event.keys.includes('itags.navPanelStyle') ||
           event.keys.includes('itags.navPanelSort')) {
-        if (await joplin.views.panels.visible(navPanel)) {
+        if (navPanelVisible) {
           await updateNavPanel(navPanel, tagLines, tagCount);
         }
       }
       // Panel visibility settings (two-way sync with toggle commands)
       if (event.keys.includes('itags.navPanelVisible')) {
         const wantVisible = await joplin.settings.value('itags.navPanelVisible');
-        const isVisible = await joplin.views.panels.visible(navPanel);
-        if (wantVisible && !isVisible) {
+        if (wantVisible && !navPanelVisible) {
           await joplin.views.panels.show(navPanel);
+          navPanelVisible = true;
           await joplin.commands.execute('itags.refreshPanel');
-        } else if (!wantVisible && isVisible) {
+        } else if (!wantVisible && navPanelVisible) {
           await joplin.views.panels.hide(navPanel);
+          navPanelVisible = false;
         }
       }
       if (event.keys.includes('itags.searchPanelVisible')) {
@@ -937,8 +947,9 @@ joplin.plugins.register({
             await focusSearchPanel(searchPanel);
             await refreshSearchPanel(searchPanel, searchParams);
           }
-        } else if (await joplin.views.panels.visible(searchPanel)) {
+        } else if (searchPanelVisible) {
           await joplin.views.panels.hide(searchPanel);
+          searchPanelVisible = false;
         }
       }
     });
