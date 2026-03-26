@@ -178,15 +178,34 @@ export function clearObjectReferences<T extends Record<string, any>>(
 
   try {
     if (Array.isArray(obj)) {
-      obj.length = 0;  // Clear all elements
+      for (const item of obj) {
+        if (item && typeof item === 'object') {
+          clearObjectReferences(item, visited);
+        }
+      }
+      obj.length = 0;
     } else if (obj instanceof Map) {
+      for (const val of obj.values()) {
+        if (val && typeof val === 'object') {
+          clearObjectReferences(val, visited);
+        }
+      }
       obj.clear();
     } else if (obj instanceof Set) {
+      for (const val of obj) {
+        if (val && typeof val === 'object') {
+          clearObjectReferences(val, visited);
+        }
+      }
       obj.clear();
     } else {
-      // Clear object properties
+      // Clear object properties, recursing into nested objects first
       for (const key of Object.keys(obj)) {
         try {
+          const val = obj[key];
+          if (val && typeof val === 'object') {
+            clearObjectReferences(val, visited);
+          }
           delete obj[key];
         } catch {
           // Ignore readonly properties
