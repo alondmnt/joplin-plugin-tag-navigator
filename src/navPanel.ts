@@ -3,6 +3,8 @@ import { parseTagsLines, parseTagsFromFrontMatter } from './parser';
 import { getTagSettings } from './settings';
 import { DatabaseManager } from './db';
 
+let navScriptsAdded = false;
+
 interface TagNode {
   count: number;
   children: {
@@ -102,8 +104,11 @@ export async function updateNavPanel(panel: string, tagsLines: TagLine[], tagCou
   `;
 
   await joplin.views.panels.setHtml(panel, html);
-  await joplin.views.panels.addScript(panel, 'navPanelStyle.css');
-  await joplin.views.panels.addScript(panel, 'navPanelScript.js');
+  if (!navScriptsAdded) {
+    await joplin.views.panels.addScript(panel, 'navPanelStyle.css');
+    await joplin.views.panels.addScript(panel, 'navPanelScript.js');
+    navScriptsAdded = true;
+  }
 }
 
 function buildTagTree(tagCount: TagCount): TagNode {
