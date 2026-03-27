@@ -1,3 +1,27 @@
+# [v2.10.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.2)
+*Released on 2026-03-27T02:27:06Z*
+
+- improve: cache plugin settings to reduce API call memory leaks
+- improve: cache panel visibility in index.ts to avoid IPC roundtrips
+- improve: make clearObjectReferences recursive for thorough cleanup
+- improve: deduplicate navPanel.addScript calls
+- refactor: remove js-yaml dependency from frontmatter parser
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.1...v2.10.2
+
+---
+
+# [v2.10.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.1)
+*Released on 2026-03-25T03:13:39Z*
+
+- fix: default note view filter highlighting to off 
+- fix: guard panel message handlers against unhandled errors
+- fix: add missing await on panel visible/postMessage calls
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.0...v2.10.1
+
+---
+
 # [v2.10.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.0)
 *Released on 2026-02-22T07:23:44Z*
 
