@@ -1,3 +1,12 @@
+# [v2.10.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.3)
+*Released on 2026-03-28T07:53:11Z*
+
+- revert: remove recursive clearObjectReferences to fix custom tag sorting
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.2...v2.10.3
+
+---
+
 # [v2.10.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.2)
 *Released on 2026-03-27T02:27:06Z*
 
