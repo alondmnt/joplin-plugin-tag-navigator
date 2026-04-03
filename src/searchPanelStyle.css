@@ -331,6 +331,20 @@ body {
     height: calc(100vh - 298px + 288px) !important;
 }
 
+/* Mobile: Joplin panels are slightly shorter than 100vh */
+#itags-search-resultsArea.mobile {
+    height: calc(97vh - 298px);
+}
+#itags-search-resultsArea.mobile.extended1X { height: calc(97vh - 298px + 32px) !important; }
+#itags-search-resultsArea.mobile.extended2X { height: calc(97vh - 298px + 64px) !important; }
+#itags-search-resultsArea.mobile.extended3X { height: calc(97vh - 298px + 96px) !important; }
+#itags-search-resultsArea.mobile.extended4X { height: calc(97vh - 298px + 128px) !important; }
+#itags-search-resultsArea.mobile.extended5X { height: calc(97vh - 298px + 160px) !important; }
+#itags-search-resultsArea.mobile.extended6X { height: calc(97vh - 298px + 192px) !important; }
+#itags-search-resultsArea.mobile.extended7X { height: calc(97vh - 298px + 224px) !important; }
+#itags-search-resultsArea.mobile.extended8X { height: calc(97vh - 298px + 256px) !important; }
+#itags-search-resultsArea.mobile.extended9X { height: calc(97vh - 298px + 288px) !important; }
+
 #itags-search-resultsArea::-webkit-scrollbar {
     display: none;
 }

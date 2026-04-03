@@ -100,11 +100,13 @@ interface PanelSettings {
   resultGrouping: string;
   tagPrefix: string;
   valueDelim: string;
+  platform: string;
 }
 
 // Get the version of Joplin
 let versionInfo = {
   toggleEditorSupport: null,
+  platform: 'desktop' as string,
 };
 
 // Dialog handle for the sort configuration dialog
@@ -112,9 +114,10 @@ let sortDialogHandle: string | null = null;
 
 async function initializeVersionInfo() {
   const version = await joplin.versionInfo();
-  versionInfo.toggleEditorSupport = 
-    version.platform === 'mobile' && 
-    parseInt(version.version.split('.')[0]) >= 3 && 
+  versionInfo.platform = version.platform || 'desktop';
+  versionInfo.toggleEditorSupport =
+    version.platform === 'mobile' &&
+    parseInt(version.version.split('.')[0]) >= 3 &&
     parseInt(version.version.split('.')[1]) >= 2;
 }
 
@@ -754,6 +757,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     resultGrouping: resultGrouping,
     tagPrefix: joplinSettings['itags.tagPrefix'] as string || '#',
     valueDelim: joplinSettings['itags.valueDelim'] as string || '=',
+    platform: versionInfo.platform,
   };
   createManagedTimeout(
     async () => {

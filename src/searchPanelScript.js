@@ -733,6 +733,11 @@ function updatePanelSettings(message) {
     resultMarker = settings.resultMarker;
     resultColorProperty = settings.resultColorProperty;
 
+    // Apply mobile layout adjustment
+    if (settings.platform === 'mobile') {
+        resultsArea.classList.add('mobile');
+    }
+
     hideElements(settings);
     updateResultsArea();
 }
