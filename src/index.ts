@@ -146,9 +146,9 @@ joplin.plugins.register({
     // Search panel
     await processAllNotes();
     const searchPanel = await joplin.views.panels.create('itags.searchPanel');
-    const tagSettings = await getTagSettings();
     await joplin.views.panels.onMessage(searchPanel, async (message: any) => {
       try {
+        const tagSettings = await getTagSettings();
         lastSearchResults = await processMessage(message, searchPanel, DatabaseManager.getDatabase(), searchParams, tagSettings, savedNoteState, lastSearchResults);
         clearObjectReferences(message);
       } catch (error) {
