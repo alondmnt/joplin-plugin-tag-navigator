@@ -202,7 +202,8 @@ joplin.plugins.register({
      * - Updates navigation panel if visible
      */
     const periodicDBUpdate: number = await joplin.settings.value('itags.periodicDBUpdate');
-    const updateDB = async () => {
+    const updateDB = async (clearFirst = false) => {
+      if (clearFirst) { DatabaseManager.clearDatabase(); }
       await processAllNotes(); // update DB
 
       // Update tags & notes
@@ -492,7 +493,7 @@ joplin.plugins.register({
       name: 'itags.updateDB',
       label: 'Inline-tags: Update database',
       iconName: 'fas fa-database',
-      execute: updateDB,
+      execute: () => updateDB(true),
     });
 
     await joplin.commands.register({
