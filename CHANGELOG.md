@@ -1,3 +1,12 @@
+# [v2.10.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.4)
+*Released on 2026-04-25T23:26:47Z*
+
+- fix: respect notebook include/exclude settings during bulk tag conversion
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.3...v2.10.4
+
+---
+
 # [v2.10.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.3)
 *Released on 2026-03-28T07:53:11Z*
 
