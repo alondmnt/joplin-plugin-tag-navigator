@@ -2,6 +2,7 @@ import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
 import { sortTags } from './utils';
 import { ConversionSettings, TagSettings, getConversionSettings, getTagSettings } from './settings';
+import { isNotebookAllowed } from './db';
 import { clearObjectReferences, clearApiResponse } from './memory';
 import {
   saveTagConversionData,
@@ -50,7 +51,7 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
   let page = 0;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'body', 'markup_language'],
+      fields: ['id', 'body', 'markup_language', 'parent_id'],
       limit: 50,
       page: page++,
     });
@@ -59,6 +60,10 @@ export async function convertAllNotesToJoplinTags(): Promise<void> {
     // Process the notes synchronously to avoid issues
     for (let note of notes.items) {
       if (tagSettings.ignoreHtmlNotes && (note.markup_language === 2)) {
+        note = clearObjectReferences(note);
+        continue;
+      }
+      if (!isNotebookAllowed(note.parent_id, tagSettings)) {
         note = clearObjectReferences(note);
         continue;
       }
@@ -90,7 +95,7 @@ export async function convertAllNotesToInlineTags(
   let page = 0;
   while (hasMore) {
     const notes = await joplin.data.get(['notes'], {
-      fields: ['id', 'body', 'markup_language'],
+      fields: ['id', 'body', 'markup_language', 'parent_id'],
       limit: 50,
       page: page++,
     });
@@ -99,6 +104,10 @@ export async function convertAllNotesToInlineTags(
     // Process the notes synchronously to avoid issues
     for (let note of notes.items) {
       if (ignoreHtmlNotes && (note.markup_language === 2)) {
+        note = clearObjectReferences(note);
+        continue;
+      }
+      if (!isNotebookAllowed(note.parent_id, tagSettings)) {
         note = clearObjectReferences(note);
         continue;
       }

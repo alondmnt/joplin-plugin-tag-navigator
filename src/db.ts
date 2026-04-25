@@ -385,7 +385,7 @@ function needsDailyUpdate(lastProcessedTime: number, currentDateString: string):
   return currentDateString !== lastProcessed.toDateString();
 }
 
-function isNotebookAllowed(parentId: string | undefined, tagSettings: TagSettings): boolean {
+export function isNotebookAllowed(parentId: string | undefined, tagSettings: TagSettings): boolean {
   if (parentId && tagSettings.excludeNotebooks.includes(parentId)) {
     return false;
   }
