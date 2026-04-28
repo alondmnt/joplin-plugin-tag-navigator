@@ -181,10 +181,16 @@ export async function clearAllTagConversionData(): Promise<void> {
       });
       hasMore = notes.has_more;
 
-      // Clear conversion data for each note
+      // Clear conversion data only for notes that actually have it. The
+      // unconditional delete used to bump every note's user_data column (and
+      // thus updated_time), forcing a full-vault re-sync on the next sync.
+      // Reading first is cheaper because most notes have no entry to clear.
       for (const note of notes.items as { id: string }[]) {
         try {
-          await deleteTagConversionData(note.id);
+          const existing = await getTagConversionData(note.id);
+          if (existing) {
+            await deleteTagConversionData(note.id);
+          }
         } catch (error) {
           // Continue with other notes even if one fails
           console.debug(`Failed to clear tag conversion data for note ${note.id}:`, error);
