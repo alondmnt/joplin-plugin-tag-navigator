@@ -328,8 +328,30 @@ export async function convertNoteToInlineTags(
     }
 
   } else {
-    // Simple mode: replace tag lines with Joplin tags that don't already exist inline
-    const sortedTags = sortTags(tagsToAdd, tagSettings.valueDelim);
+    // Simple mode: rebuild the tag-list line(s) to reflect current Joplin tags.
+    // When listPrefix length > 2, the existing tag-list line is wiped and rebuilt.
+    // For the "tags already inline" filter we therefore have to ignore tags that
+    // exist *only* on tag-list lines — otherwise they'd be excluded from the
+    // rebuild and disappear from the note entirely.
+    const lines = note.body.split('\n');
+    const wipeTagListLines = conversionSettings.listPrefix.length > 2;
+    // Only treat a line as a tag-list line if it actually contains tag-prefix
+    // tags (or is an empty list line). This avoids destroying YAML frontmatter
+    // lines like `tags: [a, b]` that share the listPrefix.
+    const isTagListLine = (line: string): boolean => {
+      if (!line.startsWith(conversionSettings.listPrefix)) return false;
+      const rest = line.slice(conversionSettings.listPrefix.length).trimLeft();
+      return rest.length === 0 || rest.startsWith(conversionSettings.tagPrefix);
+    };
+    const filteredLines = wipeTagListLines
+      ? lines.filter(line => !isTagListLine(line))
+      : lines;
+    const plainInlineTags = wipeTagListLines
+      ? extractInlineTags(filteredLines.join('\n'), tagSettings)
+      : currentInlineTagsInBody;
+    const simpleTagsToAdd = currentJoplinTags.filter(tag => !plainInlineTags.includes(tag));
+
+    const sortedTags = sortTags(simpleTagsToAdd, tagSettings.valueDelim);
     const tagList = conversionSettings.listPrefix + sortedTags
       .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
 
@@ -338,14 +360,7 @@ export async function convertNoteToInlineTags(
       return;
     }
 
-    // Remove all existing tag list lines and create new ones
-    const lines = note.body.split('\n');
-    let filteredLines = lines;
-    if (conversionSettings.listPrefix.length > 2) {
-      filteredLines = lines.filter(line => !line.startsWith(conversionSettings.listPrefix));
-    }
-
-    if (tagsToAdd.length > 0) {
+    if (simpleTagsToAdd.length > 0) {
       // Add the new tag list
       if (conversionSettings.location === 'top') {
         updatedBody = tagList + '\n' + filteredLines.join('\n');
