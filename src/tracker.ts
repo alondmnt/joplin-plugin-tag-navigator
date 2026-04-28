@@ -211,6 +211,33 @@ export function isTagListLine(line: string, listPrefix: string, tagPrefix: strin
 }
 
 /**
+ * Returns the index of the first line that is not part of leading YAML
+ * frontmatter. Frontmatter is detected as a `---` opener on the first
+ * non-empty line followed by a `---` closer further down. If no valid
+ * frontmatter is present, returns 0. Use this to insert a top-of-note
+ * tag-list line *after* the frontmatter rather than displacing it.
+ */
+export function frontMatterEndIndex(lines: string[]): number {
+  let openerIndex = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].replace(/^﻿/, '').trim();
+    if (trimmed.length === 0) continue;
+    if (trimmed === '---') {
+      openerIndex = i;
+    }
+    break;
+  }
+  if (openerIndex === -1) return 0;
+  for (let i = openerIndex + 1; i < lines.length; i++) {
+    if (lines[i].replace(/^﻿/, '').trim() === '---') {
+      return i + 1;
+    }
+  }
+  // Unterminated frontmatter — treat as no frontmatter to avoid surprises.
+  return 0;
+}
+
+/**
  * Removes specified inline tags from the note body
  * @param noteBody - The note body content
  * @param tagsToRemove - Array of tag names to remove
@@ -308,7 +335,9 @@ export function addInlineTags(
     // Create new tag line
     const newTagLine = listPrefix + newTagsString;
     if (location === 'top') {
-      lines.unshift(newTagLine);
+      // Insert after any leading YAML frontmatter so we don't displace it
+      // from the start of the note (which would invalidate it).
+      lines.splice(frontMatterEndIndex(lines), 0, newTagLine);
     } else {
       lines.push(newTagLine);
     }

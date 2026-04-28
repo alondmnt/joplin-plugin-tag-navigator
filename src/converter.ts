@@ -14,6 +14,7 @@ import {
   addInlineTags,
   hasExistingTagLines,
   isTagListLine,
+  frontMatterEndIndex,
   setsEqual
 } from './tracker';
 
@@ -354,9 +355,13 @@ export async function convertNoteToInlineTags(
     }
 
     if (simpleTagsToAdd.length > 0) {
-      // Add the new tag list
+      // Add the new tag list. For 'top' location, insert after any leading
+      // YAML frontmatter so we don't displace it from the start of the note.
       if (conversionSettings.location === 'top') {
-        updatedBody = tagList + '\n' + filteredLines.join('\n');
+        const insertAt = frontMatterEndIndex(filteredLines);
+        const rebuilt = filteredLines.slice();
+        rebuilt.splice(insertAt, 0, tagList);
+        updatedBody = rebuilt.join('\n');
       } else {
         updatedBody = filteredLines.join('\n') + '\n' + tagList;
       }
