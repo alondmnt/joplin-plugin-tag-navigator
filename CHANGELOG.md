@@ -1,3 +1,16 @@
+# [v2.10.5](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.5)
+*Released on 2026-04-28T13:30:36Z*
+
+- fix: keep both tag tracking fields fresh in conversion saves
+- fix: preserve tag-list-line tags and frontmatter in simple-mode conversion
+- fix: don't mistake YAML frontmatter for tag-list lines in tracker
+- fix: insert top-of-note tag-list line after YAML frontmatter
+- fix: only delete tag conversion data for notes that have it
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.4...v2.10.5
+
+---
+
 # [v2.10.4](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.4)
 *Released on 2026-04-25T23:26:47Z*
 
