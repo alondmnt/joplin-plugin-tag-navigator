@@ -13,6 +13,7 @@ import {
   removeInlineTags,
   addInlineTags,
   hasExistingTagLines,
+  isTagListLine,
   setsEqual
 } from './tracker';
 
@@ -274,7 +275,7 @@ export async function convertNoteToInlineTags(
   if (conversionSettings.enableTagTracking) {
     // Get previous conversion data
     const previousData = await getTagConversionData(note.id);
-    const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix);
+    const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix, conversionSettings.tagPrefix);
 
     // Only remove previously tracked tags that are no longer Joplin tags
     // But only if tag lines exist (if no tag lines, there's nothing to remove from)
@@ -335,16 +336,8 @@ export async function convertNoteToInlineTags(
     // rebuild and disappear from the note entirely.
     const lines = note.body.split('\n');
     const wipeTagListLines = conversionSettings.listPrefix.length > 2;
-    // Only treat a line as a tag-list line if it actually contains tag-prefix
-    // tags (or is an empty list line). This avoids destroying YAML frontmatter
-    // lines like `tags: [a, b]` that share the listPrefix.
-    const isTagListLine = (line: string): boolean => {
-      if (!line.startsWith(conversionSettings.listPrefix)) return false;
-      const rest = line.slice(conversionSettings.listPrefix.length).trimLeft();
-      return rest.length === 0 || rest.startsWith(conversionSettings.tagPrefix);
-    };
     const filteredLines = wipeTagListLines
-      ? lines.filter(line => !isTagListLine(line))
+      ? lines.filter(line => !isTagListLine(line, conversionSettings.listPrefix, conversionSettings.tagPrefix))
       : lines;
     const plainInlineTags = wipeTagListLines
       ? extractInlineTags(filteredLines.join('\n'), tagSettings)

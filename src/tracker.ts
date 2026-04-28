@@ -199,6 +199,18 @@ export async function clearAllTagConversionData(): Promise<void> {
 }
 
 /**
+ * Returns true if the line is a plugin-managed tag-list line (i.e. starts with
+ * listPrefix and the remainder is either empty or begins with tagPrefix).
+ * This excludes YAML frontmatter lines like `tags: [a, b]` that share the
+ * listPrefix but aren't tag-list lines.
+ */
+export function isTagListLine(line: string, listPrefix: string, tagPrefix: string): boolean {
+  if (!line.startsWith(listPrefix)) return false;
+  const rest = line.slice(listPrefix.length).trimLeft();
+  return rest.length === 0 || rest.startsWith(tagPrefix);
+}
+
+/**
  * Removes specified inline tags from the note body
  * @param noteBody - The note body content
  * @param tagsToRemove - Array of tag names to remove
@@ -208,19 +220,19 @@ export async function clearAllTagConversionData(): Promise<void> {
  * @returns The updated note body
  */
 export function removeInlineTags(
-  noteBody: string, 
-  tagsToRemove: string[], 
+  noteBody: string,
+  tagsToRemove: string[],
   listPrefix: string,
   tagPrefix: string,
   spaceReplace: string
 ): string {
   if (tagsToRemove.length === 0) return noteBody;
-  
+
   const lines = noteBody.split('\n');
   const updatedLines = [];
-  
+
   for (const line of lines) {
-    if (line.startsWith(listPrefix)) {
+    if (isTagListLine(line, listPrefix, tagPrefix)) {
       // This is a tag line, remove specified tags
       let updatedLine = line;
       
@@ -276,9 +288,9 @@ export function addInlineTags(
   const lines = noteBody.split('\n');
   let existingTagLineIndex = -1;
   
-  // Find existing tag line
+  // Find existing tag line (skip YAML frontmatter lines that share the prefix)
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith(listPrefix)) {
+    if (isTagListLine(lines[i], listPrefix, tagPrefix)) {
       existingTagLineIndex = i;
       break;
     }
@@ -314,14 +326,15 @@ export function addInlineTags(
  * Checks if the note body contains any existing tag lines
  * @param noteBody - The note body content
  * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
+ * @param tagPrefix - The prefix used for individual tags (e.g., "#")
  * @returns true if tag lines exist, false otherwise
  */
-export function hasExistingTagLines(noteBody: string, listPrefix: string): boolean {
+export function hasExistingTagLines(noteBody: string, listPrefix: string, tagPrefix: string): boolean {
   const lines = noteBody.split('\n');
-  const result = lines.some(line => line.startsWith(listPrefix));
-  
+  const result = lines.some(line => isTagListLine(line, listPrefix, tagPrefix));
+
   // Clear array to prevent memory leaks
   lines.length = 0;
-  
+
   return result;
 }
