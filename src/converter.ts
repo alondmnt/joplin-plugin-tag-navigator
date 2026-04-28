@@ -224,10 +224,16 @@ export async function convertNoteToJoplinTags(
   // Save conversion data only if tags have actually changed
   if (conversionSettings.enableTagTracking) {
     const existingData = await getTagConversionData(note.id);
-    if (!existingData || !setsEqual(currentInlineTags, existingData.joplinTags)) {
+    // Check both fields: legacy data (pre-fix) may have stale inlineTags that
+    // need migrating even when joplinTags hasn't changed.
+    if (!existingData
+        || !setsEqual(currentInlineTags, existingData.joplinTags)
+        || !setsEqual(currentInlineTags, existingData.inlineTags)) {
       await saveTagConversionData(note.id, {
         joplinTags: currentInlineTags,
-        inlineTags: existingData?.inlineTags || [],
+        // Track inline state too so Joplin→INLINE can detect Joplin-side deletions
+        // on the next call (was previously left stale, breaking the cycle).
+        inlineTags: currentInlineTags,
         lastUpdated: Date.now()
       });
     }
@@ -307,9 +313,15 @@ export async function convertNoteToInlineTags(
 
     // Save conversion data only if tags have actually changed
     const existingData = await getTagConversionData(note.id);
-    if (!existingData || !setsEqual(currentJoplinTags, existingData.inlineTags)) {
+    // Check both fields: legacy data (pre-fix) may have stale joplinTags that
+    // need migrating even when inlineTags hasn't changed.
+    if (!existingData
+        || !setsEqual(currentJoplinTags, existingData.inlineTags)
+        || !setsEqual(currentJoplinTags, existingData.joplinTags)) {
       await saveTagConversionData(note.id, {
-        joplinTags: existingData?.joplinTags || [],
+        // Track Joplin state too so INLINE→Joplin can detect inline-side
+        // deletions on the next call (was previously left stale).
+        joplinTags: currentJoplinTags,
         inlineTags: currentJoplinTags,
         lastUpdated: Date.now()
       });
@@ -320,10 +332,10 @@ export async function convertNoteToInlineTags(
     const sortedTags = sortTags(tagsToAdd, tagSettings.valueDelim);
     const tagList = conversionSettings.listPrefix + sortedTags
       .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
-    
-    if (note.body.includes(tagList + '\n')) { 
+
+    if (note.body.includes(tagList + '\n')) {
       // No change needed
-      return; 
+      return;
     }
 
     // Remove all existing tag list lines and create new ones
