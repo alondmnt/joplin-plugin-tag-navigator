@@ -989,8 +989,8 @@ export async function setCheckboxState(
   lines[message.line] = line.replace(current, `$1${message.target}$2`);
 
   const newBody = lines.join('\n');
-  updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
-  
+  await updateNote({externalId: message.externalId, line: message.line}, newBody, db, tagSettings);
+
   // Clear arrays to prevent memory leaks
   lines.length = 0;
   note = clearObjectReferences(note);
