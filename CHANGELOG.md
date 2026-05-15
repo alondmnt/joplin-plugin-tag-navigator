@@ -1,3 +1,12 @@
+# [v2.10.6](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.6)
+*Released on 2026-05-15T23:35:59Z*
+
+- fix: await note update in setCheckboxState to prevent stale panel refresh
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.5...v2.10.6
+
+---
+
 # [v2.10.5](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.5)
 *Released on 2026-04-28T13:30:36Z*
 
