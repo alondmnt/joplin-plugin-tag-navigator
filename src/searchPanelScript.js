@@ -2145,8 +2145,14 @@ function createContextMenu(event, result=null, index=null, commands=['insertTag'
         });
     }
 
-    // Query mode toggle (DNF / CNF)
-    if (commands.includes('queryMode')) {
+    // Query mode toggle (DNF / CNF).
+    // Only meaningful with 2+ groups: the labels describe the between-group
+    // relation (OR-of-groups vs AND-of-groups). With a single group there is
+    // no between-group relation, and toggling would silently flip the
+    // within-group operator instead (the inverse of the label), so the menu
+    // would contradict the operator shown in the query area. The within-group
+    // operator stays directly toggleable by clicking it inline. See issue #40.
+    if (commands.includes('queryMode') && queryGroups.length >= 2) {
         if (cmdCount > 0) {
             const separator = document.createElement('hr');
             separator.classList.add('itags-search-contextSeparator');
