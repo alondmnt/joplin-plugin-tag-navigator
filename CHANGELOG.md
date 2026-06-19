@@ -1,3 +1,14 @@
+# [v2.10.7](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.7)
+*Released on 2026-06-19T12:31:37Z*
+
+- improve: allow repeated terms across groups in AND mode
+- fix: hide query mode toggle for single-group queries (reported in #40)
+- fix: preserve manifest.json formatting on version bump 
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.6...v2.10.7
+
+---
+
 # [v2.10.6](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.6)
 *Released on 2026-05-15T23:35:59Z*
 
