@@ -1368,12 +1368,33 @@ function removeTagFromGroup(groupIndex, tagIndex) {
     updateQueryArea();
 }
 
+/**
+ * Index of the group that is a single condition matching `pred`, else -1.
+ *
+ * Encodes the CNF (AND mode) click rule: a tag/note click toggles negation
+ * only when the term already forms its own clause (a size-1 group). Otherwise
+ * the click opens a new clause, which lets the same term appear in several
+ * clauses, e.g. (A OR B) AND (A OR C). This is the deliberate CNF counterpart
+ * to the DNF rule, where a click toggles negation only for a term already in
+ * the last group. The two triggers differ (last-group vs singleton) because
+ * the modes build structure differently; do not unify them.
+ *
+ * Ranges are intentionally excluded: they are non-negatable, so handleRangeClick
+ * keeps its simpler "add once" behaviour.
+ */
+function findSingletonGroup(pred) {
+    return queryGroups.findIndex(g => g.length === 1 && pred(g[0]));
+}
+
 function handleTagClick(tag) {
     if (queryMode === 'cnf') {
-        // CNF: each tag gets its own group (AND semantics between groups)
-        const existing = queryGroups.flat().find(t => t.tag === tag);
-        if (existing) {
-            existing.negated = !existing.negated;
+        // CNF: a tag is its own clause (AND between clauses). Re-clicking a tag
+        // that already forms its own clause negates it; otherwise open a new
+        // clause, so the same tag may appear in multiple clauses.
+        const singletonIndex = findSingletonGroup(t => t.tag === tag);
+        if (singletonIndex >= 0) {
+            const condition = queryGroups[singletonIndex][0];
+            condition.negated = !condition.negated;
         } else {
             queryGroups.push([{ tag: tag, negated: false }]);
         }
@@ -1425,10 +1446,13 @@ function handleNoteClick(note) {
         return;
     }
     if (queryMode === 'cnf') {
-        // CNF: each note gets its own group (AND semantics between groups)
-        const existing = queryGroups.flat().find(n => n.title === note.title && n.externalId === note.externalId);
-        if (existing) {
-            existing.negated = !existing.negated;
+        // CNF: a note is its own clause (AND between clauses). Re-clicking a note
+        // that already forms its own clause negates it; otherwise open a new
+        // clause, so the same note may appear in multiple clauses.
+        const singletonIndex = findSingletonGroup(n => n.title === note.title && n.externalId === note.externalId);
+        if (singletonIndex >= 0) {
+            const condition = queryGroups[singletonIndex][0];
+            condition.negated = !condition.negated;
         } else {
             queryGroups.push([{ title: note.title, externalId: note.externalId, negated: false }]);
         }
