@@ -327,12 +327,20 @@ const updateVersion = () => {
 	packageJson.version = increaseVersion(packageJson.version);
 	fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`, 'utf8');
 
-	const manifest = readManifest(manifestPath);
-	manifest.version = increaseVersion(manifest.version);
-	writeManifest(manifestPath, manifest);
+	// Bump the manifest version via a targeted text replacement so the rest of
+	// the file's formatting (inline arrays, tab indent, trailing newline) is
+	// preserved. A readManifest + writeManifest round-trip re-serialises the
+	// whole file with JSON.stringify, which expands inline arrays and strips the
+	// trailing newline, producing churn unrelated to the version bump.
+	const manifest = readManifest(manifestPath);  // also validates id/categories/screenshots
+	const newManifestVersion = increaseVersion(manifest.version);
+	const manifestText = fs.readFileSync(manifestPath, 'utf8');
+	fs.writeFileSync(manifestPath,
+		manifestText.replace(/("version"\s*:\s*")[^"]*(")/, `$1${newManifestVersion}$2`),
+		'utf8');
 
-	if (packageJson.version !== manifest.version) {
-		console.warn(chalk.yellow(`Version numbers have been updated but they do not match: package.json (${packageJson.version}), manifest.json (${manifest.version}). Set them to the required values to get them in sync.`));
+	if (packageJson.version !== newManifestVersion) {
+		console.warn(chalk.yellow(`Version numbers have been updated but they do not match: package.json (${packageJson.version}), manifest.json (${newManifestVersion}). Set them to the required values to get them in sync.`));
 	}
 };
 
