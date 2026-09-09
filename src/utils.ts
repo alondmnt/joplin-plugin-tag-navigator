@@ -1,4 +1,38 @@
 /**
+ * Matches multilingual tag names starting with #.
+ * The default tag regex, used when no custom one is set in the settings.
+ */
+export const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
+
+/**
+ * Whether a pattern is free of constructs that can backtrack catastrophically.
+ *
+ * Applies wherever a user-supplied regex runs on untrusted-length input: the
+ * indexer walks it over every line of every note, and the editor content script
+ * runs it over the viewport on every keystroke, on the main thread. A rejected
+ * pattern must fall back, never run.
+ */
+export function isRegexSafe(pattern: string): boolean {
+  // Check for potentially dangerous patterns that could cause ReDoS
+  const dangerousPatterns = [
+    // Nested quantifiers like (a+)+ or (a*)* or (a+)*
+    /\([^)]*[+*]\)[+*]/,
+    // Alternation with overlapping patterns like (a|a)*
+    /\([^)]*\|[^)]*\)[+*]/,
+    // Excessive nesting depth
+    /\([^)]*\([^)]*\([^)]*\(/,
+    // Very long strings that could cause exponential backtracking
+    /.{200,}/,
+    // Catastrophic backtracking patterns like (.*)*
+    /\(\.\*\)[+*]/,
+    // Multiple consecutive quantifiers (but allow legitimate non-greedy patterns like *?, +?, ??)
+    /[+*]{2,}|[+*?]\?[+*]|\?[+*]/,
+  ];
+
+  return !dangerousPatterns.some(dangerous => dangerous.test(pattern));
+}
+
+/**
  * Processes items in parallel batches
  * @param items - Array of items to process
  * @param batchSize - Number of items to process concurrently

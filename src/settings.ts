@@ -1,8 +1,7 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
 import { clearApiResponse } from './memory';
-import { defTagRegex } from './parser';
-import { escapeRegex } from './utils';
+import { defTagRegex, escapeRegex, isRegexSafe } from './utils';
 
 /** Cached settings — invalidated on settings change */
 let _tagSettingsCache: TagSettings | null = null;
@@ -116,31 +115,6 @@ export interface ConversionSettings {
   listPrefix: string;          // Prefix for converted Joplin tags
   location: string;            // Location for converted Joplin tags
   enableTagTracking: boolean;  // Whether to enable tag tracking
-}
-
-/**
- * Validates a regex pattern to prevent ReDoS attacks
- * @param pattern - The regex pattern to validate
- * @returns true if safe, false if potentially dangerous
- */
-function isRegexSafe(pattern: string): boolean {
-  // Check for potentially dangerous patterns that could cause ReDoS
-  const dangerousPatterns = [
-    // Nested quantifiers like (a+)+ or (a*)* or (a+)*
-    /\([^)]*[+*]\)[+*]/,
-    // Alternation with overlapping patterns like (a|a)*
-    /\([^)]*\|[^)]*\)[+*]/,
-    // Excessive nesting depth
-    /\([^)]*\([^)]*\([^)]*\(/,
-    // Very long strings that could cause exponential backtracking
-    /.{200,}/,
-    // Catastrophic backtracking patterns like (.*)*
-    /\(\.\*\)[+*]/,
-    // Multiple consecutive quantifiers (but allow legitimate non-greedy patterns like *?, +?, ??)
-    /[+*]{2,}|[+*?]\?[+*]|\?[+*]/,
-  ];
-
-  return !dangerousPatterns.some(dangerous => dangerous.test(pattern));
 }
 
 /**
@@ -464,6 +438,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline tags: Render in Markdown preview',
       description: 'Requires restart',
     },
+    'itags.highlightTags': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Inline tags: Highlight in editor',
+      description: 'Requires restart',
+    },
     'itags.renderFrontMatter': {
       value: true,
       type: SettingItemType.Bool,
@@ -783,6 +765,17 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Search: Panel style',
       description: 'Custom CSS for the search panel (toggle panel or restart app).',
+    },
+    'itags.editorTagStyle': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Inline tags: Editor style',
+      description: 'Custom CSS for inline tags in the editor, overriding the default style. ' +
+        'Target .itags-editor-tag, or .itags-editor-tag--hash / --at / --plus / --slash ' +
+        'for a specific prefix.',
     },
     'itags.periodicConversion': {
       value: 0,

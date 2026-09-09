@@ -5,7 +5,8 @@
  * settings description (@mentions, +projects, //due-dates).
  * Includes repro for issue #38.
  */
-import { parseTagsLines, defTagRegex } from '../src/parser';
+import { parseTagsLines } from '../src/parser';
+import { defTagRegex } from '../src/utils';
 import { TagSettings } from '../src/settings';
 import { NoteDatabase, DatabaseManager, processNote } from '../src/db';
 
