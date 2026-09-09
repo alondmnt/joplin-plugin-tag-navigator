@@ -828,7 +828,9 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Tag regex',
-      description: 'Custom regex to match tags. Leave empty to use the default. Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",.()\\[\\]:;\\?\\\\]+)',
+      description: 'Custom regex to match tags. Leave empty to use the default. ' +
+        'Search updates immediately; editor highlighting requires restart. ' +
+        'Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",.()\\[\\]:;\\?\\\\]+)',
     },
     'itags.excludeRegex': {
       value: '',
@@ -837,7 +839,9 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Exclude regex',
-      description: 'Custom regex to exclude tags. Leave empty to not exclude any. Example to filter hex colors: #[a-fA-F0-9]{6}$',
+      description: 'Custom regex to exclude tags. Leave empty to not exclude any. ' +
+        'Search updates immediately; editor highlighting requires restart. ' +
+        'Example to filter hex colors: #[a-fA-F0-9]{6}$',
     },
     'itags.todayTag': {
       value: '#today',
