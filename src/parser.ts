@@ -88,6 +88,9 @@ export interface TagLineInfo {
  */
 export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
   let inCodeBlock = false;
+  let inIndentedCode = false;
+  let inList = false;
+  let prevLineBlank = true;  // the start of a note behaves like the line after a blank
   let isResultBlock = false;
   let isQueryBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
@@ -102,6 +105,32 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
     }
+    // Track indented (four-space) code blocks. The fence test above cannot see
+    // them, so tags inside a pasted snippet were indexed: a shebang alone yields
+    // three, since nested tags split on '/'.
+    //
+    // List state is needed because an indented code block and a paragraph
+    // continuing a list item are identical line by line - a blank line, then the
+    // indent - and only the open list tells them apart. Tags on indented list
+    // content are ordinary usage, so the list has to win.
+    const lineIndent = line.match(/^\s*/)[0].length;
+    const lineIsBlank = /^\s*$/.test(line);
+    if (/^\s*([-*+]|\d+[.)])\s/.test(line)) {
+      inList = true;
+    } else if (!lineIsBlank && lineIndent === 0) {
+      inList = false;  // a paragraph at the margin closes the list
+    }
+    if (!inCodeBlock) {
+      if (inIndentedCode) {
+        // Blank lines stay inside the block; a line back at the margin ends it,
+        // and ends it before the skip below, so that line is still indexed.
+        if (!lineIsBlank && lineIndent < 4) { inIndentedCode = false; }
+      } else if (!lineIsBlank && lineIndent >= 4 && prevLineBlank && !inList) {
+        inIndentedCode = true;
+      }
+    }
+    prevLineBlank = lineIsBlank;
+
     if (line.match(resultsStart)) {
       isResultBlock = true;
     }
@@ -117,7 +146,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     const isEmptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks, front matter, result blocks, query blocks, and empty lines
     const isMatterBlock = matterRange && lineIndex >= matterRange.startLine && lineIndex <= matterRange.endLine;
-    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isMatterBlock || isResultBlock || isQueryBlock || isEmptyLine) {
+    if (((inCodeBlock || inIndentedCode) && tagSettings.ignoreCodeBlocks) || isMatterBlock || isResultBlock || isQueryBlock || isEmptyLine) {
       return;
     }
 
