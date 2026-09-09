@@ -496,6 +496,8 @@ Every rendered tag carries four classes, on all three surfaces that display tags
 
 So `.itags-tag` styles tags everywhere, and the surface classes are there for when you want one surface to differ.
 
+Tags inside code are never styled on any of the three surfaces: code should look like code. The `Ignore code blocks` setting governs whether they are *indexed* - turn it off and tags in code blocks become searchable, but they still render as code.
+
 The `Inline tags: Style` setting takes custom CSS and applies it to all three surfaces. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. On desktop you can use either that setting or `userstyle.css`.
 
 Two related settings cover the panels as a whole rather than tags: `Search: Panel style` and `Navigation: Panel style`. In the search panel, `Inline tags: Style` is applied first, so a panel-specific rule there wins over the general tag look.
