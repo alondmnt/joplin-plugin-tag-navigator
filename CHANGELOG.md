@@ -1,4 +1,5 @@
-# v2.11.0
+# [v2.11.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.0)
+*Released on 2026-09-09T23:54:37Z*
 
 - added: inline tag highlighting in the Markdown editor, built in - no longer needs Rich Markdown
     - new setting `Inline tags: Highlight in editor` (on by default)
@@ -17,6 +18,8 @@
 - fixed: a tag regex that can backtrack catastrophically is now rejected in the Markdown preview, as it already was when indexing
 - fixed: custom CSS containing `</style>` can no longer break out of the style element and inject markup into a note
 - fixed: `Ignore code blocks` and the tag regex settings now describe when they take effect and what they cover
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.10.7...v2.11.0
 
 ---
 
