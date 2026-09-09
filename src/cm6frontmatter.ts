@@ -145,10 +145,6 @@ export default (_ctx: ContentScriptContext): MarkdownEditorContentScriptModule =
       view.dispatch({
         effects: fmLang.reconfigure(Prec.highest(support)),
       });
-
-      // Debug (singular facet):
-      const active = cm.editor.state.facet(language) as Language | null;
-      console.info('[fm] active language:', active?.name ?? '(none)');
     };
 
 
