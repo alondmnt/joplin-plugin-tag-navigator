@@ -33,16 +33,45 @@ type TagStyleSettings = {
 };
 
 /**
+ * Sample text a candidate pattern is probed against. Covers a line start, a
+ * trailing space, whitespace boundaries, a mid-word hash and each documented
+ * prefix, so a pattern whose zero-length match needs context is caught along
+ * with one that matches the empty string outright.
+ */
+const PROBE_TEXT = ' #tag @a +b //c\nfoo#bar\nx ';
+
+/**
+ * Whether a pattern can produce a zero-length match, which is the condition that
+ * freezes the editor. Testing against '' alone is not enough: a pattern led by a
+ * zero-width assertion, such as \b\w* or (?<=\s)\S*, matches the empty string
+ * only in context and would slip through.
+ */
+function canMatchEmpty(pattern: RegExp): boolean {
+  let match: RegExpExecArray | null;
+  let count = 0;
+  while ((match = pattern.exec(PROBE_TEXT)) !== null) {
+    if (match[0].length === 0) { return true; }
+    // More matches than characters means exec is not advancing.
+    if (++count > PROBE_TEXT.length) { return true; }
+  }
+  return false;
+}
+
+/**
  * Compiles a user-supplied tag pattern, falling back to the default when it does
- * not compile or can match the empty string. MatchDecorator iterates exec()
- * without advancing lastIndex itself, so an empty match there freezes the editor.
+ * not compile or can produce a zero-length match. MatchDecorator iterates exec()
+ * without advancing lastIndex itself, so a single empty match spins its loop and
+ * freezes the editor on every keystroke.
  * A fresh instance per call matters, because MatchDecorator mutates lastIndex.
  */
-function compileTagRegex(source: string): RegExp {
+export function compileTagRegex(source: string): RegExp {
   if (source) {
     try {
-      if (!new RegExp(source).test('')) { return new RegExp(source, 'g'); }
-      console.warn('Tag Navigator: tag regex can match an empty string, using the default.');
+      if (canMatchEmpty(new RegExp(source, 'g'))) {
+        console.warn('Tag Navigator: tag regex can match an empty string, using the default.', source);
+      } else {
+        return new RegExp(source, 'g');
+      }
     } catch (error) {
       console.warn('Tag Navigator: invalid tag regex, using the default.', error);
     }
