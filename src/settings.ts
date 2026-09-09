@@ -463,6 +463,14 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline tags: Render in Markdown preview',
       description: 'Requires restart',
     },
+    'itags.highlightTags': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      label: 'Inline tags: Highlight in editor',
+      description: 'Requires restart',
+    },
     'itags.renderFrontMatter': {
       value: true,
       type: SettingItemType.Bool,
@@ -782,6 +790,17 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Search: Panel style',
       description: 'Custom CSS for the search panel (toggle panel or restart app).',
+    },
+    'itags.editorTagStyle': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Inline tags: Editor style',
+      description: 'Custom CSS for inline tags in the editor, overriding the default style. ' +
+        'Target .itags-editor-tag, or .itags-editor-tag--hash / --at / --plus / --slash ' +
+        'for a specific prefix. Requires restart.',
     },
     'itags.periodicConversion': {
       value: 0,

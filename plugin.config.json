@@ -4,6 +4,7 @@
 		"replaceText.ts",
 		"tagMarkdownItPlugin.ts",
 		"fmMarkdownitPlugin.ts",
-		"cm6frontmatter.ts"
+		"cm6frontmatter.ts",
+		"cm6tagStyle.ts"
 	]
 }

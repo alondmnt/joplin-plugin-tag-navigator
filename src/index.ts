@@ -128,6 +128,27 @@ joplin.plugins.register({
         './tagMarkdownItPlugin.js',
       );
     }
+    if (await joplin.settings.value('itags.highlightTags')) {
+      // Handler before registration: an editor mounting between the two awaits
+      // would post getTagStyleSettings into the void, and the content script
+      // would silently fall back to the default regex and no user CSS.
+      await joplin.contentScripts.onMessage('itagsTagStyle', async (message: any) => {
+        if (message?.name !== 'getTagStyleSettings') { return null; }
+        const settings = await joplin.settings.values([
+          'itags.tagRegex', 'itags.excludeRegex', 'itags.editorTagStyle',
+        ]);
+        return {
+          tagRegex: settings['itags.tagRegex'] as string,
+          excludeRegex: settings['itags.excludeRegex'] as string,
+          css: settings['itags.editorTagStyle'] as string,
+        };
+      });
+      await joplin.contentScripts.register(
+        ContentScriptType.CodeMirrorPlugin,
+        'itagsTagStyle',
+        './cm6tagStyle.js',
+      );
+    }
     if (await joplin.settings.value('itags.renderFrontMatter')) {
       await joplin.contentScripts.register(
         ContentScriptType.MarkdownItPlugin,
