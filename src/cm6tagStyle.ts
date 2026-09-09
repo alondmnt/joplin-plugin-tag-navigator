@@ -4,7 +4,7 @@ import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defTagRegex, isRegexSafe, mapPrefixClass } from './utils';
+import { defTagRegex, isRegexSafe, tagClasses } from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
@@ -178,7 +178,7 @@ function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecor
       if (inCodeContext(view.state, start)) { return; }
 
       add(start, start + tag.length, Decoration.mark({
-        class: `${TAG_CLASS} ${TAG_CLASS}--${mapPrefixClass(tag)}`,
+        class: tagClasses(tag, TAG_CLASS),
       }));
     },
   });

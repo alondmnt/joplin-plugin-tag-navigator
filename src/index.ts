@@ -135,12 +135,12 @@ joplin.plugins.register({
       await joplin.contentScripts.onMessage('itagsTagStyle', async (message: any) => {
         if (message?.name !== 'getTagStyleSettings') { return null; }
         const settings = await joplin.settings.values([
-          'itags.tagRegex', 'itags.excludeRegex', 'itags.editorTagStyle',
+          'itags.tagRegex', 'itags.excludeRegex', 'itags.tagStyle',
         ]);
         return {
           tagRegex: settings['itags.tagRegex'] as string,
           excludeRegex: settings['itags.excludeRegex'] as string,
-          css: settings['itags.editorTagStyle'] as string,
+          css: settings['itags.tagStyle'] as string,
         };
       });
       await joplin.contentScripts.register(

@@ -96,6 +96,15 @@ export function sortTags(tags: string[], valueDelim: string): string[] {
   return tags.sort((a, b) => compareTagValues(a, b, valueDelim));
 }
 
+/**
+ * Class applied to every rendered inline tag, on all three surfaces: the search
+ * panel, the Markdown preview and the editor. Lets one CSS rule style tags
+ * everywhere, without the reader having to know that the panel and preview
+ * happen to share a class name while the editor does not. The surface-specific
+ * classes remain alongside it for per-surface targeting.
+ */
+export const SHARED_TAG_CLASS = 'itags-tag';
+
 // Map characters that are awkward in CSS selectors to readable class suffixes.
 const PREFIX_CLASS_MAP: Record<string, string> = {
   '#': 'hash',
@@ -120,4 +129,21 @@ export function mapPrefixClass(tag: string): string {
 
   const code = prefix.codePointAt(0);
   return code != null ? `char-${code.toString(16)}` : 'unknown';
+}
+
+/**
+ * The full class list for a rendered inline tag.
+ *
+ * Every tag carries the shared classes, so one CSS rule can style tags on all
+ * three surfaces, plus the given surface's own classes for per-surface
+ * targeting. Both come in a bare and a per-prefix form:
+ *
+ *   itags-tag  itags-tag--at  itags-editor-tag  itags-editor-tag--at
+ *
+ * @param tag The tag text, used to derive the prefix suffix
+ * @param surfaceClass The surface's own base class
+ */
+export function tagClasses(tag: string, surfaceClass: string): string {
+  const prefix = mapPrefixClass(tag);
+  return `${SHARED_TAG_CLASS} ${SHARED_TAG_CLASS}--${prefix} ${surfaceClass} ${surfaceClass}--${prefix}`;
 }

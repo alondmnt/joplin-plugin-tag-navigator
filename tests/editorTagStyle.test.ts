@@ -20,7 +20,7 @@
 import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { defTagRegex, mapPrefixClass } from '../src/utils';
+import { defTagRegex, mapPrefixClass, tagClasses, SHARED_TAG_CLASS } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
 const MULTI_PREFIX = "(?<=^|\\s)([#@+]|\\/\\/)([^\\s#@'\",.()\\[\\]:;\\?\\\\]+)";
@@ -281,4 +281,30 @@ describe('inCodeContext', () => {
     expect(inCodeContext(state(doc), doc.indexOf('#inside'))).toBe(true);
     expect(inCodeContext(state(doc), doc.indexOf('#after'))).toBe(false);
   });
+});
+
+describe('tagClasses', () => {
+  it('carries the shared class so one rule styles all three surfaces', () => {
+    for (const surface of ['itags-editor-tag', 'itags-search-renderedTag']) {
+      expect(tagClasses('#tag', surface).split(' ')).toContain(SHARED_TAG_CLASS);
+    }
+  });
+
+  it('gives the shared and surface classes matching prefix variants', () => {
+    expect(tagClasses('@who', 'itags-editor-tag').split(' ')).toEqual([
+      'itags-tag', 'itags-tag--at', 'itags-editor-tag', 'itags-editor-tag--at',
+    ]);
+  });
+
+  it('keeps the surface class, so per-surface rules still work', () => {
+    expect(tagClasses('#tag', 'itags-search-renderedTag')).toContain('itags-search-renderedTag--hash');
+    expect(tagClasses('#tag', 'itags-editor-tag')).toContain('itags-editor-tag--hash');
+  });
+
+  it.each([['#a', 'hash'], ['@a', 'at'], ['+a', 'plus'], ['//a', 'slash']])(
+    'maps %s to --%s on both the shared and surface class', (tag, suffix) => {
+      const classes = tagClasses(tag, 'itags-editor-tag');
+      expect(classes).toContain(`itags-tag--${suffix}`);
+      expect(classes).toContain(`itags-editor-tag--${suffix}`);
+    });
 });

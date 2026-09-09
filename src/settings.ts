@@ -766,16 +766,16 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: Panel style',
       description: 'Custom CSS for the search panel (toggle panel or restart app).',
     },
-    'itags.editorTagStyle': {
+    'itags.tagStyle': {
       value: '',
       type: SettingItemType.String,
       section: 'itags',
       public: true,
       advanced: true,
-      label: 'Inline tags: Editor style',
-      description: 'Custom CSS for inline tags in the editor, overriding the default style. ' +
-        'Target .itags-editor-tag, or .itags-editor-tag--hash / --at / --plus / --slash ' +
-        'for a specific prefix.',
+      label: 'Inline tags: Style',
+      description: 'Custom CSS for inline tags in the search panel, Markdown preview and editor. ' +
+        'Target .itags-tag for all three, or .itags-tag--hash / --at / --plus / --slash for a ' +
+        'specific prefix. Also the only way to restyle tags on mobile.',
     },
     'itags.periodicConversion': {
       value: 0,

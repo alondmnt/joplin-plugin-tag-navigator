@@ -1,9 +1,10 @@
 import type { ContentScriptContext, MarkdownItContentScriptModule } from 'api/types';
-import { mapPrefixClass } from './utils';
+import { tagClasses } from './utils';
 import { injectStyleChunk } from './styleInjector';
 
 const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
 const EXCLUDE_REGEX_SETTING_KEY = 'itags.excludeRegex';
+const TAG_STYLE_SETTING_KEY = 'itags.tagStyle';
 
 // Default fallback regex for matching inline tags.
 const defTagRegex = /(^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
@@ -133,6 +134,7 @@ function readSetting(pluginOptions: any, key: string, apply: (value: any) => voi
 export default function (_context: ContentScriptContext): MarkdownItContentScriptModule {
   let activeTagRegex: RegExp = defTagRegex;
   let activeExcludeRegex: RegExp | null = null;
+  let activeUserCss = '';
 
   const applySetting = (key: string, value: any) => {
     switch (key) {
@@ -141,6 +143,9 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         break;
       case EXCLUDE_REGEX_SETTING_KEY:
         activeExcludeRegex = compileExcludeRegex(value);
+        break;
+      case TAG_STYLE_SETTING_KEY:
+        activeUserCss = typeof value === 'string' ? value : '';
         break;
       default:
         break;
@@ -151,6 +156,7 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
     plugin: (markdownIt: any, pluginOptions: any) => {
       readSetting(pluginOptions, TAG_REGEX_SETTING_KEY, value => applySetting(TAG_REGEX_SETTING_KEY, value));
       readSetting(pluginOptions, EXCLUDE_REGEX_SETTING_KEY, value => applySetting(EXCLUDE_REGEX_SETTING_KEY, value));
+      readSetting(pluginOptions, TAG_STYLE_SETTING_KEY, value => applySetting(TAG_STYLE_SETTING_KEY, value));
 
       if (pluginOptions && typeof pluginOptions.onSettingChange === 'function') {
         try {
@@ -172,6 +178,7 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
         const Token = state.Token;
 
         injectStyleChunk(state, Token, TAG_STYLE_CSS);
+        injectStyleChunk(state, Token, activeUserCss);
 
         for (const token of state.tokens as TokenLike[]) {
           if (token.type !== 'inline' || !token.children) {
@@ -239,8 +246,7 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
 
                 if (!handled) {
                   const open = new Token('html_inline', '', 0);
-                  const prefixClass = mapPrefixClass(tagPart);
-                  open.content = `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}">`;
+                  open.content = `<span class="${tagClasses(tagPart, 'itags-search-renderedTag')}">`;
                   const textToken = new Token('text', '', 0);
                   textToken.content = tagPart;
                   const close = new Token('html_inline', '', 0);
