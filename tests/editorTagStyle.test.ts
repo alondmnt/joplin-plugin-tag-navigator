@@ -17,7 +17,9 @@
  *
  * tagBounds is the arithmetic that decides which characters get painted.
  */
-import { compileTagRegex, compileExcludeRegex, tagBounds } from '../src/cm6tagStyle';
+import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
+import { EditorState } from '@codemirror/state';
+import { markdown } from '@codemirror/lang-markdown';
 import { defTagRegex, mapPrefixClass } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
@@ -166,14 +168,18 @@ describe('decorated ranges', () => {
     const pattern = compileTagRegex(tagSource);
     const exclude = compileExcludeRegex(excludeSource);
     const out: string[] = [];
-    for (const raw of execAll(pattern, line).matches) {
-      const { tag, lead } = tagBounds(raw);
+    let match: RegExpExecArray | null;
+    pattern.lastIndex = 0;
+    while ((match = pattern.exec(line)) !== null) {
+      const { tag, lead } = tagBounds(match[0]);
       if (!tag) { continue; }
       if (exclude) {
         exclude.lastIndex = 0;
         if (exclude.test(tag)) { continue; }
       }
-      const start = line.indexOf(raw) + lead;
+      // Mirrors production exactly: the offset comes from the match, not from
+      // searching the line for the matched text.
+      const start = match.index + lead;
       out.push(`${start}-${start + tag.length}:${line.slice(start, start + tag.length)}:${mapPrefixClass(tag)}`);
     }
     return out;
@@ -203,5 +209,76 @@ describe('decorated ranges', () => {
 
   it('skips tags matched by the exclude pattern', () => {
     expect(decorate('#a1b2c3 and #keep', '', '#[a-fA-F0-9]{6}$')).toEqual(['12-17:#keep:hash']);
+  });
+
+  // Regression: an earlier version of this helper located matches with
+  // line.indexOf(matchText), which returns the first occurrence, so a repeated
+  // tag was reported twice at the same offset while production placed it
+  // correctly. Production uses the match's own index.
+  it('locates a repeated tag at each of its own offsets', () => {
+    expect(decorate('#tag and #tag', '')).toEqual(['0-4:#tag:hash', '9-13:#tag:hash']);
+  });
+});
+
+describe('inCodeContext', () => {
+  /** Real Markdown parse, so the node names come from the parser rather than a stub. */
+  function state(doc: string) {
+    return EditorState.create({ doc, extensions: [markdown()] });
+  }
+  /** Positions of every "#" in the doc, which is where a tag would start. */
+  function hashes(doc: string): number[] {
+    const out: number[] = [];
+    for (let i = 0; i < doc.length; i++) { if (doc[i] === '#') { out.push(i); } }
+    return out;
+  }
+
+  it('reports plain prose as not code', () => {
+    const doc = 'some #tag in prose\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(false);
+  });
+
+  it('reports an inline code span as code', () => {
+    const doc = 'text `#tag` more\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(true);
+  });
+
+  it('reports a fenced block as code', () => {
+    const doc = '```\n#tag\n```\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(true);
+  });
+
+  it('reports a fenced block with a language as code', () => {
+    const doc = '```js\n// #tag\n```\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(true);
+  });
+
+  it('reports an indented block as code, which the panel does not skip', () => {
+    const doc = 'para\n\n    #tag\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(true);
+  });
+
+  it('does not treat a heading hash as code', () => {
+    const doc = '# Heading\n\n#tag\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#tag'))).toBe(false);
+  });
+
+  it('does not treat emphasis or a link as code', () => {
+    const doc = '*a #tag* and [#tag](http://x)\n';
+    for (const pos of hashes(doc)) {
+      expect(inCodeContext(state(doc), pos)).toBe(false);
+    }
+  });
+
+  it('separates code from prose on the same line', () => {
+    const doc = 'before `#in` after #out\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#in'))).toBe(true);
+    expect(inCodeContext(state(doc), doc.indexOf('#out'))).toBe(false);
+  });
+
+  it('classifies every line of a fence transition, the case the rebuild exists for', () => {
+    const doc = '#before\n```\n#inside\n```\n#after\n';
+    expect(inCodeContext(state(doc), doc.indexOf('#before'))).toBe(false);
+    expect(inCodeContext(state(doc), doc.indexOf('#inside'))).toBe(true);
+    expect(inCodeContext(state(doc), doc.indexOf('#after'))).toBe(false);
   });
 });

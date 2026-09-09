@@ -118,11 +118,6 @@ export interface ConversionSettings {
 }
 
 /**
- * Validates a regex pattern to prevent ReDoS attacks
- * @param pattern - The regex pattern to validate
- * @returns true if safe, false if potentially dangerous
- */
-/**
  * Safely creates a RegExp from user input with validation
  * @param pattern - The regex pattern string
  * @param flags - Regex flags

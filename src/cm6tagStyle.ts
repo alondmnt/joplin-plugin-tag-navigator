@@ -1,5 +1,6 @@
 import type { ContentScriptContext, CodeMirrorControl, MarkdownEditorContentScriptModule } from 'api/types';
 import { syntaxTree } from '@codemirror/language';
+import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
@@ -124,13 +125,13 @@ function applyStyle(userCss: string): void {
  *
  * Every code node in Joplin's Markdown parser has "Code" in its name, and no
  * other node does, so substring matching survives parser version changes.
- * Checked against Joplin's own tree: @lezer/markdown contributes CodeBlock,
- * CodeInfo, CodeMark, CodeText, FencedCode, IndentedCode and InlineCode, while
+ * Checked against Joplin's own tree: @lezer/markdown emits CodeBlock (the
+ * indented form), FencedCode, CodeInfo, CodeMark, CodeText and InlineCode, while
  * Joplin's extensions add only FrontMatter*, InlineMath*, BlockMath*, Highlight*
  * and Insert* - none of which contain "Code".
  */
-function inCodeContext(view: EditorView, pos: number): boolean {
-  let node = syntaxTree(view.state).resolveInner(pos, 1);
+export function inCodeContext(state: EditorState, pos: number): boolean {
+  let node = syntaxTree(state).resolveInner(pos, 1);
   while (node) {
     if (node.name.includes('Code')) { return true; }
     node = node.parent;
@@ -174,7 +175,7 @@ function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecor
       }
 
       const start = from + lead;
-      if (inCodeContext(view, start)) { return; }
+      if (inCodeContext(view.state, start)) { return; }
 
       add(start, start + tag.length, Decoration.mark({
         class: `${TAG_CLASS} ${TAG_CLASS}--${mapPrefixClass(tag)}`,
