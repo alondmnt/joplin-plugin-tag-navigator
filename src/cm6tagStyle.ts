@@ -4,7 +4,7 @@ import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defaultTagCss, defTagRegex, isRegexSafe, tagClasses } from './utils';
+import { defaultTagCss, defTagRegex, isRegexSafe, tagBounds, tagClasses } from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
@@ -126,19 +126,6 @@ export function inCodeContext(state: EditorState, pos: number): boolean {
     node = node.parent;
   }
   return false;
-}
-
-/**
- * Locates the tag within a raw match, as an offset and the tag text.
- *
- * A tag regex may capture the whitespace around the tag rather than use a
- * lookbehind - (^|\s)#... leads with a space, (^|\s)#(\S+)(\s|$) trails one -
- * so the decoration is anchored on the tag itself, or the whitespace gets
- * painted. This is also what the panel maps its prefix class from.
- */
-export function tagBounds(matchText: string): { tag: string; lead: number } {
-  const tag = matchText.trim();
-  return { tag, lead: tag ? matchText.indexOf(tag) : 0 };
 }
 
 /**

@@ -1,13 +1,10 @@
 import type { ContentScriptContext, MarkdownItContentScriptModule } from 'api/types';
-import { defaultTagCss, tagClasses } from './utils';
+import { defaultTagCss, defTagRegex, isRegexSafe, tagBounds, tagClasses } from './utils';
 import { injectStyleChunk } from './styleInjector';
 
 const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
 const EXCLUDE_REGEX_SETTING_KEY = 'itags.excludeRegex';
 const TAG_STYLE_SETTING_KEY = 'itags.tagStyle';
-
-// Default fallback regex for matching inline tags.
-const defTagRegex = /(^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
 
 // Inline rather than a CSS asset, because the web app blocks loading plugin CSS
 // assets. Shares its definition with the panel and editor defaults.
@@ -23,6 +20,14 @@ function compileTagRegex(value: unknown): RegExp {
     return defTagRegex;
   }
 
+  // Shared with the indexer and the editor. The loop below advances lastIndex
+  // itself, so a zero-length match cannot hang this surface, but a
+  // catastrophically backtracking pattern would still run on every render.
+  if (!isRegexSafe(value)) {
+    console.warn('Tag Navigator: tag regex can backtrack catastrophically, falling back to default.', value);
+    return defTagRegex;
+  }
+
   try {
     return new RegExp(value, 'g');
   } catch (error) {
@@ -33,6 +38,11 @@ function compileTagRegex(value: unknown): RegExp {
 
 function compileExcludeRegex(value: unknown): RegExp | null {
   if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+
+  if (!isRegexSafe(value)) {
+    console.warn('Tag Navigator: exclude regex can backtrack catastrophically, ignoring.', value);
     return null;
   }
 
@@ -199,9 +209,17 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
               }
 
               const fullMatch = match[0];
-              const hashIndexInMatch = fullMatch.indexOf('#');
-              const prefixPart = hashIndexInMatch > 0 ? fullMatch.slice(0, hashIndexInMatch) : '';
-              const tagPart = hashIndexInMatch >= 0 ? fullMatch.slice(hashIndexInMatch) : fullMatch;
+              // Anchor on the tag itself rather than on a hard-coded '#'. A regex
+              // may capture the whitespace around the tag, and splitting on '#'
+              // only stripped it for '#' tags: an @mention or +project from a
+              // capture-group regex kept its leading space inside the span, and
+              // the prefix class came out as --char-20 rather than --at.
+              const { tag: tagPart, lead } = tagBounds(fullMatch);
+              const prefixPart = fullMatch.slice(0, lead);
+              // Whatever the trim removed from the end still has to be emitted:
+              // cursor advances past the whole match, so anything not pushed here
+              // is dropped from the rendered output.
+              const suffixPart = fullMatch.slice(lead + tagPart.length);
 
               const matchStart = match.index;
               const matchEnd = matchStart + fullMatch.length;
@@ -243,6 +261,12 @@ export default function (_context: ContentScriptContext): MarkdownItContentScrip
                   newChildren.push(open, textToken, close);
                   handled = true;
                 }
+              }
+
+              if (suffixPart) {
+                const suffixToken = new Token('text', '', 0);
+                suffixToken.content = suffixPart;
+                newChildren.push(suffixToken);
               }
 
               const consumed = matchEnd;
