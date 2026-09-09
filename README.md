@@ -137,6 +137,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - When the `Tag inheritance` setting is enabled (by default), tags are automatically inherited in three ways:
     1. **Outline/indentation inheritance**: Tags are inherited from parent items to their children based on indentation levels.
         - Example: If `#project/website` appears on a parent line, all indented child lines will also be tagged with `#project/website`
+        - Exception: four or more spaces of indent after a blank line, outside a list, is a Markdown code block. Those lines are skipped entirely when `Ignore code blocks` is on, so they neither carry nor inherit tags.
     2. **Heading inheritance**: Tags are inherited from headings to all content under that heading.
         - Example: If `## Meeting Notes #urgent` appears as a heading, all other *tagged lines* under that heading will also be tagged with `#urgent`
     3. **Top of the note inheritance**: Tags are inherited from the first 2 lines of the note.

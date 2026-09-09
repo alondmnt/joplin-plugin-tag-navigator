@@ -342,9 +342,9 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Ignore code blocks',
-      description: 'Ignore inline tags in code blocks when indexing. ' +
-        'Turning this off makes them searchable, but they still render as code ' +
-        'rather than as tags in the editor, preview and search panel.',
+      description: 'Ignore inline tags in code blocks when indexing, both fenced ' +
+        'and indented (four spaces). Turning this off makes them searchable, but ' +
+        'they still render as code rather than as tags in the editor and preview.',
     },
     'itags.ignoreFrontMatter': {
       value: false,
