@@ -1,8 +1,7 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
 import { clearApiResponse } from './memory';
-import { defTagRegex } from './parser';
-import { escapeRegex } from './utils';
+import { defTagRegex, escapeRegex } from './utils';
 
 /** Cached settings — invalidated on settings change */
 let _tagSettingsCache: TagSettings | null = null;

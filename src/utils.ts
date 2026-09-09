@@ -1,4 +1,10 @@
 /**
+ * Matches multilingual tag names starting with #.
+ * The default tag regex, used when no custom one is set in the settings.
+ */
+export const defTagRegex = /(?<=^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
+
+/**
  * Processes items in parallel batches
  * @param items - Array of items to process
  * @param batchSize - Number of items to process concurrently
