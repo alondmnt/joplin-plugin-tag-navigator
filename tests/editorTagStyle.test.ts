@@ -17,10 +17,10 @@
  *
  * tagBounds is the arithmetic that decides which characters get painted.
  */
-import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
+import { compileTagRegex, compileExcludeRegex, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss } from '../src/utils';
+import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss, tagBounds } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
 const MULTI_PREFIX = "(?<=^|\\s)([#@+]|\\/\\/)([^\\s#@'\",.()\\[\\]:;\\?\\\\]+)";
