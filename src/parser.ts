@@ -113,12 +113,21 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     // continuing a list item are identical line by line - a blank line, then the
     // indent - and only the open list tells them apart. Tags on indented list
     // content are ordinary usage, so the list has to win.
-    const lineIndent = line.match(/^\s*/)[0].length;
+    // Indent in columns, counting a tab as four, since a single tab opens an
+    // indented block just as four spaces do.
+    const lineIndent = line.match(/^[ \t]*/)[0].replace(/\t/g, '    ').length;
     const lineIsBlank = /^\s*$/.test(line);
-    if (/^\s*([-*+]|\d+[.)])\s/.test(line)) {
+    // A thematic break matches a naive marker test - `* * *` is an asterisk and
+    // a space - and would exempt the rest of the note from code detection.
+    const isThematicBreak = /^ {0,3}([-*_])[ \t]*(\1[ \t]*){2,}$/.test(line);
+    if (!isThematicBreak && /^[ \t]*([-*+]|\d+[.)])[ \t]/.test(line)) {
       inList = true;
-    } else if (!lineIsBlank && lineIndent === 0) {
-      inList = false;  // a paragraph at the margin closes the list
+    } else if (!lineIsBlank && lineIndent === 0 && prevLineBlank) {
+      // Only a new top-level block closes the list. A margin line straight
+      // after list content is a lazy continuation of that item's paragraph, so
+      // the list stays open and indented content below it is still list
+      // content - closing here would drop its tags.
+      inList = false;
     }
     if (!inCodeBlock) {
       if (inIndentedCode) {

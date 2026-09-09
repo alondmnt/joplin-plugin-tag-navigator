@@ -92,9 +92,47 @@ describe('indented list content is still indexed', () => {
     expect(tags('- item\n\nparagraph\n\n    #aftercode\n')).toEqual([]);
   });
 
+  it('keeps the list open across a lazy continuation at the margin', () => {
+    // CommonMark: a margin line straight after list content continues that
+    // item's paragraph, so the list is still open and the indented block below
+    // is list content, not code. Closing the list here loses the tag.
+    expect(tags('- item\nlazy continuation\n\n    #tag\n')).toContain('#tag');
+    expect(tags('- a\n- b\ntext at margin\n\n    #tag\n')).toContain('#tag');
+  });
+
+  it('closes the list at a new top-level block, not at a continuation', () => {
+    // A margin line *after a blank* starts a new block and does close the list.
+    expect(tags('- item\n\nparagraph\n\n    #aftercode\n')).toEqual([]);
+  });
+
   it('indexes a lazy continuation with no blank line before it', () => {
     // Indented code cannot interrupt a paragraph, so this is still prose.
     expect(tags('some paragraph\n    #lazy\n')).toContain('#lazy');
+  });
+});
+
+describe('shapes that only look like list markers', () => {
+  it('does not mistake a thematic break for a list', () => {
+    // `* * *` and `- - -` match a naive marker test, which would exempt the
+    // rest of the note from code detection.
+    expect(tags('para\n\n* * *\n\n    #incode\n')).toEqual([]);
+    expect(tags('para\n\n- - -\n\n    #incode\n')).toEqual([]);
+    expect(tags('para\n\n***\n\n    #incode\n')).toEqual([]);
+  });
+
+  it('still treats a real list marker as a list', () => {
+    expect(tags('- a\n\n    #inlist\n')).toContain('#inlist');
+    expect(tags('* a\n\n    #inlist\n')).toContain('#inlist');
+  });
+});
+
+describe('tab indentation', () => {
+  it('treats a tab as four columns, so tab-indented blocks are code', () => {
+    expect(tags('para\n\n\t#tabbed\n')).toEqual([]);
+  });
+
+  it('still indexes tab-indented list content', () => {
+    expect(tags('- item\n\n\t#tabbed\n')).toContain('#tabbed');
   });
 });
 
