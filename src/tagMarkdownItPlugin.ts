@@ -1,5 +1,5 @@
 import type { ContentScriptContext, MarkdownItContentScriptModule } from 'api/types';
-import { defaultTagCss, defTagRegex, tagBounds, tagClasses } from './utils';
+import { defaultTagCss, defTagRegex, isRegexSafe, tagBounds, tagClasses } from './utils';
 import { injectStyleChunk } from './styleInjector';
 
 const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
@@ -20,6 +20,14 @@ function compileTagRegex(value: unknown): RegExp {
     return defTagRegex;
   }
 
+  // Shared with the indexer and the editor. The loop below advances lastIndex
+  // itself, so a zero-length match cannot hang this surface, but a
+  // catastrophically backtracking pattern would still run on every render.
+  if (!isRegexSafe(value)) {
+    console.warn('Tag Navigator: tag regex can backtrack catastrophically, falling back to default.', value);
+    return defTagRegex;
+  }
+
   try {
     return new RegExp(value, 'g');
   } catch (error) {
@@ -30,6 +38,11 @@ function compileTagRegex(value: unknown): RegExp {
 
 function compileExcludeRegex(value: unknown): RegExp | null {
   if (typeof value !== 'string' || value.trim() === '') {
+    return null;
+  }
+
+  if (!isRegexSafe(value)) {
+    console.warn('Tag Navigator: exclude regex can backtrack catastrophically, ignoring.', value);
     return null;
   }
 

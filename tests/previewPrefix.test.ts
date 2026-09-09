@@ -96,3 +96,41 @@ describe('prefix splitting', () => {
     expect(defTagRegex.source).toContain('(?<=^|\\s)');
   });
 });
+
+describe('regex safety', () => {
+  /** A pattern isRegexSafe rejects: the (a|a)* shape. */
+  const REDOS = '(?<=^|\\s)#(\\w+|\\w+)*$';
+  /** Matches the empty string, which the render loop must survive. */
+  const EMPTY_MATCHER = '#?\\w*';
+
+  let warn: jest.SpyInstance;
+  beforeEach(() => { warn = jest.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => { warn.mockRestore(); });
+
+  it('falls back to the default rather than running a backtracking tag regex', () => {
+    // The default still applies, so #tag is styled and foo#bar is not.
+    expect(tags(render('a #tag and foo#bar', REDOS))).toEqual([['hash', '#tag']]);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('ignores a backtracking exclude regex rather than running it', () => {
+    // With the exclude ignored, both tags survive.
+    expect(tags(render('a #one and #two', '', '(#\\w+)+'))).toEqual([
+      ['hash', '#one'], ['hash', '#two'],
+    ]);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('still renders an invalid regex as plain text via the default', () => {
+    expect(tags(render('a #tag here', '#['))).toEqual([['hash', '#tag']]);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('terminates on a regex that can match the empty string', () => {
+    // isRegexSafe accepts this one, so it really runs. The render loop advances
+    // lastIndex itself, so it must finish and lose no text.
+    const html = render('a #tag b', EMPTY_MATCHER);
+    expect(textOf(html)).toContain('#tag');
+    expect(textOf(html).replace(/\s+/g, ' ').trim()).toBe('a #tag b');
+  });
+});
