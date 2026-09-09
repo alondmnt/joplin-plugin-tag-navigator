@@ -1,5 +1,5 @@
 import type { ContentScriptContext, MarkdownItContentScriptModule } from 'api/types';
-import { tagClasses } from './utils';
+import { defaultTagCss, tagClasses } from './utils';
 import { injectStyleChunk } from './styleInjector';
 
 const TAG_REGEX_SETTING_KEY = 'itags.tagRegex';
@@ -9,20 +9,9 @@ const TAG_STYLE_SETTING_KEY = 'itags.tagStyle';
 // Default fallback regex for matching inline tags.
 const defTagRegex = /(^|\s)#([^\s#'",.()\[\]:;\?\\]+)/g;
 
-// Inline default styling because the web app blocks loading plugin CSS assets.
-// Wrapped in a CSS layer so Joplin's userstyle.css can override without !important.
-const TAG_STYLE_CSS = `@layer itagsDefaults;
-@layer itagsDefaults {
-  .itags-search-renderedTag {
-    background-color: #7698b3;
-    color: #ffffff;
-    padding: 0em 2px;
-    border-radius: 5px;
-    display: inline-block;
-    margin-bottom: 2px;
-    margin-top: 2px;
-  }
-}`;
+// Inline rather than a CSS asset, because the web app blocks loading plugin CSS
+// assets. Shares its definition with the panel and editor defaults.
+const TAG_STYLE_CSS = defaultTagCss('itags-search-renderedTag', { block: true });
 
 function cloneRegex(pattern: RegExp | null): RegExp | null {
   if (!pattern) return null;

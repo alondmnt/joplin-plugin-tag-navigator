@@ -4,28 +4,17 @@ import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defTagRegex, isRegexSafe, tagClasses } from './utils';
+import { defaultTagCss, defTagRegex, isRegexSafe, tagClasses } from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
 
 /**
- * Default tag appearance, matching the search panel and the Markdown preview.
- *
- * Wrapped in a cascade layer so that any unlayered rule overrides it without
- * needing !important: the `Inline tags: Editor style` setting on every platform,
- * and userstyle.css on desktop. Deliberately omits `display: inline-block` and
- * `margin`, which disturb caret placement and line height in the editor.
+ * Default tag appearance for the editor, from the definition shared with the
+ * panel and preview. Omits the block layout those two use, since inline-block
+ * and vertical margins disturb caret placement and line height here.
  */
-const DEFAULT_CSS = `@layer itagsEditorDefaults;
-@layer itagsEditorDefaults {
-  .${TAG_CLASS} {
-    background-color: #7698b3;
-    color: #ffffff;
-    border-radius: 5px;
-    padding: 0em 2px;
-  }
-}`;
+const DEFAULT_CSS = defaultTagCss(TAG_CLASS);
 
 type TagStyleSettings = {
   tagRegex: string;

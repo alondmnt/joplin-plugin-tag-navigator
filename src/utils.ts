@@ -147,3 +147,48 @@ export function tagClasses(tag: string, surfaceClass: string): string {
   const prefix = mapPrefixClass(tag);
   return `${SHARED_TAG_CLASS} ${SHARED_TAG_CLASS}--${prefix} ${surfaceClass} ${surfaceClass}--${prefix}`;
 }
+
+/** Declarations shared by the default tag styling on every surface. */
+const TAG_DEFAULT_DECLARATIONS = `    background-color: #7698b3;
+    color: #ffffff;
+    padding: 0em 2px;
+    border-radius: 5px;`;
+
+/** Hover colour, for surfaces where a tag is clickable. */
+const TAG_DEFAULT_HOVER = '#7aaab8';
+
+/**
+ * Default tag styling for one surface, as a cascade layer.
+ *
+ * Layered so that any unlayered rule overrides it without !important: the
+ * `Inline tags: Style` setting on every platform, and userstyle.css on desktop.
+ * Defining it here rather than once per surface keeps the colours from drifting
+ * apart, and gives all three surfaces the same override contract.
+ *
+ * @param surfaceClass The surface's own base class
+ * @param options.block Adds inline-block and vertical margins. Right for the
+ *   panel and preview; omitted in the editor, where they disturb caret
+ *   placement and line height.
+ * @param options.hover Adds a hover colour. Only for surfaces where tags are
+ *   clickable.
+ */
+export function defaultTagCss(
+  surfaceClass: string,
+  options: { block?: boolean; hover?: boolean } = {},
+): string {
+  const block = options.block ? `
+    display: inline-block;
+    margin-top: 2px;
+    margin-bottom: 2px;` : '';
+  const hover = options.hover ? `
+  .${surfaceClass}:hover {
+    background-color: ${TAG_DEFAULT_HOVER};
+  }` : '';
+
+  return `@layer itagsDefaults;
+@layer itagsDefaults {
+  .${surfaceClass} {
+${TAG_DEFAULT_DECLARATIONS}${block}
+  }${hover}
+}`;
+}

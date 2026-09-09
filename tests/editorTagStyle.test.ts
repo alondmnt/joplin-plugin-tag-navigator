@@ -20,7 +20,7 @@
 import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { defTagRegex, mapPrefixClass, tagClasses, SHARED_TAG_CLASS } from '../src/utils';
+import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss, SHARED_TAG_CLASS } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
 const MULTI_PREFIX = "(?<=^|\\s)([#@+]|\\/\\/)([^\\s#@'\",.()\\[\\]:;\\?\\\\]+)";
@@ -307,4 +307,51 @@ describe('tagClasses', () => {
       expect(classes).toContain(`itags-tag--${suffix}`);
       expect(classes).toContain(`itags-editor-tag--${suffix}`);
     });
+});
+
+describe('defaultTagCss', () => {
+  const editor = defaultTagCss('itags-editor-tag');
+  const preview = defaultTagCss('itags-search-renderedTag', { block: true });
+  const panel = defaultTagCss('itags-search-renderedTag', { block: true, hover: true });
+
+  it('gives every surface the same colours, so they cannot drift apart', () => {
+    for (const css of [editor, preview, panel]) {
+      expect(css).toContain('background-color: #7698b3');
+      expect(css).toContain('color: #ffffff');
+      expect(css).toContain('border-radius: 5px');
+      expect(css).toContain('padding: 0em 2px');
+    }
+  });
+
+  it('layers every surface, so unlayered user CSS wins without !important', () => {
+    for (const css of [editor, preview, panel]) {
+      expect(css).toMatch(/^@layer itagsDefaults;/);
+      expect(css).toContain('@layer itagsDefaults {');
+    }
+  });
+
+  it('omits the block layout in the editor, where it disturbs the caret', () => {
+    expect(editor).not.toContain('display: inline-block');
+    expect(editor).not.toContain('margin');
+  });
+
+  it('keeps the block layout where the panel and preview had it', () => {
+    for (const css of [preview, panel]) {
+      expect(css).toContain('display: inline-block');
+      expect(css).toContain('margin-top: 2px');
+      expect(css).toContain('margin-bottom: 2px');
+    }
+  });
+
+  it('adds hover only where tags are clickable', () => {
+    expect(panel).toContain('.itags-search-renderedTag:hover');
+    expect(panel).toContain('#7aaab8');
+    expect(preview).not.toContain(':hover');
+    expect(editor).not.toContain(':hover');
+  });
+
+  it('targets the class it is given', () => {
+    expect(editor).toContain('.itags-editor-tag {');
+    expect(preview).toContain('.itags-search-renderedTag {');
+  });
 });
