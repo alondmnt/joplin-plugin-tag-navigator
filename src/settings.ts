@@ -776,7 +776,8 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline tags: Style',
       description: 'Custom CSS for inline tags in the search panel, Markdown preview and editor. ' +
         'Target .itags-tag for all three, or .itags-tag--hash / --at / --plus / --slash for a ' +
-        'specific prefix. Also the only way to restyle tags on mobile.',
+        'specific prefix. Also the only way to restyle tags on mobile. ' +
+        'Toggle the panel or restart the app to update the search panel.',
     },
     'itags.periodicConversion': {
       value: 0,

@@ -103,7 +103,7 @@ export function sortTags(tags: string[], valueDelim: string): string[] {
  * happen to share a class name while the editor does not. The surface-specific
  * classes remain alongside it for per-surface targeting.
  */
-export const SHARED_TAG_CLASS = 'itags-tag';
+const SHARED_TAG_CLASS = 'itags-tag';
 
 // Map characters that are awkward in CSS selectors to readable class suffixes.
 const PREFIX_CLASS_MAP: Record<string, string> = {

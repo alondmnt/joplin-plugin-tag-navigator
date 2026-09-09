@@ -20,7 +20,7 @@
 import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss, SHARED_TAG_CLASS } from '../src/utils';
+import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
 const MULTI_PREFIX = "(?<=^|\\s)([#@+]|\\/\\/)([^\\s#@'\",.()\\[\\]:;\\?\\\\]+)";
@@ -284,9 +284,12 @@ describe('inCodeContext', () => {
 });
 
 describe('tagClasses', () => {
+  // Asserts the literal rather than the module's constant: this is the class
+  // name the README documents and users write CSS against, so a rename should
+  // fail here rather than quietly stay self-consistent.
   it('carries the shared class so one rule styles all three surfaces', () => {
     for (const surface of ['itags-editor-tag', 'itags-search-renderedTag']) {
-      expect(tagClasses('#tag', surface).split(' ')).toContain(SHARED_TAG_CLASS);
+      expect(tagClasses('#tag', surface).split(' ')).toContain('itags-tag');
     }
   });
 
