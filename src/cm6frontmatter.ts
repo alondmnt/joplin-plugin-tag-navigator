@@ -1,17 +1,12 @@
-// src/cm6frontmatter.ts (only the relevant parts shown)
 import type { ContentScriptContext, MarkdownEditorContentScriptModule } from 'api/types';
-import joplin from 'api';
 
-// bundle only this:
+// Bundled, because Joplin does not provide it:
 import { yamlFrontmatter } from '@codemirror/lang-yaml';
 
-// shared with Joplin:
+// Provided by Joplin at runtime, so these stay webpack externals:
 import { language, Language, syntaxTree, LanguageSupport } from '@codemirror/language';
 import { Compartment, Prec, RangeSetBuilder } from '@codemirror/state';
 import { EditorView, Decoration, ViewPlugin, ViewUpdate } from '@codemirror/view';
-
-  import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-  import { tags as t } from '@lezer/highlight';
 
 /* ---------- Dark/light detection (no .cm-dark required) ---------- */
 function parseRGB(input: string) {
