@@ -764,7 +764,8 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Search: Panel style',
-      description: 'Custom CSS for the search panel (toggle panel or restart app).',
+      description: 'Custom CSS for the search panel (toggle panel or restart app). ' +
+        'For tag appearance see Inline tags: Style.',
     },
     'itags.tagStyle': {
       value: '',

@@ -498,7 +498,9 @@ So `.itags-tag` styles tags everywhere, and the surface classes are there for wh
 
 The `Inline tags: Style` setting takes custom CSS and applies it to all three surfaces. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. On desktop you can use either that setting or `userstyle.css`.
 
-Two related settings cover the panels as a whole rather than tags: `Search: Panel style` and `Navigation: Panel style`. In the search panel these are applied after `Inline tags: Style`, so a panel-specific rule wins over the general tag look.
+Two related settings cover the panels as a whole rather than tags: `Search: Panel style` and `Navigation: Panel style`. In the search panel, `Inline tags: Style` is applied first, so a panel-specific rule there wins over the general tag look.
+
+The bundled default appearance is the same on all three surfaces and ships inside a CSS cascade layer, so any rule you write overrides it without needing `!important`. The editor's default omits `display: inline-block` and vertical margins, which disturb caret placement and line height there.
 
 <details>
 <summary>CSS examples for tag styling</summary>
