@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { SettingItemType } from 'api/types';
 import { clearApiResponse } from './memory';
-import { defTagRegex, escapeRegex } from './utils';
+import { defTagRegex, escapeRegex, isRegexSafe } from './utils';
 
 /** Cached settings — invalidated on settings change */
 let _tagSettingsCache: TagSettings | null = null;
@@ -122,26 +122,6 @@ export interface ConversionSettings {
  * @param pattern - The regex pattern to validate
  * @returns true if safe, false if potentially dangerous
  */
-function isRegexSafe(pattern: string): boolean {
-  // Check for potentially dangerous patterns that could cause ReDoS
-  const dangerousPatterns = [
-    // Nested quantifiers like (a+)+ or (a*)* or (a+)*
-    /\([^)]*[+*]\)[+*]/,
-    // Alternation with overlapping patterns like (a|a)*
-    /\([^)]*\|[^)]*\)[+*]/,
-    // Excessive nesting depth
-    /\([^)]*\([^)]*\([^)]*\(/,
-    // Very long strings that could cause exponential backtracking
-    /.{200,}/,
-    // Catastrophic backtracking patterns like (.*)*
-    /\(\.\*\)[+*]/,
-    // Multiple consecutive quantifiers (but allow legitimate non-greedy patterns like *?, +?, ??)
-    /[+*]{2,}|[+*?]\?[+*]|\?[+*]/,
-  ];
-
-  return !dangerousPatterns.some(dangerous => dangerous.test(pattern));
-}
-
 /**
  * Safely creates a RegExp from user input with validation
  * @param pattern - The regex pattern string

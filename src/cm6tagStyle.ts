@@ -3,7 +3,7 @@ import { syntaxTree } from '@codemirror/language';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defTagRegex, mapPrefixClass } from './utils';
+import { defTagRegex, isRegexSafe, mapPrefixClass } from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
@@ -67,7 +67,9 @@ function canMatchEmpty(pattern: RegExp): boolean {
 export function compileTagRegex(source: string): RegExp {
   if (source) {
     try {
-      if (canMatchEmpty(new RegExp(source, 'g'))) {
+      if (!isRegexSafe(source)) {
+        console.warn('Tag Navigator: tag regex can backtrack catastrophically, using the default.', source);
+      } else if (canMatchEmpty(new RegExp(source, 'g'))) {
         console.warn('Tag Navigator: tag regex can match an empty string, using the default.', source);
       } else {
         return new RegExp(source, 'g');
@@ -80,12 +82,17 @@ export function compileTagRegex(source: string): RegExp {
 }
 
 /**
- * Compiles the exclude pattern, or returns null when unset or invalid.
- * Only ever used with .test, so it needs no empty-match guard.
+ * Compiles the exclude pattern, or returns null when unset, invalid, or able to
+ * backtrack catastrophically. Only ever used with .test, so it needs no
+ * empty-match guard, but it does run once per matched tag.
  */
 export function compileExcludeRegex(source: string): RegExp | null {
   if (!source) { return null; }
   try {
+    if (!isRegexSafe(source)) {
+      console.warn('Tag Navigator: exclude regex can backtrack catastrophically, ignoring it.', source);
+      return null;
+    }
     return new RegExp(source, 'g');
   } catch (error) {
     console.warn('Tag Navigator: invalid exclude regex, ignoring it.', error);
@@ -113,9 +120,12 @@ function applyStyle(userCss: string): void {
  * Matches the panel (replaceOutsideBackticks) and the preview
  * (markSkippableTextTokens), which both skip code.
  *
- * The Markdown parser names every code context with "Code" in it - InlineCode,
- * FencedCode, CodeBlock, CodeText, CodeMark, CodeInfo - and no other node does,
- * so substring matching survives parser version changes.
+ * Every code node in Joplin's Markdown parser has "Code" in its name, and no
+ * other node does, so substring matching survives parser version changes.
+ * Checked against Joplin's own tree: @lezer/markdown contributes CodeBlock,
+ * CodeInfo, CodeMark, CodeText, FencedCode, IndentedCode and InlineCode, while
+ * Joplin's extensions add only FrontMatter*, InlineMath*, BlockMath*, Highlight*
+ * and Insert* - none of which contain "Code".
  */
 function inCodeContext(view: EditorView, pos: number): boolean {
   let node = syntaxTree(view.state).resolveInner(pos, 1);

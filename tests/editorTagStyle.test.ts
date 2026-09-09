@@ -7,6 +7,12 @@
  * below is the regression net for that, and the reason the table exists is that
  * an earlier guard which only tested against '' let three shapes through.
  *
+ * compileTagRegex also applies isRegexSafe, shared with the indexer. The two
+ * gates cover different hazards: isRegexSafe catches catastrophic backtracking
+ * (measured at ~10s for a single exec on an 18-character line), canMatchEmpty
+ * catches the zero-length match that spins MatchDecorator's loop. The editor
+ * needs both, since it runs the pattern over the viewport on every keystroke.
+ *
  * tagBounds is the arithmetic that decides which characters get painted.
  */
 import { compileTagRegex, compileExcludeRegex, tagBounds } from '../src/cm6tagStyle';
@@ -45,6 +51,15 @@ describe('compileTagRegex', () => {
 
   it('falls back to the default when the pattern does not compile', () => {
     expect(compileTagRegex('#[').source).toBe(defTagRegex.source);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['(?<=^|\\s)#(\\w+|\\w+)*$', 'overlapping alternation, (a|a)* shape'],
+    ['(#\\w+)+', 'nested quantifier'],
+    ['(.*)*', 'catastrophic classic'],
+  ])('rejects %s (%s), which would hang the editor by backtracking', (source) => {
+    expect(compileTagRegex(source).source).toBe(defTagRegex.source);
     expect(warn).toHaveBeenCalled();
   });
 
@@ -94,6 +109,11 @@ describe('compileExcludeRegex', () => {
 
   it('returns null when the pattern does not compile', () => {
     expect(compileExcludeRegex('#[')).toBeNull();
+  });
+
+  it('returns null for a pattern that can backtrack catastrophically', () => {
+    expect(compileExcludeRegex('(#\\w+)+')).toBeNull();
+    expect(warn).toHaveBeenCalled();
   });
 
   it('compiles the hex-colour example from the setting description', () => {
