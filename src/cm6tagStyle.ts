@@ -140,12 +140,13 @@ function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecor
   return new MatchDecorator({
     regexp: tagRegex,
     decorate: (add, from, _to, match, view) => {
-      // A tag regex may capture the preceding whitespace, (^|\s)#..., instead of
-      // using a lookbehind, so anchor the decoration at the tag rather than at
-      // the start of the match, or the leading space gets painted too.
-      const tag = match[0].replace(/^\s+/, '');
-      const lead = match[0].length - tag.length;
+      // A tag regex may capture the whitespace around the tag rather than use a
+      // lookbehind - (^|\s)#... leads with a space, (^|\s)#(\S+)(\s|$) trails
+      // one - so anchor the decoration on the tag itself, or the space gets
+      // painted. This is also what the panel maps its prefix class from.
+      const tag = match[0].trim();
       if (!tag) { return; }
+      const lead = match[0].indexOf(tag);
 
       if (excludeRegex) {
         excludeRegex.lastIndex = 0;
