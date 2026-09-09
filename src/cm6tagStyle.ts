@@ -33,35 +33,39 @@ type TagStyleSettings = {
 };
 
 /**
- * Sample text a candidate pattern is probed against. Covers a line start, a
- * trailing space, whitespace boundaries, a mid-word hash and each documented
- * prefix, so a pattern whose zero-length match needs context is caught along
- * with one that matches the empty string outright.
+ * A RegExp whose exec() never returns a zero-length match at a stalled position.
+ *
+ * MatchDecorator iterates `while (m = re.exec(text))` without advancing lastIndex
+ * itself (iterMatches, updateRange in @codemirror/view), so a single empty match
+ * spins that loop and freezes the editor on every keystroke. Advancing lastIndex
+ * here makes the loop provably terminate for any pattern.
+ *
+ * This replaced two heuristics that both looked adequate and were not. Testing
+ * the pattern against '' misses one whose emptiness needs context, such as
+ * \b\w* or (?<=\s)\S*. Probing it against fixed sample text misses one whose
+ * emptiness needs a character the sample happens to lack in that position: the
+ * sample had no "#" followed by a non-word character, so (?<=#)\w* passed and
+ * then looped on any note containing a Markdown heading. No fixed sample can be
+ * sound, because the pattern chooses which context makes it empty. Guaranteeing
+ * termination at the loop is the only check that does not depend on the input.
  */
-const PROBE_TEXT = ' #tag @a +b //c\nfoo#bar\nx ';
-
-/**
- * Whether a pattern can produce a zero-length match, which is the condition that
- * freezes the editor. Testing against '' alone is not enough: a pattern led by a
- * zero-width assertion, such as \b\w* or (?<=\s)\S*, matches the empty string
- * only in context and would slip through.
- */
-function canMatchEmpty(pattern: RegExp): boolean {
-  let match: RegExpExecArray | null;
-  let count = 0;
-  while ((match = pattern.exec(PROBE_TEXT)) !== null) {
-    if (match[0].length === 0) { return true; }
-    // More matches than characters means exec is not advancing.
-    if (++count > PROBE_TEXT.length) { return true; }
+class NonEmptyRegExp extends RegExp {
+  exec(text: string): RegExpExecArray | null {
+    let match = super.exec(text);
+    while (match && match[0].length === 0) {
+      if (match.index >= text.length) { return null; }
+      this.lastIndex = match.index + 1;
+      match = super.exec(text);
+    }
+    return match;
   }
-  return false;
 }
 
 /**
  * Compiles a user-supplied tag pattern, falling back to the default when it does
- * not compile or can produce a zero-length match. MatchDecorator iterates exec()
- * without advancing lastIndex itself, so a single empty match spins its loop and
- * freezes the editor on every keystroke.
+ * not compile or can backtrack catastrophically. Zero-length matches need no
+ * rejection: NonEmptyRegExp makes them harmless rather than fatal, so a pattern
+ * that only sometimes matches empty still highlights the tags it does match.
  * A fresh instance per call matters, because MatchDecorator mutates lastIndex.
  */
 export function compileTagRegex(source: string): RegExp {
@@ -69,16 +73,14 @@ export function compileTagRegex(source: string): RegExp {
     try {
       if (!isRegexSafe(source)) {
         console.warn('Tag Navigator: tag regex can backtrack catastrophically, using the default.', source);
-      } else if (canMatchEmpty(new RegExp(source, 'g'))) {
-        console.warn('Tag Navigator: tag regex can match an empty string, using the default.', source);
       } else {
-        return new RegExp(source, 'g');
+        return new NonEmptyRegExp(source, 'g');
       }
     } catch (error) {
       console.warn('Tag Navigator: invalid tag regex, using the default.', error);
     }
   }
-  return new RegExp(defTagRegex.source, 'g');
+  return new NonEmptyRegExp(defTagRegex.source, 'g');
 }
 
 /**

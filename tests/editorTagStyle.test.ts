@@ -1,11 +1,13 @@
 /**
  * Tests for the editor tag styling helpers.
  *
- * compileTagRegex is the guard against an editor freeze: MatchDecorator iterates
- * exec() without advancing lastIndex itself, so a pattern able to produce a
- * zero-length match spins its loop on every keystroke. The accept/reject table
- * below is the regression net for that, and the reason the table exists is that
- * an earlier guard which only tested against '' let three shapes through.
+ * compileTagRegex guards against an editor freeze: MatchDecorator iterates exec()
+ * without advancing lastIndex itself, so a zero-length match spins its loop on
+ * every keystroke. Two heuristics were tried and both let shapes through - a
+ * test against '' missed \b\w*, and a fixed sample probe missed (?<=#)\w*,
+ * which is empty only where "#" precedes a non-word character, i.e. on every
+ * Markdown heading. The guard is now structural (NonEmptyRegExp), so these tests
+ * assert termination on real text rather than membership of a reject list.
  *
  * compileTagRegex also applies isRegexSafe, shared with the indexer. The two
  * gates cover different hazards: isRegexSafe catches catastrophic backtracking
@@ -63,6 +65,9 @@ describe('compileTagRegex', () => {
     expect(warn).toHaveBeenCalled();
   });
 
+  // These are no longer rejected: NonEmptyRegExp makes a zero-length match
+  // harmless rather than fatal, so the pattern is honoured and still highlights
+  // whatever it does match. The property that matters is termination.
   it.each([
     ['\\w*', 'unanchored star'],
     ['[#@]*', 'character-class star'],
@@ -70,23 +75,34 @@ describe('compileTagRegex', () => {
     ['.*', 'match anything'],
     ['\\b\\w*', 'leading word boundary'],
     ['(?<=\\s)\\S*', 'leading lookbehind, star'],
-    ['(?<=#)x*', 'contextual empty match'],
-  ])('rejects %s (%s), which would freeze the editor', (source) => {
-    expect(compileTagRegex(source).source).toBe(defTagRegex.source);
+    ['(?<=#)x*', 'empty match needing context'],
+    ['(?<=#)\\w*', 'empty only where # precedes a non-word char'],
+    ['(?<=[#@])\\w*', 'same, character class'],
+    ['(?<=\\+)\\S*', 'same, plus prefix'],
+  ])('honours %s (%s) and still terminates', (source) => {
+    expect(compileTagRegex(source).source).toBe(source);
   });
 
+  // A Markdown heading is "#" followed by a space, which is what defeated the
+  // fixed-sample probe this guard replaced. Every note has headings.
   it.each([
-    [defTagRegex.source, 'the default'],
-    [MULTI_PREFIX, 'the documented multi-prefix example'],
-    [CAPTURE_GROUP, 'the capture-group form'],
-    ['#[a-z]+', 'a plain literal pattern'],
-    ['(?<=^|\\s)@\\w+', 'a single-prefix lookbehind pattern'],
-  ])('accepts %s (%s)', (source) => {
-    expect(compileTagRegex(source).source).toBe(source);
+    '# Heading\n\nsome #tag here\n',
+    '## Deeper\n#tag\n',
+    'a @ b + c // d\n',
+    '#\n',
+    '',
+  ])('terminates on real note text: %j', (text) => {
+    for (const source of ['(?<=#)\\w*', '(?<=[#@])\\w*', '(?<=\\+)\\S*', '\\w*',
+                          '\\b\\w*', '(?<=\\s)\\S*', defTagRegex.source, MULTI_PREFIX]) {
+      const result = execAll(compileTagRegex(source), text);
+      expect(result.stalled).toBe(false);
+      expect(result.matches.every(m => m.length > 0)).toBe(true);
+    }
   });
 
   it('never returns a pattern that stalls MatchDecorator', () => {
     for (const source of ['', '#[', '\\w*', '\\b\\w*', '(?<=\\s)\\S*', '(?<=#)x*',
+                          '(?<=#)\\w*', '(?<=[#@])\\w*', '(?<=\\+)\\S*', '(.*)*',
                           defTagRegex.source, MULTI_PREFIX, CAPTURE_GROUP]) {
       expect(execAll(compileTagRegex(source), sample).stalled).toBe(false);
     }
