@@ -120,7 +120,11 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     // A thematic break matches a naive marker test - `* * *` is an asterisk and
     // a space - and would exempt the rest of the note from code detection.
     const isThematicBreak = /^ {0,3}([-*_])[ \t]*(\1[ \t]*){2,}$/.test(line);
-    if (!isThematicBreak && /^[ \t]*([-*+]|\d+[.)])[ \t]/.test(line)) {
+    // A marker only opens a list from outside an indented block. Otherwise a
+    // snippet whose first line is marker-shaped - numbered steps, a diff hunk -
+    // opens no block at all, and the flag then sticks and leaks the remainder.
+    const isMarker = !isThematicBreak && /^[ \t]*([-*+]|\d+[.)])[ \t]/.test(line);
+    if (isMarker && (lineIndent < 4 || inList)) {
       inList = true;
     } else if (!lineIsBlank && lineIndent === 0 && prevLineBlank) {
       // Only a new top-level block closes the list. A margin line straight

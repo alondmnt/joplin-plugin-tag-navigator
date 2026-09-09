@@ -120,6 +120,15 @@ describe('shapes that only look like list markers', () => {
     expect(tags('para\n\n***\n\n    #incode\n')).toEqual([]);
   });
 
+  it('does not let a marker-shaped first line cancel the block', () => {
+    // A pasted snippet whose first line looks like a marker - numbered steps,
+    // a diff hunk - would otherwise open no block, and the flag would then
+    // stick and leak the rest of it.
+    expect(tags('para\n\n    - #probe\n')).toEqual([]);
+    expect(tags('steps:\n\n    1. setup\n    #include <x.h> #probe\n')).toEqual([]);
+    expect(tags('diff:\n\n    - old #probe\n    + new\n')).toEqual([]);
+  });
+
   it('still treats a real list marker as a list', () => {
     expect(tags('- a\n\n    #inlist\n')).toContain('#inlist');
     expect(tags('* a\n\n    #inlist\n')).toContain('#inlist');
