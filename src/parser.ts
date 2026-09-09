@@ -88,6 +88,9 @@ export interface TagLineInfo {
  */
 export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
   let inCodeBlock = false;
+  let inIndentedCode = false;
+  let inList = false;
+  let prevLineBlank = true;  // the start of a note behaves like the line after a blank
   let isResultBlock = false;
   let isQueryBlock = false;
   let tagsMap = new Map<string, { lines: Set<number>; count: number }>();
@@ -102,6 +105,45 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     if (/^\s*```/.test(line)) {
       inCodeBlock = !inCodeBlock;
     }
+    // Track indented (four-space) code blocks. The fence test above cannot see
+    // them, so tags inside a pasted snippet were indexed: a shebang alone yields
+    // three, since nested tags split on '/'.
+    //
+    // List state is needed because an indented code block and a paragraph
+    // continuing a list item are identical line by line - a blank line, then the
+    // indent - and only the open list tells them apart. Tags on indented list
+    // content are ordinary usage, so the list has to win.
+    // Indent in columns, counting a tab as four, since a single tab opens an
+    // indented block just as four spaces do.
+    const lineIndent = line.match(/^[ \t]*/)[0].replace(/\t/g, '    ').length;
+    const lineIsBlank = /^\s*$/.test(line);
+    // A thematic break matches a naive marker test - `* * *` is an asterisk and
+    // a space - and would exempt the rest of the note from code detection.
+    const isThematicBreak = /^ {0,3}([-*_])[ \t]*(\1[ \t]*){2,}$/.test(line);
+    // A marker only opens a list from outside an indented block. Otherwise a
+    // snippet whose first line is marker-shaped - numbered steps, a diff hunk -
+    // opens no block at all, and the flag then sticks and leaks the remainder.
+    const isMarker = !isThematicBreak && /^[ \t]*([-*+]|\d+[.)])[ \t]/.test(line);
+    if (isMarker && (lineIndent < 4 || inList)) {
+      inList = true;
+    } else if (!lineIsBlank && lineIndent === 0 && prevLineBlank) {
+      // Only a new top-level block closes the list. A margin line straight
+      // after list content is a lazy continuation of that item's paragraph, so
+      // the list stays open and indented content below it is still list
+      // content - closing here would drop its tags.
+      inList = false;
+    }
+    if (!inCodeBlock) {
+      if (inIndentedCode) {
+        // Blank lines stay inside the block; a line back at the margin ends it,
+        // and ends it before the skip below, so that line is still indexed.
+        if (!lineIsBlank && lineIndent < 4) { inIndentedCode = false; }
+      } else if (!lineIsBlank && lineIndent >= 4 && prevLineBlank && !inList) {
+        inIndentedCode = true;
+      }
+    }
+    prevLineBlank = lineIsBlank;
+
     if (line.match(resultsStart)) {
       isResultBlock = true;
     }
@@ -117,7 +159,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
     const isEmptyLine = line.match(/^\s*$/);  // if we skip an empty line this means that inheritance isn't broken
     // Skip code blocks, front matter, result blocks, query blocks, and empty lines
     const isMatterBlock = matterRange && lineIndex >= matterRange.startLine && lineIndex <= matterRange.endLine;
-    if ((inCodeBlock && tagSettings.ignoreCodeBlocks) || isMatterBlock || isResultBlock || isQueryBlock || isEmptyLine) {
+    if (((inCodeBlock || inIndentedCode) && tagSettings.ignoreCodeBlocks) || isMatterBlock || isResultBlock || isQueryBlock || isEmptyLine) {
       return;
     }
 

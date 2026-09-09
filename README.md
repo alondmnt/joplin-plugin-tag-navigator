@@ -137,6 +137,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - When the `Tag inheritance` setting is enabled (by default), tags are automatically inherited in three ways:
     1. **Outline/indentation inheritance**: Tags are inherited from parent items to their children based on indentation levels.
         - Example: If `#project/website` appears on a parent line, all indented child lines will also be tagged with `#project/website`
+        - Exception: four or more spaces of indent after a blank line, outside a list, is a Markdown code block. Those lines are skipped entirely when `Ignore code blocks` is on, so they neither carry nor inherit tags.
     2. **Heading inheritance**: Tags are inherited from headings to all content under that heading.
         - Example: If `## Meeting Notes #urgent` appears as a heading, all other *tagged lines* under that heading will also be tagged with `#urgent`
     3. **Top of the note inheritance**: Tags are inherited from the first 2 lines of the note.
@@ -496,7 +497,7 @@ Every rendered tag carries four classes, on all three surfaces that display tags
 
 So `.itags-tag` styles tags everywhere, and the surface classes are there for when you want one surface to differ.
 
-Tags inside code are never styled on any of the three surfaces: code should look like code. The `Ignore code blocks` setting governs whether they are *indexed* - turn it off and tags in code blocks become searchable, but they still render as code.
+The `Ignore code blocks` setting governs whether tags inside code are *indexed*, not how they are styled. The editor and Markdown preview never style them. The search panel is not yet consistent here: it paints tags in any line it displays, including code lines pulled in as surrounding context, so a tag in a code block can appear styled there.
 
 The `Inline tags: Style` setting takes custom CSS and applies it to all three surfaces. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. On desktop you can use either that setting or `userstyle.css`.
 
