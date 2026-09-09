@@ -129,11 +129,12 @@ function inCodeContext(view: EditorView, pos: number): boolean {
 /**
  * Builds the decorator that marks up tags in the visible ranges.
  *
- * No `boundary` option: it is only an optimisation, and it requires a character
- * that can never occur inside a match, which whitespace cannot guarantee once a
- * user supplies the capture-group form. Without it MatchDecorator re-scans the
- * whole changed line against the real line text, which is correct for every
- * pattern shape and cheap for a Markdown line.
+ * No `boundary` option: it is only an optimisation of MatchDecorator's patch
+ * path, and it requires a character that can never occur inside a match, which
+ * whitespace cannot guarantee once a user supplies the capture-group form.
+ * Without it that path re-scans the whole changed line against the real line
+ * text, which is correct for every pattern shape. It matters little either way,
+ * since the view plugin below rebuilds the viewport on every doc change.
  */
 function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecorator {
   return new MatchDecorator({
@@ -176,13 +177,19 @@ function tagStylePlugin(settings: TagStyleSettings) {
     }
 
     update(update: ViewUpdate) {
-      // updateDeco needs the set this decorator produced for the pre-update
-      // state, so it has to run before any rebuild.
-      this.decorations = decorator.updateDeco(update, this.decorations);
-      // inCodeContext reads the syntax tree, and a tree that finishes parsing
-      // after the decorations were built changes neither doc nor viewport.
-      if (syntaxTree(update.startState) !== syntaxTree(update.state)) {
+      // Rebuild rather than patch whenever the syntax tree may have moved, since
+      // inCodeContext reads it and a code context can span lines: typing the
+      // third backtick of a fence turns everything below into FencedCode, and
+      // updateDeco only rescans the changed line, so those lines would keep
+      // stale decorations until the viewport moved.
+      //
+      // The tree also takes a new identity on every doc change, so this is the
+      // branch that runs while typing. updateDeco handles the rest, including
+      // viewport moves, which it services with its own createDeco call.
+      if (update.docChanged || syntaxTree(update.startState) !== syntaxTree(update.state)) {
         this.decorations = decorator.createDeco(update.view);
+      } else {
+        this.decorations = decorator.updateDeco(update, this.decorations);
       }
     }
   }, { decorations: value => value.decorations });
