@@ -1,3 +1,25 @@
+# v2.11.0
+
+- added: inline tag highlighting in the Markdown editor, built in - no longer needs Rich Markdown
+    - new setting `Inline tags: Highlight in editor` (on by default)
+    - skips tags inside code, matching the Markdown preview
+- added: setting `Inline tags: Style`, custom CSS for inline tags on all three surfaces (search panel, Markdown preview, editor)
+    - the only way to restyle tags on mobile, where `userstyle.css` cannot be edited
+    - if you highlight tags with Rich Markdown too, remove its `rm-tag` class or turn off `Inline tags: Highlight in editor`, or tags are styled twice
+- added: shared classes `itags-tag` and `itags-tag--hash` / `--at` / `--plus` / `--slash`, so one CSS rule styles tags everywhere
+    - the per-surface classes (`itags-search-renderedTag`, `itags-editor-tag`) remain for styling one surface differently
+- improved: the default tag appearance is defined once for all three surfaces, so they cannot drift apart, and ships in a CSS cascade layer so your own rules override it without `!important`
+- improved: `Search: Panel style` points at `Inline tags: Style` for tag appearance
+- fixed: tags inside indented (four-space) code blocks are no longer indexed - a pasted shell or C snippet added junk tags such as `#!/bin/bash`, `#define` and `#include`
+    - turn off `Ignore code blocks` to index them again
+    - tags on indented list content are unaffected
+- fixed: in the Markdown preview, `@mention` and `+project` tags kept their leading space and got the wrong prefix class when the tag regex captured surrounding whitespace
+- fixed: a tag regex that can backtrack catastrophically is now rejected in the Markdown preview, as it already was when indexing
+- fixed: custom CSS containing `</style>` can no longer break out of the style element and inject markup into a note
+- fixed: `Ignore code blocks` and the tag regex settings now describe when they take effect and what they cover
+
+---
+
 # [v2.10.7](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.10.7)
 *Released on 2026-06-19T12:31:37Z*
 

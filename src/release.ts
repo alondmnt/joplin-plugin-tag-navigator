@@ -1,10 +1,9 @@
 export const RELEASE_NOTES = {
-    version: "v2.10.0",
-    notes: `v2.10.0:
-- added: query mode 'CNF', AND of groups of tags (default for new queries)
-- added: right-click in query area to switch between AND (all groups) and OR (any group) modes
-- added: shift+click on nav panel tag to insert into editor (#35)
-- improved: search tag at cursor keyboard shortcut (Ctrl+Alt+T)
-- fixed: filter highlighting breaking kanban note views
-- fixed: quoted filter phrases were case-sensitive
+    version: "v2.11.0",
+    notes: `v2.11.0:
+- added: inline tag highlighting in the Markdown editor, built in - no longer needs Rich Markdown
+- added: setting 'Inline tags: Style' and the class itags-tag, to style tags in the editor, preview and search panel from one place. This is the only way to restyle tags on mobile
+- fixed: tags inside indented (four-space) code blocks are no longer indexed. Turn off 'Ignore code blocks' to index them again
+
+If you currently highlight tags with Rich Markdown, remove its rm-tag custom class and stylesheet rule, or turn off 'Inline tags: Highlight in editor' - otherwise both will style the same tags.
 `};
