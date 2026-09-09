@@ -83,7 +83,7 @@ export function compileTagRegex(source: string): RegExp {
  * Compiles the exclude pattern, or returns null when unset or invalid.
  * Only ever used with .test, so it needs no empty-match guard.
  */
-function compileExcludeRegex(source: string): RegExp | null {
+export function compileExcludeRegex(source: string): RegExp | null {
   if (!source) { return null; }
   try {
     return new RegExp(source, 'g');
@@ -127,6 +127,19 @@ function inCodeContext(view: EditorView, pos: number): boolean {
 }
 
 /**
+ * Locates the tag within a raw match, as an offset and the tag text.
+ *
+ * A tag regex may capture the whitespace around the tag rather than use a
+ * lookbehind - (^|\s)#... leads with a space, (^|\s)#(\S+)(\s|$) trails one -
+ * so the decoration is anchored on the tag itself, or the whitespace gets
+ * painted. This is also what the panel maps its prefix class from.
+ */
+export function tagBounds(matchText: string): { tag: string; lead: number } {
+  const tag = matchText.trim();
+  return { tag, lead: tag ? matchText.indexOf(tag) : 0 };
+}
+
+/**
  * Builds the decorator that marks up tags in the visible ranges.
  *
  * No `boundary` option: it is only an optimisation of MatchDecorator's patch
@@ -140,13 +153,8 @@ function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecor
   return new MatchDecorator({
     regexp: tagRegex,
     decorate: (add, from, _to, match, view) => {
-      // A tag regex may capture the whitespace around the tag rather than use a
-      // lookbehind - (^|\s)#... leads with a space, (^|\s)#(\S+)(\s|$) trails
-      // one - so anchor the decoration on the tag itself, or the space gets
-      // painted. This is also what the panel maps its prefix class from.
-      const tag = match[0].trim();
+      const { tag, lead } = tagBounds(match[0]);
       if (!tag) { return; }
-      const lead = match[0].indexOf(tag);
 
       if (excludeRegex) {
         excludeRegex.lastIndex = 0;
