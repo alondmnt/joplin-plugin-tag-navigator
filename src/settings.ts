@@ -444,7 +444,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Inline tags: Highlight in editor',
-      description: 'Requires restart',
+      description: 'Requires restart (registers an editor content script).',
     },
     'itags.renderFrontMatter': {
       value: true,
@@ -775,7 +775,7 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline tags: Editor style',
       description: 'Custom CSS for inline tags in the editor, overriding the default style. ' +
         'Target .itags-editor-tag, or .itags-editor-tag--hash / --at / --plus / --slash ' +
-        'for a specific prefix. Requires restart.',
+        'for a specific prefix. Takes effect when the editor reloads.',
     },
     'itags.periodicConversion': {
       value: 0,
@@ -804,7 +804,7 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Tag regex',
       description: 'Custom regex to match tags. Leave empty to use the default. ' +
-        'Search updates immediately; editor highlighting requires restart. ' +
+        'Search updates immediately; editor highlighting when the editor reloads. ' +
         'Example for @mentions, +projects and //due-dates: (?<=^|\\s)([#@+]|\\/\\/)([^\\s#@\'",.()\\[\\]:;\\?\\\\]+)',
     },
     'itags.excludeRegex': {
@@ -815,7 +815,7 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Exclude regex',
       description: 'Custom regex to exclude tags. Leave empty to not exclude any. ' +
-        'Search updates immediately; editor highlighting requires restart. ' +
+        'Search updates immediately; editor highlighting when the editor reloads. ' +
         'Example to filter hex colors: #[a-fA-F0-9]{6}$',
     },
     'itags.todayTag': {
