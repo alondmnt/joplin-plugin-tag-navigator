@@ -20,7 +20,7 @@
 import { compileTagRegex, compileExcludeRegex, tagBounds, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
-import { defTagRegex, mapPrefixClass } from '../src/utils';
+import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss } from '../src/utils';
 
 /** The multi-prefix example from the `Tag regex` setting description. */
 const MULTI_PREFIX = "(?<=^|\\s)([#@+]|\\/\\/)([^\\s#@'\",.()\\[\\]:;\\?\\\\]+)";
@@ -280,5 +280,81 @@ describe('inCodeContext', () => {
     expect(inCodeContext(state(doc), doc.indexOf('#before'))).toBe(false);
     expect(inCodeContext(state(doc), doc.indexOf('#inside'))).toBe(true);
     expect(inCodeContext(state(doc), doc.indexOf('#after'))).toBe(false);
+  });
+});
+
+describe('tagClasses', () => {
+  // Asserts the literal rather than the module's constant: this is the class
+  // name the README documents and users write CSS against, so a rename should
+  // fail here rather than quietly stay self-consistent.
+  it('carries the shared class so one rule styles all three surfaces', () => {
+    for (const surface of ['itags-editor-tag', 'itags-search-renderedTag']) {
+      expect(tagClasses('#tag', surface).split(' ')).toContain('itags-tag');
+    }
+  });
+
+  it('gives the shared and surface classes matching prefix variants', () => {
+    expect(tagClasses('@who', 'itags-editor-tag').split(' ')).toEqual([
+      'itags-tag', 'itags-tag--at', 'itags-editor-tag', 'itags-editor-tag--at',
+    ]);
+  });
+
+  it('keeps the surface class, so per-surface rules still work', () => {
+    expect(tagClasses('#tag', 'itags-search-renderedTag')).toContain('itags-search-renderedTag--hash');
+    expect(tagClasses('#tag', 'itags-editor-tag')).toContain('itags-editor-tag--hash');
+  });
+
+  it.each([['#a', 'hash'], ['@a', 'at'], ['+a', 'plus'], ['//a', 'slash']])(
+    'maps %s to --%s on both the shared and surface class', (tag, suffix) => {
+      const classes = tagClasses(tag, 'itags-editor-tag');
+      expect(classes).toContain(`itags-tag--${suffix}`);
+      expect(classes).toContain(`itags-editor-tag--${suffix}`);
+    });
+});
+
+describe('defaultTagCss', () => {
+  const editor = defaultTagCss('itags-editor-tag');
+  const preview = defaultTagCss('itags-search-renderedTag', { block: true });
+  const panel = defaultTagCss('itags-search-renderedTag', { block: true, hover: true });
+
+  it('gives every surface the same colours, so they cannot drift apart', () => {
+    for (const css of [editor, preview, panel]) {
+      expect(css).toContain('background-color: #7698b3');
+      expect(css).toContain('color: #ffffff');
+      expect(css).toContain('border-radius: 5px');
+      expect(css).toContain('padding: 0em 2px');
+    }
+  });
+
+  it('layers every surface, so unlayered user CSS wins without !important', () => {
+    for (const css of [editor, preview, panel]) {
+      expect(css).toMatch(/^@layer itagsDefaults;/);
+      expect(css).toContain('@layer itagsDefaults {');
+    }
+  });
+
+  it('omits the block layout in the editor, where it disturbs the caret', () => {
+    expect(editor).not.toContain('display: inline-block');
+    expect(editor).not.toContain('margin');
+  });
+
+  it('keeps the block layout where the panel and preview had it', () => {
+    for (const css of [preview, panel]) {
+      expect(css).toContain('display: inline-block');
+      expect(css).toContain('margin-top: 2px');
+      expect(css).toContain('margin-bottom: 2px');
+    }
+  });
+
+  it('adds hover only where tags are clickable', () => {
+    expect(panel).toContain('.itags-search-renderedTag:hover');
+    expect(panel).toContain('#7aaab8');
+    expect(preview).not.toContain(':hover');
+    expect(editor).not.toContain(':hover');
+  });
+
+  it('targets the class it is given', () => {
+    expect(editor).toContain('.itags-editor-tag {');
+    expect(preview).toContain('.itags-search-renderedTag {');
   });
 });

@@ -437,16 +437,10 @@ hr {
     margin-top: 5px;
 }
 
-.itags-search-renderedTag {
-	background-color: #7698b3;
-	color: white;
-	padding: 0em 2px;
-	border-radius: 5px;
-	display: inline-block;
-    margin-bottom: 2px;
-    margin-top: 2px;
-}
-.itags-search-renderedTag:hover { background-color: #7aaab8; }
+/* Tag appearance comes from the shared default in utils.defaultTagCss, injected
+   into the panel HTML inside a cascade layer so the `Inline tags: Style` setting
+   overrides it. Keeping it here would put it in a head stylesheet, where it
+   would only be overridable by document order. */
 
 .itags-search-renderedFilter {
     background-color: #eeee88;

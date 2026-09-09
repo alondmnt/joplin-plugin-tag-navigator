@@ -4,7 +4,7 @@ import * as markdownItMark from 'markdown-it-mark';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys, DEFAULT_QUERY_MODE } from './settings';
-import { escapeRegex, mapPrefixClass } from './utils';
+import { defaultTagCss, escapeRegex, tagClasses } from './utils';
 import { GroupedResult, Query, QueryRecord, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
@@ -127,6 +127,8 @@ async function initializeVersionInfo() {
  */
 export async function registerSearchPanel(panel: string): Promise<void> {
   await joplin.views.panels.setHtml(panel, `
+    <style>${defaultTagCss('itags-search-renderedTag', { block: true, hover: true })}</style>
+    <style>${await joplin.settings.value('itags.tagStyle')}</style>
     <style>${await joplin.settings.value('itags.searchPanelStyle')}</style>
     <div id="itags-search-inputTagArea" class="hidden">
       <input type="text" id="itags-search-tagFilter" class="hidden" placeholder="Filter tags..." />
@@ -810,8 +812,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
         return lines.map((line, lineNumber) =>
           replaceOutsideBackticks(line, tagRegex, (match) => {
             const normalizedMatch = match.trim();
-            const prefixClass = mapPrefixClass(normalizedMatch || match);
-            return `<span class="itags-search-renderedTag itags-search-renderedTag--${prefixClass}" data-line-number="${lineNumber}">${match}</span>`;
+            return `<span class="${tagClasses(normalizedMatch || match, 'itags-search-renderedTag')}" data-line-number="${lineNumber}">${match}</span>`;
           })
         ).join('\n');
       }).join('\n');

@@ -485,46 +485,63 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 ### Styling inline tags
 
-The Markdown preview pane and the Tag Navigator search panel wrap every matched tag in the class `itags-search-renderedTag` and, when the token starts with `#`, `@`, `+`, `//`, or any other character, add `itags-search-renderedTag--hash`, `--at`, `--plus`, `--slash`, `--<other char>`. You may modify their appearance in `userstyle.css` (for Markdown preview), or in the `Search: Panel style` setting (for the plugin's search panel).
+Every rendered tag carries four classes, on all three surfaces that display tags (the search panel, the Markdown preview and the Markdown editor):
 
-The Markdown editor uses the same scheme with its own class, `itags-editor-tag` and `itags-editor-tag--hash` / `--at` / `--plus` / `--slash` / `--<other char>`. It is controlled by two settings:
+| Class | Matches |
+| ----- | ------- |
+| `itags-tag` | every tag, on every surface |
+| `itags-tag--hash` / `--at` / `--plus` / `--slash` / `--<other char>` | every tag with that prefix, on every surface |
+| `itags-search-renderedTag` (panel, preview) / `itags-editor-tag` (editor) | that surface only |
+| `itags-search-renderedTag--hash` / `itags-editor-tag--at` / ... | that surface, that prefix |
 
-- `Inline tags: Highlight in editor` turns it on or off (on by default).
-- `Inline tags: Editor style` takes custom CSS that overrides the default style. This is the only way to restyle editor tags on mobile, where `userstyle.css` cannot be edited.
+So `.itags-tag` styles tags everywhere, and the surface classes are there for when you want one surface to differ.
 
-The editor uses a separate class on purpose, because rules written for the preview often include `display: inline-block`, which disturbs caret placement in the editor.
+The `Inline tags: Style` setting takes custom CSS and applies it to all three surfaces. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. On desktop you can use either that setting or `userstyle.css`.
+
+Two related settings cover the panels as a whole rather than tags: `Search: Panel style` and `Navigation: Panel style`. In the search panel, `Inline tags: Style` is applied first, so a panel-specific rule there wins over the general tag look.
+
+The bundled default appearance is the same on all three surfaces and ships inside a CSS cascade layer, so any rule you write overrides it without needing `!important`. The editor's default omits `display: inline-block` and vertical margins, which disturb caret placement and line height there.
 
 <details>
-<summary>CSS example for tag styling</summary>
+<summary>CSS examples for tag styling</summary>
+
+Style every tag on every surface:
 
 ```css
-/* optional: specify different sub-styles for each type of tag */
-.itags-search-renderedTag {
-	background-color: #a576b3ff;
-} /* global style */
+.itags-tag {
+	background-color: #a576b3;
+}
+```
 
-.itags-search-renderedTag--at {
+Give each type of tag its own colour, everywhere:
+
+```css
+.itags-tag--at {
 	background-color: #6fae4a;
-} /* type-specific style */
+}
 
-.itags-search-renderedTag--plus {
+.itags-tag--plus {
 	background-color: #ae4a6f;
 }
 
-.itags-search-renderedTag--slash {
+.itags-tag--slash {
 	background-color: #4a6fae;
 }
 ```
 
-The same, for the `Inline tags: Editor style` setting:
+Style one surface differently from the others. Note that `display: inline-block` is fine in the panel and preview but disturbs caret placement in the editor, which is why the editor's default omits it:
 
 ```css
-.itags-editor-tag {
-	background-color: #a576b3;
+/* preview and panel only */
+.itags-search-renderedTag {
+	display: inline-block;
+	margin: 2px 0;
 }
 
-.itags-editor-tag--at {
-	background-color: #6fae4a;
+/* editor only */
+.itags-editor-tag {
+	background-color: transparent;
+	border-bottom: 2px solid #7698b3;
 }
 ```
 
