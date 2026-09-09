@@ -444,7 +444,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Inline tags: Highlight in editor',
-      description: 'Requires restart (registers an editor content script).',
+      description: 'Requires restart',
     },
     'itags.renderFrontMatter': {
       value: true,
