@@ -313,13 +313,22 @@ export function checkboxLineRegex(state: CheckboxState): RegExp {
  * without !important. Monospace and bold keep the marker legible at text size,
  * which is what the states looked like under Rich Markdown's overlays.
  *
- * The last rule cannot be layered. In the editor a marker is a token of its
- * own: Joplin's Markdown parser reads [@] as a link and its theme styles links
- * and list content, so the marker text sits in a span inside the decoration
- * carrying a colour and a font of its own. That span would keep them whatever
- * the decoration says, because an unlayered rule beats a layered one at any
- * specificity. Making it inherit hands both back to the decoration, and so to
- * whoever styles it, rather than fixing a colour and a font here.
+ * The last two rules cannot be layered, because Joplin's editor theme is not.
+ * A layered rule loses to an unlayered one at any specificity, so:
+ *
+ * - The font leads with `span` to clear `.<theme> span { font-family: inherit }`,
+ *   which Joplin's theme applies to every span in the editor and which
+ *   outranks a bare class. Ours ties on specificity and wins on order, since
+ *   CodeMirror mounts its theme at the top of the head and this is appended.
+ * - A marker is also a token of its own: Joplin reads [@] as a link and styles
+ *   links and list content, so the marker text sits in a span inside the
+ *   decoration carrying a colour and a font of its own. Making that span
+ *   inherit hands both back to the decoration, and so to whoever styles it,
+ *   rather than fixing a colour and a font here.
+ *
+ * The colours stay layered: nothing in the editor sets a colour on every span,
+ * so there is nothing to outrank, and the layer keeps them overridable by a
+ * plain class selector.
  *
  * @param surfaceClass The surface's own base class
  */
@@ -331,13 +340,13 @@ export function defaultCheckboxCss(surfaceClass: string): string {
 
   return `@layer itagsDefaults;
 @layer itagsDefaults {
-  .${surfaceClass} {
-    font-family: monospace;
-    font-weight: bold;
-  }
 ${colours}
 }
-.${surfaceClass} * {
+span.${surfaceClass} {
+  font-family: monospace;
+  font-weight: bold;
+}
+span.${surfaceClass} * {
   color: inherit;
   font-family: inherit;
   font-weight: inherit;

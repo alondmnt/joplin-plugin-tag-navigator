@@ -543,6 +543,14 @@ Style one surface differently from the others. Avoid `display: inline-block` in 
 }
 ```
 
+Fonts in the editor need one extra step. Joplin resets `font-family` on every span there, which outranks a bare class, so lead with `span`:
+
+```css
+span.itags-checkbox {
+	font-family: sans-serif;
+}
+```
+
 Recolour a task state in the panel and the editor at once:
 
 ```css

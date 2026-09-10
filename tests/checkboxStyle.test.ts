@@ -131,6 +131,9 @@ describe('checkboxMarkerRegex', () => {
   });
 });
 
+/** Everything after the cascade layer, which is where the editor's rules go. */
+const unlayered = (css: string) => css.slice(css.indexOf('\n}\n') + 3);
+
 describe('defaultCheckboxCss', () => {
   const css = defaultCheckboxCss('itags-editor-checkbox');
 
@@ -145,20 +148,35 @@ describe('defaultCheckboxCss', () => {
     }
   });
 
+  test('sets the font outside the layer, and specifically enough for Joplin', () => {
+    // Joplin's editor theme carries `.<theme> span { font-family: inherit }`,
+    // which applies to the decoration itself and outranks a bare class, and
+    // being unlayered it beats a layered rule at any specificity. Leading with
+    // `span` ties on specificity, and our style element is appended after
+    // CodeMirror's, so it wins on order. Verified in Chromium against Joplin's
+    // own generated CSS: without the `span` the marker renders in the editor
+    // font, with it in monospace.
+    expect(unlayered(css)).toContain('span.itags-editor-checkbox {');
+    expect(unlayered(css)).toContain('font-family: monospace;');
+  });
+
   test('hands the colour and font of a nested token span back to the decoration', () => {
     // Joplin reads [@] as a link and its theme styles links and list content,
     // so the marker text sits in a span of its own inside the decoration. That
     // span keeps its colour and font unless a rule outside the layer says
-    // otherwise, since an unlayered rule beats a layered one at any
-    // specificity. Verified in Chromium: without this rule the marker keeps
-    // the token's colour and font, with it the marker takes the state colour,
-    // the monospace default, and any override of them.
-    const [layered, unlayered] = css.split('\n}\n');
+    // otherwise. Making it inherit hands both back to the decoration, and so
+    // to whoever styles it.
+    expect(unlayered(css)).toContain('span.itags-editor-checkbox * {');
+    expect(unlayered(css)).toContain('color: inherit;');
+    expect(unlayered(css)).toContain('font-family: inherit;');
+    expect(unlayered(css)).toContain('font-weight: inherit;');
+  });
+
+  test('keeps the colours in the layer, where a plain class overrides them', () => {
+    const layered = css.slice(0, css.indexOf('\n}\n'));
     expect(layered).toContain('@layer itagsDefaults {');
-    expect(unlayered).toContain('.itags-editor-checkbox * {');
-    expect(unlayered).toContain('color: inherit;');
-    expect(unlayered).toContain('font-family: inherit;');
-    expect(unlayered).toContain('font-weight: inherit;');
+    expect(layered).toContain('color: #cb55c2;');
+    expect(unlayered(css)).not.toContain('#cb55c2');
   });
 
   test('names the surface it was asked for', () => {
