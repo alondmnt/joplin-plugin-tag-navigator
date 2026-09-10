@@ -4,22 +4,31 @@ import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defaultTagCss, defTagRegex, isRegexSafe, tagBounds, tagClasses } from './utils';
+import {
+  checkboxClasses, checkboxMarkerRegex, checkboxStateFor, defaultCheckboxCss, defaultTagCss,
+  defTagRegex, isRegexSafe, tagBounds, tagClasses,
+} from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
+const CHECKBOX_CLASS = 'itags-editor-checkbox';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
 
 /**
- * Default tag appearance for the editor, from the definition shared with the
- * panel and preview. Omits the block layout those two use, since inline-block
- * and vertical margins disturb caret placement and line height here.
+ * Default appearance for the editor, from the definitions shared with the panel
+ * and preview. Tags omit the block layout those two use, since inline-block and
+ * vertical margins disturb caret placement and line height here. Both are
+ * injected whichever highlighter is on, since a class nothing carries costs
+ * nothing.
  */
-const DEFAULT_CSS = defaultTagCss(TAG_CLASS);
+const DEFAULT_CSS = `${defaultTagCss(TAG_CLASS)}\n${defaultCheckboxCss(CHECKBOX_CLASS)}`;
 
-type TagStyleSettings = {
+/** What the plugin's settings say the editor should paint, and how. */
+type EditorStyleSettings = {
   tagRegex: string;
   excludeRegex: string;
   css: string;
+  tags: boolean;
+  checkboxes: string;
 };
 
 /**
@@ -128,44 +137,44 @@ export function inCodeContext(state: EditorState, pos: number): boolean {
   return false;
 }
 
+/** Where a match should be painted, as offsets within the matched text. */
+export type Marker = { start: number; end: number; className: string };
+
 /**
- * Builds the decorator that marks up tags in the visible ranges.
+ * A view plugin that paints one class per regex match in the visible ranges.
  *
- * No `boundary` option: it is only an optimisation of MatchDecorator's patch
- * path, and it requires a character that can never occur inside a match, which
- * whitespace cannot guarantee once a user supplies the capture-group form.
- * Without it that path re-scans the whole changed line against the real line
- * text, which is correct for every pattern shape. It matters little either way,
- * since the view plugin below rebuilds the viewport on every doc change.
+ * Callers say what to match and what to call it; this owns the rest, so a
+ * second kind of match costs a regex and a locate function. Matches inside
+ * code are skipped, since a marker there is text rather than a marker, the way
+ * the panel (replaceOutsideBackticks) and the preview (markSkippableTextTokens)
+ * skip code too.
+ *
+ * No `boundary` option on the decorator: it is only an optimisation of
+ * MatchDecorator's patch path, and it requires a character that can never
+ * occur inside a match, which whitespace cannot guarantee once a user supplies
+ * the capture-group form of the tag regex. Without it that path re-scans the
+ * whole changed line against the real line text, which is correct for every
+ * pattern shape. It matters little either way, since the plugin rebuilds the
+ * viewport on every doc change.
+ *
+ * @param regexp What to look for. Must be global, and a fresh instance, since
+ *   MatchDecorator mutates lastIndex.
+ * @param locate Where within a match to paint, and with which classes, or null
+ *   to paint nothing.
  */
-function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecorator {
-  return new MatchDecorator({
-    regexp: tagRegex,
+function markerPlugin(regexp: RegExp, locate: (match: RegExpExecArray) => Marker | null) {
+  const decorator = new MatchDecorator({
+    regexp,
     decorate: (add, from, _to, match, view) => {
-      const { tag, lead } = tagBounds(match[0]);
-      if (!tag) { return; }
+      const marker = locate(match);
+      if (!marker) { return; }
 
-      if (excludeRegex) {
-        excludeRegex.lastIndex = 0;
-        if (excludeRegex.test(tag)) { return; }
-      }
-
-      const start = from + lead;
+      const start = from + marker.start;
       if (inCodeContext(view.state, start)) { return; }
 
-      add(start, start + tag.length, Decoration.mark({
-        class: tagClasses(tag, TAG_CLASS),
-      }));
+      add(start, from + marker.end, Decoration.mark({ class: marker.className }));
     },
   });
-}
-
-/** View plugin that keeps tag decorations in step with edits, scrolling and parsing. */
-function tagStylePlugin(settings: TagStyleSettings) {
-  const decorator = tagDecorator(
-    compileTagRegex(settings.tagRegex),
-    compileExcludeRegex(settings.excludeRegex),
-  );
 
   return ViewPlugin.fromClass(class {
     decorations: DecorationSet;
@@ -193,13 +202,57 @@ function tagStylePlugin(settings: TagStyleSettings) {
   }, { decorations: value => value.decorations });
 }
 
+/** Paints inline tags, minus any the exclude pattern rejects. */
+function tagPlugin(settings: EditorStyleSettings) {
+  const excludeRegex = compileExcludeRegex(settings.excludeRegex);
+
+  return markerPlugin(compileTagRegex(settings.tagRegex), match => {
+    const { tag, lead } = tagBounds(match[0]);
+    if (!tag) { return null; }
+
+    if (excludeRegex) {
+      excludeRegex.lastIndex = 0;
+      if (excludeRegex.test(tag)) { return null; }
+    }
+
+    return { start: lead, end: lead + tag.length, className: tagClasses(tag, TAG_CLASS) };
+  });
+}
+
+/**
+ * Paints the marker of a task in one of the six states, and only the marker.
+ *
+ * Joplin replaces the bullet of a list item, and the [ ] or [x] of a task, with
+ * widgets of its own while its `Render markup in editor` setting is on, which
+ * is the default. A decoration on those two states is then inert, and one
+ * spanning the bullet would paint a range that is no longer there, so the
+ * decoration stops at the brackets. The other four states are invisible to
+ * Joplin's Markdown parser, which is why they are the ones this shows.
+ */
+export function checkboxMarker(match: RegExpExecArray): Marker | null {
+  const state = checkboxStateFor(match[1]);
+  if (!state) { return null; }
+
+  return {
+    start: match[0].indexOf('['),
+    end: match[0].length,
+    className: checkboxClasses(state, CHECKBOX_CLASS),
+  };
+}
+
+function checkboxPlugin() {
+  return markerPlugin(checkboxMarkerRegex(), checkboxMarker);
+}
+
 export default (context: ContentScriptContext): MarkdownEditorContentScriptModule => ({
   plugin: (editorControl: CodeMirrorControl) => {
     if (!editorControl.cm6) { return; }
 
     // Settings arrive over postMessage, so the extension is added once they land.
     void (async () => {
-      let settings: TagStyleSettings = { tagRegex: '', excludeRegex: '', css: '' };
+      let settings: EditorStyleSettings = {
+        tagRegex: '', excludeRegex: '', css: '', tags: true, checkboxes: 'markers',
+      };
       try {
         settings = await context.postMessage({ name: 'getTagStyleSettings' }) ?? settings;
       } catch (error) {
@@ -207,7 +260,8 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
       }
 
       applyStyle(settings.css);
-      editorControl.addExtension(tagStylePlugin(settings));
+      if (settings.tags) { editorControl.addExtension(tagPlugin(settings)); }
+      if (settings.checkboxes !== 'off') { editorControl.addExtension(checkboxPlugin()); }
     })();
   },
 });
