@@ -1,3 +1,13 @@
+# [v2.11.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.2)
+*Released on 2026-09-10T04:54:20Z*
+
+- improved: `Inline checkboxes: Highlight in editor` is a plain on-off setting rather than a dropdown, now that it has two states rather than three
+    - if you had already turned it off it stays off; if you had picked the default from the dropdown, switch it back on
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.11.1...v2.11.2
+
+---
+
 # [v2.11.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.1)
 *Released on 2026-09-10T04:16:22Z*
 
