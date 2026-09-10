@@ -145,6 +145,22 @@ describe('defaultCheckboxCss', () => {
     }
   });
 
+  test('hands the colour and font of a nested token span back to the decoration', () => {
+    // Joplin reads [@] as a link and its theme styles links and list content,
+    // so the marker text sits in a span of its own inside the decoration. That
+    // span keeps its colour and font unless a rule outside the layer says
+    // otherwise, since an unlayered rule beats a layered one at any
+    // specificity. Verified in Chromium: without this rule the marker keeps
+    // the token's colour and font, with it the marker takes the state colour,
+    // the monospace default, and any override of them.
+    const [layered, unlayered] = css.split('\n}\n');
+    expect(layered).toContain('@layer itagsDefaults {');
+    expect(unlayered).toContain('.itags-editor-checkbox * {');
+    expect(unlayered).toContain('color: inherit;');
+    expect(unlayered).toContain('font-family: inherit;');
+    expect(unlayered).toContain('font-weight: inherit;');
+  });
+
   test('names the surface it was asked for', () => {
     expect(defaultCheckboxCss('itags-search-checkbox')).toContain('.itags-search-checkbox--done');
   });

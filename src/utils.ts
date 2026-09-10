@@ -305,12 +305,21 @@ export function checkboxLineRegex(state: CheckboxState): RegExp {
 }
 
 /**
- * Default checkbox styling for one surface, as a cascade layer.
+ * Default checkbox styling for one surface, as a cascade layer plus one
+ * unlayered rule.
  *
- * Layered on the same terms as defaultTagCss, so the `Inline tags: Style`
- * setting and userstyle.css override it without !important. Monospace and bold
- * keep the marker legible at text size, which is what the states looked like
- * under Rich Markdown's overlays.
+ * The colours are layered on the same terms as defaultTagCss, so the
+ * `Inline tags and checkboxes: Style` setting and userstyle.css override them
+ * without !important. Monospace and bold keep the marker legible at text size,
+ * which is what the states looked like under Rich Markdown's overlays.
+ *
+ * The last rule cannot be layered. In the editor a marker is a token of its
+ * own: Joplin's Markdown parser reads [@] as a link and its theme styles links
+ * and list content, so the marker text sits in a span inside the decoration
+ * carrying a colour and a font of its own. That span would keep them whatever
+ * the decoration says, because an unlayered rule beats a layered one at any
+ * specificity. Making it inherit hands both back to the decoration, and so to
+ * whoever styles it, rather than fixing a colour and a font here.
  *
  * @param surfaceClass The surface's own base class
  */
@@ -327,5 +336,10 @@ export function defaultCheckboxCss(surfaceClass: string): string {
     font-weight: bold;
   }
 ${colours}
+}
+.${surfaceClass} * {
+  color: inherit;
+  font-family: inherit;
+  font-weight: inherit;
 }`;
 }
