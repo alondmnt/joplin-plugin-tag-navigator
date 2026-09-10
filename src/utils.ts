@@ -265,12 +265,19 @@ export function checkboxClasses(state: CheckboxState, surfaceClass: string): str
   return `${SHARED_CHECKBOX_CLASS} ${SHARED_CHECKBOX_CLASS}--${state.key} ${surfaceClass} ${surfaceClass}--${state.key}`;
 }
 
-/** Escapes a marker for use inside a regex character class. */
+/**
+ * Escapes a marker for a character class, [ x@], where only these four
+ * characters are special. Use escapeMarker for one standing on its own.
+ */
 function escapeInClass(marker: string): string {
   return marker.replace(/[\\\]^-]/g, '\\$&');
 }
 
-/** Escapes a marker for use on its own in a regex. escapeRegex() trims, which would drop the space of an open task. */
+/**
+ * Escapes a marker standing on its own in a pattern. Use escapeInClass inside
+ * a character class, where a different set of characters is special, and not
+ * escapeRegex, which trims and so would drop the space of an open task.
+ */
 function escapeMarker(marker: string): string {
   return marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
