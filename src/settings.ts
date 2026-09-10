@@ -448,6 +448,21 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline tags: Highlight in editor',
       description: 'Requires restart',
     },
+    'itags.highlightCheckboxes': {
+      value: 'markers',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      isEnum: true,
+      label: 'Inline checkboxes: Highlight in editor',
+      description: 'Colour the six task states - [ ] [@] [?] [!] [x] [~] - in the Markdown editor. ' +
+        'Joplin renders [ ] and [x] as checkboxes of its own, so those two are unaffected while ' +
+        'its Render markup in editor setting is on. Requires restart',
+      options: {
+        off: 'Off',
+        markers: 'Text markers',
+      },
+    },
     'itags.renderFrontMatter': {
       value: true,
       type: SettingItemType.Bool,
@@ -775,10 +790,12 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       advanced: true,
-      label: 'Inline tags: Style',
+      label: 'Inline tags and checkboxes: Style',
       description: 'Custom CSS for inline tags in the search panel (toggle panel or restart app), ' +
         'Markdown preview and editor. Target .itags-tag for all three, or ' +
         '.itags-tag--hash / --at / --plus / --slash for a specific prefix. ' +
+        'For checkbox markers target .itags-checkbox, or .itags-checkbox--open / --ongoing / ' +
+        '--in-question / --blocked / --done / --obsolete for one state. ' +
         'Also the only way to restyle tags on mobile.',
     },
     'itags.periodicConversion': {

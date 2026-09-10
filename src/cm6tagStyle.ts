@@ -4,22 +4,31 @@ import type { EditorState } from '@codemirror/state';
 import {
   Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate,
 } from '@codemirror/view';
-import { defaultTagCss, defTagRegex, isRegexSafe, tagBounds, tagClasses } from './utils';
+import {
+  checkboxClasses, checkboxMarkerRegex, checkboxStateFor, defaultCheckboxCss, defaultTagCss,
+  defTagRegex, isRegexSafe, tagBounds, tagClasses,
+} from './utils';
 
 const TAG_CLASS = 'itags-editor-tag';
+const CHECKBOX_CLASS = 'itags-editor-checkbox';
 const STYLE_ELEMENT_ID = 'itags-editor-tag-style';
 
 /**
- * Default tag appearance for the editor, from the definition shared with the
- * panel and preview. Omits the block layout those two use, since inline-block
- * and vertical margins disturb caret placement and line height here.
+ * Default appearance for the editor, from the definitions shared with the panel
+ * and preview. Tags omit the block layout those two use, since inline-block and
+ * vertical margins disturb caret placement and line height here. Both are
+ * injected whichever highlighter is on, since a class nothing carries costs
+ * nothing.
  */
-const DEFAULT_CSS = defaultTagCss(TAG_CLASS);
+const DEFAULT_CSS = `${defaultTagCss(TAG_CLASS)}\n${defaultCheckboxCss(CHECKBOX_CLASS)}`;
 
-type TagStyleSettings = {
+/** What the plugin's settings say the editor should paint, and how. */
+type EditorStyleSettings = {
   tagRegex: string;
   excludeRegex: string;
   css: string;
+  tags: boolean;
+  checkboxes: string;
 };
 
 /**
@@ -129,7 +138,7 @@ export function inCodeContext(state: EditorState, pos: number): boolean {
 }
 
 /** Where a match should be painted, as offsets within the matched text. */
-type Marker = { start: number; end: number; className: string };
+export type Marker = { start: number; end: number; className: string };
 
 /**
  * A view plugin that paints one class per regex match in the visible ranges.
@@ -194,7 +203,7 @@ function markerPlugin(regexp: RegExp, locate: (match: RegExpExecArray) => Marker
 }
 
 /** Paints inline tags, minus any the exclude pattern rejects. */
-function tagPlugin(settings: TagStyleSettings) {
+function tagPlugin(settings: EditorStyleSettings) {
   const excludeRegex = compileExcludeRegex(settings.excludeRegex);
 
   return markerPlugin(compileTagRegex(settings.tagRegex), match => {
@@ -210,13 +219,40 @@ function tagPlugin(settings: TagStyleSettings) {
   });
 }
 
+/**
+ * Paints the marker of a task in one of the six states, and only the marker.
+ *
+ * Joplin replaces the bullet of a list item, and the [ ] or [x] of a task, with
+ * widgets of its own while its `Render markup in editor` setting is on, which
+ * is the default. A decoration on those two states is then inert, and one
+ * spanning the bullet would paint a range that is no longer there, so the
+ * decoration stops at the brackets. The other four states are invisible to
+ * Joplin's Markdown parser, which is why they are the ones this shows.
+ */
+export function checkboxMarker(match: RegExpExecArray): Marker | null {
+  const state = checkboxStateFor(match[1]);
+  if (!state) { return null; }
+
+  return {
+    start: match[0].indexOf('['),
+    end: match[0].length,
+    className: checkboxClasses(state, CHECKBOX_CLASS),
+  };
+}
+
+function checkboxPlugin() {
+  return markerPlugin(checkboxMarkerRegex(), checkboxMarker);
+}
+
 export default (context: ContentScriptContext): MarkdownEditorContentScriptModule => ({
   plugin: (editorControl: CodeMirrorControl) => {
     if (!editorControl.cm6) { return; }
 
     // Settings arrive over postMessage, so the extension is added once they land.
     void (async () => {
-      let settings: TagStyleSettings = { tagRegex: '', excludeRegex: '', css: '' };
+      let settings: EditorStyleSettings = {
+        tagRegex: '', excludeRegex: '', css: '', tags: true, checkboxes: 'markers',
+      };
       try {
         settings = await context.postMessage({ name: 'getTagStyleSettings' }) ?? settings;
       } catch (error) {
@@ -224,7 +260,8 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
       }
 
       applyStyle(settings.css);
-      editorControl.addExtension(tagPlugin(settings));
+      if (settings.tags) { editorControl.addExtension(tagPlugin(settings)); }
+      if (settings.checkboxes !== 'off') { editorControl.addExtension(checkboxPlugin()); }
     })();
   },
 });

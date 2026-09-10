@@ -128,19 +128,26 @@ joplin.plugins.register({
         './tagMarkdownItPlugin.js',
       );
     }
-    if (await joplin.settings.value('itags.highlightTags')) {
+    const highlightTags = await joplin.settings.value('itags.highlightTags');
+    const highlightCheckboxes = await joplin.settings.value('itags.highlightCheckboxes');
+    if (highlightTags || highlightCheckboxes !== 'off') {
       // Handler before registration: an editor mounting between the two awaits
       // would post getTagStyleSettings into the void, and the content script
       // would silently fall back to the default regex and no user CSS.
       await joplin.contentScripts.onMessage('itagsTagStyle', async (message: any) => {
         if (message?.name !== 'getTagStyleSettings') { return null; }
+        // Read on every request, so a setting change reaches the next editor
+        // to mount without a restart. Only the registration above needs one.
         const settings = await joplin.settings.values([
           'itags.tagRegex', 'itags.excludeRegex', 'itags.tagStyle',
+          'itags.highlightTags', 'itags.highlightCheckboxes',
         ]);
         return {
           tagRegex: settings['itags.tagRegex'] as string,
           excludeRegex: settings['itags.excludeRegex'] as string,
           css: settings['itags.tagStyle'] as string,
+          tags: settings['itags.highlightTags'] as boolean,
+          checkboxes: settings['itags.highlightCheckboxes'] as string,
         };
       });
       await joplin.contentScripts.register(
