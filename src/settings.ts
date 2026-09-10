@@ -449,20 +449,12 @@ export async function registerSettings(): Promise<void> {
       description: 'Requires restart',
     },
     'itags.highlightCheckboxes': {
-      value: 'markers',
-      type: SettingItemType.String,
+      value: true,
+      type: SettingItemType.Bool,
       section: 'itags',
       public: true,
-      isEnum: true,
       label: 'Inline checkboxes: Highlight in editor',
-      description: 'Colour the six task states - [ ] [@] [?] [!] [x] [~] - in the Markdown editor. ' +
-        'Joplin renders [ ] and [x] as checkboxes of its own, so those two are unaffected while ' +
-        'its Render markup in editor setting is on. The README has CSS that draws those two as ' +
-        'text markers too, if you want all six to match. Requires restart',
-      options: {
-        off: 'Off',
-        markers: 'Text markers',
-      },
+      description: 'Requires restart',
     },
     'itags.renderFrontMatter': {
       value: true,

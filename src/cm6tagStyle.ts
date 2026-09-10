@@ -28,7 +28,7 @@ type EditorStyleSettings = {
   excludeRegex: string;
   css: string;
   tags: boolean;
-  checkboxes: string;
+  checkboxes: boolean;
 };
 
 /**
@@ -251,7 +251,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
     // Settings arrive over postMessage, so the extension is added once they land.
     void (async () => {
       let settings: EditorStyleSettings = {
-        tagRegex: '', excludeRegex: '', css: '', tags: true, checkboxes: 'markers',
+        tagRegex: '', excludeRegex: '', css: '', tags: true, checkboxes: true,
       };
       try {
         settings = await context.postMessage({ name: 'getTagStyleSettings' }) ?? settings;
@@ -261,7 +261,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
 
       applyStyle(settings.css);
       if (settings.tags) { editorControl.addExtension(tagPlugin(settings)); }
-      if (settings.checkboxes !== 'off') { editorControl.addExtension(checkboxPlugin()); }
+      if (settings.checkboxes) { editorControl.addExtension(checkboxPlugin()); }
     })();
   },
 });

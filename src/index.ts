@@ -130,7 +130,7 @@ joplin.plugins.register({
     }
     const highlightTags = await joplin.settings.value('itags.highlightTags');
     const highlightCheckboxes = await joplin.settings.value('itags.highlightCheckboxes');
-    if (highlightTags || highlightCheckboxes !== 'off') {
+    if (highlightTags || highlightCheckboxes) {
       // Handler before registration: an editor mounting between the two awaits
       // would post getTagStyleSettings into the void, and the content script
       // would silently fall back to the default regex and no user CSS.
@@ -147,7 +147,7 @@ joplin.plugins.register({
           excludeRegex: settings['itags.excludeRegex'] as string,
           css: settings['itags.tagStyle'] as string,
           tags: settings['itags.highlightTags'] as boolean,
-          checkboxes: settings['itags.highlightCheckboxes'] as string,
+          checkboxes: settings['itags.highlightCheckboxes'] as boolean,
         };
       });
       await joplin.contentScripts.register(
