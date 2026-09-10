@@ -136,8 +136,10 @@ joplin.plugins.register({
       // would silently fall back to the default regex and no user CSS.
       await joplin.contentScripts.onMessage('itagsTagStyle', async (message: any) => {
         if (message?.name !== 'getTagStyleSettings') { return null; }
-        // Read on every request, so a setting change reaches the next editor
-        // to mount without a restart. Only the registration above needs one.
+        // Read on every request, so a changed regex or stylesheet reaches the
+        // next editor to mount. Turning a highlighter on or off still needs a
+        // restart: an extension cannot be taken off a live editor, and Joplin
+        // keeps one across notes.
         const settings = await joplin.settings.values([
           'itags.tagRegex', 'itags.excludeRegex', 'itags.tagStyle',
           'itags.highlightTags', 'itags.highlightCheckboxes',
