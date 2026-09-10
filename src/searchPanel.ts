@@ -4,7 +4,9 @@ import * as markdownItMark from 'markdown-it-mark';
 import * as markdownItTaskLists from 'markdown-it-task-lists';
 import * as prism from './prism.js';
 import { TagSettings, getTagSettings, queryEnd, queryStart, getResultSettings, getStandardGroupingKeys, DEFAULT_QUERY_MODE } from './settings';
-import { defaultTagCss, escapeRegex, tagClasses } from './utils';
+import {
+  CHECKBOX_STATES, checkboxClasses, checkboxLineRegex, defaultTagCss, escapeRegex, tagClasses,
+} from './utils';
 import { GroupedResult, Query, QueryRecord, runSearch, sortResults } from './search';
 import { noteIdRegex } from './parser';
 import { NoteDatabase, processNote } from './db';
@@ -31,12 +33,6 @@ const md = new MarkdownIt({
 export const REGEX = {
   findQuery: new RegExp(`[\n]*${queryStart}([\\s\\S]*?)${queryEnd}`),
   wikiLink: /\[\[([^\]]+)\]\]/g,
-  xitOpen: /(^[\s]*)- \[ \] (.*)$/gm,
-  xitDone: /(^[\s]*)- \[[xX]\] (.*)$/gm,
-  xitOngoing: /(^[\s]*)- \[@\] (.*)$/gm,
-  xitObsolete: /(^[\s]*)- \[~\] (.*)$/gm,
-  xitInQuestion: /(^[\s]*)- \[\?\] (.*)$/gm,
-  xitBlocked: /(^[\s]*)- \[!\] (.*)$/gm,
   codeBlock: /(```[^`]*```)/g,
   backtickContent: /(`[^`]*`)/,
   heading: /^(#{1,6})\s+(.*)$/,
@@ -44,6 +40,20 @@ export const REGEX = {
   checkboxState: /^(\s*- \[)[x\s@\?!~](\])/g,
   contextMarker: /\u200B\u2060/g,
   coreMarker: /\u200B\u2061/g,
+};
+
+/**
+ * The class name the panel has always given each task state, kept alongside the
+ * shared ones. The panel's own script reads these to decide what a click means,
+ * and users style them from `Search: Panel style`.
+ */
+const LEGACY_CHECKBOX_CLASS: Record<string, string> = {
+  'open': 'xitOpen',
+  'ongoing': 'xitOngoing',
+  'in-question': 'xitInQuestion',
+  'blocked': 'xitBlocked',
+  'done': 'xitDone',
+  'obsolete': 'xitObsolete',
 };
 
 // QueryRecord is defined in search.ts and re-exported here for backward compatibility
@@ -790,6 +800,28 @@ export async function updatePanelNoteState(panel: string, savedNoteState: { [key
 }
 
 /**
+ * Rewrites every task line into the panel's checkbox markup.
+ *
+ * The square carries the shared classes, so one CSS rule reaches the panel and
+ * the editor at once, and the state's long-standing class, which the panel's
+ * own script reads on a click. The text after the marker keeps its own class,
+ * since the panel dims and strikes through a whole line where the editor only
+ * colours the marker.
+ *
+ * @param text The result text, before Markdown rendering
+ */
+export function renderCheckboxes(text: string): string {
+  for (const state of CHECKBOX_STATES) {
+    const legacy = LEGACY_CHECKBOX_CLASS[state.key];
+    text = text.replace(checkboxLineRegex(state),
+      `$1- <span class="${checkboxClasses(state, 'itags-search-checkbox')} ${legacy}" ` +
+      `data-checked="${state.key === 'done'}"></span>` +
+      `<span class="itags-search-${legacy}">$2</span>\n`);
+  }
+  return text;
+}
+
+/**
  * Renders markdown content to HTML with special handling for tags and checkboxes
  * @param groupedResults - Search results grouped by note
  * @param tagRegex - Regular expression for matching tags
@@ -823,13 +855,7 @@ function renderHTML(groupedResults: GroupedResult[], tagRegex: RegExp, resultMar
     processedSection = processedSection
       .replace(REGEX.wikiLink, '<a href="$1">$1</a>');
     if (colorTodos) {
-      processedSection = processedSection
-        .replace(REGEX.xitOpen, '$1- <span class="itags-search-checkbox xitOpen" data-checked="false"></span><span class="itags-search-xitOpen">$2</span>\n')
-        .replace(REGEX.xitDone, '$1- <span class="itags-search-checkbox xitDone" data-checked="true"></span><span class="itags-search-xitDone">$2</span>\n')
-        .replace(REGEX.xitOngoing, '$1- <span class="itags-search-checkbox xitOngoing" data-checked="false"></span><span class="itags-search-xitOngoing">$2</span>\n')
-        .replace(REGEX.xitObsolete, '$1- <span class="itags-search-checkbox xitObsolete" data-checked="false"></span><span class="itags-search-xitObsolete">$2</span>\n')
-        .replace(REGEX.xitInQuestion, '$1- <span class="itags-search-checkbox xitInQuestion" data-checked="false"></span><span class="itags-search-xitInQuestion">$2</span>\n')
-        .replace(REGEX.xitBlocked, '$1- <span class="itags-search-checkbox xitBlocked" data-checked="false"></span><span class="itags-search-xitBlocked">$2</span>\n');
+      processedSection = renderCheckboxes(processedSection);
     }
     let html = md.render(processedSection);
     // Replace markers (Unicode) with HTML spans for CSS styling
