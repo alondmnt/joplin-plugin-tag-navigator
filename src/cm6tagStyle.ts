@@ -128,44 +128,44 @@ export function inCodeContext(state: EditorState, pos: number): boolean {
   return false;
 }
 
+/** Where a match should be painted, as offsets within the matched text. */
+type Marker = { start: number; end: number; className: string };
+
 /**
- * Builds the decorator that marks up tags in the visible ranges.
+ * A view plugin that paints one class per regex match in the visible ranges.
  *
- * No `boundary` option: it is only an optimisation of MatchDecorator's patch
- * path, and it requires a character that can never occur inside a match, which
- * whitespace cannot guarantee once a user supplies the capture-group form.
- * Without it that path re-scans the whole changed line against the real line
- * text, which is correct for every pattern shape. It matters little either way,
- * since the view plugin below rebuilds the viewport on every doc change.
+ * Callers say what to match and what to call it; this owns the rest, so a
+ * second kind of match costs a regex and a locate function. Matches inside
+ * code are skipped, since a marker there is text rather than a marker, the way
+ * the panel (replaceOutsideBackticks) and the preview (markSkippableTextTokens)
+ * skip code too.
+ *
+ * No `boundary` option on the decorator: it is only an optimisation of
+ * MatchDecorator's patch path, and it requires a character that can never
+ * occur inside a match, which whitespace cannot guarantee once a user supplies
+ * the capture-group form of the tag regex. Without it that path re-scans the
+ * whole changed line against the real line text, which is correct for every
+ * pattern shape. It matters little either way, since the plugin rebuilds the
+ * viewport on every doc change.
+ *
+ * @param regexp What to look for. Must be global, and a fresh instance, since
+ *   MatchDecorator mutates lastIndex.
+ * @param locate Where within a match to paint, and with which classes, or null
+ *   to paint nothing.
  */
-function tagDecorator(tagRegex: RegExp, excludeRegex: RegExp | null): MatchDecorator {
-  return new MatchDecorator({
-    regexp: tagRegex,
+function markerPlugin(regexp: RegExp, locate: (match: RegExpExecArray) => Marker | null) {
+  const decorator = new MatchDecorator({
+    regexp,
     decorate: (add, from, _to, match, view) => {
-      const { tag, lead } = tagBounds(match[0]);
-      if (!tag) { return; }
+      const marker = locate(match);
+      if (!marker) { return; }
 
-      if (excludeRegex) {
-        excludeRegex.lastIndex = 0;
-        if (excludeRegex.test(tag)) { return; }
-      }
-
-      const start = from + lead;
+      const start = from + marker.start;
       if (inCodeContext(view.state, start)) { return; }
 
-      add(start, start + tag.length, Decoration.mark({
-        class: tagClasses(tag, TAG_CLASS),
-      }));
+      add(start, from + marker.end, Decoration.mark({ class: marker.className }));
     },
   });
-}
-
-/** View plugin that keeps tag decorations in step with edits, scrolling and parsing. */
-function tagStylePlugin(settings: TagStyleSettings) {
-  const decorator = tagDecorator(
-    compileTagRegex(settings.tagRegex),
-    compileExcludeRegex(settings.excludeRegex),
-  );
 
   return ViewPlugin.fromClass(class {
     decorations: DecorationSet;
@@ -193,6 +193,23 @@ function tagStylePlugin(settings: TagStyleSettings) {
   }, { decorations: value => value.decorations });
 }
 
+/** Paints inline tags, minus any the exclude pattern rejects. */
+function tagPlugin(settings: TagStyleSettings) {
+  const excludeRegex = compileExcludeRegex(settings.excludeRegex);
+
+  return markerPlugin(compileTagRegex(settings.tagRegex), match => {
+    const { tag, lead } = tagBounds(match[0]);
+    if (!tag) { return null; }
+
+    if (excludeRegex) {
+      excludeRegex.lastIndex = 0;
+      if (excludeRegex.test(tag)) { return null; }
+    }
+
+    return { start: lead, end: lead + tag.length, className: tagClasses(tag, TAG_CLASS) };
+  });
+}
+
 export default (context: ContentScriptContext): MarkdownEditorContentScriptModule => ({
   plugin: (editorControl: CodeMirrorControl) => {
     if (!editorControl.cm6) { return; }
@@ -207,7 +224,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
       }
 
       applyStyle(settings.css);
-      editorControl.addExtension(tagStylePlugin(settings));
+      editorControl.addExtension(tagPlugin(settings));
     })();
   },
 });
