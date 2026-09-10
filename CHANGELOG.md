@@ -1,3 +1,20 @@
+# [v2.11.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.1)
+*Released on 2026-09-10T04:16:22Z*
+
+- added: checkbox highlighting in the Markdown editor - the six [x]it! task states, coloured from the same definition the search panel uses
+    - new setting `Inline checkboxes: Highlight in editor`, showing text markers by default
+    - Joplin draws `[ ]` and `[x]` as checkboxes of its own, so what changes on screen are `[@]`, `[?]`, `[!]` and `[~]`, which it does not recognise
+    - markers inside code are skipped, as tags are
+- added: shared classes `itags-checkbox` and `itags-checkbox--open` / `--ongoing` / `--in-question` / `--blocked` / `--done` / `--obsolete`, so one CSS rule styles task markers in both the search panel and the editor
+    - the panel keeps `xitOpen` and friends, so CSS written against them still works
+    - the README has CSS for drawing Joplin's own checkboxes as text markers too, if you want all six states to match
+- improved: `Inline tags: Style` is now `Inline tags and checkboxes: Style`, and takes CSS for tags and task markers alike
+- improved: the search panel builds its checkbox markup once rather than once per result section
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.11.0...v2.11.1
+
+---
+
 # [v2.11.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.0)
 *Released on 2026-09-09T23:54:37Z*
 
