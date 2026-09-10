@@ -281,7 +281,9 @@ function escapeMarker(marker: string): string {
  * lastIndex.
  *
  * Anchored at the start of the line and stopping at the closing bracket, so
- * only "[x]" is decorated. The list marker is left alone: Joplin replaces the
+ * only "[x]" is decorated. `^` needs no `m` flag: MatchDecorator runs the
+ * pattern over one line of text at a time (iterMatches in @codemirror/view
+ * skips line breaks), so it already anchors to a line. The list marker is left alone: Joplin replaces the
  * bullet of a list item with a widget of its own whenever markup rendering is
  * on, which is the default, and a decoration spanning it would paint half a
  * range that is no longer there.
@@ -305,8 +307,8 @@ export function checkboxLineRegex(state: CheckboxState): RegExp {
 }
 
 /**
- * Default checkbox styling for one surface, as a cascade layer plus one
- * unlayered rule.
+ * Default checkbox styling for one surface, as a cascade layer plus two
+ * unlayered rules.
  *
  * The colours are layered on the same terms as defaultTagCss, so the
  * `Inline tags and checkboxes: Style` setting and userstyle.css override them

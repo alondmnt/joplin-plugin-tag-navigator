@@ -800,23 +800,32 @@ export async function updatePanelNoteState(panel: string, savedNoteState: { [key
 }
 
 /**
- * Rewrites every task line into the panel's checkbox markup.
+ * Each task state's pattern and the markup it becomes, built once.
  *
  * The square carries the shared classes, so one CSS rule reaches the panel and
  * the editor at once, and the state's long-standing class, which the panel's
  * own script reads on a click. The text after the marker keeps its own class,
  * since the panel dims and strikes through a whole line where the editor only
  * colours the marker.
+ */
+const CHECKBOX_MARKUP = CHECKBOX_STATES.map(state => {
+  const legacy = LEGACY_CHECKBOX_CLASS[state.key];
+  return {
+    regex: checkboxLineRegex(state),
+    replacement: `$1- <span class="${checkboxClasses(state, 'itags-search-checkbox')} ${legacy}" ` +
+      `data-checked="${state.key === 'done'}"></span>` +
+      `<span class="itags-search-${legacy}">$2</span>\n`,
+  };
+});
+
+/**
+ * Rewrites every task line into the panel's checkbox markup.
  *
  * @param text The result text, before Markdown rendering
  */
 export function renderCheckboxes(text: string): string {
-  for (const state of CHECKBOX_STATES) {
-    const legacy = LEGACY_CHECKBOX_CLASS[state.key];
-    text = text.replace(checkboxLineRegex(state),
-      `$1- <span class="${checkboxClasses(state, 'itags-search-checkbox')} ${legacy}" ` +
-      `data-checked="${state.key === 'done'}"></span>` +
-      `<span class="itags-search-${legacy}">$2</span>\n`);
+  for (const { regex, replacement } of CHECKBOX_MARKUP) {
+    text = text.replace(regex, replacement);
   }
   return text;
 }
