@@ -205,3 +205,127 @@ export function tagBounds(matchText: string): { tag: string; lead: number } {
   const tag = matchText.trim();
   return { tag, lead: tag ? matchText.indexOf(tag) : 0 };
 }
+
+/**
+ * Class applied to every rendered checkbox marker, on every surface. The
+ * counterpart of SHARED_TAG_CLASS: one CSS rule can colour task states in the
+ * search panel and the editor at once, without the reader having to know which
+ * surface paints a square and which paints the [x] text.
+ */
+const SHARED_CHECKBOX_CLASS = 'itags-checkbox';
+
+/** One of the task states the plugin recognises, in inline [x]it! notation. */
+export type CheckboxState = {
+  /** Class suffix, and the stable identifier used across surfaces. */
+  key: string;
+  /** The characters that may appear between the brackets. Done takes both cases. */
+  markers: string[];
+  /** Default colour, shared by every surface that paints this state. */
+  colour: string;
+};
+
+/**
+ * The six task states, in the order the kanban board lays them out.
+ *
+ * One definition behind the panel's markup, the editor's highlighting and the
+ * default colours of both. The colours are the ones searchPanelStyle.css has
+ * always used, so the two surfaces agree by construction.
+ */
+export const CHECKBOX_STATES: CheckboxState[] = [
+  { key: 'open', markers: [' '], colour: '#4178be' },
+  { key: 'ongoing', markers: ['@'], colour: '#cb55c2' },
+  { key: 'in-question', markers: ['?'], colour: '#cc913f' },
+  { key: 'blocked', markers: ['!'], colour: '#e22d2d' },
+  { key: 'done', markers: ['x', 'X'], colour: '#64a073' },
+  { key: 'obsolete', markers: ['~'], colour: '#999999' },
+];
+
+/**
+ * The state a bracket character stands for, or null when it stands for none.
+ *
+ * @param marker The single character between the brackets
+ */
+export function checkboxStateFor(marker: string): CheckboxState | null {
+  return CHECKBOX_STATES.find(state => state.markers.includes(marker)) ?? null;
+}
+
+/**
+ * The full class list for a rendered checkbox marker.
+ *
+ * The same contract as tagClasses: shared classes for styling every surface at
+ * once, the surface's own classes for targeting one, each in a bare and a
+ * per-state form:
+ *
+ *   itags-checkbox  itags-checkbox--done  itags-editor-checkbox  itags-editor-checkbox--done
+ *
+ * @param state The task state the marker is in
+ * @param surfaceClass The surface's own base class
+ */
+export function checkboxClasses(state: CheckboxState, surfaceClass: string): string {
+  return `${SHARED_CHECKBOX_CLASS} ${SHARED_CHECKBOX_CLASS}--${state.key} ${surfaceClass} ${surfaceClass}--${state.key}`;
+}
+
+/** Escapes a marker for use inside a regex character class. */
+function escapeInClass(marker: string): string {
+  return marker.replace(/[\\\]^-]/g, '\\$&');
+}
+
+/** Escapes a marker for use on its own in a regex. escapeRegex() trims, which would drop the space of an open task. */
+function escapeMarker(marker: string): string {
+  return marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Matches a checkbox marker at the head of a list item, capturing the bracket
+ * character. A fresh instance per call, because MatchDecorator mutates
+ * lastIndex.
+ *
+ * Anchored at the start of the line and stopping at the closing bracket, so
+ * only "[x]" is decorated. The list marker is left alone: Joplin replaces the
+ * bullet of a list item with a widget of its own whenever markup rendering is
+ * on, which is the default, and a decoration spanning it would paint half a
+ * range that is no longer there.
+ */
+export function checkboxMarkerRegex(): RegExp {
+  const markers = CHECKBOX_STATES.map(state => state.markers.map(escapeInClass).join('')).join('');
+  return new RegExp(`^[ \\t]*[-*+][ \\t]+\\[([${markers}])\\](?=[ \\t]|$)`, 'g');
+}
+
+/**
+ * Matches whole lines in one task state, capturing the indent and the text
+ * after the marker. The form the search panel rewrites into HTML.
+ *
+ * @param state The task state to match
+ */
+export function checkboxLineRegex(state: CheckboxState): RegExp {
+  const marker = state.markers.length === 1
+    ? escapeMarker(state.markers[0])
+    : `[${state.markers.map(escapeInClass).join('')}]`;
+  return new RegExp(`(^[\\s]*)- \\[${marker}\\] (.*)$`, 'gm');
+}
+
+/**
+ * Default checkbox styling for one surface, as a cascade layer.
+ *
+ * Layered on the same terms as defaultTagCss, so the `Inline tags: Style`
+ * setting and userstyle.css override it without !important. Monospace and bold
+ * keep the marker legible at text size, which is what the states looked like
+ * under Rich Markdown's overlays.
+ *
+ * @param surfaceClass The surface's own base class
+ */
+export function defaultCheckboxCss(surfaceClass: string): string {
+  const colours = CHECKBOX_STATES.map(state =>
+    `  .${surfaceClass}--${state.key} {
+    color: ${state.colour};
+  }`).join('\n');
+
+  return `@layer itagsDefaults;
+@layer itagsDefaults {
+  .${surfaceClass} {
+    font-family: monospace;
+    font-weight: bold;
+  }
+${colours}
+}`;
+}
