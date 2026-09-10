@@ -457,7 +457,8 @@ export async function registerSettings(): Promise<void> {
       label: 'Inline checkboxes: Highlight in editor',
       description: 'Colour the six task states - [ ] [@] [?] [!] [x] [~] - in the Markdown editor. ' +
         'Joplin renders [ ] and [x] as checkboxes of its own, so those two are unaffected while ' +
-        'its Render markup in editor setting is on. Requires restart',
+        'its Render markup in editor setting is on. The README has CSS that draws those two as ' +
+        'text markers too, if you want all six to match. Requires restart',
       options: {
         off: 'Off',
         markers: 'Text markers',
@@ -782,7 +783,7 @@ export async function registerSettings(): Promise<void> {
       advanced: true,
       label: 'Search: Panel style',
       description: 'Custom CSS for the search panel (toggle panel or restart app). ' +
-        'For tag appearance see Inline tags: Style.',
+        'For tag and checkbox appearance see Inline tags and checkboxes: Style.',
     },
     'itags.tagStyle': {
       value: '',

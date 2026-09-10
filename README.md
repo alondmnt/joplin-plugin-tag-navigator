@@ -54,7 +54,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Click a global tag to search for it, Cmd/Ctrl+click to add it to the current query, or Shift+click to insert it into the editor.
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
-6. It renders inline tags and front matter in both the Markdown preview and the Markdown editor. ([tips](#styling-inline-tags))
+6. It renders inline tags and front matter in both the Markdown preview and the Markdown editor. ([tips](#styling-inline-tags-and-checkboxes))
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
@@ -106,7 +106,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Filtering results](#filtering-results)
 - [Context expansion](#context-expansion)
 - [Colour tags](#colour-tags)
-- [Styling inline tags](#styling-inline-tags)
+- [Styling inline tags and checkboxes](#styling-inline-tags-and-checkboxes)
 
 ### Advanced
 - [Inline TODOs](#inline-todos)
@@ -484,21 +484,24 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 ![colour tags](img/tag-navigator-colours.png)
 
-### Styling inline tags
+### Styling inline tags and checkboxes
 
-Tags are displayed on three surfaces: the search panel, the Markdown preview and the Markdown editor. Every rendered tag carries a shared class and a surface-specific one, each in a plain and a per-prefix form:
+Tags are displayed on three surfaces: the search panel, the Markdown preview and the Markdown editor. Every rendered tag, and every task marker, carries a shared class and a surface-specific one, each in a plain form and one per prefix or state:
 
 | Class | Matches |
 | ----- | ------- |
 | `itags-tag`, `itags-tag--hash` / `--at` / `--plus` / `--slash` | every surface |
 | `itags-search-renderedTag` (panel, preview), `itags-editor-tag` (editor), each with the same prefix suffixes | one surface |
+| `itags-checkbox`, `itags-checkbox--open` / `--ongoing` / `--in-question` / `--blocked` / `--done` / `--obsolete` | task markers, panel and editor |
 
-The `Inline tags: Style` setting takes custom CSS and applies it to all three. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. Your rules override the bundled default without needing `!important`.
+The `Inline tags and checkboxes: Style` setting takes custom CSS and applies it to all three. **This is the only way to restyle tags on mobile**, where `userstyle.css` cannot be edited. Your rules override the bundled default without needing `!important`.
+
+`Inline checkboxes: Highlight in editor` colours the six task states in the editor. Joplin draws `[ ]` and `[x]` as checkboxes of its own, so those two keep their usual look and the other four, which Joplin does not recognise, get the state colour.
 
 `Search: Panel style` and `Navigation: Panel style` style those panels as a whole rather than tags.
 
 <details>
-<summary>CSS examples for tag styling</summary>
+<summary>CSS examples for tag and checkbox styling</summary>
 
 Style every tag on every surface:
 
@@ -539,6 +542,63 @@ Style one surface differently from the others. Avoid `display: inline-block` in 
 	border-bottom: 2px solid #7698b3;
 }
 ```
+
+Recolour a task state in the panel and the editor at once:
+
+```css
+.itags-checkbox--blocked {
+	color: #e22d2d;
+}
+```
+
+In the panel the marker is a coloured square, so set `background-color` there:
+
+```css
+.itags-search-checkbox--blocked {
+	background-color: #e22d2d;
+}
+```
+
+Draw the checkboxes Joplin renders for `[ ]` and `[x]` as text markers too, so that all six states match. This one reaches into Joplin's own editor markup, so it may need adjusting after a Joplin update, and it is left to you rather than bundled for that reason. The checkboxes stay clickable:
+
+```css
+.cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"] {
+	appearance: none;
+	-webkit-appearance: none;
+	width: auto;
+	height: auto;
+	margin: 0;
+	font-family: monospace;
+	font-weight: bold;
+	color: #4178be;
+}
+
+.cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]::after {
+	content: " [ ]";
+}
+
+.cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]:checked {
+	color: #64a073;
+}
+
+.cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]:checked::after {
+	content: " [x]";
+}
+
+/* Joplin's checkbox stands in for the list bullet as well, so hide the bullet
+   on the lines it does not replace. With the space each marker leads with, the
+   six states then start at the same column. */
+.cm-editor .cm-line:has(.itags-editor-checkbox) .cm-bullet-list-marker {
+	display: none;
+}
+
+/* Joplin reads [@] and its siblings as links, and underlines them. */
+.cm-editor .itags-editor-checkbox * {
+	text-decoration: none;
+}
+```
+
+The bullet rule needs `:has()`, which desktop Joplin and iOS 15.4 or later have, and the alignment assumes the editor font is monospace, as it is by default. Where either does not hold the markers still get their colour, they just do not line up.
 
 </details>
 
