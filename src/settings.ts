@@ -792,11 +792,9 @@ export async function registerSettings(): Promise<void> {
       public: true,
       advanced: true,
       label: 'Inline tags and checkboxes: Style',
-      description: 'Custom CSS for inline tags in the search panel (toggle panel or restart app), ' +
-        'Markdown preview and editor. Target .itags-tag for all three, or ' +
-        '.itags-tag--hash / --at / --plus / --slash for a specific prefix. ' +
-        'For checkbox markers target .itags-checkbox, or .itags-checkbox--open / --ongoing / ' +
-        '--in-question / --blocked / --done / --obsolete for one state. ' +
+      description: 'Custom CSS for inline tags and checkbox markers in the search panel ' +
+        '(toggle panel or restart app), Markdown preview and editor. Target .itags-tag and ' +
+        '.itags-checkbox; the README lists the per-prefix and per-state classes. ' +
         'Also the only way to restyle tags on mobile.',
     },
     'itags.periodicConversion': {

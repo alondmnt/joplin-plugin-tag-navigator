@@ -582,7 +582,7 @@ Draw the checkboxes Joplin renders for `[ ]` and `[x]` as text markers too, so t
 }
 
 .cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]::after {
-	content: " [ ]";
+	content: "[ ]";
 }
 
 .cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]:checked {
@@ -590,14 +590,20 @@ Draw the checkboxes Joplin renders for `[ ]` and `[x]` as text markers too, so t
 }
 
 .cm-editor .cm-ext-checkbox-toggle > input[type="checkbox"]:checked::after {
-	content: " [x]";
+	content: "[x]";
 }
 
 /* Joplin's checkbox stands in for the list bullet as well, so hide the bullet
-   on the lines it does not replace. With the space each marker leads with, the
-   six states then start at the same column. */
+   on the lines it does not replace. */
 .cm-editor .cm-line:has(.itags-editor-checkbox) .cm-bullet-list-marker {
 	display: none;
+}
+
+/* The other states keep the space that follows their bullet in the text, so
+   the checkbox needs one too. It goes on the container, not in the monospace
+   marker, so that both spaces are the same width. */
+.cm-editor .cm-ext-checkbox-toggle::before {
+	content: " ";
 }
 
 /* Joplin reads [@] and its siblings as links, and underlines them. */
@@ -606,7 +612,7 @@ Draw the checkboxes Joplin renders for `[ ]` and `[x]` as text markers too, so t
 }
 ```
 
-The bullet rule needs `:has()`, which desktop Joplin and iOS 15.4 or later have, and the alignment assumes the editor font is monospace, as it is by default. Where either does not hold the markers still get their colour, they just do not line up.
+The bullet rule needs `:has()`, which desktop Joplin and iOS 15.4 or later have. Without it the markers still get their colour, they just do not line up.
 
 </details>
 
