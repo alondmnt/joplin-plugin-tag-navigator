@@ -54,7 +54,7 @@ This plugin adds inline tag support (such as #inline-tag) to [Joplin](https://jo
     - Click a global tag to search for it, Cmd/Ctrl+click to add it to the current query, or Shift+click to insert it into the editor.
 4. It can convert your existing inline tags to native Joplin tags, so that they are accessible using Joplin's built-in tag search.
 5. It can convert your existing native Joplin tags to inline tags, so that they are accessible using inline tag search (this plugin). ([tips](#converting-joplin-tags))
-6. It renders inline tags and front matter in the Markdown preview, and front matter in the Markdown editor. ([tips](#styling-inline-tags))
+6. It renders inline tags and front matter in both the Markdown preview and the Markdown editor. ([tips](#styling-inline-tags))
 
 After installing the plugin, check the commands listed under `Tag Navigator` in the `Tools` menu, as well as the corresponding settings section.
 
