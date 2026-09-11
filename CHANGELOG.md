@@ -1,3 +1,15 @@
+# [v2.11.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.3)
+*Released on 2026-09-11T03:03:37Z*
+
+- fixed: tag inheritance and nested tags could stop being indexed partway through a session, so lines that inherit a tag, and lines tagged with a child of the tag you searched for, went missing from search results and in-note views (#38)
+    - the navigation panel narrowed the shared settings for its own use, and from the first time it rendered, every reindex ran with inheritance and nested tags switched off
+    - reindexing made it worse rather than better: `Update tag database` clears the index and rebuilt all of it the same way. Restarting was the only reset, and installing this update is one, so nothing is needed beyond the usual restart
+    - present since v2.10.2
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.11.2...v2.11.3
+
+---
+
 # [v2.11.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.2)
 *Released on 2026-09-10T04:54:20Z*
 
