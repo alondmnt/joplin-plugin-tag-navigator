@@ -24,9 +24,14 @@ export interface TagLine {
 }
 
 export async function getNavTagLines(body: string): Promise<[TagLine[], TagCount]> {
-  const tagSettings = await getTagSettings();
-  tagSettings.inheritTags = false;
-  tagSettings.nestedTags = false;  // Get only child tags
+  // A narrowed copy, never the shared settings: this panel lists the tags a
+  // note carries itself, while everything else, the indexer included, wants
+  // inheritance and nested tags.
+  const tagSettings = {
+    ...await getTagSettings(),
+    inheritTags: false,
+    nestedTags: false,  // Get only child tags
+  };
   const tagLines = [...parseTagsFromFrontMatter(body, tagSettings), ...parseTagsLines(body, tagSettings)];
   // Get only unique tags
   const uniqueTagLines = tagLines.filter((tagLine, index, self) =>
