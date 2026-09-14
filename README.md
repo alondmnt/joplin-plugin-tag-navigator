@@ -104,6 +104,7 @@ After installing the plugin, check the commands listed under `Tag Navigator` in 
 - [Table views](#table-views)
 - [Kanban views](#kanban-views)
 - [Filtering results](#filtering-results)
+- [Result cards](#result-cards)
 - [Context expansion](#context-expansion)
 - [Colour tags](#colour-tags)
 - [Styling inline tags and checkboxes](#styling-inline-tags-and-checkboxes)
@@ -332,7 +333,7 @@ Saved queries allow you to store search configurations in notes and reuse them a
   - `"consecutive"`: Group adjacent lines
   - `"item"`: Split by item
   - `"none"`: No grouping (flat list) — each paragraph becomes its own card, enabling cross-note sorting by tag
-  - To change the global grouping, right-click on a note title in the search panel. Saved queries can override this with their own `resultGrouping` property.
+  - To change the global grouping, right-click anywhere on a result card in the search panel. Saved queries can override this with their own `resultGrouping` property.
 - **`resultToggle`**: Boolean to collapse (`true`) or expand (`false`) result cards
 - **`includeCols`**: (Table view only) Comma-separated list of columns to display
   - Can include: note properties, tags, "modified", "created" timestamps
@@ -391,7 +392,7 @@ This example uses DNF mode (no `mode` field, so saved queries default to `"dnf"`
     - The new note will contain a [front matter](#front-matter-tags) template with properties for each column.
 - Tables can be customised using the following settings:
     - `Note view: Table view columns`: Set the default number of columns (most common ones) to display in the table view.
-    - `Search: Extract the full notebook path`: Enable this to display the notebook path in the table view, and to allow [filtering results](#filtering-results) by this path.
+    - `Search: Extract the full notebook path`: Enable this to display the notebook path in the table view and in [result card](#result-cards) footers, and to allow [filtering results](#filtering-results) by this path.
     - `Note view: Note view: Tag case in table view`: Set to "Title Case" / "lowercase".
 - Table views, like any other type of note view, can be updated periodically using the settings: `Note view: Periodic update of tag search view in notes` and `Database / Note view: Update after sync`.
 - Tables can be customised per note using with table-specific options. See the [saved queries](#saved-queries) section for complete specifications and examples.
@@ -431,6 +432,20 @@ This example uses DNF mode (no `mode` field, so saved queries default to `"dnf"`
     - Example: `"!references/"` excludes notebooks containing "references" in their path.
 - You may also enable `Search: Use regex for tag / note / content filtering` to filter using regular expressions.
 
+### Result cards
+
+Each result in the list view is shown as a card. By default the card is headed by the note title, which you can click to collapse the card, and whose **←** arrow opens the note at the matched line.
+
+The setting `Search: Note title location` moves that information:
+
+- `Heading`: the note title above the result content. This is the default.
+- `Footer`: the notebook path and note title in a small grey line below the result content. Use this when the results are what you scan and the note is context rather than a header. The footer keeps the collapse click and the **←** arrow.
+- `None`: no note information at all, for compact cards. These cards are always expanded, and clicking a result still opens the note at the matched line.
+
+The footer path follows `Search: Extract the full notebook path`: turn it on for the full path (`/Projects/2026/Weekly review`), leave it off for just the notebook holding the note (`2026/Weekly review`). The footer is kept to a single row and shortens the path first, so the note title stays readable. Hover over it to see the whole path.
+
+To change the [result grouping](#advanced-options), right-click anywhere on a result card. This works in all three modes.
+
 ### Context expansion
 
 Context expansion lets you reveal surrounding lines around search results to see more context without opening the note.
@@ -444,7 +459,7 @@ Context expansion lets you reveal surrounding lines around search results to see
 
 ### Inline TODOs
 
-- Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`). For individual task filtering, use "Split by item" grouping (right-click a note title on the panel).
+- Filter results by pending tasks (`"- [ ]"`) or ones done (`"- [x]"`). For individual task filtering, use "Split by item" grouping (right-click a result card on the panel).
 - Sort results by tags to reflect their priority (see [custom sorting options](#advanced-options)).
 <details>
 <summary>Custom regex for @mentions, +projects, //due-dates</summary>
