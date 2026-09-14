@@ -1,11 +1,6 @@
 export const RELEASE_NOTES = {
-    version: "v2.11.1",
-    notes: `- added: inline 6-state checkbox highlighting in the Markdown editor - no longer needs Rich Markdown
-- added: the class itags-checkbox, and one per state, across editor and panel
-
-v2.11.0:
-- added: inline tag highlighting in the Markdown editor, built in - no longer needs Rich Markdown
-- added: setting 'Inline tags: Style' and the class itags-tag, to style tags in the editor, preview and search panel
-
-If you currently highlight tags with Rich Markdown, remove its rm-tag custom class and stylesheet rule, or turn off 'Inline tags: Highlight in editor' - otherwise both will style the same tags.
+    version: "v2.12.0",
+    notes: `- added: setting 'Search: Note title location' - keep the note title as a heading above each result, move it to a small grey line below the result carrying the notebook path, or hide it for compact cards
+- the notebook path follows 'Search: Extract the full notebook path'
+- result grouping is now reachable by right-clicking anywhere on a result card, not only its title
 `};
