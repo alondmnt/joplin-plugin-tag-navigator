@@ -385,6 +385,33 @@ body {
     word-wrap: break-word;
 }
 
+/* Note location "footer": notebook path and title below the result content.
+   Kept to a single row - the path is shortened first so the note title survives. */
+.itags-search-resultNotebook {
+    display: flex;
+    margin-top: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 0.85em;
+    color: var(--joplin-color);
+    opacity: 0.7;
+}
+
+.itags-search-resultNotebook:hover {
+    background-color: var(--joplin-background-color-hover3);
+}
+
+.itags-search-resultNotebookPath {
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.itags-search-resultNotebookTitle {
+    flex-shrink: 0;
+}
+
 .itags-search-resultSection {
     position: relative;
 }

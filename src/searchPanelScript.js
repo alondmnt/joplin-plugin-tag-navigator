@@ -48,6 +48,7 @@ let valueDelim = '=';
 let dropdownIsOpen = false;
 let resultColorProperty = 'border';
 let resultGrouping = 'heading'; // Current result grouping setting
+let resultNoteLocation = 'heading'; // Where a result shows its note: 'heading', 'footer' or 'none'
 const DEFAULT_QUERY_MODE = 'cnf'; // Must match DEFAULT_QUERY_MODE in settings.ts
 let queryMode = DEFAULT_QUERY_MODE; // Current query mode: 'dnf' (OR-of-ANDs) or 'cnf' (AND-of-ORs)
 let sectionExpandLevel = {};  // Maps "noteId|color|sectionIndex" -> level (0-3)
@@ -701,6 +702,7 @@ function updatePanelSettings(message) {
     tagPrefix = settings.tagPrefix || '#';
     valueDelim = settings.valueDelim || '=';
     resultGrouping = settings.resultGrouping || 'heading'; // Store resultGrouping setting
+    resultNoteLocation = settings.resultNoteLocation || 'heading';
     
     // Sync panel state with Joplin settings
     const newResultToggleState = settings.resultToggle ? 'collapse' : 'expand';
@@ -918,27 +920,20 @@ function updateResultsArea() {
                 resultEl.style.backgroundColor = result.color;
             }
         }
-        const titleEl = document.createElement('h3');
-        titleEl.style.cursor = 'pointer';
+        // The chrome row carries the note identity and the card controls.
+        // 'heading' places it above the content, 'footer' below it, 'none' omits it.
+        let titleEl = null;
+        let footerEl = null;
+        if (resultNoteLocation === 'heading') {
+            titleEl = document.createElement('h3');
+            titleEl.appendChild(document.createTextNode(result.title));
+            resultEl.appendChild(titleEl);
 
-        // Add note icon with link info
-        const openLink = document.createElement('span');
-        openLink.innerHTML = '&larr;';
-        openLink.style.marginRight = '5px';
-        addEventListenerWithTracking(openLink, 'click', (event) => {
-            event.stopPropagation();
-            webviewApi.postMessage({
-                name: 'openNote',
-                externalId: ':/' + result.externalId,
-                line: Math.min(...result.lineNumbers[0]),
+            // The document-level fallback skips h3 so that headings keep their own menu
+            addEventListenerWithTracking(titleEl, 'contextmenu', (event) => {
+                createContextMenu(event, null, null, ['resultGrouping']);
             });
-        });
-
-        const titleText = document.createTextNode(result.title);
-
-        titleEl.appendChild(openLink);
-        titleEl.appendChild(titleText);
-        resultEl.appendChild(titleEl);
+        }
 
         const contentContainer = document.createElement('div');
         contentContainer.classList.add('itags-search-resultContent');
@@ -950,7 +945,11 @@ function updateResultsArea() {
         const stateKey = getCardKey(result);
 
         // Determine display state based on saved state or default
-        if (stateKey in noteState) {
+        if (resultNoteLocation === 'none') {
+            // Without a chrome row there is no per-card toggle, so a collapsed card
+            // would be an empty box the user cannot reopen. Always render it expanded.
+            contentContainer.style.display = 'block';
+        } else if (stateKey in noteState) {
             // Use saved state (true = expanded/display:block, false = collapsed/display:none)
             contentContainer.style.display = noteState[stateKey] ? 'block' : 'none';
         } else {
@@ -982,11 +981,11 @@ function updateResultsArea() {
             }
         }
 
-        // Apply title highlighting once before processing content sections
-        if (resultMarker && (inclusionPatterns.length > 0)) {
-            const highlightedTitle = highlightText(result.title, inclusionPatterns, 'itags-search-renderedFilter');
-            titleEl.innerHTML = highlightedTitle;
-            titleEl.insertBefore(openLink, titleEl.firstChild);
+        // Apply title highlighting once before processing content sections.
+        // The footer is deliberately left unhighlighted: it is de-emphasised by design.
+        // attachCardControls() prepends the open-note arrow after this point.
+        if (titleEl && resultMarker && (inclusionPatterns.length > 0)) {
+            titleEl.innerHTML = highlightText(result.title, inclusionPatterns, 'itags-search-renderedFilter');
         }
 
         let hasContent = false;
@@ -1068,22 +1067,21 @@ function updateResultsArea() {
         }
 
         resultEl.appendChild(contentContainer);
+
+        // The footer is a sibling of contentContainer, not a child: collapsing a card
+        // sets contentContainer to display:none, which would hide the footer with it.
+        if (resultNoteLocation === 'footer') {
+            footerEl = buildResultFooter(result);
+            resultEl.appendChild(footerEl);
+        }
+
         resultsArea.appendChild(resultEl);
         displayedNoteCount++;
 
-        // Add title click handler that updates the state
-        addEventListenerWithTracking(titleEl, 'click', () => {
-            const isCollapsed = contentContainer.style.display === 'none';
-            contentContainer.style.display = isCollapsed ? 'block' : 'none';
-            // Update the note state with the new state (after toggling)
-            // true means expanded (display:block), false means collapsed (display:none)
-            updateNoteState(getCardKey(result), isCollapsed ? true : false);
-        });
-
-        // Add right-click context menu handler for note titles
-        addEventListenerWithTracking(titleEl, 'contextmenu', (event) => {
-            createContextMenu(event, null, null, ['resultGrouping']);
-        });
+        const chromeEl = titleEl || footerEl;
+        if (chromeEl) {
+            attachCardControls(chromeEl, result, contentContainer);
+        }
 
         // Add spacing between notes
         const resultSpace = document.createElement('div');
@@ -1110,6 +1108,69 @@ function updateResultsArea() {
     if (resultsArea.lastElementChild && resultsArea.lastElementChild.classList.contains('itags-search-resultSpace')) {
         resultsArea.removeChild(resultsArea.lastElementChild);
     }
+}
+
+/**
+ * Builds the grey footer line showing where a result came from, as
+ * "notebook/path/note title". The path follows the full-notebook-path setting,
+ * so it is either the full path or the leaf notebook only.
+ * @param {object} result The result the card renders
+ * @returns {HTMLElement} The footer element
+ */
+function buildResultFooter(result) {
+    const footerEl = document.createElement('div');
+    footerEl.classList.add('itags-search-resultNotebook');
+
+    // Two spans so that CSS can shrink the path and leave the note title intact
+    const notebook = result.notebook || '';
+    const pathEl = document.createElement('span');
+    pathEl.classList.add('itags-search-resultNotebookPath');
+    pathEl.textContent = notebook;
+    const nameEl = document.createElement('span');
+    nameEl.classList.add('itags-search-resultNotebookTitle');
+    nameEl.textContent = result.title;
+
+    footerEl.appendChild(pathEl);
+    footerEl.appendChild(nameEl);
+    // The line is clipped to one row, so expose the whole thing on hover
+    footerEl.title = notebook + result.title;
+
+    return footerEl;
+}
+
+/**
+ * Attaches the card controls to whichever element carries the note identity,
+ * so that heading and footer cards behave identically: the open-note arrow and
+ * the click-to-collapse toggle. Cards with no chrome row ('none') get neither,
+ * and are always rendered expanded.
+ * @param {HTMLElement} chromeEl Element carrying the note identity
+ * @param {object} result The result the card renders
+ * @param {HTMLElement} contentContainer The card body that the toggle shows / hides
+ */
+function attachCardControls(chromeEl, result, contentContainer) {
+    chromeEl.style.cursor = 'pointer';
+
+    // Note icon with link info
+    const openLink = document.createElement('span');
+    openLink.innerHTML = '&larr;';
+    openLink.style.marginRight = '5px';
+    addEventListenerWithTracking(openLink, 'click', (event) => {
+        event.stopPropagation();
+        webviewApi.postMessage({
+            name: 'openNote',
+            externalId: ':/' + result.externalId,
+            line: Math.min(...result.lineNumbers[0]),
+        });
+    });
+    chromeEl.insertBefore(openLink, chromeEl.firstChild);
+
+    addEventListenerWithTracking(chromeEl, 'click', () => {
+        const isCollapsed = contentContainer.style.display === 'none';
+        contentContainer.style.display = isCollapsed ? 'block' : 'none';
+        // Update the note state with the new state (after toggling)
+        // true means expanded (display:block), false means collapsed (display:none)
+        updateNoteState(getCardKey(result), isCollapsed ? true : false);
+    });
 }
 
 // Helper function to create click handler
@@ -2837,7 +2898,10 @@ function registerEventHandlers() {
         } else if (event.target.matches('.itags-search-tag')) {
             createContextMenu(event, null, null, ['insertTag', 'searchTag', 'extendQuery', 'sortByTag', 'addToSort', 'replaceAll', 'removeAll']);
         } else if (event.target.type !== 'text') {
-            createContextMenu(event, null, null, ['queryMode']);
+            // Offer grouping anywhere in the results area, so that it stays reachable
+            // when the note heading is hidden (see the resultNoteLocation setting)
+            const inResults = event.target.closest('#itags-search-resultsArea');
+            createContextMenu(event, null, null, inResults ? ['resultGrouping', 'queryMode'] : ['queryMode']);
         }
     });
 

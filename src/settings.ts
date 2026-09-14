@@ -604,7 +604,7 @@ export async function registerSettings(): Promise<void> {
       section: 'itags',
       public: true,
       label: 'Search: Extract the full notebook path',
-      description: 'The full path can be used to filter results, and will also be shown in the table view (useful when you have identically-named notebooks).'
+      description: 'The full path can be used to filter results, and will also be shown in the table view and below list results (useful when you have identically-named notebooks).'
     },
     'itags.showQuery': {
       value: true,
@@ -662,6 +662,20 @@ export async function registerSettings(): Promise<void> {
       label: 'Search: Result grouping',
       description: 'Each group is shown as a section within a note in the search results. Groups can be filtered and sorted.',
       options: STANDARD_GROUPING_OPTIONS
+    },
+    'itags.resultNoteLocation': {
+      value: 'heading',
+      public: true,
+      type: SettingItemType.String,
+      isEnum: true,
+      section: 'itags',
+      label: 'Search: Note title location',
+      description: 'Where each result shows the note it came from. Footer places the notebook path and title in a small grey line below the result (the path follows "Extract the full notebook path"). None hides both, for compact cards.',
+      options: {
+        heading: 'Heading',
+        footer: 'Footer',
+        none: 'None',
+      }
     },
     'itags.contextExpansionStep': {
       value: 2,
