@@ -385,10 +385,18 @@ body {
     word-wrap: break-word;
 }
 
+/* The content tucks itself into the card's bottom padding, which is right when it is the
+   last thing in the card. A footer below it would collapse against that negative margin
+   and sit flush with the content, so the tuck is dropped when a footer follows. */
+.itags-search-resultContent:has(+ .itags-search-resultNotebook) {
+    margin-bottom: 0;
+}
+
 /* Note location "footer": notebook path and title below the result content.
    Kept to a single row - the path is shortened first so the note title survives. */
 .itags-search-resultNotebook {
     display: flex;
+    align-items: baseline;  /* the arrow is its own flex item: align glyphs, not boxes */
     margin-top: 5px;
     white-space: nowrap;
     overflow: hidden;
