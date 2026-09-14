@@ -439,8 +439,10 @@ Each result in the list view is shown as a card. By default the card is headed b
 The setting `Search: Note title location` moves that information:
 
 - `Heading`: the note title above the result content. This is the default.
-- `Footer`: the notebook path and note title in a small grey line below the result content. Use this when the results are what you scan and the note is context rather than a header. The footer keeps the collapse click and the **←** arrow.
+- `Footer`: the notebook path and note title in a small grey line below the result content. Use this when the results are what you scan and the note is context rather than a header. The footer keeps the **←** arrow, and its two halves filter the results: click the notebook path to narrow to that notebook, click the note title to narrow to that note.
 - `None`: no note information at all, for compact cards. These cards are always expanded, and clicking a result still opens the note at the matched line.
+
+Because the halves of the footer filter, a footer card has no collapse click of its own. Use the collapse button beside the results filter to collapse and expand them all. Clicking a filter fills in the results filter box, so pressing `Escape` there clears it again.
 
 The footer path follows `Search: Extract the full notebook path`: turn it on for the full path (`/Projects/2026/Weekly review`), leave it off for just the notebook holding the note (`2026/Weekly review`). The footer is kept to a single row and shortens the path first, so the note title stays readable. Hover over it to see the whole path.
 
