@@ -744,6 +744,17 @@ function updatePanelSettings(message) {
     updateResultsArea();
 }
 
+/**
+ * Whether result cards are rendered with a note row, meaning the heading or the footer.
+ * Cards without one have no per-card control, so they are always rendered expanded and
+ * the global collapse toggle is hidden. Any unrecognised location is treated as having
+ * no note row, so it cannot produce a collapsed card that nothing can reopen.
+ * @returns {boolean} True when the current note location produces a note row
+ */
+function cardsHaveNoteRow() {
+    return resultNoteLocation === 'heading' || resultNoteLocation === 'footer';
+}
+
 function hideElements(settings) {
     let hiddenCount = 0;
     if (settings.showNotes) {
@@ -771,6 +782,14 @@ function hideElements(settings) {
         resultOrder.classList.add('hidden');
         resultToggle.classList.add('hidden');
         hiddenCount++;
+    }
+    // Collapsing a card is undone by clicking its note row. Cards rendered without one
+    // have no such control, so the global toggle would leave boxes the user cannot reopen.
+    // Read from the module state rather than the argument: the panel-section callers pass
+    // an object that carries only the section flags.
+    // Not counted as a hidden section: the row around it stays, so no vertical space frees up.
+    if (!cardsHaveNoteRow()) {
+        resultToggle.classList.add('hidden');
     }
     if (settings.showTagRange) {
         tagRangeArea.classList.remove('hidden');
@@ -945,9 +964,10 @@ function updateResultsArea() {
         const stateKey = getCardKey(result);
 
         // Determine display state based on saved state or default
-        if (resultNoteLocation === 'none') {
-            // Without a chrome row there is no per-card toggle, so a collapsed card
-            // would be an empty box the user cannot reopen. Always render it expanded.
+        if (!cardsHaveNoteRow()) {
+            // Without a note row there is no per-card toggle, so a collapsed card would be
+            // an empty box the user cannot reopen. Always render it expanded, and ignore any
+            // noteState left behind by the global toggle or by another note location.
             contentContainer.style.display = 'block';
         } else if (stateKey in noteState) {
             // Use saved state (true = expanded/display:block, false = collapsed/display:none)
@@ -1078,9 +1098,8 @@ function updateResultsArea() {
         resultsArea.appendChild(resultEl);
         displayedNoteCount++;
 
-        const chromeEl = titleEl || footerEl;
-        if (chromeEl) {
-            attachCardControls(chromeEl, result, contentContainer);
+        if (cardsHaveNoteRow()) {
+            attachCardControls(titleEl || footerEl, result, contentContainer);
         }
 
         // Add spacing between notes
