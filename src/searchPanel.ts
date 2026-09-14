@@ -108,6 +108,7 @@ interface PanelSettings {
   spaceReplace: string;
   resultColorProperty: string;
   resultGrouping: string;
+  resultNoteLocation: string;
   tagPrefix: string;
   valueDelim: string;
   platform: string;
@@ -737,6 +738,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     'itags.spaceReplace',
     'itags.resultColorProperty',
     'itags.resultGrouping',
+    'itags.resultNoteLocation',
     'itags.tagPrefix',
     'itags.valueDelim',
   ]);
@@ -767,6 +769,7 @@ export async function updatePanelSettings(panel: string, searchParams?: QueryRec
     spaceReplace: joplinSettings['itags.spaceReplace'] as string,
     resultColorProperty: joplinSettings['itags.resultColorProperty'] as string,
     resultGrouping: resultGrouping,
+    resultNoteLocation: joplinSettings['itags.resultNoteLocation'] as string || 'heading',
     tagPrefix: joplinSettings['itags.tagPrefix'] as string || '#',
     valueDelim: joplinSettings['itags.valueDelim'] as string || '=',
     platform: versionInfo.platform,
