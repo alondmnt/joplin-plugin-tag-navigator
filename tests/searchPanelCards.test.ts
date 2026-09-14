@@ -193,13 +193,23 @@ describe('result cards: collapsing', () => {
     expect(card.querySelector('.itags-search-resultContent').style.display).toBe('block');
   });
 
-  test('the global toggle stays available when cards have a note row', async () => {
+  test('the global toggle comes back when the note row does', async () => {
     const panel = await loadPanel();
-    panel.render('footer', [makeResult()]);
-    panel.window.eval(`hideElements({ showQuery: true, expandedTagList: true, showNotes: true,
-      showResultFilter: true, showTagRange: true });`);
-
+    const sections = `{ showQuery: true, expandedTagList: true, showNotes: true,
+      showResultFilter: true, showTagRange: true }`;
     const toggle = panel.window.document.getElementById('itags-search-resultToggle');
+
+    panel.render('footer', [makeResult()]);
+    panel.window.eval(`hideElements(${sections});`);
+    expect(toggle.classList.contains('hidden')).toBe(false);
+
+    // Hiding it must not be one-way: the same panel switching locations has to recover
+    panel.render('none', [makeResult()]);
+    panel.window.eval(`hideElements(${sections});`);
+    expect(toggle.classList.contains('hidden')).toBe(true);
+
+    panel.render('heading', [makeResult()]);
+    panel.window.eval(`hideElements(${sections});`);
     expect(toggle.classList.contains('hidden')).toBe(false);
   });
 });
