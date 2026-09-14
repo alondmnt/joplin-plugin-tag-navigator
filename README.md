@@ -419,7 +419,7 @@ This example uses DNF mode (no `mode` field, so saved queries default to `"dnf"`
 ### Filtering results
 
 - Text entered in the results filter (on the panel or in a saved query) can be used to search within title of the notes, their notebook name / path, or the content of the displayed results.
-- Filtering behaviour depends on the result grouping mode (right-click a note title on the panel to change):
+- Filtering behaviour depends on the result grouping mode (right-click anywhere on a result card to change):
     - **Group by heading** (default): Shows/hides entire sections based on whether they contain matching content.
     - **Split by item**: Shows/hides individual items, useful for filtering specific tasks like `"- [ ]"`.
     - **No grouping**: Each paragraph is a separate card, enabling sorting across notes by tag (e.g., due dates, priorities).
