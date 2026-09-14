@@ -1,3 +1,19 @@
+# [v2.12.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.12.0)
+*Released on 2026-09-14T04:24:02Z*
+
+- added: setting `Search: Note title location`, controlling where a result card in the list view shows the note it came from
+    - `Heading` keeps the note title above the result content. This is the existing behaviour, and stays the default
+    - `Footer` moves it below the content, as a small grey line carrying the notebook path and the note title. The path follows `Search: Extract the full notebook path`, so it is either the full path or just the notebook holding the note
+    - the footer is kept to a single row and shortens the path before the note title, so the title stays readable when the path is long. Hover to see the whole thing
+    - `None` hides both, for compact cards. Those cards are always expanded and the collapse button is hidden, since there is no note row left to click to reopen them
+    - result grouping is now reachable by right-clicking anywhere on a result card. It previously required right-clicking the note title, which two of the three locations hide, and markdown headings inside results opened no menu at all
+- fixed: the Markdown editor was styled only in the main window, leaving tags and checkboxes unstyled in secondary windows
+- fixed: the tick in panel checkboxes sat low, most visibly on Android. It was positioned with a one-pixel nudge tuned against one platform's font metrics, and is now centred in its box
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.11.3...v2.12.0
+
+---
+
 # [v2.11.3](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.11.3)
 *Released on 2026-09-11T03:03:37Z*
 
