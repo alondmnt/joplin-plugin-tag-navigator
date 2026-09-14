@@ -2881,8 +2881,10 @@ function registerEventHandlers() {
             event.target.click();
             return;
         }
-        // Check if this is a note title element - if so, let its specific handler deal with it
-        if (event.target.tagName === 'H3' || event.target.closest('h3')) { return; }
+        // Check if this is a note title element - if so, let its specific handler deal with it.
+        // Only the card title is matched: normalizeHeadingLevel() renders every heading inside
+        // result content as an h3 too, and those must fall through to the results menu below.
+        if (event.target.closest('.itags-search-resultNote > h3')) { return; }
 
         const contextMenu = document.querySelectorAll('.itags-search-contextMenu');
         contextMenu.forEach(menu => {
