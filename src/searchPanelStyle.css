@@ -405,7 +405,10 @@ body {
     opacity: 0.7;
 }
 
-.itags-search-resultNotebook:hover {
+/* Only the two halves are clickable, so only they take the hover - highlighting the
+   whole row would promise a target in the gap after the title, where there is none. */
+.itags-search-resultNotebookPath:hover,
+.itags-search-resultNotebookTitle:hover {
     background-color: var(--joplin-background-color-hover3);
 }
 

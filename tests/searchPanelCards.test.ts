@@ -144,16 +144,27 @@ describe('result cards: note location', () => {
 });
 
 describe('result cards: collapsing', () => {
-  test('the footer collapses and reopens the card', async () => {
+  test('the heading collapses and reopens the card', async () => {
+    const panel = await loadPanel();
+    panel.render('heading', [makeResult()]);
+    const card = panel.card();
+    const content = card.querySelector('.itags-search-resultContent');
+    const heading = card.querySelector(':scope > h3');
+
+    expect(content.style.display).toBe('block');
+    heading.dispatchEvent(new panel.window.MouseEvent('click', { bubbles: true }));
+    expect(content.style.display).toBe('none');
+    heading.dispatchEvent(new panel.window.MouseEvent('click', { bubbles: true }));
+    expect(content.style.display).toBe('block');
+  });
+
+  test('the footer does not collapse, since its halves filter instead', async () => {
     const panel = await loadPanel();
     panel.render('footer', [makeResult()]);
     const card = panel.card();
     const content = card.querySelector('.itags-search-resultContent');
     const footer = card.querySelector('.itags-search-resultNotebook');
 
-    expect(content.style.display).toBe('block');
-    footer.dispatchEvent(new panel.window.MouseEvent('click', { bubbles: true }));
-    expect(content.style.display).toBe('none');
     footer.dispatchEvent(new panel.window.MouseEvent('click', { bubbles: true }));
     expect(content.style.display).toBe('block');
   });
@@ -211,6 +222,65 @@ describe('result cards: collapsing', () => {
     panel.render('heading', [makeResult()]);
     panel.window.eval(`hideElements(${sections});`);
     expect(toggle.classList.contains('hidden')).toBe(false);
+  });
+});
+
+describe('result cards: filtering from the footer', () => {
+  /** The result filter, and the results still on screen after the click. */
+  function filterAfterClicking(panel: Panel, selector: string) {
+    const target = panel.card().querySelector(selector);
+    target.dispatchEvent(new panel.window.MouseEvent('click', { bubbles: true }));
+    const filter = panel.window.document.getElementById('itags-search-resultFilter');
+    return {
+      value: filter.value,
+      shown: panel.window.document
+        .querySelectorAll('.itags-search-resultNote').length,
+    };
+  }
+
+  test('clicking the path filters to that notebook', async () => {
+    const panel = await loadPanel();
+    panel.render('footer', [
+      makeResult(),
+      makeResult({ externalId: 'b'.repeat(32), title: 'Elsewhere', notebook: '/Other/' }),
+    ]);
+
+    const { value, shown } = filterAfterClicking(panel, '.itags-search-resultNotebookPath');
+    expect(value).toBe('"/Projects/2026/"');
+    expect(shown).toBe(1);
+  });
+
+  test('clicking the title filters to that note', async () => {
+    const panel = await loadPanel();
+    panel.render('footer', [
+      makeResult(),
+      makeResult({ externalId: 'b'.repeat(32), title: 'Elsewhere', notebook: '/Projects/2026/' }),
+    ]);
+
+    // Quoted, or "Weekly review" would filter as two independent words
+    const { value, shown } = filterAfterClicking(panel, '.itags-search-resultNotebookTitle');
+    expect(value).toBe('"Weekly review"');
+    expect(shown).toBe(1);
+  });
+
+  test('a title containing a quote still matches the note it came from', async () => {
+    const panel = await loadPanel();
+    panel.render('footer', [makeResult({ title: 'Ann\'s "big" review' })]);
+
+    // Not wrapped: there is no escape syntax for a quote inside a phrase, and
+    // stripping it would leave a filter that no longer matches the title
+    const { value, shown } = filterAfterClicking(panel, '.itags-search-resultNotebookTitle');
+    expect(value).toBe('Ann\'s "big" review');
+    expect(shown).toBe(1);
+  });
+
+  test('a result with no notebook has no path to click', async () => {
+    const panel = await loadPanel();
+    panel.render('footer', [makeResult({ notebook: undefined })]);
+
+    const path = panel.card().querySelector('.itags-search-resultNotebookPath');
+    expect(path.textContent).toBe('');
+    expect(path.style.cursor).toBe('');
   });
 });
 

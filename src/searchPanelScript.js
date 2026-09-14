@@ -1149,30 +1149,59 @@ function buildResultFooter(result) {
     nameEl.classList.add('itags-search-resultNotebookTitle');
     nameEl.textContent = result.title;
 
+    if (notebook) {
+        addFilterOnClick(pathEl, notebook, 'notebook');
+    }
+    addFilterOnClick(nameEl, result.title, 'note');
+
     footerEl.appendChild(pathEl);
     footerEl.appendChild(nameEl);
-    // The line is clipped to one row, so expose the whole thing on hover
+    // The line is clipped to one row, so expose the whole thing on hover. The spans
+    // carry their own titles, which show the same text alongside what clicking does.
     footerEl.title = notebook + result.title;
 
     return footerEl;
 }
 
 /**
- * Attaches the card controls to whichever element carries the note identity,
- * so that heading and footer cards behave identically: the open-note arrow and
- * the click-to-collapse toggle. Cards with no chrome row ('none') get neither,
- * and are always rendered expanded.
+ * Makes an element narrow the results to `text` when clicked, as though it had been
+ * typed into the result filter. The filter already matches the note title and the
+ * notebook alongside the line text, so this only fills the box in.
+ * @param {HTMLElement} element Element to make clickable
+ * @param {string} text Value to filter by
+ * @param {string} label What that value names, for the hover title
+ */
+function addFilterOnClick(element, text, label) {
+    element.style.cursor = 'pointer';
+    element.title = `Filter by ${label}: ${text}`;
+    addEventListenerWithTracking(element, 'click', (event) => {
+        event.stopPropagation();
+        // Quoted, because titles and notebook names contain spaces and would
+        // otherwise be filtered as separate words. Text that already contains a
+        // quote cannot be expressed as a phrase - parseFilter has no escape syntax
+        // - and stripping the quote would stop it matching the name it came from,
+        // so it goes in as-is and matches on its words instead.
+        resultFilter.value = text.includes('"') ? text : `"${text}"`;
+        resultFilter.dispatchEvent(new Event('input'));
+    });
+}
+
+/**
+ * Attaches the card controls to whichever element carries the note identity.
+ * The open-note arrow goes on every note row. Click-to-collapse is heading-only:
+ * in the footer the path and the title are click targets of their own, so there is
+ * nothing left of the row to collapse with, and the toolbar toggle covers it
+ * instead. Cards with no note row ('none') get neither, and are always expanded.
  * @param {HTMLElement} chromeEl Element carrying the note identity
  * @param {object} result The result the card renders
  * @param {HTMLElement} contentContainer The card body that the toggle shows / hides
  */
 function attachCardControls(chromeEl, result, contentContainer) {
-    chromeEl.style.cursor = 'pointer';
-
     // Note icon with link info
     const openLink = document.createElement('span');
     openLink.innerHTML = '&larr;';
     openLink.style.marginRight = '5px';
+    openLink.style.cursor = 'pointer';
     addEventListenerWithTracking(openLink, 'click', (event) => {
         event.stopPropagation();
         webviewApi.postMessage({
@@ -1183,6 +1212,9 @@ function attachCardControls(chromeEl, result, contentContainer) {
     });
     chromeEl.insertBefore(openLink, chromeEl.firstChild);
 
+    if (resultNoteLocation !== 'heading') { return; }
+
+    chromeEl.style.cursor = 'pointer';
     addEventListenerWithTracking(chromeEl, 'click', () => {
         const isCollapsed = contentContainer.style.display === 'none';
         contentContainer.style.display = isCollapsed ? 'block' : 'none';
