@@ -105,13 +105,20 @@ export function compileExcludeRegex(source: string): RegExp | null {
  * Writes the default style plus the user's override into a single style element,
  * replacing whatever was there before. User CSS comes last and unlayered, so it
  * wins on both source order and layer precedence.
+ *
+ * The document is a parameter rather than the global one, because a note opened
+ * in its own window is a `window.open` document that Joplin portals the editor
+ * into, sharing this script's JS context. The global `document` is then still
+ * the main window's, and a style element appended there never reaches the second
+ * window, which links one stylesheet of its own at setup and copies nothing
+ * after that.
  */
-function applyStyle(userCss: string): void {
-  let element = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null;
+function applyStyle(doc: Document, userCss: string): void {
+  let element = doc.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null;
   if (!element) {
-    element = document.createElement('style');
+    element = doc.createElement('style');
     element.id = STYLE_ELEMENT_ID;
-    document.head.appendChild(element);
+    doc.head.appendChild(element);
   }
   element.textContent = userCss ? `${DEFAULT_CSS}\n${userCss}` : DEFAULT_CSS;
 }
@@ -248,6 +255,10 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
   plugin: (editorControl: CodeMirrorControl) => {
     if (!editorControl.cm6) { return; }
 
+    // This editor may be the one in a note's own window, and it is that window's
+    // document, not the global one, that has to carry the style.
+    const doc: Document = editorControl.editor?.dom?.ownerDocument ?? document;
+
     // Settings arrive over postMessage, so the extension is added once they land.
     void (async () => {
       let settings: EditorStyleSettings = {
@@ -259,7 +270,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
         console.warn('Tag Navigator: could not read tag style settings, using defaults.', error);
       }
 
-      applyStyle(settings.css);
+      applyStyle(doc, settings.css);
       if (settings.tags) { editorControl.addExtension(tagPlugin(settings)); }
       if (settings.checkboxes) { editorControl.addExtension(checkboxPlugin()); }
     })();
