@@ -1,3 +1,15 @@
+# [v2.12.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.12.1)
+*Released on 2026-09-14T04:51:10Z*
+
+- added: in footer mode, clicking the notebook path filters the results to that notebook, and clicking the note title filters to that note (#58)
+    - footer cards no longer collapse when clicked, since the click now filters
+
+<img width="239" height="70" alt="image" src="https://github.com/user-attachments/assets/61a24a38-936d-48c5-898c-9ce81f2186eb" />
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.12.0...v2.12.1
+
+---
+
 # [v2.12.0](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.12.0)
 *Released on 2026-09-14T04:24:02Z*
 
