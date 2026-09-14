@@ -16,8 +16,12 @@
  * needs both, since it runs the pattern over the viewport on every keystroke.
  *
  * tagBounds is the arithmetic that decides which characters get painted.
+ *
+ * The last block covers where the style element lands (#54). A note opened in
+ * its own window shares this script's JS context, so the global `document` is
+ * still the main window's and styling it leaves the second window bare.
  */
-import { compileTagRegex, compileExcludeRegex, inCodeContext } from '../src/cm6tagStyle';
+import tagStyleContentScript, { compileTagRegex, compileExcludeRegex, inCodeContext } from '../src/cm6tagStyle';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
 import { defTagRegex, mapPrefixClass, tagClasses, defaultTagCss, tagBounds } from '../src/utils';
@@ -356,5 +360,78 @@ describe('defaultTagCss', () => {
   it('targets the class it is given', () => {
     expect(editor).toContain('.itags-editor-tag {');
     expect(preview).toContain('.itags-search-renderedTag {');
+  });
+});
+
+describe('style injection', () => {
+  const { JSDOM, VirtualConsole } = require('jsdom');
+  const STYLE_ID = 'itags-editor-tag-style';
+  const SETTINGS = {
+    tagRegex: '', excludeRegex: '', css: '.itags-editor-tag { color: red; }',
+    tags: true, checkboxes: true,
+  };
+
+  /**
+   * A blank document, standing in for a window Joplin portals an editor into.
+   *
+   * The console is left unattached because jsdom's CSS parser predates @layer and
+   * reports the default style as unparseable. Electron's does not, and nothing
+   * here asserts on parsed rules, so the noise is all it would contribute.
+   */
+  const newDocument = () => new JSDOM(
+    '<!doctype html><html><head></head><body></body></html>',
+    { virtualConsole: new VirtualConsole() },
+  ).window.document;
+
+  /** An editor control whose DOM sits in the given document, or nowhere at all. */
+  const controlIn = (doc: Document | null) => ({
+    cm6: true,
+    editor: doc ? { dom: doc.body.appendChild(doc.createElement('div')) } : undefined,
+    addExtension: () => {},
+  });
+
+  /** Runs the content script against one editor and waits for its settings to land. */
+  async function loadInto(control: any) {
+    const context = { postMessage: async () => SETTINGS } as any;
+    tagStyleContentScript(context).plugin(control);
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+  }
+
+  let mainDocument: Document;
+  beforeEach(() => {
+    mainDocument = newDocument();
+    (global as any).document = mainDocument;
+  });
+  afterEach(() => { delete (global as any).document; });
+
+  it('styles the document the editor is in, not the one the script runs in', async () => {
+    const secondWindow = newDocument();
+    await loadInto(controlIn(secondWindow));
+
+    expect(secondWindow.getElementById(STYLE_ID).textContent).toContain('color: red');
+    expect(mainDocument.getElementById(STYLE_ID)).toBeNull();
+  });
+
+  it('styles each window that opens the same note', async () => {
+    const secondWindow = newDocument();
+    await loadInto(controlIn(mainDocument));
+    await loadInto(controlIn(secondWindow));
+
+    for (const doc of [mainDocument, secondWindow]) {
+      expect(doc.getElementById(STYLE_ID)).not.toBeNull();
+    }
+  });
+
+  it('reuses the one style element when a second editor opens in the same window', async () => {
+    await loadInto(controlIn(mainDocument));
+    await loadInto(controlIn(mainDocument));
+
+    expect(mainDocument.querySelectorAll(`#${STYLE_ID}`)).toHaveLength(1);
+  });
+
+  it('falls back to the global document when the editor exposes no DOM', async () => {
+    await loadInto(controlIn(null));
+
+    expect(mainDocument.getElementById(STYLE_ID)).not.toBeNull();
   });
 });
