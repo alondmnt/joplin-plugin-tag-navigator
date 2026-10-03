@@ -2466,6 +2466,10 @@ function createInputField(defaultTag, tagElement, finalizeFunction) {
         }
     }
 
+    // The input lives inside the result card, so without this a tap to move the
+    // cursor bubbles to the card's click handler and opens the note.
+    addEventListenerWithTracking(input, 'click', (e) => e.stopPropagation());
+
     // Add event listeners to finalize renaming on Enter key or focus out
     addEventListenerWithTracking(input, 'blur', finalizeInput);
     addEventListenerWithTracking(input, 'keydown', (e) => {
