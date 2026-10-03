@@ -1,3 +1,12 @@
+# [v2.12.2](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.12.2)
+*Released on 2026-10-03T14:16:09Z*
+
+- fixed: on mobile, tapping the text box while replacing a tag (to move the cursor) no longer opens the note and closes the panel
+
+**Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.12.1...v2.12.2
+
+---
+
 # [v2.12.1](https://github.com/alondmnt/joplin-plugin-tag-navigator/releases/tag/v2.12.1)
 *Released on 2026-09-14T04:51:10Z*
 
