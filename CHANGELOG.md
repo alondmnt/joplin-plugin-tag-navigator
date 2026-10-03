@@ -4,8 +4,6 @@
 - added: in footer mode, clicking the notebook path filters the results to that notebook, and clicking the note title filters to that note (#58)
     - footer cards no longer collapse when clicked, since the click now filters
 
-<img width="239" height="70" alt="image" src="https://github.com/user-attachments/assets/61a24a38-936d-48c5-898c-9ce81f2186eb" />
-
 **Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.12.0...v2.12.1
 
 ---
@@ -21,6 +19,10 @@
     - result grouping is now reachable by right-clicking anywhere on a result card. It previously required right-clicking the note title, which two of the three locations hide, and markdown headings inside results opened no menu at all
 - fixed: the Markdown editor was styled only in the main window, leaving tags and checkboxes unstyled in secondary windows
 - fixed: the tick in panel checkboxes sat low, most visibly on Android. It was positioned with a one-pixel nudge tuned against one platform's font metrics, and is now centred in its box
+
+<img width="239" height="70" alt="image" src="https://github.com/user-attachments/assets/61a24a38-936d-48c5-898c-9ce81f2186eb" />
+<br>
+<img width="328" height="113" alt="image" src="https://github.com/user-attachments/assets/31873899-3d33-47a7-935c-d56673d61361" />
 
 **Full Changelog**: https://github.com/alondmnt/joplin-plugin-tag-navigator/compare/v2.11.3...v2.12.0
 
