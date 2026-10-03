@@ -416,6 +416,8 @@ function processHierarchicalItems(
       notebook: groupedResult.notebook,
       updatedTime: groupedResult.updatedTime,
       createdTime: groupedResult.createdTime,
+      userUpdatedTime: groupedResult.userUpdatedTime,
+      userCreatedTime: groupedResult.userCreatedTime,
     });
   }
 }
@@ -586,6 +588,8 @@ function processStandaloneItems(
       notebook: groupedResult.notebook,
       updatedTime: groupedResult.updatedTime,
       createdTime: groupedResult.createdTime,
+      userUpdatedTime: groupedResult.userUpdatedTime,
+      userCreatedTime: groupedResult.userCreatedTime,
     });
   }
 }

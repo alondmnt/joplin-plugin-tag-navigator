@@ -51,7 +51,9 @@ export interface SortableItem {
   title: string;         // Note title
   notebook?: string;     // Notebook name
   updatedTime?: number;  // Last update timestamp
-  createdTime?: number;  // Creation timestamp
+  createdTime?: number;  // Creation timestamp (internal, shown in columns)
+  userUpdatedTime?: number;  // User-facing update timestamp (used for sorting, matches Joplin)
+  userCreatedTime?: number;  // User-facing creation timestamp (used for sorting, matches Joplin)
   tags?: string[][];     // Array of unique tags per group for sorting
 }
 
@@ -377,6 +379,8 @@ async function processQueryResults(
           notebook: result.notebook,
           updatedTime: result.updatedTime,
           createdTime: result.createdTime,
+          userUpdatedTime: result.userUpdatedTime,
+          userCreatedTime: result.userCreatedTime,
           color: result.color,
           lineNumbers: [result.lineNumbers[i]],
           text: [result.text[i]],
@@ -416,7 +420,7 @@ async function getTextAndTitleByGroup(
   contextExpansionStep: number = 0
 ): Promise<GroupedResult> {
   let note = await joplin.data.get(['notes', result.externalId],
-    { fields: ['title', 'body', 'updated_time', 'created_time', 'parent_id'] });
+    { fields: ['title', 'body', 'updated_time', 'created_time', 'user_updated_time', 'user_created_time', 'parent_id'] });
   let folder: any;
   try {
     folder = await joplin.data.get(['folders', note.parent_id], { fields: ['title', 'parent_id'] });
@@ -460,6 +464,8 @@ async function getTextAndTitleByGroup(
   result.notebook = notebook;
   result.updatedTime = note.updated_time;
   result.createdTime = note.created_time;
+  result.userUpdatedTime = note.user_updated_time;
+  result.userCreatedTime = note.user_created_time;
 
   // Context expansion - generate expanded text at each level
   if (contextExpansionStep > 0) {
@@ -1020,9 +1026,9 @@ export function sortResults<T extends SortableItem>(
       let comparison = 0;
 
       if (sortBy === 'created') {
-        comparison = (a.createdTime - b.createdTime) * sortOrder;
+        comparison = (a.userCreatedTime - b.userCreatedTime) * sortOrder;
       } else if (sortBy === 'modified') {
-        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+        comparison = (a.userUpdatedTime - b.userUpdatedTime) * sortOrder;
       } else if (sortBy === 'notebook') {
         comparison = a.notebook.localeCompare(b.notebook) * sortOrder;
       } else if (sortBy === 'title') {
@@ -1039,7 +1045,7 @@ export function sortResults<T extends SortableItem>(
         comparison = compareTagArrays(aTags, bTags, sortBy, sortOrder, tagSettings);
       } else {
         // Default to modified time if we don't have tags
-        comparison = (a.updatedTime - b.updatedTime) * sortOrder;
+        comparison = (a.userUpdatedTime - b.userUpdatedTime) * sortOrder;
       }
 
       if (comparison !== 0) {
