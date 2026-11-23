@@ -1,6 +1,13 @@
 import type { ContentScriptContext, MarkdownEditorContentScriptModule } from 'api/types';
 import { EditorView } from '@codemirror/view';
 
+/** A replacement in the original line's UTF-16 offsets, with an exclusive end. */
+export interface LineReplacement {
+  from: number;
+  to: number;
+  insert: string;
+}
+
 // Content script module for editor commands
 export default (context: ContentScriptContext): MarkdownEditorContentScriptModule => {
   return {
@@ -25,26 +32,28 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
         };
       });
 
-      // Replace content in the current line
-      editorControl.registerCommand('replaceCurrentLine', (newContent: string) => {
+      /**
+       * Applies non-overlapping replacements relative to the original line.
+       * A cursor before a replaced tag stays before it; one inside or immediately
+       * after it moves to its end. Positions in untouched text follow that text.
+       */
+      editorControl.registerCommand('replaceCurrentLine', (replacements: LineReplacement[]) => {
         const editor: EditorView = editorControl.editor;
         const state = editor.state;
         const cursor = state.selection.main.head;
         const line = state.doc.lineAt(cursor);
 
-        // Calculate cursor position within the line
-        const cursorPosInLine = cursor - line.from;
-        
-        // Replace the entire line with new content
+        const changes = state.changes(replacements.map(replacement => ({
+          from: line.from + replacement.from,
+          to: line.from + replacement.to,
+          insert: replacement.insert
+        })));
+
         const transaction = state.update({
-          changes: {
-            from: line.from,
-            to: line.to,
-            insert: newContent
-          },
-          // Maintain cursor position relative to line, but don't go beyond new line length
+          changes,
+          // Forward association moves a cursor inside a replacement to its end.
           selection: {
-            anchor: line.from + Math.min(cursorPosInLine, newContent.length)
+            anchor: changes.mapPos(cursor, 1)
           }
         });
 
@@ -54,7 +63,7 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
         return {
           success: true,
           newLineNumber: line.number - 1,
-          newContent: newContent
+          newContent: transaction.newDoc.sliceString(line.from, changes.mapPos(line.to, 1))
         };
       });
 
@@ -124,4 +133,4 @@ export default (context: ContentScriptContext): MarkdownEditorContentScriptModul
       });
     },
   };
-}; 
+};

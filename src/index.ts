@@ -10,6 +10,7 @@ import { runSearch, GroupedResult } from './search';
 import { QueryRecord, focusSearchPanel, registerSearchPanel, updatePanelResults, updatePanelSettings, saveQuery, loadQuery, updatePanelQuery, processMessage, updatePanelTagData, updatePanelNoteData } from './searchPanel';
 import { RELEASE_NOTES } from './release';
 import { parseDateTag } from './parser';
+import type { LineReplacement } from './replaceText';
 import { clearAllTagConversionData } from './tracker';
 import { clearObjectReferences, clearApiResponse, createManagedInterval, getMemoryManager } from './memory';
 
@@ -627,30 +628,21 @@ joplin.plugins.register({
           }
 
           const tagSettings = await getTagSettings();
-          let hasChanges = false;
 
-          // Process each line to replace date tags
-          const processedLines = lineInfo.lines.map(line => {
-            const originalContent = line.lineContent;
-            
-            // Find all tags in the line and process them for date replacements
-            const tagMatches = originalContent.match(tagSettings.tagRegex);
-            let processedContent = originalContent;
-            
-            if (tagMatches) {
-              tagMatches.forEach(tag => {
-                const processedTag = parseDateTag(tag, tagSettings);
-                if (processedTag !== tag) {
-                  processedContent = processedContent.replace(tag, processedTag);
-                  hasChanges = true;
-                }
-              });
+          // Keep original match offsets so each tag maps the cursor independently.
+          const replacements: LineReplacement[][] = lineInfo.lines.map(line => {
+            const changes: LineReplacement[] = [];
+            const tagRegex = new RegExp(tagSettings.tagRegex.source, tagSettings.tagRegex.flags);
+            for (const match of line.lineContent.matchAll(tagRegex)) {
+              const processedTag = parseDateTag(match[0], tagSettings);
+              if (processedTag !== match[0]) {
+                changes.push({ from: match.index, to: match.index + match[0].length, insert: processedTag });
+              }
             }
-            
-            return processedContent;
+            return changes;
           });
 
-          if (!hasChanges) {
+          if (!replacements.some(changes => changes.length > 0)) {
             await joplin.views.dialogs.showMessageBox('No date tags found to replace in the current line(s).');
             return;
           }
@@ -660,10 +652,18 @@ joplin.plugins.register({
             // Single line replacement
             await joplin.commands.execute('editor.execCommand', {
               name: 'replaceCurrentLine',
-              args: [processedLines[0]]
+              args: [replacements[0]]
             });
           } else {
             // Multiple lines replacement
+            const processedLines = lineInfo.lines.map((line, index) => {
+              let content = line.lineContent;
+              // Work backwards so earlier replacements retain their original offsets.
+              for (const change of replacements[index].slice().reverse()) {
+                content = content.slice(0, change.from) + change.insert + content.slice(change.to);
+              }
+              return content;
+            });
             await joplin.commands.execute('editor.execCommand', {
               name: 'replaceSelectedLines',
               args: [processedLines]
