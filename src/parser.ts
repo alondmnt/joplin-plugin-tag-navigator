@@ -1,5 +1,6 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 import { format } from 'date-fns';
+import { hasInlineTagPrefix } from './utils';
 
 /**
  * Regular expressions for parsing different elements
@@ -858,13 +859,10 @@ export function parseTagsFromFrontMatter(
     // Process based on key
     if ((key.toLowerCase() === 'tags') || (key.toLowerCase() === 'keywords')) {
       // For "tags" key, simply prefix each item and replace spaces
-      tags.push(...valueArray.map(tag => {
-        // Reset regex state to avoid issues with global flag
-        tagSettings.tagRegex.lastIndex = 0;
-        return tagSettings.tagRegex.test(String(tag)) 
-          ? String(tag).toLowerCase() 
-          : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`;
-      }));
+      tags.push(...valueArray.map(tag => hasInlineTagPrefix(String(tag), tagSettings.tagRegex)
+        ? String(tag).toLowerCase()
+        : `${tagSettings.tagPrefix}${String(tag).replace(/\s+/g, tagSettings.spaceReplace).toLowerCase()}`
+      ));
     } else {
       // For other keys, create nested tags and replace spaces in both key and value
       const safeKey = key.replace(/\s+/g, tagSettings.spaceReplace).toLowerCase();

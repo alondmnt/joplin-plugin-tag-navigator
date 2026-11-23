@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { parseTagsFromFrontMatter, parseTagsLines } from './parser';
-import { sortTags } from './utils';
+import { sortTags, formatInlineTag, InlineTagSettings } from './utils';
 import { ConversionSettings, TagSettings, getConversionSettings, getTagSettings } from './settings';
 import { isNotebookAllowed } from './db';
 import { clearObjectReferences, clearApiResponse } from './memory';
@@ -246,7 +246,7 @@ export async function convertNoteToJoplinTags(
  * Converts Joplin tags to inline tags for a single note
  * @param note - The note to process
  * @param conversionSettings - The settings for the conversion
- * @param tagSettings - Tag settings (unused but kept for backward compatibility)
+ * @param tagSettings - Tag parsing and prefix detection settings
  */
 export async function convertNoteToInlineTags(
   note: { id: string; body: string; markup_language: number },
@@ -262,26 +262,37 @@ export async function convertNoteToInlineTags(
   if (!tagSettings) {
     tagSettings = await getTagSettings();
   }
+  const inlineSettings: InlineTagSettings = {
+    tagRegex: tagSettings.tagRegex,
+    tagPrefix: conversionSettings.tagPrefix,
+    spaceReplace: conversionSettings.spaceReplace,
+  };
 
-  let tagsToAdd = currentJoplinTags;
-  let tagsToRemove: string[] = [];
+  /** Reads list payloads at a tag boundary even if List prefix has no trailing space. */
+  const inlineTagsInBody = (body: string): string[] => {
+    const listPrefix = conversionSettings.listPrefix;
+    const separatedBody = /\s$/.test(listPrefix) ? body : body.split('\n').map(line =>
+      isTagListLine(line, listPrefix, inlineSettings)
+        ? listPrefix + ' ' + line.slice(listPrefix.length)
+        : line
+    ).join('\n');
+    return extractInlineTags(separatedBody, tagSettings).map(tag => formatInlineTag(tag, inlineSettings));
+  };
+
   let updatedBody = note.body;
-
-  // Get all current inline tags from the entire note body
-  const currentInlineTagsInBody = extractInlineTags(note.body, tagSettings);
-  // Only add Joplin tags that don't already exist as inline tags anywhere in the body
-  tagsToAdd = currentJoplinTags.filter(tag => !currentInlineTagsInBody.includes(tag));
 
   // Check if tag tracking is enabled
   if (conversionSettings.enableTagTracking) {
     // Get previous conversion data
     const previousData = await getTagConversionData(note.id);
-    const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix, conversionSettings.tagPrefix);
+    const hasTagLines = hasExistingTagLines(note.body, conversionSettings.listPrefix, inlineSettings);
 
     // Only remove previously tracked tags that are no longer Joplin tags
     // But only if tag lines exist (if no tag lines, there's nothing to remove from)
-    tagsToRemove = (hasTagLines && previousData) 
-      ? previousData.inlineTags.filter(tag => !currentJoplinTags.includes(tag))
+    // Distinct Joplin names (e.g. alice and #alice) can share one inline form.
+    const desiredInlineTags = currentJoplinTags.map(tag => formatInlineTag(tag, inlineSettings));
+    const tagsToRemove = (hasTagLines && previousData)
+      ? previousData.inlineTags.filter(tag => !desiredInlineTags.includes(formatInlineTag(tag, inlineSettings)))
       : [];
 
     // Remove old inline tags that are no longer in Joplin tags
@@ -290,10 +301,13 @@ export async function convertNoteToInlineTags(
         updatedBody,
         tagsToRemove,
         conversionSettings.listPrefix,
-        conversionSettings.tagPrefix,
-        conversionSettings.spaceReplace
+        inlineSettings
       );
     }
+
+    // Removing a child can also remove the only inferred occurrence of its parent.
+    const remainingInlineTags = inlineTagsInBody(updatedBody);
+    const tagsToAdd = currentJoplinTags.filter(tag => !remainingInlineTags.includes(formatInlineTag(tag, inlineSettings)));
 
     // Add new inline tags
     if (tagsToAdd.length > 0) {
@@ -301,8 +315,7 @@ export async function convertNoteToInlineTags(
         updatedBody,
         tagsToAdd,
         conversionSettings.listPrefix,
-        conversionSettings.tagPrefix,
-        conversionSettings.spaceReplace,
+        inlineSettings,
         conversionSettings.location as 'top' | 'bottom',
         tagSettings.valueDelim
       );
@@ -338,16 +351,14 @@ export async function convertNoteToInlineTags(
     const lines = note.body.split('\n');
     const wipeTagListLines = conversionSettings.listPrefix.length > 2;
     const filteredLines = wipeTagListLines
-      ? lines.filter(line => !isTagListLine(line, conversionSettings.listPrefix, conversionSettings.tagPrefix))
+      ? lines.filter(line => !isTagListLine(line, conversionSettings.listPrefix, inlineSettings))
       : lines;
-    const plainInlineTags = wipeTagListLines
-      ? extractInlineTags(filteredLines.join('\n'), tagSettings)
-      : currentInlineTagsInBody;
-    const simpleTagsToAdd = currentJoplinTags.filter(tag => !plainInlineTags.includes(tag));
+    const plainInlineTags = inlineTagsInBody(filteredLines.join('\n'));
+    const simpleTagsToAdd = currentJoplinTags.filter(tag => !plainInlineTags.includes(formatInlineTag(tag, inlineSettings)));
 
     const sortedTags = sortTags(simpleTagsToAdd, tagSettings.valueDelim);
-    const tagList = conversionSettings.listPrefix + sortedTags
-      .map(tag => conversionSettings.tagPrefix + tag.replace(/\s/g, conversionSettings.spaceReplace)).join(' ');
+    const tagList = conversionSettings.listPrefix + [...new Set(sortedTags
+      .map(tag => formatInlineTag(tag, inlineSettings)))].join(' ');
 
     if (note.body.includes(tagList + '\n')) {
       // No change needed

@@ -1,3 +1,22 @@
+import type { TagSettings } from './settings';
+
+/** Settings shared by frontmatter and Joplin tag formatting. */
+export type InlineTagSettings = Pick<TagSettings, 'tagRegex' | 'tagPrefix' | 'spaceReplace'>;
+
+/** Tests the configured syntax from the start of each scan, even for global regexes. */
+export function hasInlineTagPrefix(tag: string, tagRegex: RegExp): boolean {
+  tagRegex.lastIndex = 0;
+  return tagRegex.test(tag);
+}
+
+/** Replaces spaces, then preserves a recognised prefix or adds the configured one. */
+export function formatInlineTag(tag: string, settings: InlineTagSettings): string {
+  const formattedTag = tag.replace(/\s/g, settings.spaceReplace);
+  return hasInlineTagPrefix(formattedTag, settings.tagRegex)
+    ? formattedTag
+    : settings.tagPrefix + formattedTag;
+}
+
 /**
  * Matches multilingual tag names starting with #.
  * The default tag regex, used when no custom one is set in the settings.

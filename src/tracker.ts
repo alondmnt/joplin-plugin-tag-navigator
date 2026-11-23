@@ -1,7 +1,7 @@
 import joplin from 'api';
 import { ModelType } from '../api/types';
 import { clearApiResponse } from './memory';
-import { sortTags, escapeRegex } from './utils';
+import { sortTags, escapeRegex, formatInlineTag, InlineTagSettings } from './utils';
 
 /**
  * Interface for tracking tag conversions per note
@@ -206,14 +206,18 @@ export async function clearAllTagConversionData(): Promise<void> {
 
 /**
  * Returns true if the line is a plugin-managed tag-list line (i.e. starts with
- * listPrefix and the remainder is either empty or begins with tagPrefix).
+ * listPrefix and the remainder is empty or begins with a recognised inline tag).
  * This excludes YAML frontmatter lines like `tags: [a, b]` that share the
  * listPrefix but aren't tag-list lines.
  */
-export function isTagListLine(line: string, listPrefix: string, tagPrefix: string): boolean {
+export function isTagListLine(line: string, listPrefix: string, settings: InlineTagSettings): boolean {
   if (!line.startsWith(listPrefix)) return false;
   const rest = line.slice(listPrefix.length).trimLeft();
-  return rest.length === 0 || rest.startsWith(tagPrefix);
+  if (rest.length === 0 || rest.startsWith(settings.tagPrefix)) return true;
+  settings.tagRegex.lastIndex = 0;
+  const match = settings.tagRegex.exec(rest);
+  // A tag later in a YAML value does not make the line a managed tag list.
+  return match !== null && match.index === 0 && match[0].trim().length > 0;
 }
 
 /**
@@ -248,16 +252,14 @@ export function frontMatterEndIndex(lines: string[]): number {
  * @param noteBody - The note body content
  * @param tagsToRemove - Array of tag names to remove
  * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
- * @param tagPrefix - The prefix used for individual tags (e.g., "#")
- * @param spaceReplace - The character used to replace spaces in tags
+ * @param settings - Prefix detection and formatting settings
  * @returns The updated note body
  */
 export function removeInlineTags(
   noteBody: string,
   tagsToRemove: string[],
   listPrefix: string,
-  tagPrefix: string,
-  spaceReplace: string
+  settings: InlineTagSettings
 ): string {
   if (tagsToRemove.length === 0) return noteBody;
 
@@ -265,22 +267,22 @@ export function removeInlineTags(
   const updatedLines = [];
 
   for (const line of lines) {
-    if (isTagListLine(line, listPrefix, tagPrefix)) {
+    if (isTagListLine(line, listPrefix, settings)) {
       // This is a tag line, remove specified tags
-      let updatedLine = line;
+      let tagList = line.slice(listPrefix.length);
       
       for (const tagToRemove of tagsToRemove) {
-        const tagWithPrefix = tagPrefix + tagToRemove.replace(/\s/g, spaceReplace);
-        // Remove the tag and any trailing/leading spaces
-        updatedLine = updatedLine.replace(new RegExp(`\\s*${escapeRegex(tagWithPrefix)}\\s*`, 'g'), ' ');
+        const tagWithPrefix = formatInlineTag(tagToRemove, settings);
+        // Match complete tags, including when listPrefix has no trailing space.
+        tagList = tagList.replace(new RegExp(`(^|\\s)${escapeRegex(tagWithPrefix)}(?=\\s|$)`, 'g'), '$1');
       }
       
       // Clean up the line - remove extra spaces and ensure proper formatting
-      updatedLine = updatedLine.replace(/\s+/g, ' ').trim();
+      tagList = tagList.replace(/\s+/g, ' ').trim();
       
       // Only keep the line if it still has content after the prefix
-      if (updatedLine.length > listPrefix.length) {
-        updatedLines.push(updatedLine);
+      if (tagList.length > 0) {
+        updatedLines.push((listPrefix + tagList).trim());
       }
     } else {
       updatedLines.push(line);
@@ -301,8 +303,7 @@ export function removeInlineTags(
  * @param noteBody - The note body content
  * @param tagsToAdd - Array of tag names to add
  * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
- * @param tagPrefix - The prefix used for individual tags (e.g., "#")
- * @param spaceReplace - The character used to replace spaces in tags
+ * @param settings - Prefix detection and formatting settings
  * @param location - Where to add the tags ('top' or 'bottom')
  * @param valueDelim - Delimiter for sorting tags
  * @returns The updated note body
@@ -311,8 +312,7 @@ export function addInlineTags(
   noteBody: string,
   tagsToAdd: string[],
   listPrefix: string,
-  tagPrefix: string,
-  spaceReplace: string,
+  settings: InlineTagSettings,
   location: 'top' | 'bottom',
   valueDelim: string
 ): string {
@@ -323,15 +323,15 @@ export function addInlineTags(
   
   // Find existing tag line (skip YAML frontmatter lines that share the prefix)
   for (let i = 0; i < lines.length; i++) {
-    if (isTagListLine(lines[i], listPrefix, tagPrefix)) {
+    if (isTagListLine(lines[i], listPrefix, settings)) {
       existingTagLineIndex = i;
       break;
     }
   }
   
   const sortedTags = sortTags(tagsToAdd, valueDelim);
-  const newTagsString = sortedTags
-    .map(tag => tagPrefix + tag.replace(/\s/g, spaceReplace)).join(' ');
+  const newTagsString = [...new Set(sortedTags
+    .map(tag => formatInlineTag(tag, settings)))].join(' ');
   
   if (existingTagLineIndex !== -1) {
     // Add to existing tag line
@@ -361,12 +361,12 @@ export function addInlineTags(
  * Checks if the note body contains any existing tag lines
  * @param noteBody - The note body content
  * @param listPrefix - The prefix used for tag lists (e.g., "tags: ")
- * @param tagPrefix - The prefix used for individual tags (e.g., "#")
+ * @param settings - Prefix detection and formatting settings
  * @returns true if tag lines exist, false otherwise
  */
-export function hasExistingTagLines(noteBody: string, listPrefix: string, tagPrefix: string): boolean {
+export function hasExistingTagLines(noteBody: string, listPrefix: string, settings: InlineTagSettings): boolean {
   const lines = noteBody.split('\n');
-  const result = lines.some(line => isTagListLine(line, listPrefix, tagPrefix));
+  const result = lines.some(line => isTagListLine(line, listPrefix, settings));
 
   // Clear array to prevent memory leaks
   lines.length = 0;
