@@ -29,6 +29,7 @@ function conversionFor(tags: string[], tracking: boolean, body = 'Body text.', s
   let history: TagConversionData | null = null;
   const options: ConversionSettings = {
     tagPrefix: '#', spaceReplace: '_', listPrefix: 'tags: ', location: 'top', enableTagTracking: tracking,
+    conversionExcludeRegex: '', conversionExpandTags: true,
   };
   (joplin.data.get as jest.Mock).mockImplementation(async () => ({
     items: currentTags.map((title, index) => ({ id: `tag${index}`, title })),
