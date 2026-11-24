@@ -1,6 +1,6 @@
 import { resultsStart, resultsEnd, queryStart, queryEnd, TagSettings } from './settings';
 import { format } from 'date-fns';
-import { hasInlineTagPrefix } from './utils';
+import { hasInlineTagPrefix, tagBounds } from './utils';
 
 /**
  * Regular expressions for parsing different elements
@@ -81,13 +81,55 @@ export interface TagLineInfo {
   index: number;
 }
 
+/** Parsing controls that do not change tag syntax or date normalisation. */
+export interface TagParseOptions {
+  includeTag?: (tag: string) => boolean;
+  expandTags?: boolean;
+}
+
+/** A normalised match and its trimmed tag range in the original source line. */
+export interface InlineTagMatch {
+  match: string;
+  tag: string;
+  from: number;
+  to: number;
+}
+
+/** Matches tags in full line context using the body parser's case normalisation. */
+export function matchInlineTags(text: string, tagRegex: RegExp): InlineTagMatch[] {
+  const normalised = text.toLocaleLowerCase();
+  tagRegex.lastIndex = 0;
+
+  /** Maps a normalised boundary back to source UTF-16 offsets if casing changes length. */
+  const sourceOffset = (offset: number, end: boolean): number => {
+    if (normalised.length === text.length) return offset;
+    // Find the last source boundary whose normalised prefix fits before offset.
+    let low = 0;
+    let high = text.length + 1;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (text.slice(0, mid).toLocaleLowerCase().length <= offset) low = mid + 1;
+      else high = mid;
+    }
+    const start = Math.max(0, low - 1);
+    return end && text.slice(0, start).toLocaleLowerCase().length < offset ? start + 1 : start;
+  };
+
+  return Array.from(normalised.matchAll(tagRegex)).map(match => {
+    const { tag, lead } = tagBounds(match[0]);
+    const from = match.index + lead;
+    return { match: match[0], tag, from: sourceOffset(from, false), to: sourceOffset(from + tag.length, true) };
+  });
+}
+
 /**
  * Parses tags and their line numbers from text content
  * @param text The text content to parse
  * @param tagSettings Configuration for tag parsing
+ * @param options Occurrence filtering and expansion controls; syntax settings remain unchanged
  * @returns Array of tag information including line numbers and relationships
  */
-export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineInfo[] {
+export function parseTagsLines(text: string, tagSettings: TagSettings, options: TagParseOptions = {}): TagLineInfo[] {
   let inCodeBlock = false;
   let inIndentedCode = false;
   let inList = false;
@@ -192,9 +234,11 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
       });
     }
 
-    const tagMatches = line.match(tagSettings.tagRegex);
-    if (tagMatches) {
-      tagMatches.forEach((tag) => {
+    const tagMatches = matchInlineTags(line, tagSettings.tagRegex);
+    if (tagMatches.length) {
+      tagMatches.forEach((match) => {
+        let tag = match.match;
+        if (options.includeTag && !options.includeTag(match.tag)) return;
         if (tagSettings.excludeRegex && tag.match(tagSettings.excludeRegex)) {
           return;
         }
@@ -212,7 +256,7 @@ export function parseTagsLines(text: string, tagSettings: TagSettings): TagLineI
 
         let tagFamily: string[];
         let nValues = 0;
-        if (tagSettings.nestedTags) {
+        if (tagSettings.nestedTags && options.expandTags !== false) {
           const value = tag.split(tagSettings.valueDelim, 2);  // Split #parent/child=value into key-value parts
           tagFamily = value[0].split('/');  // Split #parent/child into nested parts
           nValues = value.length - 1;
@@ -835,11 +879,13 @@ function parseFrontMatterContent(contentLines: string[], lineCount: number): Fro
  * Extracts tags from front matter content
  * @param text The text content containing front matter
  * @param tagSettings Configuration for tag processing
+ * @param options Occurrence filtering and expansion controls
  * @returns Array of tag information from front matter
  */
 export function parseTagsFromFrontMatter(
   text: string, 
-  tagSettings: TagSettings
+  tagSettings: TagSettings,
+  options: TagParseOptions = {}
 ): TagLineInfo[] {
   const frontMatter = parseFrontMatter(text, tagSettings);
   if (frontMatter.errors) {
@@ -873,10 +919,13 @@ export function parseTagsFromFrontMatter(
   }
   tags.push(tagSettings.tagPrefix + 'frontmatter');
 
+  // Conversion can exclude an occurrence before it generates parents or bare keys.
+  const includedTags = options.includeTag ? tags.filter(tag => options.includeTag(tag.trim())) : tags;
+
   // For each tag, split nested tags, and build all intermediate tags
   const nestedTags: string[] = [];
-  if (tagSettings.nestedTags) {
-    for (const tag of tags) {
+  if (tagSettings.nestedTags && options.expandTags !== false) {
+    for (const tag of includedTags) {
       const value = tag.split(tagSettings.valueDelim, 2);
       const parts = value[0].split('/');
       for (let i = 1; i <= parts.length; i++) {
@@ -889,7 +938,7 @@ export function parseTagsFromFrontMatter(
   }
 
   // Keep unique front matter tags, as they all point to the same lines
-  const allTags = [...new Set([...tags, ...nestedTags])];
+  const allTags = [...new Set([...includedTags, ...nestedTags])];
   const lines = Array.from({ length: frontMatter.lineCount }, (_, i) => i);
 
   // Convert to TagLineInfo[]

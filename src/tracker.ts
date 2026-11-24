@@ -2,6 +2,7 @@ import joplin from 'api';
 import { ModelType } from '../api/types';
 import { clearApiResponse } from './memory';
 import { sortTags, escapeRegex, formatInlineTag, InlineTagSettings } from './utils';
+import { matchInlineTags } from './parser';
 
 /**
  * Interface for tracking tag conversions per note
@@ -220,6 +221,33 @@ export function isTagListLine(line: string, listPrefix: string, settings: Inline
   return match !== null && match.index === 0 && match[0].trim().length > 0;
 }
 
+/** Gives managed list payloads a parsing boundary when List prefix has no trailing space. */
+export function separateTagListPrefix(line: string, listPrefix: string, settings: InlineTagSettings): string {
+  return !/\s$/.test(listPrefix) && isTagListLine(line, listPrefix, settings)
+    ? listPrefix + ' ' + line.slice(listPrefix.length)
+    : line;
+}
+
+/** Removes recognised tags from managed lists, preserving excluded and unparsed source text. */
+export function filterTagListLines(
+  noteBody: string, listPrefix: string, settings: InlineTagSettings, keepTag: (tag: string) => boolean
+): string {
+  return noteBody.split('\n').flatMap(line => {
+    if (!isTagListLine(line, listPrefix, settings)) return [line];
+    const separatedLine = separateTagListPrefix(line, listPrefix, settings);
+    const payloadStart = listPrefix.length + separatedLine.length - line.length;
+    const removed = matchInlineTags(separatedLine, settings.tagRegex)
+      .filter(match => match.tag && match.from >= payloadStart && !keepTag(match.tag));
+    if (!removed.length) return [line];
+    let payload = line.slice(listPrefix.length);
+    // Work backwards to retain the parser's original offsets and raw spelling.
+    for (const match of removed.reverse()) {
+      payload = payload.slice(0, match.from - payloadStart) + payload.slice(match.to - payloadStart);
+    }
+    return payload.trim() ? [listPrefix + payload.trim()] : [];
+  }).join('\n');
+}
+
 /**
  * Returns the index of the first line that is not part of leading YAML
  * frontmatter. Frontmatter is detected as a `---` opener on the first
@@ -298,6 +326,12 @@ export function removeInlineTags(
   return result;
 }
 
+/** Formats a managed tag-list line consistently for writing and no-change checks. */
+export function formatTagList(tags: string[], listPrefix: string, settings: InlineTagSettings, valueDelim: string): string {
+  return listPrefix + [...new Set(sortTags(tags, valueDelim)
+    .map(tag => formatInlineTag(tag, settings)))].join(' ');
+}
+
 /**
  * Adds inline tags to the note body
  * @param noteBody - The note body content
@@ -329,9 +363,8 @@ export function addInlineTags(
     }
   }
   
-  const sortedTags = sortTags(tagsToAdd, valueDelim);
-  const newTagsString = [...new Set(sortedTags
-    .map(tag => formatInlineTag(tag, settings)))].join(' ');
+  const tagList = formatTagList(tagsToAdd, listPrefix, settings, valueDelim);
+  const newTagsString = tagList.slice(listPrefix.length);
   
   if (existingTagLineIndex !== -1) {
     // Add to existing tag line
@@ -339,7 +372,7 @@ export function addInlineTags(
     lines[existingTagLineIndex] = existingLine + ' ' + newTagsString;
   } else {
     // Create new tag line
-    const newTagLine = listPrefix + newTagsString;
+    const newTagLine = tagList;
     if (location === 'top') {
       // Insert after any leading YAML frontmatter so we don't displace it
       // from the start of the note (which would invalidate it).

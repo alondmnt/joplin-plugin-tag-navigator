@@ -23,6 +23,7 @@ const joplin = {
     },
     dialogs: {
       showMessageBox: jest.fn(),
+      showToast: jest.fn(),
     },
     toolbarButtons: {
       create: jest.fn(),

@@ -127,6 +127,8 @@ export interface ConversionSettings {
   listPrefix: string;          // Prefix for converted Joplin tags
   location: string;            // Location for converted Joplin tags
   enableTagTracking: boolean;  // Whether to enable tag tracking
+  conversionExcludeRegex: string; // Inline syntax excluded from conversion in both directions
+  conversionExpandTags: boolean;  // Include inferred parents and bare keys during inline → Joplin conversion
 }
 
 /**
@@ -310,6 +312,8 @@ export async function getConversionSettings(): Promise<ConversionSettings> {
     'itags.listPrefix',
     'itags.location',
     'itags.enableTagTracking',
+    'itags.conversionExcludeRegex',
+    'itags.conversionExpandTags',
   ]);
   _conversionSettingsCache = {
     tagPrefix: settings['itags.tagPrefix'] as string || '#',
@@ -317,6 +321,8 @@ export async function getConversionSettings(): Promise<ConversionSettings> {
     listPrefix: settings['itags.listPrefix'] as string || 'tags: ',
     location: settings['itags.location'] as string || 'top',
     enableTagTracking: settings['itags.enableTagTracking'] as boolean || false,
+    conversionExcludeRegex: settings['itags.conversionExcludeRegex'] as string || '',
+    conversionExpandTags: settings['itags.conversionExpandTags'] !== false,
   };
   return { ..._conversionSettingsCache };
 }
@@ -833,6 +839,24 @@ export async function registerSettings(): Promise<void> {
       public: true,
       label: 'Tag conversion tracking',
       description: 'Track converted tags for intelligent cleanup when removing / modifying joplin and inline tags.',
+    },
+    'itags.conversionExcludeRegex': {
+      value: '',
+      type: SettingItemType.String,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Tag conversion exclusion regex',
+      description: 'Exclude full inline tags (including their prefixes) from conversion and tracking in both directions. Example: ^(?:@|//). Empty preserves current behaviour. Invalid patterns cancel conversion.',
+    },
+    'itags.conversionExpandTags': {
+      value: true,
+      type: SettingItemType.Bool,
+      section: 'itags',
+      public: true,
+      advanced: true,
+      label: 'Expand tags during conversion',
+      description: 'Include inferred parents and bare keys when converting inline tags to Joplin tags: #project/client also creates project; #color=green also creates color. Disable to convert only the complete tags. Does not enable expansion if Nested tags is disabled.',
     },
     'itags.tagRegex': {
       value: '',
